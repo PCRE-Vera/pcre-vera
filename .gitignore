@@ -1,0 +1,10 @@
+.swival
+
+tmp/
+.venv/
+__pycache__/
+*.py[co]
+.pytest_cache/
+
+lean/.lake/
+gen/js/node_modules/
