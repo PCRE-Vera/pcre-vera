@@ -1,3 +1,3 @@
 # pcre-truste
 
-An experiment to see if AI can build a PCRE-compatible regex engine that isn't garbage.
+An experiment to see if AI can build PCRE-compatible regex engines that aren't garbage.
