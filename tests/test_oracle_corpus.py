@@ -193,3 +193,14 @@ def test_oracle_corpus_names_the_case_it_is_complaining_about(tmp_path):
     case["match_option"] = ["NOTBOL"]
     with pytest.raises(ValueError, match="the-one-with-the-typo"):
         corpus_module.load(_write_corpus(tmp_path, case))
+
+
+def test_oracle_corpus_note_is_text_or_nothing(tmp_path):
+    """A note travels into failure messages, so it has to be a sentence."""
+    case = {"name": "x", "pattern": "a", "subject": "a", "expect": "nomatch"}
+    with pytest.raises(ValueError, match="note"):
+        corpus_module.load(_write_corpus(tmp_path, {**case, "note": ["not", "text"]}))
+
+    loaded = corpus_module.load(_write_corpus(tmp_path, {**case, "note": "why this pins"}))
+    assert loaded.cases[0].note == "why this pins"
+    assert corpus_module.load(_write_corpus(tmp_path, case)).cases[0].note == ""

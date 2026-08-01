@@ -286,7 +286,7 @@ def load(path: Path = SEED_PATH) -> Corpus:
                 newline=_convention(entry, "newline", "LF"),
                 bsr=_convention(entry, "bsr", "UNICODE"),
                 start=_start(entry),
-                note=str(entry.get("note", "")),
+                note=_text(entry, "note") if "note" in entry else "",
             )
         )
     return Corpus(path=path, cases=tuple(cases))
