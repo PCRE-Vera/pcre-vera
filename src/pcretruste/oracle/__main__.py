@@ -16,7 +16,7 @@ import sys
 from . import build as build_module
 from . import corpus as corpus_module
 from . import pin as pin_module
-from .client import Oracle, OracleError
+from .client import OracleError
 from .protocol import ProtocolError
 
 

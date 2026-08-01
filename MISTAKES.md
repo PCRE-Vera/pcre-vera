@@ -196,3 +196,113 @@ phase.
   itself open, so the field that says which case it is could go missing without
   a word worth reading. The outermost layer is the one an author gets wrong
   first.
+
+## Caught during M2 implementation
+
+- Gave a builder class an attribute named `ret` and a method named `ret`. The
+  attribute won, so every `f.ret(expr)` built a literal and emitted no return
+  statement, and the validator's "can reach its end without returning" was the
+  only thing that noticed. In a class that is half data and half verbs, a name
+  that reads as both is a name to avoid.
+- Serialized declarations in canonical (sorted) order while keeping the
+  author's order in memory, so a program did not equal what its own text
+  decoded to. If an encoding normalizes something, the value has to normalize
+  it too, or round-tripping tests a weaker property than it looks like.
+- Propagated `frozen` through every field read out of a frozen struct. The rule
+  is narrower: a field comes out frozen only when it would otherwise be linear,
+  because a copyable field is copied out and writing to that copy must not
+  reach back into the frozen value. A rule stated as "X propagates" is worth
+  re-reading for the case where it should not.
+- Wrote an interpreter that recovered operand widths from the runtime values,
+  which works for everything except a bare integer — which is to say, for
+  everything except the case that matters. It carries a small type environment
+  now, built from the declarations it walks past.
+- Let the validator index `INT_RANGE` with whatever type a literal claimed. The
+  reader can only build literals of the five scalar types, but the DSL will
+  happily write `bytes_(5)`, and a KeyError is not a rule violation. Every
+  table lookup in a checker needs the check that the key is in the table.
+
+## Caught reviewing M2
+
+All of one shape, and worth stating as one lesson: **a checker that shares a
+boundary with a parser will quietly rely on the parser.** Every hole below is
+a check that existed in the reader and nowhere else, on a path a program built
+in memory takes and a decoded one does not.
+
+- Wrote operator dispatch as "if it is `not`, else treat it as `neg`/`bnot`",
+  which reads as exhaustive and is not. `Unary("wat", x)` validated and
+  computed bitwise-not. An else-branch over a closed set has to be spelled as
+  the closed set, or the set is not closed.
+- Compared a struct literal's field *names* as a set, after `dict()` had
+  already collapsed a repeat. Building the dictionary is what discarded the
+  evidence; the length is what says "exactly once".
+- Range-checked payloads without type-checking them. `0 <= 1.0 <= 7` is true,
+  and `x << 1.0` is a TypeError. A comparison is not a type check, and in
+  Python it will not tell you so.
+- Detected struct cycles by following only fields whose type is directly a
+  struct. A cycle through `frozen<S>` has a finite storage size, so nothing
+  looked wrong, and only the zero value — which is defined recursively —
+  actually diverges. When two derived properties differ in what they recurse
+  through, the check has to follow the one that recurses further.
+- Assumed a name that parses is a name that prints. `var`, `class` and `len`
+  are all fine identifiers here and unusable in Go or JavaScript verbatim.
+- Made the reference interpreter raise a trap from a loop variant, when the
+  document says no backend evaluates a variant at all. An interpreter that is
+  the only implementation able to produce an answer is producing the wrong
+  answer.
+- Enforced argument disjointness at TIR call sites and left the host-facing
+  entry point taking the same cell twice, which hands one heap-backed value two
+  live names. A rule that holds inside the language and not at its edge does
+  not hold.
+- Wrote a normative rule — "a linear value is never read as an expression" —
+  that nothing implemented and nothing could, since `len(v)` reads `v`. A
+  specification sentence that no test can fail is a sentence nobody checked.
+- Stopped an aliasing walk at frozen values, reasoning that sharing one is what
+  freezing is for. True of two frozen views of a value; false of a frozen view
+  of something still mutable elsewhere, which then watches it change. A rule
+  that holds for the symmetric case is not thereby a rule.
+- Then wrote the same check over `inout` arguments only, having just restated
+  the rule it was mirroring — which says "every other argument, `in` ones
+  included, since they read". Three review rounds went into one aliasing check.
+  When a rule already exists in prose, the implementation should be read back
+  against that sentence, clause by clause, rather than against the case that
+  prompted the fix.
+- Checked "every validator rule has a negative test" by looking for the rule's
+  number in the test file. A comment satisfies that. The suite watches for the
+  rules it actually provokes now, which is the difference between testing the
+  property and testing that somebody typed its name.
+- Compared types with `is` while relying on `==` everywhere else. `Prim` is a
+  frozen dataclass, so a rebuilt `Prim("bytes")` is equal to the constant and
+  is not the constant; `is_linear` asked the second question and answered "not
+  linear" about the type linearity exists for. Two ways of asking the same
+  question is one too many, and the one the data model already supports is the
+  one to keep.
+- Ended a projection-by-projection comparison at the first pair that matched.
+  Two equal literal indices settle nothing on their own — `v[0].a` and `v[0].b`
+  are disjoint — and a comparison that walks a list has to say what "equal so
+  far" means as carefully as what "different" means.
+- Detected struct cycles with a plain recursive walk: no memo, so a shared
+  suffix was re-walked once per incoming edge and a chain of diamonds cost
+  2^n, and no explicit stack, so a long chain raised `RecursionError`. A
+  validator that answers `RecursionError` has not answered.
+- Resolved every name through a dictionary lookup and never asked whether the
+  name was a string. An object with a cooperative `__eq__` and `__hash__`
+  resolves as `"u32"` through the whole validator and reaches a serializer that
+  has nothing to write. Equality is what a lookup asks; it is not what the
+  answer is used for afterwards.
+- Wrote a mutation sweep that replaced leaves and dropped list elements, and
+  called it a proof that the validator is the boundary. It never put a node of
+  one kind where a node of another belongs, which is the one thing a program
+  built in memory can do and a decoded one cannot — so it missed an `EnumDecl`
+  among the structs, a variant list that was a `list`, and a bytes constant
+  holding a `str`. A sweep proves what it varies.
+- Promised that printers emit TIR names verbatim while letting two enums share
+  a variant name. Go turns a variant into a package-level constant, so the two
+  become one redeclared identifier. A "no mangling" contract is a claim about
+  every target's scoping rules, and it has to be checked against them — the Go
+  compiler had the answer in three lines.
+- Answered "this walk raises RecursionError" by making that one walk iterative
+  and writing a docstring that claimed the property for the module. Three other
+  walks over the same program still recursed, and so would the Lean decoder and
+  both printers. When a claim is about a boundary, either the boundary enforces
+  it or the claim comes out of the document — a docstring is not a mechanism.

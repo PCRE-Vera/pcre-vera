@@ -1,0 +1,603 @@
+{
+  "consts": [
+    {
+      "name": "BITS",
+      "type": {
+        "frozen": "bytes"
+      },
+      "value": {
+        "bytes": "0102040810204080"
+      }
+    }
+  ],
+  "enums": [
+    {
+      "name": "Phase",
+      "variants": [
+        "Enter",
+        "AfterFirst",
+        "AfterSecond"
+      ]
+    }
+  ],
+  "funcs": [
+    {
+      "body": [
+        {
+          "let": {
+            "init": null,
+            "name": "stack",
+            "type": {
+              "vec": {
+                "elem": {
+                  "struct": "Task"
+                },
+                "max": 64
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 10000
+            },
+            "name": "fuel",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "result",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "done",
+            "type": {
+              "struct": "Task"
+            }
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "inout": {
+                  "var": "stack"
+                }
+              },
+              {
+                "in": {
+                  "var": "n"
+                }
+              }
+            ],
+            "dest": null,
+            "fn": "push_task"
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "assign": {
+                  "place": {
+                    "var": "fuel"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "fuel"
+                      },
+                      "op": "sub",
+                      "right": {
+                        "counter": 1
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "let": {
+                  "init": {
+                    "bin": {
+                      "left": {
+                        "len": {
+                          "var": "stack"
+                        }
+                      },
+                      "op": "sub",
+                      "right": {
+                        "u32": 1
+                      }
+                    }
+                  },
+                  "name": "top",
+                  "type": "u32"
+                }
+              },
+              {
+                "switch": {
+                  "arms": [
+                    {
+                      "body": [
+                        {
+                          "let": {
+                            "init": {
+                              "field": {
+                                "base": {
+                                  "index": {
+                                    "base": {
+                                      "var": "stack"
+                                    },
+                                    "index": {
+                                      "var": "top"
+                                    }
+                                  }
+                                },
+                                "name": "n"
+                              }
+                            },
+                            "name": "k",
+                            "type": "u32"
+                          }
+                        },
+                        {
+                          "if": {
+                            "cond": {
+                              "cmp": {
+                                "left": {
+                                  "var": "k"
+                                },
+                                "op": "le",
+                                "right": {
+                                  "u32": 1
+                                }
+                              }
+                            },
+                            "else": [
+                              {
+                                "assign": {
+                                  "place": {
+                                    "field": {
+                                      "base": {
+                                        "index": {
+                                          "base": {
+                                            "var": "stack"
+                                          },
+                                          "index": {
+                                            "var": "top"
+                                          }
+                                        }
+                                      },
+                                      "name": "phase"
+                                    }
+                                  },
+                                  "value": {
+                                    "enumval": {
+                                      "type": "Phase",
+                                      "variant": "AfterFirst"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "call": {
+                                  "args": [
+                                    {
+                                      "inout": {
+                                        "var": "stack"
+                                      }
+                                    },
+                                    {
+                                      "in": {
+                                        "bin": {
+                                          "left": {
+                                            "var": "k"
+                                          },
+                                          "op": "sub",
+                                          "right": {
+                                            "u32": 1
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "dest": null,
+                                  "fn": "push_task"
+                                }
+                              }
+                            ],
+                            "then": [
+                              {
+                                "assign": {
+                                  "place": {
+                                    "var": "result"
+                                  },
+                                  "value": {
+                                    "cast": {
+                                      "arg": {
+                                        "var": "k"
+                                      },
+                                      "type": "counter"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "pop": {
+                                  "dest": {
+                                    "var": "done"
+                                  },
+                                  "seq": {
+                                    "var": "stack"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "variant": "Enter"
+                    },
+                    {
+                      "body": [
+                        {
+                          "assign": {
+                            "place": {
+                              "field": {
+                                "base": {
+                                  "index": {
+                                    "base": {
+                                      "var": "stack"
+                                    },
+                                    "index": {
+                                      "var": "top"
+                                    }
+                                  }
+                                },
+                                "name": "saved"
+                              }
+                            },
+                            "value": {
+                              "var": "result"
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "place": {
+                              "field": {
+                                "base": {
+                                  "index": {
+                                    "base": {
+                                      "var": "stack"
+                                    },
+                                    "index": {
+                                      "var": "top"
+                                    }
+                                  }
+                                },
+                                "name": "phase"
+                              }
+                            },
+                            "value": {
+                              "enumval": {
+                                "type": "Phase",
+                                "variant": "AfterSecond"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "let": {
+                            "init": {
+                              "field": {
+                                "base": {
+                                  "index": {
+                                    "base": {
+                                      "var": "stack"
+                                    },
+                                    "index": {
+                                      "var": "top"
+                                    }
+                                  }
+                                },
+                                "name": "n"
+                              }
+                            },
+                            "name": "second",
+                            "type": "u32"
+                          }
+                        },
+                        {
+                          "call": {
+                            "args": [
+                              {
+                                "inout": {
+                                  "var": "stack"
+                                }
+                              },
+                              {
+                                "in": {
+                                  "bin": {
+                                    "left": {
+                                      "var": "second"
+                                    },
+                                    "op": "sub",
+                                    "right": {
+                                      "u32": 2
+                                    }
+                                  }
+                                }
+                              }
+                            ],
+                            "dest": null,
+                            "fn": "push_task"
+                          }
+                        }
+                      ],
+                      "variant": "AfterFirst"
+                    },
+                    {
+                      "body": [
+                        {
+                          "assign": {
+                            "place": {
+                              "var": "result"
+                            },
+                            "value": {
+                              "bin": {
+                                "left": {
+                                  "field": {
+                                    "base": {
+                                      "index": {
+                                        "base": {
+                                          "var": "stack"
+                                        },
+                                        "index": {
+                                          "var": "top"
+                                        }
+                                      }
+                                    },
+                                    "name": "saved"
+                                  }
+                                },
+                                "op": "add",
+                                "right": {
+                                  "var": "result"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "pop": {
+                            "dest": {
+                              "var": "done"
+                            },
+                            "seq": {
+                              "var": "stack"
+                            }
+                          }
+                        }
+                      ],
+                      "variant": "AfterSecond"
+                    }
+                  ],
+                  "default": null,
+                  "value": {
+                    "field": {
+                      "base": {
+                        "index": {
+                          "base": {
+                            "var": "stack"
+                          },
+                          "index": {
+                            "var": "top"
+                          }
+                        }
+                      },
+                      "name": "phase"
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "and": {
+                "left": {
+                  "cmp": {
+                    "left": {
+                      "len": {
+                        "var": "stack"
+                      }
+                    },
+                    "op": "gt",
+                    "right": {
+                      "u32": 0
+                    }
+                  }
+                },
+                "right": {
+                  "cmp": {
+                    "left": {
+                      "var": "fuel"
+                    },
+                    "op": "gt",
+                    "right": {
+                      "counter": 0
+                    }
+                  }
+                }
+              }
+            },
+            "variant": {
+              "var": "fuel"
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "var": "out"
+            },
+            "value": {
+              "var": "result"
+            }
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "cmp": {
+                "left": {
+                  "len": {
+                    "var": "stack"
+                  }
+                },
+                "op": "eq",
+                "right": {
+                  "u32": 0
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "fib",
+      "params": [
+        {
+          "mode": "in",
+          "name": "n",
+          "type": "u32"
+        },
+        {
+          "mode": "inout",
+          "name": "out",
+          "type": "counter"
+        }
+      ],
+      "ret": "bool"
+    },
+    {
+      "body": [
+        {
+          "return": {
+            "value": {
+              "index": {
+                "base": {
+                  "constref": "BITS"
+                },
+                "index": {
+                  "bin": {
+                    "left": {
+                      "cast": {
+                        "arg": {
+                          "var": "i"
+                        },
+                        "type": "u32"
+                      }
+                    },
+                    "op": "and",
+                    "right": {
+                      "u32": 7
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "masked",
+      "params": [
+        {
+          "mode": "in",
+          "name": "i",
+          "type": "u8"
+        }
+      ],
+      "ret": "u8"
+    },
+    {
+      "body": [
+        {
+          "push": {
+            "seq": {
+              "var": "stack"
+            },
+            "value": {
+              "structval": {
+                "fields": {
+                  "n": {
+                    "var": "k"
+                  },
+                  "phase": {
+                    "enumval": {
+                      "type": "Phase",
+                      "variant": "Enter"
+                    }
+                  },
+                  "saved": {
+                    "counter": 0
+                  }
+                },
+                "type": "Task"
+              }
+            }
+          }
+        }
+      ],
+      "name": "push_task",
+      "params": [
+        {
+          "mode": "inout",
+          "name": "stack",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Task"
+              },
+              "max": 64
+            }
+          }
+        },
+        {
+          "mode": "in",
+          "name": "k",
+          "type": "u32"
+        }
+      ],
+      "ret": null
+    }
+  ],
+  "structs": [
+    {
+      "fields": [
+        {
+          "name": "n",
+          "type": "u32"
+        },
+        {
+          "name": "phase",
+          "type": {
+            "enum": "Phase"
+          }
+        },
+        {
+          "name": "saved",
+          "type": "counter"
+        }
+      ],
+      "name": "Task"
+    }
+  ],
+  "tir": 1
+}
