@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    name: Python and the pcre2 oracle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: true
+
+      # The build directory is named after a digest of the pin, the shim source
+      # and the recipe, so the same key can never hand back a build of anything
+      # else.
+      - name: Cache the pinned pcre2 build
+        uses: actions/cache@v6
+        with:
+          path: tmp/oracle
+          key: oracle-${{ runner.os }}-${{ hashFiles('oracle/pcre2-pin.toml', 'oracle/pcre2shim/shim.c', 'src/pcretruste/oracle/build.py') }}
+
+      - run: uv sync --frozen
+
+      - name: Check the oracle against the pin
+        run: uv run python -m pcretruste.oracle verify
+
+      - run: uv run pytest
+
+  lean:
+    name: Lean
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: lean
+          build: "true"
+          test: "false"
+          lint: "false"
+          use-mathlib-cache: "false"
+
+  go:
+    name: Go
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gen/go
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: false
+      - run: go vet ./...
+      - run: go test ./...
+
+  javascript:
+    name: JavaScript
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gen/js
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - run: node --test
