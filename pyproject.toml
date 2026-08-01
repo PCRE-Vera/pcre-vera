@@ -1,0 +1,23 @@
+[project]
+name = "pcretruste"
+version = "0.0.0"
+description = "Generator for a formally verified PCRE engine and its Go and JavaScript backends"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8.0", "tomli-w>=1.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pcretruste"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "oracle: needs the pinned pcre2 build; applied automatically in conftest.py",
+]

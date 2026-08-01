@@ -1,0 +1,102 @@
+# The pinned pcre2 reference build.
+#
+# "Correct PCRE" is not one behavior: it depends on how libpcre2 was built and
+# configured, so this file is the arbiter rather than prose in DESIGN.md
+# section 2.3. Everything here is checked, never assumed. The tarball is
+# verified against its hash before it is unpacked, the shipped character tables
+# are verified before they are compiled, and once the library is linked the
+# harness reads its configuration back through the public API and compares it
+# field by field with the [expect] table below.
+#
+# Moving to a newer pcre2 release means editing this file, re-recording the
+# hashes, and documenting the compatibility change. It never happens silently.
+
+schema = 1
+
+[source]
+version = "10.47"
+release_tag = "pcre2-10.47"
+tarball = "pcre2-10.47.tar.bz2"
+url = "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.47/pcre2-10.47.tar.bz2"
+sha256 = "47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7"
+
+# The default C locale character tables, taken from the release rather than
+# rebuilt from the build machine's locale. \w, \s, \b, the POSIX classes and
+# caseless matching in byte mode all follow these 1088 bytes, so they are
+# pinned twice over: as the source file that gets compiled, and as the bytes
+# the linked library actually ends up using ([expect].tables_sha256).
+chartables_source = "src/pcre2_chartables.c.dist"
+chartables_source_sha256 = "a0ceb94d96a2b438524d0cb85168e1ab5323c871865ddf9d524d45eb1ed131d1"
+
+[build]
+# Only the 8-bit library is built, and only the library: pcre2test, pcre2grep
+# and the 16/32-bit widths are not part of the reference. Flags that merely
+# restate a configure default are listed anyway, so that a future change of
+# default cannot move the reference without moving this file.
+cflags = "-O2"
+configure = [
+  "--disable-shared",
+  "--enable-static",
+  "--enable-pcre2-8",
+  "--disable-pcre2-16",
+  "--disable-pcre2-32",
+  "--disable-jit",
+  "--enable-unicode",
+  "--disable-rebuild-chartables",
+  "--enable-newline-is-lf",
+  "--disable-bsr-anycrlf",
+  "--disable-never-backslash-C",
+  "--disable-ebcdic",
+  "--with-link-size=2",
+  "--with-parens-nest-limit=250",
+  "--with-max-varlookbehind=255",
+  "--with-match-limit=10000000",
+  "--with-match-limit-depth=10000000",
+  "--with-heap-limit=20000000",
+  "--disable-pcre2grep-jit",
+  "--disable-pcre2grep-libz",
+  "--disable-pcre2grep-libbz2",
+  "--disable-pcre2test-libedit",
+  "--disable-pcre2test-libreadline",
+  "--disable-valgrind",
+  "--disable-coverage",
+  "--disable-fuzz-support",
+  "--disable-dependency-tracking",
+]
+make_target = "libpcre2-8.la"
+library = ".libs/libpcre2-8.a"
+include_dir = "src"
+
+# What pcre2_config() must report once the library is linked. A mismatch here
+# means the build is not the reference build, and the harness refuses to run.
+# One pinned knob is missing on purpose: --with-max-varlookbehind has no
+# pcre2_config field, so the corpus pins it by behavior instead, at 255 and 256.
+[expect]
+version_prefix = "10.47 "
+unicode = 1
+unicode_version = "16.0.0"
+newline = "LF"
+bsr = "UNICODE"
+jit = 0
+link_size = 2
+effective_link_size = 2
+parens_nest_limit = 250
+match_limit = 10000000
+depth_limit = 10000000
+heap_limit = 20000000
+never_backslash_c = 0
+compiled_widths = 1  # 8-bit only
+tables_length = 1088
+tables_sha256 = "40bfdd1a0c1e45c7c85c799dfefa098d30ea58e832d813d00f6dfc6bed167513"
+
+# Limits the harness applies to every oracle match, generous but finite: they
+# exist so a pathological fuzz case cannot wedge the harness, not to mirror our
+# own budgets. Our limits and pcre2's meter different implementation events, so
+# no setting makes them equivalent; result comparison is restricted to runs
+# where our engine finished inside its own budget instead (DESIGN.md section 1).
+# A run that trips one of these surfaces as a match error and is reported, never
+# silently treated as a no-match.
+[limits]
+match_limit = 50000000
+depth_limit = 100000
+heap_limit_kib = 262144

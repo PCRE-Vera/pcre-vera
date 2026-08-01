@@ -1,0 +1,9 @@
+name = "pcretruste"
+version = "0.0.0"
+defaultTargets = ["Pcretruste"]
+
+# No dependencies on purpose. Batteries joins at M6, when layers S and R start
+# and the proofs actually need it; mathlib stays out so CI stays fast.
+
+[[lean_lib]]
+name = "Pcretruste"

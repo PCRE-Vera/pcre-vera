@@ -57,7 +57,9 @@ The engine must provide, for every compiled pattern, concrete numeric bounds tha
   Other classifications are conservative advisory labels; they may overestimate, never underestimate.
 
 The design must also address allocation-free matching: a reusable match context preallocated once from the compiled pattern's bounds, so that successive match calls perform no allocation at all.
-That's the path for hard-realtime callers.
+That is as far as the engine can go on its own, and the documentation must say so wherever the word realtime appears: what we guarantee is deterministically bounded work per call and allocation-free matching when a context is used.
+It doesn't turn Go or a browser into a hard-realtime system.
+Garbage collection pauses, JIT warmup, and scheduling belong to the host runtime and sit outside our model; latency budgets are the application's judgment of its own runtime.
 
 ## API surface
 
