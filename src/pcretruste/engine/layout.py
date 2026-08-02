@@ -100,8 +100,12 @@ class Layout:
         # internal configuration a certificate prices, `Cc` is the complexity
         # class the analysis claims, `Bk` picks which of the three bounds an
         # accessor is asking for, and `Cr` is the checker's verdict.
+        #
+        # A kind is not a label: BOUNDS.md gives each one its own composition
+        # rule and its own shape for the bytecode it covers, so naming the
+        # wrong kind is a refusal rather than a mislabelled tree.
 
-        self.Rk = m.enum("Rk", ["RkRoot", "RkGroup", "RkBranch", "RkRepeat"])
+        self.Rk = m.enum("Rk", ["RkRoot", "RkGroup", "RkBranch", "RkAlt", "RkRepeat"])
 
         self.Cfg = m.enum("Cfg", ["CfgBacktrack", "CfgPike", "CfgMemo"])
 
@@ -124,6 +128,7 @@ class Layout:
         self.Cr = m.enum(
             "Cr",
             [
+                # The tree is a tree, and its ranges nest.
                 "CrNoRegions",
                 "CrRootKind",
                 "CrRootParent",
@@ -133,10 +138,25 @@ class Layout:
                 "CrBackwards",
                 "CrNotNested",
                 "CrOverlap",
-                "CrTermRange",
-                "CrZeroTerm",
+                # The certificate is about this program, in this configuration.
+                "CrNoRules",
+                "CrConfig",
                 "CrBase",
-                "CrDegree",
+                # The tree accounts for the bytecode it claims to cover.
+                "CrOpcode",
+                "CrShape",
+                "CrChildren",
+                # The composition rules of BOUNDS.md have an answer, and the
+                # certificate is at least as large as the answer.
+                "CrAmbiguous",
+                "CrOverflow",
+                "CrRegionWork",
+                "CrRegionOuts",
+                "CrRegionStack",
+                "CrRegionTrail",
+                "CrTotalCost",
+                "CrTotalStack",
+                "CrTotalMem",
                 "CrNotLinear",
                 # Last, so that a verdict nobody assigned is a refusal.
                 "CrOk",
@@ -226,23 +246,40 @@ class Layout:
 
         # --- the bound certificate ---
         #
-        # One bound is a sum of terms, each of them coef * base^n * n^degree in
-        # the subject length n, and a region names one sum per quantity. A
-        # `Sum` is where its terms sit in the certificate's flat term table,
-        # which keeps a region a fixed-size copyable record like every other
-        # arena entry here.
+        # One bound is a polynomial over a single growth base:
+        #
+        #     base^n * (c0 + c1*(n+1) + c2*(n+1)^2 + ... )
+        #
+        # in the subject length n. A base of one is the polynomial case, which
+        # is what a Pike-eligible pattern gets; a base above one is the shape a
+        # backtracking bound takes when the structural analysis of BOUNDS.md
+        # finds genuine ambiguity.
+        #
+        # Writing the powers in (n + 1) rather than in n is what makes the form
+        # closed under the two things the checker does with it. Every basis
+        # function is then at least 1 and nondecreasing, so a sum of two bounds
+        # with different bases can be over-approximated by the larger base
+        # without going wrong at n = 0, and a claim dominates a requirement
+        # exactly when it dominates it coefficient by coefficient.
         #
         # `Bound` is what evaluating one answers: a number, or the explicit
         # refusal DESIGN.md section 2.4 calls ExceedsBudget. When `ok` is false
         # the value says nothing, because "at least 2^53" is not a budget
         # anybody can plan with.
 
-        self.Term = m.struct("Term", [("coef", counter), ("base", u32), ("degree", u32)])
-
-        self.Sum = m.struct("Sum", [("first", u32), ("count", u32)])
+        self.Poly = m.struct(
+            "Poly",
+            [("base", counter)]
+            + [(f"c{degree}", counter) for degree in range(spec.MAX_DEGREE + 1)],
+        )
 
         self.Bound = m.struct("Bound", [("ok", boolean), ("value", counter)])
 
+        # What a region costs for one entry into it: instruction visits,
+        # backtrack entries pushed, undo entries recorded, and the forward
+        # exits it hands the construct that follows it. The last one is the
+        # region's ambiguity, and it is the multiplier everything else in
+        # BOUNDS.md composes with.
         self.Region = m.struct(
             "Region",
             [
@@ -250,9 +287,22 @@ class Layout:
                 ("parent", u32),
                 ("lo", u32),
                 ("hi", u32),
-                ("cost", self.Sum),
-                ("stack", self.Sum),
-                ("mem", self.Sum),
+                ("work", self.Poly),
+                ("outs", self.Poly),
+                ("stack", self.Poly),
+                ("trail", self.Poly),
+            ],
+        )
+
+        # The running total of a walk across one span of bytecode: what it has
+        # charged so far, and the flow reaching the point it has got to.
+        self.Acc = m.struct(
+            "Acc",
+            [
+                ("work", self.Poly),
+                ("stack", self.Poly),
+                ("trail", self.Poly),
+                ("flow", self.Poly),
             ],
         )
 
@@ -274,24 +324,30 @@ class Layout:
         self.Stack = vec(self.Bt, spec.MAX_STACK)
         self.Trail = vec(self.Undo, spec.MAX_TRAIL)
         self.Regions = vec(self.Region, spec.MAX_REGIONS)
-        self.Terms = vec(self.Term, spec.MAX_TERMS)
-        self.Ends = vec(u32, spec.MAX_REGIONS)
+        self.Marks = vec(u32, spec.MAX_REGIONS)
 
         self.FrozenCode = frozen(self.Code)
         self.FrozenReps = frozen(self.Reps)
         self.FrozenRegions = frozen(self.Regions)
-        self.FrozenTerms = frozen(self.Terms)
 
         # A certificate is frozen the moment the analyzer is done with it, for
         # the same reason the compiled pattern is: one of them serves any number
         # of simultaneous accessor calls, and nothing can write through it.
+        #
+        # The three whole-pattern bounds are the ones the accessors of
+        # DESIGN.md section 2.4 report. They are not the root region's numbers:
+        # a region is priced per entry into it, and the pattern is entered once
+        # per starting position, on top of setup and scratch growth that no
+        # region covers.
         self.Cert = m.struct(
             "Cert",
             [
                 ("config", self.Cfg),
                 ("complexity", self.Cc),
+                ("cost", self.Poly),
+                ("stack", self.Poly),
+                ("mem", self.Poly),
                 ("regions", self.FrozenRegions),
-                ("terms", self.FrozenTerms),
             ],
         )
 

@@ -8,17 +8,17 @@ What is here is the wave 1 subset of DESIGN.md section 2.1 on the backtracking
 matcher of section 4.3, under caller-supplied cost, stack and memory limits.
 M4 added the two backends around it, and left that surface deliberately
 provisional: compile and match, nothing else. The Pike VM, matcher selection,
-the memoized configuration, the analysis accessors and the preallocated match
-context are all M5, and find-all is the backends' own sugar over match calls.
-Wave 2 lands in M8, wave 3 in M10.
+the memoized configuration, the analysis accessors, the match configuration
+argument and the preallocated match context are all M5, and find-all is the
+backends' own sugar over match calls. Wave 2 lands in M8, wave 3 in M10.
 
 M5 has started at the far end of the analysis, with `certificate`: the bound
 certificate the analyzer will have to produce, the checker that decides whether
 to believe one, and the finite-or-ExceedsBudget arithmetic the accessors report
-in. What the checker rules on so far is the shape of a certificate. The rules
-that make an accepted one sound are per-opcode, so they need the program the
-certificate prices and not just its length, and they come before the analyzer
-rather than with it.
+in. The checker takes the compiled pattern and prices it opcode by opcode
+against the rules of BOUNDS.md, so an accepted certificate bounds that program
+rather than merely being well formed. What is still missing is the analyzer
+that produces one, and the region table the compiler will emit for it.
 """
 
 from .driver import (
@@ -28,10 +28,9 @@ from .driver import (
     Engine,
     EngineError,
     Limits,
+    Poly,
     Region,
     ResourceExceeded,
-    Sum,
-    Term,
     TooLarge,
     Unsupported,
     Usage,
@@ -46,10 +45,9 @@ __all__ = [
     "Engine",
     "EngineError",
     "Limits",
+    "Poly",
     "Region",
     "ResourceExceeded",
-    "Sum",
-    "Term",
     "TooLarge",
     "Unsupported",
     "Usage",

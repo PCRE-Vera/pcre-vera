@@ -26,15 +26,19 @@ the sign changes, `INT_MIN / -1`, counter saturation at the cap, the growth
 schedule read back through `cap`, a struct written through after being copied —
 and this file says what every call has to answer.
 
-`certificates.json` is the bound certificates of DESIGN.md section 5, each
-with the verdict the checker has to draw and the three bounds it has to
-evaluate, at seven subject lengths from zero to the counter's saturation point.
-The verdicts are hand-written and the bounds are recorded, which is the honest
-split: what the checker refuses is a contract, and transcribing twenty-one
-numbers per case by hand would be copying rather than specifying. This corpus
-exists because a certificate has no way in through the public API, so without
-it the checker would be the one piece of the engine that both backends carried
-and neither ran.
+`certificates.json` is the bound certificates of DESIGN.md section 5 and
+BOUNDS.md, each with the pattern it prices, the verdict the checker has to
+draw, and the three bounds it has to evaluate at seven subject lengths from
+zero to the counter's saturation point. A case names a pattern rather than a
+bytecode listing, so every runner compiles it with the engine it has and the
+checker is handed the program that engine would really run — two backends that
+disagree about the bytecode therefore disagree here. The verdicts are
+hand-written and the bounds are recorded, which is the honest split: what the
+checker refuses is a contract, and transcribing twenty-one numbers per case by
+hand would be copying rather than specifying. This corpus exists because a
+certificate has no way in through the public API, so without it the checker
+would be the one piece of the engine that both backends carried and neither
+ran.
 
 The runners, one row per file and one column per language:
 
@@ -61,4 +65,4 @@ The JavaScript one needs no such thing.
 
 Expected match bounds are the other half of what DESIGN.md section 8 asks for,
 and they arrive with the M5 analyzer, when compilation starts producing the
-certificates these three files so far only hand-write.
+certificates this file so far builds from the side.

@@ -100,21 +100,17 @@ A region is a source construct the compiler flattened — a group, an alternatio
 branch, a quantifier body — so the AST arena already bounds how many there can
 be."""
 
-MAX_TERMS = 16 * MAX_REGIONS
-"""Bound terms across one certificate.
-
-Every region names three sums, one per quantity the analysis bounds, and a sum
-the analyzer cannot fold down to a handful of terms is one it failed to compose.
-So this is another safety net rather than a working limit."""
-
 MAX_DEGREE = 4
-"""The highest power of the subject length one bound term may carry.
+"""The highest power of (n + 1) a bound polynomial carries.
 
-A pattern whose bound genuinely needs more is one the analyzer has to price some
-other way, with an exponential term or with no certificate at all. The cap is
-here so that evaluating a term is a fixed handful of multiplications, and so
-that the degree is a number the soundness argument can enumerate rather than
-quantify over."""
+A bound is `base^n` times a polynomial in the subject length, and this is how
+many coefficients that polynomial has room for, so it is a field count rather
+than a limit anything is compared against. A composition that would need a
+higher power has no certificate at all, which is a refusal the checker names.
+
+Four is what the shapes of BOUNDS.md reach: each nested quantifier whose body
+can match empty contributes one power, and the per-attempt loop contributes the
+last."""
 
 UNSET = 0xFFFFFFFF
 """What a register holds before anything writes it, reported as -1."""

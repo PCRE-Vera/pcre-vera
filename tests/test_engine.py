@@ -199,6 +199,28 @@ def test_setup_alone_can_exceed_the_memory_limit(engine: Engine) -> None:
     assert isinstance(engine.match(b"a", b"a", limits=Limits(memory=1)), ResourceExceeded)
 
 
+def test_handing_the_answer_back_is_charged_for(engine: Engine) -> None:
+    """Every unit of an anchored run of `abc`, named.
+
+    The register file and the ovector zeroed once is 16, clearing the registers
+    for the one starting position is 8, the four instructions are 4, and
+    copying the two ovector slots back out to the caller is 8. A subject that
+    fails on the first character never reaches the copy, which is what makes
+    the last of those visible rather than assumed.
+    """
+    roomy = Limits(cost=1 << 20, stack=1 << 10, memory=1 << 20)
+    engine.match(b"abc", b"abc", match_options=["ANCHORED"], limits=roomy)
+    assert engine.last_usage is not None and engine.last_usage.cost == 16 + 8 + 4 + 8
+    engine.match(b"abc", b"xxx", match_options=["ANCHORED"], limits=roomy)
+    assert engine.last_usage is not None and engine.last_usage.cost == 16 + 8 + 1
+
+    # A call whose budget does not stretch to delivering its own result has
+    # gone over it, and says so rather than copying for free.
+    short = Limits(cost=16 + 8 + 4 + 7, stack=1 << 10, memory=1 << 20)
+    outcome = engine.match(b"abc", b"abc", match_options=["ANCHORED"], limits=short)
+    assert isinstance(outcome, ResourceExceeded)
+
+
 def test_the_cost_limit_is_exact_at_the_edge(engine: Engine) -> None:
     """DESIGN.md section 8: at the observed actual it succeeds, one below it does not."""
     engine.match(b"a+b", b"aaab")

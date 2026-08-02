@@ -16,6 +16,16 @@ import { fileURLToPath } from "node:url";
 
 export const SCHEMA = 1;
 
+// Every byte string in a corpus is lowercase hex, because only the case's
+// author knows how to read one as text.
+export function unhex(text) {
+  const bytes = new Uint8Array(text.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(text.slice(2 * i, 2 * i + 2), 16);
+  }
+  return bytes;
+}
+
 export function load(name) {
   const path = fileURLToPath(new URL(`../../conformance/${name}`, import.meta.url));
   const document = JSON.parse(readFileSync(path, "utf8"));

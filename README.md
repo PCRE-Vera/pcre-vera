@@ -20,7 +20,8 @@ outside the model.
 
 `objective.md` says what this is for. `DESIGN.md` says how it gets built in
 detail, from the IR design through the proof layering to the milestones.
-`TIR-SPEC.md` defines the IR itself, normatively.
+`TIR-SPEC.md` defines the IR itself, normatively, and `BOUNDS.md` does the
+same for the resource bounds.
 
 ## Where the project is
 
@@ -145,21 +146,26 @@ M5 has started at the far end of that work, with the thing the bounds have to
 pass through. DESIGN.md section 5 does not have one analyzer computing numbers
 everything then trusts; it has an analyzer that searches for a bound
 certificate and a deliberately small checker that decides whether to believe
-one. Only the checker gets proved, which is why it exists first:
-`engine/certificate.py` is the certificate — the compiler's region tree,
-annotated with the terms that price each region — the invariants that make it a
-tree, and the arithmetic that evaluates it. A bound comes back as a number or
-as an explicit refusal, never as a saturated counter dressed up as a maximum,
-and the two projections with a ceiling of their own refuse past it too, so any
-number an accessor gives back is one the caller can turn round and pass as a
-limit.
+one. Only the checker gets proved, which is why it exists first.
+`engine/certificate.py` is that checker, and [BOUNDS.md](BOUNDS.md) is the rule
+set it applies: what every opcode costs, what every region kind composes to,
+and what a whole call pays for setup, for its n + 1 starting positions and for
+the scratch it grows. The subject is the compiled pattern itself, so an
+accepted certificate is about the bytecode the matcher would really run.
 
-What the checker rules on so far is the shape of a certificate, and it is worth
-saying plainly that shape is not soundness: a length is the only fact about the
-program it is given, so an accepted certificate is a well-formed thing rather
-than a bound anyone has checked. The rules that make one sound are per-opcode
-and need the program itself, and they come before the analyzer rather than with
-it.
+What `CrOk` means, exactly: for this program, in this configuration, at every
+subject length, every start offset and every combination of match options, the
+matcher charges no more cost, pushes no more backtrack entries and reserves no
+more scratch than the certificate names. Take one unit off any of those numbers
+and the checker says which one and why. A bound comes back as a number or as an
+explicit refusal, never as a saturated counter dressed up as a maximum, and the
+two projections with a ceiling of their own refuse past it too, so any number
+an accessor gives back is one the caller can turn round and pass as a limit.
+
+What is not here yet is the analyzer that produces a certificate, and the
+region table the compiler will emit for it to annotate. Those come next, and
+they come with the checker already standing between them and anything that
+believes a bound.
 
 ## Using it
 
@@ -256,6 +262,7 @@ own has no dependencies at all.
 | objective.md      | what the project is for                              |
 | DESIGN.md         | the plan, in full                                    |
 | TIR-SPEC.md       | the IR, defined normatively                          |
+| BOUNDS.md         | the resource bounds, rule by rule                    |
 | LOG.md            | what was asked and what was done, step by step       |
 | MISTAKES.md       | what earlier drafts got wrong, kept as a trap list   |
 | api-faq.md        | APIs that did not behave the way we first assumed    |

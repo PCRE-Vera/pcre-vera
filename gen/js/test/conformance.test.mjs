@@ -5,17 +5,9 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
 
-import { load } from "../corpus.mjs";
+import { load, unhex } from "../corpus.mjs";
 import { BSR, Kind, compile, defaultLimits } from "../index.mjs";
 import { probe } from "../probe.mjs";
-
-function unhex(text) {
-  const bytes = new Uint8Array(text.length / 2);
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(text.slice(2 * i, 2 * i + 2), 16);
-  }
-  return bytes;
-}
 
 const latin1 = (bytes) => String.fromCharCode(...bytes);
 

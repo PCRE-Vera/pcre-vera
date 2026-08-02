@@ -687,7 +687,12 @@ compilation runs it before trusting any bound, and in Lean where Layer A
 proves it sound, so any accepted certificate really bounds the run.
 Proving a checker is far less work than proving the analyzer's search,
 and it is what keeps the M5 analyzer mechanically connectable to the
-M6/M7 proofs instead of drifting into a plausibility argument. For plain
+M6/M7 proofs instead of drifting into a plausibility argument. The rules
+the checker applies — every opcode's charge, every region kind's
+composition, and what a whole call pays on top of the tree — are written
+down in BOUNDS.md, which is normative for them the way TIR-SPEC.md is for
+the IR: an analyzer may only claim what that document lets a checker
+verify. For plain
 quantified patterns the empty-match rule makes
 re-entries consume input and the composed bound comes out linear in the
 subject length n; bounded lookbehinds contribute factors proportional to
@@ -1198,7 +1203,7 @@ matcher as a middle path.
 
 ```
 pcre-truste/
-  objective.md, DESIGN.md, LOG.md, api-faq.md
+  objective.md, DESIGN.md, BOUNDS.md, LOG.md, api-faq.md
   pyproject.toml            uv project: the generator and all tooling
   src/pcretruste/
     tir/                    schema, validator, serializer, interpreter

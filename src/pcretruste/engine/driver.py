@@ -87,45 +87,51 @@ class Limits:
 
 
 @dataclass(frozen=True)
-class Term:
-    """One term of a bound: `coef * base^n * n^degree` in the subject length."""
+class Poly:
+    """A bound: `base^n` times `coefs[0] + coefs[1] * (n+1) + ...`.
 
-    coef: int
+    The coefficients are written low power first and may stop early, since a
+    bound rarely reaches the top of the range the struct has room for.
+    """
+
+    coefs: tuple[int, ...] = ()
     base: int = 1
-    degree: int = 0
 
 
-@dataclass(frozen=True)
-class Sum:
-    """Where a bound's terms sit in the certificate's flat term table."""
-
-    first: int = 0
-    count: int = 0
+ZERO = Poly()
 
 
 @dataclass(frozen=True)
 class Region:
-    """One source construct, its instruction range, and what it is priced at."""
+    """One source construct, its instruction range, and what one entry costs.
+
+    `outs` is how many times control can leave the region going forward, which
+    is the ambiguity everything else composes with (BOUNDS.md section 3).
+    """
 
     kind: str
     parent: int
     lo: int
     hi: int
-    cost: Sum = Sum()
-    stack: Sum = Sum()
-    mem: Sum = Sum()
+    work: Poly = ZERO
+    outs: Poly = ZERO
+    stack: Poly = ZERO
+    trail: Poly = ZERO
 
 
 @dataclass(frozen=True)
 class Certificate:
-    """What the analyzer will produce and the checker already refuses to guess at.
+    """What the analyzer will produce and the checker refuses to guess at.
 
-    Region 0 is the root, so the whole-pattern bounds are its bounds and there
-    is no second copy of them to disagree with the tree.
+    The three whole-pattern bounds are what the accessors report. They are not
+    the root region's numbers: the root is priced per starting position, and a
+    call pays for setup and for scratch growth on top of that.
     """
 
     regions: tuple[Region, ...]
-    terms: tuple[Term, ...] = ()
+    cost: Poly = ZERO
+    stack: Poly = ZERO
+    mem: Poly = ZERO
     config: str = "CfgBacktrack"
     complexity: str = "CcNotProvenLinear"
 
@@ -157,11 +163,10 @@ def _certificate(cert: Certificate) -> StructValue:
     where the types are the guarantee. So a malformed one arriving here really
     is a bug of ours, which is what `EngineError` says.
     """
-    # The lengths first, before converting elements that are about to be
-    # thrown away: a table past its declared maximum is refused either way,
-    # and building it costs tens of megabytes on the way to the same answer.
+    # The length first, before converting elements that are about to be thrown
+    # away: a table past its declared maximum is refused either way, and
+    # building it costs tens of megabytes on the way to the same answer.
     _fits(cert.regions, spec.MAX_REGIONS, "regions")
-    _fits(cert.terms, spec.MAX_TERMS, "terms")
     regions = [
         _struct(
             "Region",
@@ -170,39 +175,34 @@ def _certificate(cert: Certificate) -> StructValue:
                 "parent": _scalar(region.parent, U32),
                 "lo": _scalar(region.lo, U32),
                 "hi": _scalar(region.hi, U32),
-                "cost": _sum(region.cost),
-                "stack": _sum(region.stack),
-                "mem": _sum(region.mem),
+                "work": _poly(region.work),
+                "outs": _poly(region.outs),
+                "stack": _poly(region.stack),
+                "trail": _poly(region.trail),
             },
         )
         for region in cert.regions
-    ]
-    terms = [
-        _struct(
-            "Term",
-            {
-                "coef": _scalar(one.coef, COUNTER),
-                "base": _scalar(one.base, U32),
-                "degree": _scalar(one.degree, U32),
-            },
-        )
-        for one in cert.terms
     ]
     return _struct(
         "Cert",
         {
             "config": _tag(cert.config, "Cfg"),
             "complexity": _tag(cert.complexity, "Cc"),
+            "cost": _poly(cert.cost),
+            "stack": _poly(cert.stack),
+            "mem": _poly(cert.mem),
             "regions": _frozen(regions, StructType("Region"), spec.MAX_REGIONS),
-            "terms": _frozen(terms, StructType("Term"), spec.MAX_TERMS),
         },
     )
 
 
-def _sum(one: Sum) -> StructValue:
-    return _struct(
-        "Sum", {"first": _scalar(one.first, U32), "count": _scalar(one.count, U32)}
-    )
+def _poly(one: Poly) -> StructValue:
+    _fits(one.coefs, spec.MAX_DEGREE + 1, "coefficients")
+    fields: dict[str, object] = {"base": _scalar(one.base, COUNTER)}
+    for degree in range(spec.MAX_DEGREE + 1):
+        value = one.coefs[degree] if degree < len(one.coefs) else 0
+        fields[f"c{degree}"] = _scalar(value, COUNTER)
+    return _struct("Poly", fields)
 
 
 def _struct(name: str, fields: dict[str, object]) -> StructValue:
@@ -429,10 +429,19 @@ class Engine:
     # caller. When the analyzer lands, compilation runs the same checker over
     # what it produced before any of it is believed.
 
-    def check_certificate(self, cert: Certificate, code_len: int) -> str:
-        """The checker's verdict, named: "CrOk", or the reason it refused."""
+    def check_certificate(
+        self,
+        built: CompiledPattern,
+        cert: Certificate,
+        config: str = "CfgBacktrack",
+    ) -> str:
+        """The checker's verdict, named: "CrOk", or the reason it refused.
+
+        The subject is the compiled pattern itself, so what the checker prices
+        is the bytecode the matcher would run rather than a description of it.
+        """
         answer = self._interp().call(
-            "cert_check", [_certificate(cert), _scalar(code_len, U32)]
+            "cert_check", [built.re, _tag(config, "Cfg"), _certificate(cert)]
         )
         assert isinstance(answer, Tag)
         return answer.variant

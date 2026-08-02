@@ -5,6 +5,11 @@ package engine
 // generated JavaScript, so agreeing with it is what "agreeing bit for bit"
 // means.
 //
+// Every case names a pattern rather than a bytecode listing, so this compiles
+// it here and hands the checker the program this backend would really run. Two
+// backends that disagree about the bytecode therefore disagree about the
+// verdict, which is the point.
+//
 // This test sits inside the generated package rather than beside the wrapper.
 // TIR field names are printed verbatim, so the printer's Tir_ facade can export
 // readers for them but nothing that writes: a certificate can be read from
@@ -14,6 +19,7 @@ package engine
 // compiled pattern rather than build one.
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"github.com/jedisct1/pcre-truste/gen/go/internal/corpustest"
@@ -21,32 +27,33 @@ import (
 
 const certificatePath = "../../../../conformance/certificates.json"
 
-type certSum struct {
-	First uint32 `json:"first"`
-	Count uint32 `json:"count"`
+type certPoly struct {
+	Base uint64 `json:"base"`
+	C0   uint64 `json:"c0"`
+	C1   uint64 `json:"c1"`
+	C2   uint64 `json:"c2"`
+	C3   uint64 `json:"c3"`
+	C4   uint64 `json:"c4"`
 }
 
 type certRegion struct {
-	Kind   uint32  `json:"kind"`
-	Parent uint32  `json:"parent"`
-	Lo     uint32  `json:"lo"`
-	Hi     uint32  `json:"hi"`
-	Cost   certSum `json:"cost"`
-	Stack  certSum `json:"stack"`
-	Mem    certSum `json:"mem"`
-}
-
-type certTerm struct {
-	Coef   uint64 `json:"coef"`
-	Base   uint32 `json:"base"`
-	Degree uint32 `json:"degree"`
+	Kind   uint32   `json:"kind"`
+	Parent uint32   `json:"parent"`
+	Lo     uint32   `json:"lo"`
+	Hi     uint32   `json:"hi"`
+	Work   certPoly `json:"work"`
+	Outs   certPoly `json:"outs"`
+	Stack  certPoly `json:"stack"`
+	Trail  certPoly `json:"trail"`
 }
 
 type certBody struct {
 	Config     uint32       `json:"config"`
 	Complexity uint32       `json:"complexity"`
+	Cost       certPoly     `json:"cost"`
+	Stack      certPoly     `json:"stack"`
+	Mem        certPoly     `json:"mem"`
 	Regions    []certRegion `json:"regions"`
-	Terms      []certTerm   `json:"terms"`
 }
 
 // A nil bound is the ExceedsBudget of DESIGN.md section 2.4, which is a refusal
@@ -61,7 +68,8 @@ type certBounds struct {
 type certCase struct {
 	Name    string       `json:"name"`
 	Note    string       `json:"note"`
-	CodeLen uint32       `json:"codelen"`
+	Pattern string       `json:"pattern"`
+	Config  uint32       `json:"config"`
 	Cert    certBody     `json:"cert"`
 	Check   uint32       `json:"check"`
 	Bounds  []certBounds `json:"bounds"`
@@ -76,40 +84,69 @@ func readCertificates(t *testing.T) []certCase {
 	return cases
 }
 
-func buildSum(one certSum) Sum {
-	return Sum{first: one.First, count: one.Count}
+func buildPoly(one certPoly) Poly {
+	return Poly{base: one.Base, c0: one.C0, c1: one.C1, c2: one.C2, c3: one.C3, c4: one.C4}
 }
 
-func buildCert(body certBody) Cert {
+// A TIR enum value is one of the variants it declares, and once printed it is
+// a number like any other, so a decoder that cast whatever the file held would
+// hand the engine a value the IR has no meaning for. The Python side refuses a
+// variant name its enum does not declare; this is the same refusal, spelt in
+// the ordinals the file carries.
+func variant(t *testing.T, what string, ordinal uint32, last uint32) uint32 {
+	t.Helper()
+	if ordinal > last {
+		t.Fatalf("%s ordinal %d names no variant", what, ordinal)
+	}
+	return ordinal
+}
+
+func buildCert(t *testing.T, body certBody) Cert {
 	regions := make([]Region, len(body.Regions))
 	for i, one := range body.Regions {
 		regions[i] = Region{
-			kind:   Rk(one.Kind),
+			kind:   Rk(variant(t, "Rk", one.Kind, uint32(RkRepeat))),
 			parent: one.Parent,
 			lo:     one.Lo,
 			hi:     one.Hi,
-			cost:   buildSum(one.Cost),
-			stack:  buildSum(one.Stack),
-			mem:    buildSum(one.Mem),
+			work:   buildPoly(one.Work),
+			outs:   buildPoly(one.Outs),
+			stack:  buildPoly(one.Stack),
+			trail:  buildPoly(one.Trail),
 		}
 	}
-	terms := make([]Term, len(body.Terms))
-	for i, one := range body.Terms {
-		terms[i] = Term{coef: one.Coef, base: one.Base, degree: one.Degree}
-	}
 	return Cert{
-		config:     Cfg(body.Config),
-		complexity: Cc(body.Complexity),
+		config:     Cfg(variant(t, "Cfg", body.Config, uint32(CfgMemo))),
+		complexity: Cc(variant(t, "Cc", body.Complexity, uint32(CcLinear))),
+		cost:       buildPoly(body.Cost),
+		stack:      buildPoly(body.Stack),
+		mem:        buildPoly(body.Mem),
 		regions:    regions,
-		terms:      terms,
 	}
+}
+
+func buildProgram(t *testing.T, pattern string) Re {
+	t.Helper()
+	bytes, err := hex.DecodeString(pattern)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out Out
+	Tir_compile(bytes, 0, 0, 0, &out)
+	if code := out.Tir_err(); code != 0 {
+		t.Fatalf("the pattern does not compile: error %d", code)
+	}
+	return out.Tir_re()
 }
 
 func TestCertificateCorpus(t *testing.T) {
 	for _, one := range readCertificates(t) {
 		t.Run(one.Name, func(t *testing.T) {
-			cert := buildCert(one.Cert)
-			if got := Tir_cert_check(cert, one.CodeLen); uint32(got) != one.Check {
+			cert := buildCert(t, one.Cert)
+			re := buildProgram(t, one.Pattern)
+			asked := Cfg(variant(t, "Cfg", one.Config, uint32(CfgMemo)))
+			got := Tir_cert_check(re, asked, cert)
+			if uint32(got) != one.Check {
 				t.Fatalf("cert_check = %d, want %d (%s)", got, one.Check, one.Note)
 			}
 			for _, at := range one.Bounds {

@@ -7,9 +7,10 @@ charged against the memory limit before it happens. The worst case is therefore
 a clean ResourceExceeded rather than an unbounded run (DESIGN.md section 4.3).
 
 Captures and repetition counters live in one flat register file; a write to it
-records an undo entry, which backtracking replays. Undo entries are recorded
-only while there is something to backtrack to, which is what keeps the trail
-from growing over a long run of a pattern that has no choice points at all.
+records an undo entry, which backtracking replays and is charged for. Undo
+entries are recorded only while there is something to backtrack to, which is
+what keeps the trail from growing over a long run of a pattern that has no
+choice points at all.
 
 The bounds these limits are compared against are the caller's, not yet the
 analyzer's: computing them from the pattern is M5.
@@ -621,15 +622,30 @@ def _match(L: Layout) -> None:
                     f.pop(bt, entry)
                     f.set(pc, entry.field("pc"))
                     f.set(pos, entry.field("pos"))
-                    with f.while_(
-                        trail.len() > entry.field("mark"), trail.len().cast(counter)
-                    ):
-                        undo = tmp(f, L.Undo)
-                        f.pop(trail, undo)
-                        f.set(regs.at(undo.field("slot")), undo.field("old"))
-                    with f.if_(bt.len() == u32(0)):
-                        f.truncate(trail, u32(0))
-                    f.set(fail, boolean(False))
+                    # Putting the registers back is work, at the same four
+                    # units per register the reset below charges, and how many
+                    # there are to put back is known before any of it happens.
+                    replay = tmp(
+                        f,
+                        counter,
+                        (trail.len().cast(counter) - entry.field("mark").cast(counter))
+                        * counter(4),
+                    )
+                    with f.if_(replay > costlimit - cost):
+                        f.set(result, u32(spec.RESOURCE_EXCEEDED))
+                        f.set(searching, boolean(False))
+                        f.set(running, boolean(False))
+                    with f.else_():
+                        f.set(cost, cost + replay)
+                        with f.while_(
+                            trail.len() > entry.field("mark"), trail.len().cast(counter)
+                        ):
+                            undo = tmp(f, L.Undo)
+                            f.pop(trail, undo)
+                            f.set(regs.at(undo.field("slot")), undo.field("old"))
+                        with f.if_(bt.len() == u32(0)):
+                            f.truncate(trail, u32(0))
+                        f.set(fail, boolean(False))
 
         with f.if_(found):
             f.set(result, u32(spec.MATCHED))
@@ -656,14 +672,23 @@ def _match(L: Layout) -> None:
         ):
             f.set(attempt, attempt + u32(1))
 
+    # Handing the answer back is work as well, at the same four units per
+    # register the reset charges. A call whose budget does not stretch to
+    # delivering its own result has gone over it like any other, and says so
+    # rather than copying for free.
+    with f.if_(result == u32(spec.MATCHED)):
+        deliver = tmp(f, counter, novec.cast(counter) * counter(4))
+        with f.if_(deliver > costlimit - cost):
+            f.set(result, u32(spec.RESOURCE_EXCEEDED))
+        with f.else_():
+            f.set(cost, cost + deliver)
+            k = tmp(f, u32, u32(0))
+            with f.while_(k < novec, down(novec, k)):
+                f.set(ov.at(k), regs.at(k))
+                f.set(k, k + u32(1))
     f.set(f["use"].field("cost"), cost)
     f.set(f["use"].field("stack"), stackpeak)
     f.set(f["use"].field("mem"), peak)
-    with f.if_(result == u32(spec.MATCHED)):
-        k = tmp(f, u32, u32(0))
-        with f.while_(k < novec, down(novec, k)):
-            f.set(ov.at(k), regs.at(k))
-            f.set(k, k + u32(1))
     f.ret(result)
 
     f = L.func(

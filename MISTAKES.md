@@ -589,3 +589,46 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   who made it is only useful while that stays true, and a string is exactly the
   kind of reference no rename touches. When a module moves, its own name is the
   first thing to grep for, not the last.
+- Counted a loop's iterations where the VM counts passes through its header.
+  `OpRepLoop` is where the counter is read, so the pass that finds the count
+  spent is a pass of its own: it reads, decides, and leaves without entering the
+  body. `a{2,5}` on five bytes reaches the header six times, and the rule said
+  five, so every bounded repetition was priced one visit short. What found it
+  was not a test — the slack elsewhere in the total hid it — but simulating one
+  anchored run by hand against the observed cost, where 239 units came out
+  exactly right for six passes and one short for five. A bound derived from
+  reading the code has to be checked against the code executing.
+- Wrote down that the cost model and the matcher disagree about replaying the
+  undo trail, and left it written down. The replay was bounded, which is true
+  and is not the claim: `CrOk` says the certificate bounds the work, and work
+  nothing charges for is work the meter cannot report. A caveat in a
+  specification is a bug with better manners.
+- Decoded enum ordinals out of a corpus file and cast them straight into the
+  generated engine, in Go and in JavaScript both, while the Python side had
+  refused a variant name its enum did not declare since the first slice. A TIR
+  enum value is one of the variants it declares; printed, it is an integer like
+  any other, and a switch that covers every variant is lowered without a default
+  because there is nothing left to cover. So a number that names no variant is
+  not a value the checker has any answer for — it falls through every arm and
+  the region it belongs to is priced at nothing. Three runners reading the same
+  file should refuse the same things, and the two that could not say a variant's
+  name were the two that had stopped checking.
+- Appended to `LOG.md` and `MISTAKES.md` from a shell whose working directory a
+  previous command had left inside `gen/js`, creating two files there and
+  committing them. This is the third time the drift has bitten, and the earlier
+  two failed loudly where this one silently wrote the right prose into the wrong
+  repository corner. Every command that touches a path gets the absolute one.
+- Left the ovector copy uncharged after fixing the undo replay for exactly the
+  same reason. Both are work the matcher does outside the instruction loop, and
+  having just written down that "bounded" and "charged" are different claims, I
+  did not go looking for the other place the difference lived. When a defect
+  turns out to be an instance of a class, the next move is to enumerate the
+  class.
+- Justified option-independence with a premise that is false. Match options do
+  not only remove work: `NOTEMPTY` refuses a match the run had already found
+  and the search carries on, so `a??` on one byte costs more with it than
+  without. The bound was sound the whole time, for a different reason — every
+  fork is priced for both arms whether or not a run takes the second — and a
+  specification that reaches the right answer through a wrong premise is worse
+  than one that says nothing, because it invites the reader to reuse the
+  premise.
