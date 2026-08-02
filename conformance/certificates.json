@@ -1,0 +1,3033 @@
+{
+  "cases": [
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "root-only",
+      "note": "The least a certificate can be: one region over the whole program."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 5,
+            "kind": 1,
+            "lo": 1,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 3,
+            "kind": 2,
+            "lo": 1,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 1,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 5,
+            "kind": 2,
+            "lo": 3,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 1,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 4,
+            "kind": 3,
+            "lo": 3,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 3,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "nested-and-touching",
+      "note": "A group holding two alternation branches that meet end to end, with a quantifier body inside the second of them."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 2,
+            "kind": 1,
+            "lo": 2,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "empty-region",
+      "note": "A group with nothing in it compiles to two saves and no body between them, so a region of zero width is a real thing rather than a mistake."
+    },
+    {
+      "bounds": [
+        {
+          "cost": null,
+          "mem": null,
+          "n": 0,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 1,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 2,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 10,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 53,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [],
+        "terms": []
+      },
+      "check": 0,
+      "codelen": 6,
+      "name": "no-regions",
+      "note": "A certificate with no root has nothing to be the pattern's bound."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 1,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 1,
+      "codelen": 6,
+      "name": "root-is-not-a-root",
+      "note": "Region 0 is the root by position, and has to say so as well."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 2,
+      "codelen": 6,
+      "name": "root-has-a-parent",
+      "note": "Nothing encloses the whole program."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 1,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 3,
+      "codelen": 6,
+      "name": "root-starts-late",
+      "note": "A root that misses the first instruction prices less than the pattern."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 5,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 3,
+      "codelen": 6,
+      "name": "root-stops-early",
+      "note": "And a root that stops short of the last one prices less as well."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 2,
+            "kind": 0,
+            "lo": 1,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 4,
+      "codelen": 6,
+      "name": "two-roots",
+      "note": "Only region 0 is the root, or the tree has two places to start from."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 2,
+            "kind": 1,
+            "lo": 1,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 1,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 5,
+      "codelen": 6,
+      "name": "parent-above-its-child",
+      "note": "A parent at or above its child's index is what a cycle looks like from here, and refusing it is what makes the tree a tree without a walk."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 2,
+            "kind": 1,
+            "lo": 3,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 6,
+      "codelen": 6,
+      "name": "range-runs-backwards",
+      "note": "A region that ends before it starts covers no instruction at all."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 7,
+            "kind": 1,
+            "lo": 1,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 7,
+      "codelen": 6,
+      "name": "child-outside-its-parent",
+      "note": "A child reaching past its parent would be priced by neither."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 3,
+            "kind": 2,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 4,
+            "kind": 2,
+            "lo": 2,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 8,
+      "codelen": 6,
+      "name": "siblings-overlap",
+      "note": "Two children sharing an instruction would have it counted twice, or by whichever of them the composition rule reached first."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 2,
+            "lo": 3,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 3,
+            "kind": 2,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 8,
+      "codelen": 6,
+      "name": "siblings-out-of-order",
+      "note": "Disjoint but backwards is refused too: the compiler emits regions as it flattens the AST, so source order costs a correct analyzer nothing and lets the checker settle both halves of the sibling rule in one pass."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 3,
+            "kind": 2,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 2,
+            "lo": 3,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "siblings-meet",
+      "note": "Meeting end to end is not overlapping, which is the common case."
+    },
+    {
+      "bounds": [
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 9,
+      "codelen": 6,
+      "name": "sum-names-terms-that-are-not-there",
+      "note": "An empty term table prices nothing, whatever a region claims."
+    },
+    {
+      "bounds": [
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 2,
+              "first": 3
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 1,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 9,
+      "codelen": 6,
+      "name": "sum-runs-past-the-table",
+      "note": "And a sum may not reach past the last term either. Asked for a bound anyway, the engine answers rather than reading past the end."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 2,
+            "coef": 0,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 10,
+      "codelen": 6,
+      "name": "term-worth-nothing",
+      "note": "A term with no coefficient contributes nothing, so it says nothing that an empty sum does not say more clearly \u2014 and it would make every rule below conditional on a coefficient."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 1,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 0,
+            "coef": 1,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 11,
+      "codelen": 6,
+      "name": "base-of-zero",
+      "note": "0^n is 1 at n = 0 and 0 after that. No bound has that shape, and one that vanishes on longer subjects would look like a bound that holds."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 1,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 32,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 100000,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 418195493,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 1,
+            "degree": 5
+          }
+        ]
+      },
+      "check": 12,
+      "codelen": 6,
+      "name": "degree-past-the-cap",
+      "note": "A power the soundness argument has no rule for."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 1,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 2,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 4,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 1024,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 1,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 2,
+            "coef": 1,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 13,
+      "codelen": 6,
+      "name": "linear-claim-with-a-growing-base",
+      "note": "Linear means c * (n + 1). An exponential term is not that."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 1,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 4,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 100,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 2809,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 4294836225,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 1,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 1,
+            "degree": 2
+          }
+        ]
+      },
+      "check": 13,
+      "codelen": 6,
+      "name": "linear-claim-with-a-square",
+      "note": "Nor is a square, however modest its coefficient."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 17,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 34,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 51,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 187,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 918,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 1114112,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 1,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 2,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 17,
+            "degree": 0
+          },
+          {
+            "base": 1,
+            "coef": 17,
+            "degree": 1
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "linear-claim-that-holds",
+      "note": "The Pike bound of DESIGN.md section 5: a constant and a term in n."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 3,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 6,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 11,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 123,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 2918,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 4294967298,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 3,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 3,
+            "degree": 0
+          },
+          {
+            "base": 1,
+            "coef": 2,
+            "degree": 1
+          },
+          {
+            "base": 1,
+            "coef": 1,
+            "degree": 2
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "polynomial",
+      "note": "3 + 2n + n^2, evaluated left to right in counter arithmetic."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 0,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": []
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "nothing-priced",
+      "note": "A region with no terms is a bound of zero, not a missing bound."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 1,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 2,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 4,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 1024,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 2,
+            "coef": 1,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "exponential",
+      "note": "2^n is a number until it is not, which happens at n = 53."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 9007199254740991,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 9007199254740991,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 9007199254740991,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 9007199254740991,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 9007199254740991,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 9007199254740991,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 9007199254740991,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 9007199254740991,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "at-the-saturation-point",
+      "note": "Exactly 2^53 - 1 is a bound a caller can pass back as a cost limit."
+    },
+    {
+      "bounds": [
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 2,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 9007199254740991,
+            "degree": 0
+          },
+          {
+            "base": 1,
+            "coef": 1,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "one-past-the-saturation-point",
+      "note": "One more is not, and comes back as a refusal rather than as the cap."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 9007199254740991,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 9007199254740991,
+            "degree": 1
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "product-that-would-saturate",
+      "note": "The pre-check is on the operands, so the product never happens."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 4503599627370495,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 9007199254740990,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 4503599627370495,
+            "degree": 1
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "product-that-just-fits",
+      "note": "And the one below it is exact."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 178956970,
+          "mem": 178956970,
+          "n": 0,
+          "stack": 178956970
+        },
+        {
+          "cost": 178956970,
+          "mem": 178956970,
+          "n": 1,
+          "stack": 178956970
+        },
+        {
+          "cost": 178956970,
+          "mem": 178956970,
+          "n": 2,
+          "stack": 178956970
+        },
+        {
+          "cost": 178956970,
+          "mem": 178956970,
+          "n": 10,
+          "stack": 178956970
+        },
+        {
+          "cost": 178956970,
+          "mem": 178956970,
+          "n": 53,
+          "stack": 178956970
+        },
+        {
+          "cost": 178956970,
+          "mem": 178956970,
+          "n": 65535,
+          "stack": 178956970
+        },
+        {
+          "cost": 178956970,
+          "mem": 178956970,
+          "n": 9007199254740991,
+          "stack": 178956970
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 1,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 1,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 178956970,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "at-the-stack-ceiling",
+      "note": "The largest stack bound a stack limit could name."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 178956971,
+          "mem": 178956971,
+          "n": 0,
+          "stack": null
+        },
+        {
+          "cost": 178956971,
+          "mem": 178956971,
+          "n": 1,
+          "stack": null
+        },
+        {
+          "cost": 178956971,
+          "mem": 178956971,
+          "n": 2,
+          "stack": null
+        },
+        {
+          "cost": 178956971,
+          "mem": 178956971,
+          "n": 10,
+          "stack": null
+        },
+        {
+          "cost": 178956971,
+          "mem": 178956971,
+          "n": 53,
+          "stack": null
+        },
+        {
+          "cost": 178956971,
+          "mem": 178956971,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": 178956971,
+          "mem": 178956971,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 1,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 1,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 178956971,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "past-the-stack-ceiling",
+      "note": "One entry more, which no limit could accept, so it is not a number."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 2147483647,
+          "mem": 2147483647,
+          "n": 0,
+          "stack": null
+        },
+        {
+          "cost": 2147483647,
+          "mem": 2147483647,
+          "n": 1,
+          "stack": null
+        },
+        {
+          "cost": 2147483647,
+          "mem": 2147483647,
+          "n": 2,
+          "stack": null
+        },
+        {
+          "cost": 2147483647,
+          "mem": 2147483647,
+          "n": 10,
+          "stack": null
+        },
+        {
+          "cost": 2147483647,
+          "mem": 2147483647,
+          "n": 53,
+          "stack": null
+        },
+        {
+          "cost": 2147483647,
+          "mem": 2147483647,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": 2147483647,
+          "mem": 2147483647,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 1,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 1,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 2147483647,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "at-the-memory-ceiling",
+      "note": "The section 3 byte ceiling, which is the largest reservation there is."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 2147483648,
+          "mem": null,
+          "n": 0,
+          "stack": null
+        },
+        {
+          "cost": 2147483648,
+          "mem": null,
+          "n": 1,
+          "stack": null
+        },
+        {
+          "cost": 2147483648,
+          "mem": null,
+          "n": 2,
+          "stack": null
+        },
+        {
+          "cost": 2147483648,
+          "mem": null,
+          "n": 10,
+          "stack": null
+        },
+        {
+          "cost": 2147483648,
+          "mem": null,
+          "n": 53,
+          "stack": null
+        },
+        {
+          "cost": 2147483648,
+          "mem": null,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": 2147483648,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 1,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 1,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 2147483648,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "past-the-memory-ceiling",
+      "note": "One byte more is refused as memory and still fine as cost, which is the whole difference between the three projections."
+    },
+    {
+      "bounds": [
+        {
+          "cost": 7,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 7,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 7,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 7,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 7,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 7,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 7,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "regions": [
+          {
+            "cost": {
+              "count": 1,
+              "first": 0
+            },
+            "hi": 6,
+            "kind": 0,
+            "lo": 0,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 4294967295,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          },
+          {
+            "cost": {
+              "count": 1,
+              "first": 1
+            },
+            "hi": 2,
+            "kind": 1,
+            "lo": 1,
+            "mem": {
+              "count": 0,
+              "first": 0
+            },
+            "parent": 0,
+            "stack": {
+              "count": 0,
+              "first": 0
+            }
+          }
+        ],
+        "terms": [
+          {
+            "base": 1,
+            "coef": 7,
+            "degree": 0
+          },
+          {
+            "base": 1,
+            "coef": 1000,
+            "degree": 0
+          }
+        ]
+      },
+      "check": 14,
+      "codelen": 6,
+      "name": "children-are-not-summed-behind-the-accessor",
+      "note": "The pattern's bound is the root's bound. Nothing adds the children in, because the composition rule that would justify it does not exist yet."
+    }
+  ],
+  "note": "Generated by pcretruste.backends.certificates. Each case hands the engine's bound-certificate checker one certificate and asks for the three bounds it prices, at every subject length below. Every implementation of the engine has to give exactly these answers: the same verdict, and the same number or the same refusal. A bound of null is the ExceedsBudget of DESIGN.md section 2.4, which is a refusal rather than a number and never a saturated counter.",
+  "schema": 1
+}

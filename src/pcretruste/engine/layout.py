@@ -95,6 +95,54 @@ class Layout:
             ],
         )
 
+        # The vocabulary of the resource analysis, from DESIGN.md section 5.
+        # `Rk` says what source construct a region came from, `Cfg` names the
+        # internal configuration a certificate prices, `Cc` is the complexity
+        # class the analysis claims, `Bk` picks which of the three bounds an
+        # accessor is asking for, and `Cr` is the checker's verdict.
+
+        self.Rk = m.enum("Rk", ["RkRoot", "RkGroup", "RkBranch", "RkRepeat"])
+
+        self.Cfg = m.enum("Cfg", ["CfgBacktrack", "CfgPike", "CfgMemo"])
+
+        # What a certificate claims about its own cost bound, which is not
+        # quite the pattern's complexity class. The class of a pattern is fixed
+        # at compilation and takes no configuration (DESIGN.md section 2.4),
+        # and it is the class of the certificate for the path compilation
+        # selected: a Pike-eligible pattern is linear, and its test-only
+        # backtracking certificate honestly says otherwise about the path
+        # nobody can ask for.
+        #
+        # The order is the point rather than an accident, here and in `Cr`
+        # below: a zero value is the first variant (TIR-SPEC.md section 4.1),
+        # so a certificate nobody finished filling in has to come out claiming
+        # nothing rather than claiming to be linear.
+        self.Cc = m.enum("Cc", ["CcNotProvenLinear", "CcLinear"])
+
+        self.Bk = m.enum("Bk", ["BkCost", "BkStack", "BkMem"])
+
+        self.Cr = m.enum(
+            "Cr",
+            [
+                "CrNoRegions",
+                "CrRootKind",
+                "CrRootParent",
+                "CrRootRange",
+                "CrTwoRoots",
+                "CrParentOrder",
+                "CrBackwards",
+                "CrNotNested",
+                "CrOverlap",
+                "CrTermRange",
+                "CrZeroTerm",
+                "CrBase",
+                "CrDegree",
+                "CrNotLinear",
+                # Last, so that a verdict nobody assigned is a refusal.
+                "CrOk",
+            ],
+        )
+
         # --- structs ---
         #
         # An AST node keeps its children in a sibling list so that the arena
@@ -176,6 +224,38 @@ class Layout:
 
         self.Esc = m.struct("Esc", [("kind", self.Ek), ("val", u32)])
 
+        # --- the bound certificate ---
+        #
+        # One bound is a sum of terms, each of them coef * base^n * n^degree in
+        # the subject length n, and a region names one sum per quantity. A
+        # `Sum` is where its terms sit in the certificate's flat term table,
+        # which keeps a region a fixed-size copyable record like every other
+        # arena entry here.
+        #
+        # `Bound` is what evaluating one answers: a number, or the explicit
+        # refusal DESIGN.md section 2.4 calls ExceedsBudget. When `ok` is false
+        # the value says nothing, because "at least 2^53" is not a budget
+        # anybody can plan with.
+
+        self.Term = m.struct("Term", [("coef", counter), ("base", u32), ("degree", u32)])
+
+        self.Sum = m.struct("Sum", [("first", u32), ("count", u32)])
+
+        self.Bound = m.struct("Bound", [("ok", boolean), ("value", counter)])
+
+        self.Region = m.struct(
+            "Region",
+            [
+                ("kind", self.Rk),
+                ("parent", u32),
+                ("lo", u32),
+                ("hi", u32),
+                ("cost", self.Sum),
+                ("stack", self.Sum),
+                ("mem", self.Sum),
+            ],
+        )
+
         # --- sequence types ---
 
         self.frozen_bytes = frozen(bytes_)
@@ -193,9 +273,27 @@ class Layout:
         self.Regs = vec(u32, spec.MAX_REGS)
         self.Stack = vec(self.Bt, spec.MAX_STACK)
         self.Trail = vec(self.Undo, spec.MAX_TRAIL)
+        self.Regions = vec(self.Region, spec.MAX_REGIONS)
+        self.Terms = vec(self.Term, spec.MAX_TERMS)
+        self.Ends = vec(u32, spec.MAX_REGIONS)
 
         self.FrozenCode = frozen(self.Code)
         self.FrozenReps = frozen(self.Reps)
+        self.FrozenRegions = frozen(self.Regions)
+        self.FrozenTerms = frozen(self.Terms)
+
+        # A certificate is frozen the moment the analyzer is done with it, for
+        # the same reason the compiled pattern is: one of them serves any number
+        # of simultaneous accessor calls, and nothing can write through it.
+        self.Cert = m.struct(
+            "Cert",
+            [
+                ("config", self.Cfg),
+                ("complexity", self.Cc),
+                ("regions", self.FrozenRegions),
+                ("terms", self.FrozenTerms),
+            ],
+        )
 
         # --- the compiled pattern ---
         #

@@ -91,6 +91,31 @@ MAX_TRAIL = CEILING // UNDO_SIZE
 """Declared maximum of the undo trail, derived the same way and for the same
 reason: only the caller's memory limit decides when the trail is too long."""
 
+# --- resource analysis (DESIGN.md section 5) ---
+
+MAX_REGIONS = MAX_NODES
+"""Regions in one bound certificate.
+
+A region is a source construct the compiler flattened — a group, an alternation
+branch, a quantifier body — so the AST arena already bounds how many there can
+be."""
+
+MAX_TERMS = 16 * MAX_REGIONS
+"""Bound terms across one certificate.
+
+Every region names three sums, one per quantity the analysis bounds, and a sum
+the analyzer cannot fold down to a handful of terms is one it failed to compose.
+So this is another safety net rather than a working limit."""
+
+MAX_DEGREE = 4
+"""The highest power of the subject length one bound term may carry.
+
+A pattern whose bound genuinely needs more is one the analyzer has to price some
+other way, with an exponential term or with no certificate at all. The cap is
+here so that evaluating a term is a fixed handful of multiplications, and so
+that the degree is a number the soundness argument can enumerate rather than
+quantify over."""
+
 UNSET = 0xFFFFFFFF
 """What a register holds before anything writes it, reported as -1."""
 

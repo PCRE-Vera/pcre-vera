@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   6182089085255ec8c29233aa9a771209a0a4286cd302ddfa9d9ff268e7d7141c
+//   4d4269798a43a720e1570113f990ba2d80415504fe8d46ea375cdbfbba21aee5
 //
 // The wave 1 pcre-truste engine as printed from its TIR artifact: the
 // pattern parser, the bytecode compiler, and the backtracking matcher. The
@@ -15,7 +15,7 @@
 // loudly instead of reading undefined off the end of a typed array.
 
 /** SHA-256 of the TIR artifact this module was printed from. */
-export const artifactSha256 = "6182089085255ec8c29233aa9a771209a0a4286cd302ddfa9d9ff268e7d7141c";
+export const artifactSha256 = "4d4269798a43a720e1570113f990ba2d80415504fe8d46ea375cdbfbba21aee5";
 
 /** What a checked operation throws, per TIR-SPEC.md section 12. */
 export class tir_Trap extends Error {
@@ -223,6 +223,37 @@ function tir_rem_i32(a, b, f) {
   return (a % b) | 0;
 }
 
+// enum Bk
+export const BkCost = 0;
+export const BkStack = 1;
+export const BkMem = 2;
+
+// enum Cc
+export const CcNotProvenLinear = 0;
+export const CcLinear = 1;
+
+// enum Cfg
+export const CfgBacktrack = 0;
+export const CfgPike = 1;
+export const CfgMemo = 2;
+
+// enum Cr
+export const CrNoRegions = 0;
+export const CrRootKind = 1;
+export const CrRootParent = 2;
+export const CrRootRange = 3;
+export const CrTwoRoots = 4;
+export const CrParentOrder = 5;
+export const CrBackwards = 6;
+export const CrNotNested = 7;
+export const CrOverlap = 8;
+export const CrTermRange = 9;
+export const CrZeroTerm = 10;
+export const CrBase = 11;
+export const CrDegree = 12;
+export const CrNotLinear = 13;
+export const CrOk = 14;
+
 // enum Ek
 export const EkErr = 0;
 export const EkChar = 1;
@@ -285,6 +316,33 @@ export const OpRepEnter = 21;
 export const OpRepNext = 22;
 export const OpAccept = 23;
 
+// enum Rk
+export const RkRoot = 0;
+export const RkGroup = 1;
+export const RkBranch = 2;
+export const RkRepeat = 3;
+
+export class Bound {
+  constructor() {
+    this.ok = false;
+    this.value = 0;
+  }
+
+  tir_clone() {
+    const o = new Bound();
+    o.ok = this.ok;
+    o.value = this.value;
+    return o;
+  }
+}
+
+function tir_new_Bound(ok, value) {
+  const o = new Bound();
+  o.ok = ok;
+  o.value = value;
+  return o;
+}
+
 export class Bt {
   constructor() {
     this.pc = 0;
@@ -306,6 +364,33 @@ function tir_new_Bt(pc, pos, mark) {
   o.pc = pc;
   o.pos = pos;
   o.mark = mark;
+  return o;
+}
+
+export class Cert {
+  constructor() {
+    this.config = CfgBacktrack;
+    this.complexity = CcNotProvenLinear;
+    this.regions = new tir_Seq(tir_EMPTY_OBJ, 0);
+    this.terms = new tir_Seq(tir_EMPTY_OBJ, 0);
+  }
+
+  tir_clone() {
+    const o = new Cert();
+    o.config = this.config;
+    o.complexity = this.complexity;
+    o.regions = this.regions;
+    o.terms = this.terms;
+    return o;
+  }
+}
+
+function tir_new_Cert(config, complexity, regions, terms) {
+  const o = new Cert();
+  o.config = config;
+  o.complexity = complexity;
+  o.regions = regions;
+  o.terms = terms;
   return o;
 }
 
@@ -609,6 +694,42 @@ function tir_new_Ref(num, off, nlen) {
   return o;
 }
 
+export class Region {
+  constructor() {
+    this.kind = RkRoot;
+    this.parent = 0;
+    this.lo = 0;
+    this.hi = 0;
+    this.cost = new Sum();
+    this.stack = new Sum();
+    this.mem = new Sum();
+  }
+
+  tir_clone() {
+    const o = new Region();
+    o.kind = this.kind;
+    o.parent = this.parent;
+    o.lo = this.lo;
+    o.hi = this.hi;
+    o.cost = this.cost.tir_clone();
+    o.stack = this.stack.tir_clone();
+    o.mem = this.mem.tir_clone();
+    return o;
+  }
+}
+
+function tir_new_Region(kind, parent, lo, hi, cost, stack, mem) {
+  const o = new Region();
+  o.kind = kind;
+  o.parent = parent;
+  o.lo = lo;
+  o.hi = hi;
+  o.cost = cost;
+  o.stack = stack;
+  o.mem = mem;
+  return o;
+}
+
 export class Rep {
   constructor() {
     this.lo = 0;
@@ -639,6 +760,51 @@ function tir_new_Rep(lo, hi, greedy, head, body, after) {
   o.head = head;
   o.body = body;
   o.after = after;
+  return o;
+}
+
+export class Sum {
+  constructor() {
+    this.first = 0;
+    this.count = 0;
+  }
+
+  tir_clone() {
+    const o = new Sum();
+    o.first = this.first;
+    o.count = this.count;
+    return o;
+  }
+}
+
+function tir_new_Sum(first, count) {
+  const o = new Sum();
+  o.first = first;
+  o.count = count;
+  return o;
+}
+
+export class Term {
+  constructor() {
+    this.coef = 0;
+    this.base = 0;
+    this.degree = 0;
+  }
+
+  tir_clone() {
+    const o = new Term();
+    o.coef = this.coef;
+    o.base = this.base;
+    o.degree = this.degree;
+    return o;
+  }
+}
+
+function tir_new_Term(coef, base, degree) {
+  const o = new Term();
+  o.coef = coef;
+  o.base = base;
+  o.degree = degree;
   return o;
 }
 
@@ -933,6 +1099,55 @@ export function attach_escape(w, esc) {
   }
 }
 
+export function bound_add(a, b) {
+  if (((!a.ok) || (!b.ok))) {
+    return tir_new_Bound(false, 0);
+  }
+  let tmp1 = a.value;
+  let tmp2 = b.value;
+  if ((tmp1 > tir_csub(9007199254740991, tmp2))) {
+    return tir_new_Bound(false, 0);
+  }
+  return tir_new_Bound(true, tir_cadd(tmp1, tmp2));
+}
+
+export function bound_mul(a, b) {
+  if (((!a.ok) || (!b.ok))) {
+    return tir_new_Bound(false, 0);
+  }
+  let tmp1 = a.value;
+  let tmp2 = b.value;
+  if (((tmp1 === 0) || (tmp2 === 0))) {
+    return tir_new_Bound(true, 0);
+  }
+  if ((tmp1 > tir_div_counter(9007199254740991, tmp2, 0))) {
+    return tir_new_Bound(false, 0);
+  }
+  return tir_new_Bound(true, tir_cmul(tmp1, tmp2));
+}
+
+export function bound_pow(base, exp) {
+  if ((base === 1)) {
+    return tir_new_Bound(true, 1);
+  }
+  if ((base === 0)) {
+    if ((exp === 0)) {
+      return tir_new_Bound(true, 1);
+    }
+    return tir_new_Bound(true, 0);
+  }
+  let out = tir_new_Bound(true, 1);
+  let i = 0;
+  let step = new Bound();
+  while (((i < exp) && out.ok)) {
+    const tir_t1 = bound_mul(out.tir_clone(), tir_new_Bound(true, base));
+    step = tir_t1;
+    out = step.tir_clone();
+    i = tir_cadd(i, 1);
+  }
+  return out.tir_clone();
+}
+
 export function bsr_at(subj, pos, bsr) {
   let tmp1 = subj.n;
   if ((pos >= tmp1)) {
@@ -955,6 +1170,131 @@ export function bsr_at(subj, pos, bsr) {
     return 1;
   }
   return 0;
+}
+
+export function cert_bound(cert, kind, n) {
+  let regions = cert.regions;
+  if ((regions.n === 0)) {
+    return tir_new_Bound(false, 0);
+  }
+  let root = tir_at(regions, 0).tir_clone();
+  let which = new Sum();
+  let ceiling = 9007199254740991;
+  const tir_t1 = kind;
+  if (tir_t1 === BkCost) {
+    which = root.cost.tir_clone();
+  } else if (tir_t1 === BkStack) {
+    which = root.stack.tir_clone();
+    ceiling = 178956970;
+  } else if (tir_t1 === BkMem) {
+    which = root.mem.tir_clone();
+    ceiling = 2147483647;
+  }
+  let out = new Bound();
+  const tir_t2 = sum_value(cert.terms, which.tir_clone(), n);
+  out = tir_t2;
+  if ((out.ok && (out.value > ceiling))) {
+    return tir_new_Bound(false, 0);
+  }
+  return out.tir_clone();
+}
+
+export function cert_check(cert, codelen) {
+  let regions = cert.regions;
+  let terms = cert.terms;
+  let tmp1 = regions.n;
+  let tmp2 = terms.n;
+  if ((tmp1 === 0)) {
+    return CrNoRegions;
+  }
+  let root = tir_at(regions, 0).tir_clone();
+  if ((root.kind !== RkRoot)) {
+    return CrRootKind;
+  }
+  if ((root.parent !== 4294967295)) {
+    return CrRootParent;
+  }
+  if (((root.lo !== 0) || (root.hi !== codelen))) {
+    return CrRootRange;
+  }
+  let ends = new tir_Seq(tir_EMPTY_U32, 0);
+  let i = 0;
+  while ((i < tmp1)) {
+    tir_push(ends, 8208, tir_mk_u32, tir_at(regions, i).lo);
+    i = ((i + 1) >>> 0);
+  }
+  i = 1;
+  while ((i < tmp1)) {
+    let tmp3 = tir_at(regions, i).tir_clone();
+    let tmp4 = tmp3.parent;
+    if ((tmp3.kind === RkRoot)) {
+      return CrTwoRoots;
+    }
+    if ((tmp4 >= i)) {
+      return CrParentOrder;
+    }
+    if ((tmp3.lo > tmp3.hi)) {
+      return CrBackwards;
+    }
+    let tmp5 = tir_at(regions, tmp4).tir_clone();
+    if (((tmp3.lo < tmp5.lo) || (tmp3.hi > tmp5.hi))) {
+      return CrNotNested;
+    }
+    if ((tmp3.lo < tir_at(ends, tmp4))) {
+      return CrOverlap;
+    }
+    const tir_t1 = tmp4;
+    tir_bound(ends.n, tir_t1);
+    ends.a[tir_t1] = tmp3.hi;
+    i = ((i + 1) >>> 0);
+  }
+  i = 0;
+  let tmp6 = false;
+  while ((i < tmp1)) {
+    let tmp7 = tir_at(regions, i).tir_clone();
+    const tir_t2 = sum_fits(tmp7.cost.tir_clone(), tmp2);
+    tmp6 = tir_t2;
+    if ((!tmp6)) {
+      return CrTermRange;
+    }
+    const tir_t3 = sum_fits(tmp7.stack.tir_clone(), tmp2);
+    tmp6 = tir_t3;
+    if ((!tmp6)) {
+      return CrTermRange;
+    }
+    const tir_t4 = sum_fits(tmp7.mem.tir_clone(), tmp2);
+    tmp6 = tir_t4;
+    if ((!tmp6)) {
+      return CrTermRange;
+    }
+    i = ((i + 1) >>> 0);
+  }
+  i = 0;
+  while ((i < tmp2)) {
+    let tmp8 = tir_at(terms, i).tir_clone();
+    if ((tmp8.coef === 0)) {
+      return CrZeroTerm;
+    }
+    if ((tmp8.base === 0)) {
+      return CrBase;
+    }
+    if ((tmp8.degree > 4)) {
+      return CrDegree;
+    }
+    i = ((i + 1) >>> 0);
+  }
+  if ((cert.complexity === CcLinear)) {
+    let tmp9 = root.cost.tir_clone();
+    i = 0;
+    while ((i < tmp9.count)) {
+      let tmp10 = tir_at(terms, ((tmp9.first + i) >>> 0)).tir_clone();
+      if (((tmp10.base !== 1) || (tmp10.degree > 1))) {
+        return CrNotLinear;
+      }
+      i = ((i + 1) >>> 0);
+    }
+  }
+  return CrOk;
 }
 
 export function charge_grow(oldcap, lenv, esize, maxv, mem, peak, cost, memlimit, costlimit) {
@@ -3917,6 +4257,55 @@ export function skip_gaps(pat, at, w) {
     tmp2 = ((tmp8 + 1) >>> 0);
   }
   at.v = tmp2;
+}
+
+export function sum_fits(s, held) {
+  if ((s.count === 0)) {
+    return true;
+  }
+  if ((s.first >= held)) {
+    return false;
+  }
+  return (s.count <= ((held - s.first) >>> 0));
+}
+
+export function sum_value(terms, s, n) {
+  let out = tir_new_Bound(true, 0);
+  let i = 0;
+  while (((i < s.count) && out.ok)) {
+    let tmp1 = ((s.first + i) >>> 0);
+    if ((tmp1 >= terms.n)) {
+      return tir_new_Bound(false, 0);
+    }
+    let tmp2 = new Bound();
+    const tir_t1 = term_value(tir_at(terms, tmp1).tir_clone(), n);
+    tmp2 = tir_t1;
+    let tmp3 = new Bound();
+    const tir_t2 = bound_add(out.tir_clone(), tmp2.tir_clone());
+    tmp3 = tir_t2;
+    out = tmp3.tir_clone();
+    i = ((i + 1) >>> 0);
+  }
+  return out.tir_clone();
+}
+
+export function term_value(t, n) {
+  if ((t.coef === 0)) {
+    return tir_new_Bound(true, 0);
+  }
+  let growth = new Bound();
+  const tir_t1 = bound_pow((t.base), n);
+  growth = tir_t1;
+  let power = new Bound();
+  const tir_t2 = bound_pow(n, (t.degree));
+  power = tir_t2;
+  let scaled = new Bound();
+  const tir_t3 = bound_mul(tir_new_Bound(true, t.coef), growth.tir_clone());
+  scaled = tir_t3;
+  let total = new Bound();
+  const tir_t4 = bound_mul(scaled.tir_clone(), power.tir_clone());
+  total = tir_t4;
+  return total.tir_clone();
 }
 
 export function walk_alt(w, top, job, nd) {

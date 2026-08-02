@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   6182089085255ec8c29233aa9a771209a0a4286cd302ddfa9d9ff268e7d7141c
+//   4d4269798a43a720e1570113f990ba2d80415504fe8d46ea375cdbfbba21aee5
 //
 // The wave 1 pcre-truste engine as printed from its TIR artifact: the
 // pattern parser, the bytecode compiler, and the backtracking matcher. The
@@ -18,7 +18,7 @@ package engine
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact this package was printed
 // from.
-const ArtifactSHA256 = "6182089085255ec8c29233aa9a771209a0a4286cd302ddfa9d9ff268e7d7141c"
+const ArtifactSHA256 = "4d4269798a43a720e1570113f990ba2d80415504fe8d46ea375cdbfbba21aee5"
 
 // Tir_Trap is what a checked operation panics with, per TIR-SPEC.md section 12.
 type Tir_Trap struct {
@@ -206,6 +206,41 @@ func tir_reserve[T any](s *[]T, capacity uint32, limit int) {
 	}
 }
 
+type Bk int32
+
+const BkCost Bk = 0
+const BkStack Bk = 1
+const BkMem Bk = 2
+
+type Cc int32
+
+const CcNotProvenLinear Cc = 0
+const CcLinear Cc = 1
+
+type Cfg int32
+
+const CfgBacktrack Cfg = 0
+const CfgPike Cfg = 1
+const CfgMemo Cfg = 2
+
+type Cr int32
+
+const CrNoRegions Cr = 0
+const CrRootKind Cr = 1
+const CrRootParent Cr = 2
+const CrRootRange Cr = 3
+const CrTwoRoots Cr = 4
+const CrParentOrder Cr = 5
+const CrBackwards Cr = 6
+const CrNotNested Cr = 7
+const CrOverlap Cr = 8
+const CrTermRange Cr = 9
+const CrZeroTerm Cr = 10
+const CrBase Cr = 11
+const CrDegree Cr = 12
+const CrNotLinear Cr = 13
+const CrOk Cr = 14
+
 type Ek int32
 
 const EkErr Ek = 0
@@ -271,10 +306,29 @@ const OpRepEnter Op = 21
 const OpRepNext Op = 22
 const OpAccept Op = 23
 
+type Rk int32
+
+const RkRoot Rk = 0
+const RkGroup Rk = 1
+const RkBranch Rk = 2
+const RkRepeat Rk = 3
+
+type Bound struct {
+	ok bool
+	value uint64
+}
+
 type Bt struct {
 	pc uint32
 	pos uint32
 	mark uint32
+}
+
+type Cert struct {
+	config Cfg
+	complexity Cc
+	regions []Region
+	terms []Term
 }
 
 type Esc struct {
@@ -357,6 +411,16 @@ type Ref struct {
 	nlen uint32
 }
 
+type Region struct {
+	kind Rk
+	parent uint32
+	lo uint32
+	hi uint32
+	cost Sum
+	stack Sum
+	mem Sum
+}
+
 type Rep struct {
 	lo uint32
 	hi uint32
@@ -364,6 +428,17 @@ type Rep struct {
 	head uint32
 	body uint32
 	after uint32
+}
+
+type Sum struct {
+	first uint32
+	count uint32
+}
+
+type Term struct {
+	coef uint64
+	base uint32
+	degree uint32
 }
 
 type Undo struct {
@@ -737,6 +812,55 @@ func attach_escape(w *Work, esc Esc) {
 	}
 }
 
+func bound_add(a Bound, b Bound) Bound {
+	if ((!a.ok) || (!b.ok)) {
+		return (Bound{ok: false, value: uint64(0)})
+	}
+	var tmp1 uint64 = a.value
+	var tmp2 uint64 = b.value
+	if (tmp1 > tir_csub(uint64(9007199254740991), tmp2)) {
+		return (Bound{ok: false, value: uint64(0)})
+	}
+	return (Bound{ok: true, value: tir_cadd(tmp1, tmp2)})
+}
+
+func bound_mul(a Bound, b Bound) Bound {
+	if ((!a.ok) || (!b.ok)) {
+		return (Bound{ok: false, value: uint64(0)})
+	}
+	var tmp1 uint64 = a.value
+	var tmp2 uint64 = b.value
+	if ((tmp1 == uint64(0)) || (tmp2 == uint64(0))) {
+		return (Bound{ok: true, value: uint64(0)})
+	}
+	if (tmp1 > tir_div_counter(uint64(9007199254740991), tmp2, uint64(0))) {
+		return (Bound{ok: false, value: uint64(0)})
+	}
+	return (Bound{ok: true, value: tir_cmul(tmp1, tmp2)})
+}
+
+func bound_pow(base uint64, exp uint64) Bound {
+	if (base == uint64(1)) {
+		return (Bound{ok: true, value: uint64(1)})
+	}
+	if (base == uint64(0)) {
+		if (exp == uint64(0)) {
+			return (Bound{ok: true, value: uint64(1)})
+		}
+		return (Bound{ok: true, value: uint64(0)})
+	}
+	var out Bound = (Bound{ok: true, value: uint64(1)})
+	var i uint64 = uint64(0)
+	var step Bound
+	for ((i < exp) && out.ok) {
+		tir_t1 := bound_mul(out, (Bound{ok: true, value: base}))
+		step = tir_t1
+		out = step
+		i = tir_cadd(i, uint64(1))
+	}
+	return out
+}
+
 func bsr_at(subj []byte, pos uint32, bsr uint32) uint32 {
 	var tmp1 uint32 = uint32(len(subj))
 	if (pos >= tmp1) {
@@ -759,6 +883,133 @@ func bsr_at(subj []byte, pos uint32, bsr uint32) uint32 {
 		return uint32(1)
 	}
 	return uint32(0)
+}
+
+func cert_bound(cert Cert, kind Bk, n uint64) Bound {
+	var regions []Region = cert.regions
+	if (uint32(len(regions)) == uint32(0)) {
+		return (Bound{ok: false, value: uint64(0)})
+	}
+	var root Region = regions[uint32(0)]
+	var which Sum
+	var ceiling uint64 = uint64(9007199254740991)
+	switch kind {
+	case BkCost:
+		which = root.cost
+	case BkStack:
+		which = root.stack
+		ceiling = uint64(178956970)
+	case BkMem:
+		which = root.mem
+		ceiling = uint64(2147483647)
+	}
+	var out Bound
+	tir_t1 := sum_value(cert.terms, which, n)
+	out = tir_t1
+	if (out.ok && (out.value > ceiling)) {
+		return (Bound{ok: false, value: uint64(0)})
+	}
+	return out
+}
+
+func cert_check(cert Cert, codelen uint32) Cr {
+	var regions []Region = cert.regions
+	var terms []Term = cert.terms
+	var tmp1 uint32 = uint32(len(regions))
+	var tmp2 uint32 = uint32(len(terms))
+	if (tmp1 == uint32(0)) {
+		return CrNoRegions
+	}
+	var root Region = regions[uint32(0)]
+	if (root.kind != RkRoot) {
+		return CrRootKind
+	}
+	if (root.parent != uint32(4294967295)) {
+		return CrRootParent
+	}
+	if ((root.lo != uint32(0)) || (root.hi != codelen)) {
+		return CrRootRange
+	}
+	var ends []uint32
+	var i uint32 = uint32(0)
+	for (i < tmp1) {
+		tir_push(&ends, 8208, regions[i].lo)
+		i = (i + uint32(1))
+	}
+	i = uint32(1)
+	for (i < tmp1) {
+		var tmp3 Region = regions[i]
+		var tmp4 uint32 = tmp3.parent
+		if (tmp3.kind == RkRoot) {
+			return CrTwoRoots
+		}
+		if (tmp4 >= i) {
+			return CrParentOrder
+		}
+		if (tmp3.lo > tmp3.hi) {
+			return CrBackwards
+		}
+		var tmp5 Region = regions[tmp4]
+		if ((tmp3.lo < tmp5.lo) || (tmp3.hi > tmp5.hi)) {
+			return CrNotNested
+		}
+		if (tmp3.lo < ends[tmp4]) {
+			return CrOverlap
+		}
+		tir_t1 := tmp4
+		if tir_t1 >= uint32(len(ends)) {
+			tir_oob(tir_t1, uint32(len(ends)))
+		}
+		ends[tir_t1] = tmp3.hi
+		i = (i + uint32(1))
+	}
+	i = uint32(0)
+	var tmp6 bool = false
+	for (i < tmp1) {
+		var tmp7 Region = regions[i]
+		tir_t2 := sum_fits(tmp7.cost, tmp2)
+		tmp6 = tir_t2
+		if (!tmp6) {
+			return CrTermRange
+		}
+		tir_t3 := sum_fits(tmp7.stack, tmp2)
+		tmp6 = tir_t3
+		if (!tmp6) {
+			return CrTermRange
+		}
+		tir_t4 := sum_fits(tmp7.mem, tmp2)
+		tmp6 = tir_t4
+		if (!tmp6) {
+			return CrTermRange
+		}
+		i = (i + uint32(1))
+	}
+	i = uint32(0)
+	for (i < tmp2) {
+		var tmp8 Term = terms[i]
+		if (tmp8.coef == uint64(0)) {
+			return CrZeroTerm
+		}
+		if (tmp8.base == uint32(0)) {
+			return CrBase
+		}
+		if (tmp8.degree > uint32(4)) {
+			return CrDegree
+		}
+		i = (i + uint32(1))
+	}
+	if (cert.complexity == CcLinear) {
+		var tmp9 Sum = root.cost
+		i = uint32(0)
+		for (i < tmp9.count) {
+			var tmp10 Term = terms[(tmp9.first + i)]
+			if ((tmp10.base != uint32(1)) || (tmp10.degree > uint32(1))) {
+				return CrNotLinear
+			}
+			i = (i + uint32(1))
+		}
+	}
+	return CrOk
 }
 
 func charge_grow(oldcap uint32, lenv uint32, esize uint32, maxv uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
@@ -3657,6 +3908,55 @@ func skip_gaps(pat []byte, at *uint32, w *Work) {
 	(*at) = tmp2
 }
 
+func sum_fits(s Sum, held uint32) bool {
+	if (s.count == uint32(0)) {
+		return true
+	}
+	if (s.first >= held) {
+		return false
+	}
+	return (s.count <= (held - s.first))
+}
+
+func sum_value(terms []Term, s Sum, n uint64) Bound {
+	var out Bound = (Bound{ok: true, value: uint64(0)})
+	var i uint32 = uint32(0)
+	for ((i < s.count) && out.ok) {
+		var tmp1 uint32 = (s.first + i)
+		if (tmp1 >= uint32(len(terms))) {
+			return (Bound{ok: false, value: uint64(0)})
+		}
+		var tmp2 Bound
+		tir_t1 := term_value(terms[tmp1], n)
+		tmp2 = tir_t1
+		var tmp3 Bound
+		tir_t2 := bound_add(out, tmp2)
+		tmp3 = tir_t2
+		out = tmp3
+		i = (i + uint32(1))
+	}
+	return out
+}
+
+func term_value(t Term, n uint64) Bound {
+	if (t.coef == uint64(0)) {
+		return (Bound{ok: true, value: uint64(0)})
+	}
+	var growth Bound
+	tir_t1 := bound_pow(uint64(t.base), n)
+	growth = tir_t1
+	var power Bound
+	tir_t2 := bound_pow(n, uint64(t.degree))
+	power = tir_t2
+	var scaled Bound
+	tir_t3 := bound_mul((Bound{ok: true, value: t.coef}), growth)
+	scaled = tir_t3
+	var total Bound
+	tir_t4 := bound_mul(scaled, power)
+	total = tir_t4
+	return total
+}
+
 func walk_alt(w *Work, top uint32, job Job, nd Node) {
 	var tmp1 uint32 = top
 	var tmp2 Job
@@ -3952,8 +4252,28 @@ func Tir_attach_escape(w *Work, esc Esc) {
 	attach_escape(w, esc)
 }
 
+func Tir_bound_add(a Bound, b Bound) Bound {
+	return bound_add(a, b)
+}
+
+func Tir_bound_mul(a Bound, b Bound) Bound {
+	return bound_mul(a, b)
+}
+
+func Tir_bound_pow(base uint64, exp uint64) Bound {
+	return bound_pow(base, exp)
+}
+
 func Tir_bsr_at(subj []byte, pos uint32, bsr uint32) uint32 {
 	return bsr_at(subj, pos, bsr)
+}
+
+func Tir_cert_bound(cert Cert, kind Bk, n uint64) Bound {
+	return cert_bound(cert, kind, n)
+}
+
+func Tir_cert_check(cert Cert, codelen uint32) Cr {
+	return cert_check(cert, codelen)
 }
 
 func Tir_charge_grow(oldcap uint32, lenv uint32, esize uint32, maxv uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
@@ -4160,6 +4480,18 @@ func Tir_skip_gaps(pat []byte, at *uint32, w *Work) {
 	skip_gaps(pat, at, w)
 }
 
+func Tir_sum_fits(s Sum, held uint32) bool {
+	return sum_fits(s, held)
+}
+
+func Tir_sum_value(terms []Term, s Sum, n uint64) Bound {
+	return sum_value(terms, s, n)
+}
+
+func Tir_term_value(t Term, n uint64) Bound {
+	return term_value(t, n)
+}
+
 func Tir_walk_alt(w *Work, top uint32, job Job, nd Node) {
 	walk_alt(w, top, job, nd)
 }
@@ -4176,9 +4508,17 @@ func Tir_write_reg(regs *[]uint32, trail *[]Undo, mem *uint64, peak *uint64, cos
 	return write_reg(regs, trail, mem, peak, cost, memlimit, costlimit, btlen, slot, value)
 }
 
+func (v *Bound) Tir_ok() bool { return v.ok }
+func (v *Bound) Tir_value() uint64 { return v.value }
+
 func (v *Bt) Tir_pc() uint32 { return v.pc }
 func (v *Bt) Tir_pos() uint32 { return v.pos }
 func (v *Bt) Tir_mark() uint32 { return v.mark }
+
+func (v *Cert) Tir_config() Cfg { return v.config }
+func (v *Cert) Tir_complexity() Cc { return v.complexity }
+func (v *Cert) Tir_regions() []Region { return v.regions }
+func (v *Cert) Tir_terms() []Term { return v.terms }
 
 func (v *Esc) Tir_kind() Ek { return v.kind }
 func (v *Esc) Tir_val() uint32 { return v.val }
@@ -4240,12 +4580,27 @@ func (v *Ref) Tir_num() uint32 { return v.num }
 func (v *Ref) Tir_off() uint32 { return v.off }
 func (v *Ref) Tir_nlen() uint32 { return v.nlen }
 
+func (v *Region) Tir_kind() Rk { return v.kind }
+func (v *Region) Tir_parent() uint32 { return v.parent }
+func (v *Region) Tir_lo() uint32 { return v.lo }
+func (v *Region) Tir_hi() uint32 { return v.hi }
+func (v *Region) Tir_cost() Sum { return v.cost }
+func (v *Region) Tir_stack() Sum { return v.stack }
+func (v *Region) Tir_mem() Sum { return v.mem }
+
 func (v *Rep) Tir_lo() uint32 { return v.lo }
 func (v *Rep) Tir_hi() uint32 { return v.hi }
 func (v *Rep) Tir_greedy() bool { return v.greedy }
 func (v *Rep) Tir_head() uint32 { return v.head }
 func (v *Rep) Tir_body() uint32 { return v.body }
 func (v *Rep) Tir_after() uint32 { return v.after }
+
+func (v *Sum) Tir_first() uint32 { return v.first }
+func (v *Sum) Tir_count() uint32 { return v.count }
+
+func (v *Term) Tir_coef() uint64 { return v.coef }
+func (v *Term) Tir_base() uint32 { return v.base }
+func (v *Term) Tir_degree() uint32 { return v.degree }
 
 func (v *Undo) Tir_slot() uint32 { return v.slot }
 func (v *Undo) Tir_old() uint32 { return v.old }

@@ -529,3 +529,45 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   the constant its own printer emits, and neither looked at parameters, so a
   parameter called `Math` printed a JavaScript module where `Math.imul` meant
   the parameter.
+- Computed a bound term's `base^n` before looking at its coefficient, so a term
+  with a coefficient of zero reported ExceedsBudget at any subject length where
+  the base overflowed — a refusal about arithmetic that was never going to be
+  part of the answer. The saturating multiply already short-circuits on a zero
+  operand; it just never got the chance, because the operand it would have
+  short-circuited on was evaluated last. Evaluation order decides which of two
+  correct rules actually fires.
+- Put the complexity class on the bound certificate and had the checker say
+  nothing about it, so a certificate could call itself linear while naming an
+  exponential cost bound. Two separate errors in one field: a claim nothing
+  checks is decoration, and the class as DESIGN.md describes it is fixed per
+  pattern while a certificate is per configuration, so the field also needed a
+  meaning of its own before a rule about it could be written. The rule is cheap
+  once the meaning is settled — linear is `c * (n + 1)`, so no growing base and
+  no power above the first — which is the tell that the omission was not about
+  difficulty.
+- Wrote a docstring for the certificate marshalling saying it "refuses only
+  what would not be a TIR value at all — a count no u32 holds, a table longer
+  than its declared maximum", and then checked the integers and not the tables,
+  nor the enum variants either. A docstring that describes a guard which is not
+  there is worse than no docstring: the next reader stops looking, and the
+  reviewer who does look has to work out which of the two is the truth. If the
+  sentence is worth writing, the branch is worth writing first.
+- Wrote down as a fact that the certificate checker could not be run from Go or
+  JavaScript, having checked neither. JavaScript already exported every class
+  and constant a test needed, and Go only wanted the test file to sit in the
+  package it was testing. The tell was the shape of the sentence: it explained
+  why something could not be done, in a commit that was not trying to do it.
+  A limitation recorded without an attempt is a guess wearing a fact's clothes,
+  and it is worse than silence because the next reader believes it.
+- Ordered an enum so that its zero value was the claim rather than the absence
+  of one: `CcLinear` first meant a certificate nobody had filled in came out of
+  Go and JavaScript asserting the pattern was linear. TIR-SPEC.md section 4.1
+  says plainly that a zero value is the first variant, so variant order is a
+  safety decision in any enum whose variants are not equally harmless, and the
+  conservative one goes first.
+- Let the checker and the arithmetic hold different opinions about what a term
+  with a zero coefficient means: the arithmetic said "zero, whatever its shape"
+  and the shape rules went on refusing its base and its degree. Either answer
+  is defensible alone; having both is what made it a bug, and it would have let
+  a certificate call itself linear while naming an exponential term that
+  happened to be multiplied by zero.

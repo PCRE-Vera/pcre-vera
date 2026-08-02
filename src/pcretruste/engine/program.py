@@ -12,7 +12,7 @@ import functools
 
 from ..dsl import boolean, inout, u32
 from ..tir import ir
-from . import compiler, parser, spec, vm
+from . import certificate, compiler, parser, spec, vm
 from .layout import Layout
 
 
@@ -84,6 +84,7 @@ def build() -> ir.Program:
     parser.build(L)
     compiler.build(L)
     vm.build(L)
+    certificate.build(L)
     _entry(L)
     return L.build()
 

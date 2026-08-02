@@ -1,12 +1,12 @@
 # The conformance corpora
 
-Two language-neutral JSON files and a small runner per backend. They are what
+Three language-neutral JSON files and a small runner per backend. They are what
 makes "the Python interpreter, the generated Go, and the generated JavaScript
 agree bit for bit" a thing that gets checked rather than hoped for.
 
-Both are generated — `make generate` writes them — and both are committed, so a
-change to either shows up as a reviewable diff and `make generate-verify` fails
-on a checkout where one has drifted.
+All three are generated — `make generate` writes them — and all three are
+committed, so a change to any of them shows up as a reviewable diff and
+`make generate-verify` fails on a checkout where one has drifted.
 
 `corpus.json` is the wave 1 differential corpus of `oracle/corpus/wave1.json`,
 restated so that a runner in any language can read it without reimplementing
@@ -26,13 +26,39 @@ the sign changes, `INT_MIN / -1`, counter saturation at the cap, the growth
 schedule read back through `cap`, a struct written through after being copied —
 and this file says what every call has to answer.
 
-The runners:
+`certificates.json` is the bound certificates of DESIGN.md section 5, each
+with the verdict the checker has to draw and the three bounds it has to
+evaluate, at seven subject lengths from zero to the counter's saturation point.
+The verdicts are hand-written and the bounds are recorded, which is the honest
+split: what the checker refuses is a contract, and transcribing twenty-one
+numbers per case by hand would be copying rather than specifying. This corpus
+exists because a certificate has no way in through the public API, so without
+it the checker would be the one piece of the engine that both backends carried
+and neither ran.
+
+The runners, one row per file and one column per language:
 
 ```
-tests/test_conformance.py            the Python interpreter
-gen/go/conformance_test.go           the generated Go
-gen/js/test/conformance.test.mjs     the generated JavaScript
++-------------------+---------------------------+---------------------------+
+| corpus.json and   | tests/test_conformance.py | the Python interpreter    |
+| lowering.json     | gen/go/conformance_test   | the generated Go          |
+|                   |   .go                     |                           |
+|                   | gen/js/test/conformance   | the generated JavaScript  |
+|                   |   .test.mjs               |                           |
++-------------------+---------------------------+---------------------------+
+| certificates.json | tests/test_certificate.py | the Python interpreter    |
+|                   | gen/go/internal/engine/   | the generated Go          |
+|                   |   certificate_test.go     |                           |
+|                   | gen/js/test/certificate   | the generated JavaScript  |
+|                   |   .test.mjs               |                           |
++-------------------+---------------------------+---------------------------+
 ```
 
-Expected bounds are the other half of what DESIGN.md section 8 asks for, and
-they arrive with the M5 analyzer. There is nothing to write down until then.
+The Go certificate runner sits inside the generated package rather than beside
+the wrapper, because TIR field names are printed verbatim and Go cannot reach a
+lower-case field from another package, so a certificate has to be built there.
+The JavaScript one needs no such thing.
+
+Expected match bounds are the other half of what DESIGN.md section 8 asks for,
+and they arrive with the M5 analyzer, when compilation starts producing the
+certificates these three files so far only hand-write.

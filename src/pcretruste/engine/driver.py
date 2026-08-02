@@ -16,8 +16,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ..oracle.client import Compiled, CompileError, Match, NoMatch
-from ..tir.interp import Cell, Frozen, Interpreter, Seq, StructValue
-from ..tir.types import CAP, CEILING, U8, StructType
+from ..tir.interp import Cell, Frozen, Interpreter, Seq, StructValue, Tag
+from ..tir.types import CAP, CEILING, COUNTER, INT_RANGE, U8, U32, StructType, Type
 from . import spec
 from .program import program
 
@@ -86,12 +86,128 @@ class Limits:
     memory: int = DEFAULT_MEMORY_LIMIT
 
 
+@dataclass(frozen=True)
+class Term:
+    """One term of a bound: `coef * base^n * n^degree` in the subject length."""
+
+    coef: int
+    base: int = 1
+    degree: int = 0
+
+
+@dataclass(frozen=True)
+class Sum:
+    """Where a bound's terms sit in the certificate's flat term table."""
+
+    first: int = 0
+    count: int = 0
+
+
+@dataclass(frozen=True)
+class Region:
+    """One source construct, its instruction range, and what it is priced at."""
+
+    kind: str
+    parent: int
+    lo: int
+    hi: int
+    cost: Sum = Sum()
+    stack: Sum = Sum()
+    mem: Sum = Sum()
+
+
+@dataclass(frozen=True)
+class Certificate:
+    """What the analyzer will produce and the checker already refuses to guess at.
+
+    Region 0 is the root, so the whole-pattern bounds are its bounds and there
+    is no second copy of them to disagree with the tree.
+    """
+
+    regions: tuple[Region, ...]
+    terms: tuple[Term, ...] = ()
+    config: str = "CfgBacktrack"
+    complexity: str = "CcNotProvenLinear"
+
+
 class EngineError(RuntimeError):
     """The engine did something only a bug of ours explains."""
 
 
+def _frozen(items: list, elem: Type, maximum: int) -> Frozen:
+    if len(items) > maximum:
+        raise EngineError(f"{len(items)} of {elem} is past the declared maximum {maximum}")
+    return Frozen(Seq(elem, maximum, items, len(items)))
+
+
 def _blob(data: bytes) -> Frozen:
-    return Frozen(Seq(U8, CEILING, list(data), len(data)))
+    return _frozen(list(data), U8, CEILING)
+
+
+def _certificate(cert: Certificate) -> StructValue:
+    """A certificate as the TIR values that stand for one.
+
+    The checker's whole job is to distrust what it is handed, so this refuses
+    only what would not be a TIR value at all — a count no u32 holds, a table
+    longer than its declared maximum. Anything that is well typed and still
+    nonsense is exactly what the checker is there to answer for.
+    """
+    regions = [
+        StructValue(
+            "Region",
+            {
+                "kind": _tag(region.kind, "Rk"),
+                "parent": _scalar(region.parent, U32),
+                "lo": _scalar(region.lo, U32),
+                "hi": _scalar(region.hi, U32),
+                "cost": _sum(region.cost),
+                "stack": _sum(region.stack),
+                "mem": _sum(region.mem),
+            },
+        )
+        for region in cert.regions
+    ]
+    terms = [
+        StructValue(
+            "Term",
+            {
+                "coef": _scalar(one.coef, COUNTER),
+                "base": _scalar(one.base, U32),
+                "degree": _scalar(one.degree, U32),
+            },
+        )
+        for one in cert.terms
+    ]
+    return StructValue(
+        "Cert",
+        {
+            "config": _tag(cert.config, "Cfg"),
+            "complexity": _tag(cert.complexity, "Cc"),
+            "regions": _frozen(regions, StructType("Region"), spec.MAX_REGIONS),
+            "terms": _frozen(terms, StructType("Term"), spec.MAX_TERMS),
+        },
+    )
+
+
+def _sum(one: Sum) -> StructValue:
+    return StructValue(
+        "Sum", {"first": _scalar(one.first, U32), "count": _scalar(one.count, U32)}
+    )
+
+
+def _scalar(value: object, t: Type) -> int:
+    """An integer a TIR value of this type could actually hold."""
+    if not _in_range(value, INT_RANGE[t][1]):
+        raise EngineError(f"{value!r} is not a {t}")
+    assert isinstance(value, int)
+    return value
+
+
+def _tag(variant: str, enum: str) -> Tag:
+    """A variant this enum actually declares, since a tag is a name, not a number."""
+    if variant not in program().enum_map[enum].variants:
+        raise EngineError(f"enum {enum} has no variant {variant!r}")
+    return Tag(enum, variant)
 
 
 def _options(names: Sequence[str], table: dict[str, int], what: str) -> int | None:
@@ -275,6 +391,29 @@ class Engine:
         slots = ov.value
         assert isinstance(slots, Seq)
         return Match(ovector=tuple(_offset(v) for v in slots.items))
+
+    # --- bound certificates ---
+    #
+    # Nothing produces a certificate yet, so these two take one from the
+    # caller. When the analyzer lands, compilation runs the same checker over
+    # what it produced before any of it is believed.
+
+    def check_certificate(self, cert: Certificate, code_len: int) -> str:
+        """The checker's verdict, named: "CrOk", or the reason it refused."""
+        answer = self._interp().call(
+            "cert_check", [_certificate(cert), _scalar(code_len, U32)]
+        )
+        assert isinstance(answer, Tag)
+        return answer.variant
+
+    def bound(self, cert: Certificate, kind: str, subject_len: int) -> int | None:
+        """A certified bound at that subject length, or None for ExceedsBudget."""
+        answer = self._interp().call(
+            "cert_bound",
+            [_certificate(cert), _tag(kind, "Bk"), _scalar(subject_len, COUNTER)],
+        )
+        assert isinstance(answer, StructValue)
+        return answer.fields["value"] if answer.fields["ok"] else None
 
 
 def _in_range(value: object, ceiling: int) -> bool:

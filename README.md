@@ -25,10 +25,8 @@ detail, from the IR design through the proof layering to the milestones.
 ## Where the project is
 
 M0 (scaffolding), M1 (the pcre2 oracle), M2 (the TIR core), M3 (the wave 1
-engine) and M4 (the Go and JavaScript backends) are done.
-
-The Pike VM and the resource analyzer arrive in M5, and the Lean proofs from M6
-on.
+engine) and M4 (the Go and JavaScript backends) are done. M5, the Pike VM and
+the resource analyzer, has started; the Lean proofs follow from M6 on.
 
 Four things work today, and everything else leans on them.
 
@@ -131,16 +129,37 @@ boundary, saturates counters at the cap, divides `INT_MIN` by -1, grows vectors
 one push at a time and reads the capacity back, writes through a struct it just
 copied, fills one sequence of every element type there is — the engine itself
 only ever uses two — and overflows a named constant, which Go folds at compile
-time and would refuse rather than wrap. `conformance/corpus.json` is the wave 1 corpus restated in a form
-any language can read. Both files run against the Python interpreter, the
-generated Go, and the generated JavaScript, and all three have to give the same
-answers.
+time and would refuse rather than wrap. `conformance/corpus.json` is the wave 1
+corpus restated in a form any language can read, and
+`conformance/certificates.json` does the same for the bound checker below.
+All three files run against the Python interpreter, the generated Go, and the
+generated JavaScript, and all three languages have to give the same answers.
 
 M4 is deliberately provisional and both wrappers say so. Compile and match
 work; every pattern runs on the backtracking matcher, because matcher selection
 needs the Pike VM. The analysis accessors of DESIGN.md section 2.4, the
 preallocated match context, and the match configuration argument all arrive
 with M5, together with the bounds that make them mean anything.
+
+M5 has started at the far end of that work, with the thing the bounds have to
+pass through. DESIGN.md section 5 does not have one analyzer computing numbers
+everything then trusts; it has an analyzer that searches for a bound
+certificate and a deliberately small checker that decides whether to believe
+one. Only the checker gets proved, which is why it exists first:
+`engine/certificate.py` is the certificate — the compiler's region tree,
+annotated with the terms that price each region — the invariants that make it a
+tree, and the arithmetic that evaluates it. A bound comes back as a number or
+as an explicit refusal, never as a saturated counter dressed up as a maximum,
+and the two projections with a ceiling of their own refuse past it too, so any
+number an accessor gives back is one the caller can turn round and pass as a
+limit.
+
+What the checker rules on so far is the shape of a certificate, and it is worth
+saying plainly that shape is not soundness: a length is the only fact about the
+program it is given, so an accepted certificate is a well-formed thing rather
+than a bound anyone has checked. The rules that make one sound are per-opcode
+and need the program itself, and they come before the analyzer rather than with
+it.
 
 ## Using it
 

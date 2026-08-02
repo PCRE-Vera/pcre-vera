@@ -57,6 +57,49 @@
   ],
   "enums": [
     {
+      "name": "Bk",
+      "variants": [
+        "BkCost",
+        "BkStack",
+        "BkMem"
+      ]
+    },
+    {
+      "name": "Cc",
+      "variants": [
+        "CcNotProvenLinear",
+        "CcLinear"
+      ]
+    },
+    {
+      "name": "Cfg",
+      "variants": [
+        "CfgBacktrack",
+        "CfgPike",
+        "CfgMemo"
+      ]
+    },
+    {
+      "name": "Cr",
+      "variants": [
+        "CrNoRegions",
+        "CrRootKind",
+        "CrRootParent",
+        "CrRootRange",
+        "CrTwoRoots",
+        "CrParentOrder",
+        "CrBackwards",
+        "CrNotNested",
+        "CrOverlap",
+        "CrTermRange",
+        "CrZeroTerm",
+        "CrBase",
+        "CrDegree",
+        "CrNotLinear",
+        "CrOk"
+      ]
+    },
+    {
       "name": "Ek",
       "variants": [
         "EkErr",
@@ -125,6 +168,15 @@
         "OpRepEnter",
         "OpRepNext",
         "OpAccept"
+      ]
+    },
+    {
+      "name": "Rk",
+      "variants": [
+        "RkRoot",
+        "RkGroup",
+        "RkBranch",
+        "RkRepeat"
       ]
     }
   ],
@@ -2162,6 +2214,675 @@
     {
       "body": [
         {
+          "if": {
+            "cond": {
+              "or": {
+                "left": {
+                  "un": {
+                    "arg": {
+                      "field": {
+                        "base": {
+                          "var": "a"
+                        },
+                        "name": "ok"
+                      }
+                    },
+                    "op": "not"
+                  }
+                },
+                "right": {
+                  "un": {
+                    "arg": {
+                      "field": {
+                        "base": {
+                          "var": "b"
+                        },
+                        "name": "ok"
+                      }
+                    },
+                    "op": "not"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": false
+                        },
+                        "value": {
+                          "counter": 0
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "field": {
+                "base": {
+                  "var": "a"
+                },
+                "name": "value"
+              }
+            },
+            "name": "tmp1",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "field": {
+                "base": {
+                  "var": "b"
+                },
+                "name": "value"
+              }
+            },
+            "name": "tmp2",
+            "type": "counter"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp1"
+                },
+                "op": "gt",
+                "right": {
+                  "bin": {
+                    "left": {
+                      "counter": 9007199254740991
+                    },
+                    "op": "sub",
+                    "right": {
+                      "var": "tmp2"
+                    }
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": false
+                        },
+                        "value": {
+                          "counter": 0
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "structval": {
+                "fields": {
+                  "ok": {
+                    "bool": true
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "tmp1"
+                      },
+                      "op": "add",
+                      "right": {
+                        "var": "tmp2"
+                      }
+                    }
+                  }
+                },
+                "type": "Bound"
+              }
+            }
+          }
+        }
+      ],
+      "name": "bound_add",
+      "params": [
+        {
+          "mode": "in",
+          "name": "a",
+          "type": {
+            "struct": "Bound"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "b",
+          "type": {
+            "struct": "Bound"
+          }
+        }
+      ],
+      "ret": {
+        "struct": "Bound"
+      }
+    },
+    {
+      "body": [
+        {
+          "if": {
+            "cond": {
+              "or": {
+                "left": {
+                  "un": {
+                    "arg": {
+                      "field": {
+                        "base": {
+                          "var": "a"
+                        },
+                        "name": "ok"
+                      }
+                    },
+                    "op": "not"
+                  }
+                },
+                "right": {
+                  "un": {
+                    "arg": {
+                      "field": {
+                        "base": {
+                          "var": "b"
+                        },
+                        "name": "ok"
+                      }
+                    },
+                    "op": "not"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": false
+                        },
+                        "value": {
+                          "counter": 0
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "field": {
+                "base": {
+                  "var": "a"
+                },
+                "name": "value"
+              }
+            },
+            "name": "tmp1",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "field": {
+                "base": {
+                  "var": "b"
+                },
+                "name": "value"
+              }
+            },
+            "name": "tmp2",
+            "type": "counter"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "or": {
+                "left": {
+                  "cmp": {
+                    "left": {
+                      "var": "tmp1"
+                    },
+                    "op": "eq",
+                    "right": {
+                      "counter": 0
+                    }
+                  }
+                },
+                "right": {
+                  "cmp": {
+                    "left": {
+                      "var": "tmp2"
+                    },
+                    "op": "eq",
+                    "right": {
+                      "counter": 0
+                    }
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": true
+                        },
+                        "value": {
+                          "counter": 0
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp1"
+                },
+                "op": "gt",
+                "right": {
+                  "div": {
+                    "fallback": {
+                      "counter": 0
+                    },
+                    "left": {
+                      "counter": 9007199254740991
+                    },
+                    "right": {
+                      "var": "tmp2"
+                    }
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": false
+                        },
+                        "value": {
+                          "counter": 0
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "structval": {
+                "fields": {
+                  "ok": {
+                    "bool": true
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "tmp1"
+                      },
+                      "op": "mul",
+                      "right": {
+                        "var": "tmp2"
+                      }
+                    }
+                  }
+                },
+                "type": "Bound"
+              }
+            }
+          }
+        }
+      ],
+      "name": "bound_mul",
+      "params": [
+        {
+          "mode": "in",
+          "name": "a",
+          "type": {
+            "struct": "Bound"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "b",
+          "type": {
+            "struct": "Bound"
+          }
+        }
+      ],
+      "ret": {
+        "struct": "Bound"
+      }
+    },
+    {
+      "body": [
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "base"
+                },
+                "op": "eq",
+                "right": {
+                  "counter": 1
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": true
+                        },
+                        "value": {
+                          "counter": 1
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "base"
+                },
+                "op": "eq",
+                "right": {
+                  "counter": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "var": "exp"
+                      },
+                      "op": "eq",
+                      "right": {
+                        "counter": 0
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "structval": {
+                            "fields": {
+                              "ok": {
+                                "bool": true
+                              },
+                              "value": {
+                                "counter": 1
+                              }
+                            },
+                            "type": "Bound"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": true
+                        },
+                        "value": {
+                          "counter": 0
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "structval": {
+                "fields": {
+                  "ok": {
+                    "bool": true
+                  },
+                  "value": {
+                    "counter": 1
+                  }
+                },
+                "type": "Bound"
+              }
+            },
+            "name": "out",
+            "type": {
+              "struct": "Bound"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "i",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "step",
+            "type": {
+              "struct": "Bound"
+            }
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "out"
+                      }
+                    },
+                    {
+                      "in": {
+                        "structval": {
+                          "fields": {
+                            "ok": {
+                              "bool": true
+                            },
+                            "value": {
+                              "var": "base"
+                            }
+                          },
+                          "type": "Bound"
+                        }
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "step"
+                  },
+                  "fn": "bound_mul"
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "out"
+                  },
+                  "value": {
+                    "var": "step"
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "i"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "i"
+                      },
+                      "op": "add",
+                      "right": {
+                        "counter": 1
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "and": {
+                "left": {
+                  "cmp": {
+                    "left": {
+                      "var": "i"
+                    },
+                    "op": "lt",
+                    "right": {
+                      "var": "exp"
+                    }
+                  }
+                },
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "out"
+                    },
+                    "name": "ok"
+                  }
+                }
+              }
+            },
+            "variant": {
+              "bin": {
+                "left": {
+                  "var": "exp"
+                },
+                "op": "sub",
+                "right": {
+                  "var": "i"
+                }
+              }
+            }
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "var": "out"
+            }
+          }
+        }
+      ],
+      "name": "bound_pow",
+      "params": [
+        {
+          "mode": "in",
+          "name": "base",
+          "type": "counter"
+        },
+        {
+          "mode": "in",
+          "name": "exp",
+          "type": "counter"
+        }
+      ],
+      "ret": {
+        "struct": "Bound"
+      }
+    },
+    {
+      "body": [
+        {
           "let": {
             "init": {
               "len": {
@@ -2435,6 +3156,1657 @@
         }
       ],
       "ret": "u32"
+    },
+    {
+      "body": [
+        {
+          "let": {
+            "init": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "regions"
+              }
+            },
+            "name": "regions",
+            "type": {
+              "frozen": {
+                "vec": {
+                  "elem": {
+                    "struct": "Region"
+                  },
+                  "max": 8208
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "len": {
+                    "var": "regions"
+                  }
+                },
+                "op": "eq",
+                "right": {
+                  "u32": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": false
+                        },
+                        "value": {
+                          "counter": 0
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "index": {
+                "base": {
+                  "var": "regions"
+                },
+                "index": {
+                  "u32": 0
+                }
+              }
+            },
+            "name": "root",
+            "type": {
+              "struct": "Region"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "which",
+            "type": {
+              "struct": "Sum"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 9007199254740991
+            },
+            "name": "ceiling",
+            "type": "counter"
+          }
+        },
+        {
+          "switch": {
+            "arms": [
+              {
+                "body": [
+                  {
+                    "assign": {
+                      "place": {
+                        "var": "which"
+                      },
+                      "value": {
+                        "field": {
+                          "base": {
+                            "var": "root"
+                          },
+                          "name": "cost"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "variant": "BkCost"
+              },
+              {
+                "body": [
+                  {
+                    "assign": {
+                      "place": {
+                        "var": "which"
+                      },
+                      "value": {
+                        "field": {
+                          "base": {
+                            "var": "root"
+                          },
+                          "name": "stack"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "assign": {
+                      "place": {
+                        "var": "ceiling"
+                      },
+                      "value": {
+                        "counter": 178956970
+                      }
+                    }
+                  }
+                ],
+                "variant": "BkStack"
+              },
+              {
+                "body": [
+                  {
+                    "assign": {
+                      "place": {
+                        "var": "which"
+                      },
+                      "value": {
+                        "field": {
+                          "base": {
+                            "var": "root"
+                          },
+                          "name": "mem"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "assign": {
+                      "place": {
+                        "var": "ceiling"
+                      },
+                      "value": {
+                        "counter": 2147483647
+                      }
+                    }
+                  }
+                ],
+                "variant": "BkMem"
+              }
+            ],
+            "default": null,
+            "value": {
+              "var": "kind"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "out",
+            "type": {
+              "struct": "Bound"
+            }
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "cert"
+                    },
+                    "name": "terms"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "var": "which"
+                }
+              },
+              {
+                "in": {
+                  "var": "n"
+                }
+              }
+            ],
+            "dest": {
+              "var": "out"
+            },
+            "fn": "sum_value"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "and": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "out"
+                    },
+                    "name": "ok"
+                  }
+                },
+                "right": {
+                  "cmp": {
+                    "left": {
+                      "field": {
+                        "base": {
+                          "var": "out"
+                        },
+                        "name": "value"
+                      }
+                    },
+                    "op": "gt",
+                    "right": {
+                      "var": "ceiling"
+                    }
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": false
+                        },
+                        "value": {
+                          "counter": 0
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "var": "out"
+            }
+          }
+        }
+      ],
+      "name": "cert_bound",
+      "params": [
+        {
+          "mode": "in",
+          "name": "cert",
+          "type": {
+            "struct": "Cert"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "kind",
+          "type": {
+            "enum": "Bk"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "n",
+          "type": "counter"
+        }
+      ],
+      "ret": {
+        "struct": "Bound"
+      }
+    },
+    {
+      "body": [
+        {
+          "let": {
+            "init": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "regions"
+              }
+            },
+            "name": "regions",
+            "type": {
+              "frozen": {
+                "vec": {
+                  "elem": {
+                    "struct": "Region"
+                  },
+                  "max": 8208
+                }
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "terms"
+              }
+            },
+            "name": "terms",
+            "type": {
+              "frozen": {
+                "vec": {
+                  "elem": {
+                    "struct": "Term"
+                  },
+                  "max": 131328
+                }
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "len": {
+                "var": "regions"
+              }
+            },
+            "name": "tmp1",
+            "type": "u32"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "len": {
+                "var": "terms"
+              }
+            },
+            "name": "tmp2",
+            "type": "u32"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp1"
+                },
+                "op": "eq",
+                "right": {
+                  "u32": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "enumval": {
+                      "type": "Cr",
+                      "variant": "CrNoRegions"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "index": {
+                "base": {
+                  "var": "regions"
+                },
+                "index": {
+                  "u32": 0
+                }
+              }
+            },
+            "name": "root",
+            "type": {
+              "struct": "Region"
+            }
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "root"
+                    },
+                    "name": "kind"
+                  }
+                },
+                "op": "ne",
+                "right": {
+                  "enumval": {
+                    "type": "Rk",
+                    "variant": "RkRoot"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "enumval": {
+                      "type": "Cr",
+                      "variant": "CrRootKind"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "root"
+                    },
+                    "name": "parent"
+                  }
+                },
+                "op": "ne",
+                "right": {
+                  "u32": 4294967295
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "enumval": {
+                      "type": "Cr",
+                      "variant": "CrRootParent"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "or": {
+                "left": {
+                  "cmp": {
+                    "left": {
+                      "field": {
+                        "base": {
+                          "var": "root"
+                        },
+                        "name": "lo"
+                      }
+                    },
+                    "op": "ne",
+                    "right": {
+                      "u32": 0
+                    }
+                  }
+                },
+                "right": {
+                  "cmp": {
+                    "left": {
+                      "field": {
+                        "base": {
+                          "var": "root"
+                        },
+                        "name": "hi"
+                      }
+                    },
+                    "op": "ne",
+                    "right": {
+                      "var": "codelen"
+                    }
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "enumval": {
+                      "type": "Cr",
+                      "variant": "CrRootRange"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "ends",
+            "type": {
+              "vec": {
+                "elem": "u32",
+                "max": 8208
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "u32": 0
+            },
+            "name": "i",
+            "type": "u32"
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "push": {
+                  "seq": {
+                    "var": "ends"
+                  },
+                  "value": {
+                    "field": {
+                      "base": {
+                        "index": {
+                          "base": {
+                            "var": "regions"
+                          },
+                          "index": {
+                            "var": "i"
+                          }
+                        }
+                      },
+                      "name": "lo"
+                    }
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "i"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "i"
+                      },
+                      "op": "add",
+                      "right": {
+                        "u32": 1
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "i"
+                },
+                "op": "lt",
+                "right": {
+                  "var": "tmp1"
+                }
+              }
+            },
+            "variant": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "var": "tmp1"
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "sub",
+                "right": {
+                  "cast": {
+                    "arg": {
+                      "var": "i"
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "var": "i"
+            },
+            "value": {
+              "u32": 1
+            }
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "let": {
+                  "init": {
+                    "index": {
+                      "base": {
+                        "var": "regions"
+                      },
+                      "index": {
+                        "var": "i"
+                      }
+                    }
+                  },
+                  "name": "tmp3",
+                  "type": {
+                    "struct": "Region"
+                  }
+                }
+              },
+              {
+                "let": {
+                  "init": {
+                    "field": {
+                      "base": {
+                        "var": "tmp3"
+                      },
+                      "name": "parent"
+                    }
+                  },
+                  "name": "tmp4",
+                  "type": "u32"
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "var": "tmp3"
+                          },
+                          "name": "kind"
+                        }
+                      },
+                      "op": "eq",
+                      "right": {
+                        "enumval": {
+                          "type": "Rk",
+                          "variant": "RkRoot"
+                        }
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrTwoRoots"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "var": "tmp4"
+                      },
+                      "op": "ge",
+                      "right": {
+                        "var": "i"
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrParentOrder"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "var": "tmp3"
+                          },
+                          "name": "lo"
+                        }
+                      },
+                      "op": "gt",
+                      "right": {
+                        "field": {
+                          "base": {
+                            "var": "tmp3"
+                          },
+                          "name": "hi"
+                        }
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrBackwards"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "let": {
+                  "init": {
+                    "index": {
+                      "base": {
+                        "var": "regions"
+                      },
+                      "index": {
+                        "var": "tmp4"
+                      }
+                    }
+                  },
+                  "name": "tmp5",
+                  "type": {
+                    "struct": "Region"
+                  }
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "or": {
+                      "left": {
+                        "cmp": {
+                          "left": {
+                            "field": {
+                              "base": {
+                                "var": "tmp3"
+                              },
+                              "name": "lo"
+                            }
+                          },
+                          "op": "lt",
+                          "right": {
+                            "field": {
+                              "base": {
+                                "var": "tmp5"
+                              },
+                              "name": "lo"
+                            }
+                          }
+                        }
+                      },
+                      "right": {
+                        "cmp": {
+                          "left": {
+                            "field": {
+                              "base": {
+                                "var": "tmp3"
+                              },
+                              "name": "hi"
+                            }
+                          },
+                          "op": "gt",
+                          "right": {
+                            "field": {
+                              "base": {
+                                "var": "tmp5"
+                              },
+                              "name": "hi"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrNotNested"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "var": "tmp3"
+                          },
+                          "name": "lo"
+                        }
+                      },
+                      "op": "lt",
+                      "right": {
+                        "index": {
+                          "base": {
+                            "var": "ends"
+                          },
+                          "index": {
+                            "var": "tmp4"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrOverlap"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "index": {
+                      "base": {
+                        "var": "ends"
+                      },
+                      "index": {
+                        "var": "tmp4"
+                      }
+                    }
+                  },
+                  "value": {
+                    "field": {
+                      "base": {
+                        "var": "tmp3"
+                      },
+                      "name": "hi"
+                    }
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "i"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "i"
+                      },
+                      "op": "add",
+                      "right": {
+                        "u32": 1
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "i"
+                },
+                "op": "lt",
+                "right": {
+                  "var": "tmp1"
+                }
+              }
+            },
+            "variant": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "var": "tmp1"
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "sub",
+                "right": {
+                  "cast": {
+                    "arg": {
+                      "var": "i"
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "var": "i"
+            },
+            "value": {
+              "u32": 0
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "bool": false
+            },
+            "name": "tmp6",
+            "type": "bool"
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "let": {
+                  "init": {
+                    "index": {
+                      "base": {
+                        "var": "regions"
+                      },
+                      "index": {
+                        "var": "i"
+                      }
+                    }
+                  },
+                  "name": "tmp7",
+                  "type": {
+                    "struct": "Region"
+                  }
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "field": {
+                          "base": {
+                            "var": "tmp7"
+                          },
+                          "name": "cost"
+                        }
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "tmp2"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp6"
+                  },
+                  "fn": "sum_fits"
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "un": {
+                      "arg": {
+                        "var": "tmp6"
+                      },
+                      "op": "not"
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrTermRange"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "field": {
+                          "base": {
+                            "var": "tmp7"
+                          },
+                          "name": "stack"
+                        }
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "tmp2"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp6"
+                  },
+                  "fn": "sum_fits"
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "un": {
+                      "arg": {
+                        "var": "tmp6"
+                      },
+                      "op": "not"
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrTermRange"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "field": {
+                          "base": {
+                            "var": "tmp7"
+                          },
+                          "name": "mem"
+                        }
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "tmp2"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp6"
+                  },
+                  "fn": "sum_fits"
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "un": {
+                      "arg": {
+                        "var": "tmp6"
+                      },
+                      "op": "not"
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrTermRange"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "i"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "i"
+                      },
+                      "op": "add",
+                      "right": {
+                        "u32": 1
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "i"
+                },
+                "op": "lt",
+                "right": {
+                  "var": "tmp1"
+                }
+              }
+            },
+            "variant": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "var": "tmp1"
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "sub",
+                "right": {
+                  "cast": {
+                    "arg": {
+                      "var": "i"
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "var": "i"
+            },
+            "value": {
+              "u32": 0
+            }
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "let": {
+                  "init": {
+                    "index": {
+                      "base": {
+                        "var": "terms"
+                      },
+                      "index": {
+                        "var": "i"
+                      }
+                    }
+                  },
+                  "name": "tmp8",
+                  "type": {
+                    "struct": "Term"
+                  }
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "var": "tmp8"
+                          },
+                          "name": "coef"
+                        }
+                      },
+                      "op": "eq",
+                      "right": {
+                        "counter": 0
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrZeroTerm"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "var": "tmp8"
+                          },
+                          "name": "base"
+                        }
+                      },
+                      "op": "eq",
+                      "right": {
+                        "u32": 0
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrBase"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "var": "tmp8"
+                          },
+                          "name": "degree"
+                        }
+                      },
+                      "op": "gt",
+                      "right": {
+                        "u32": 4
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "enumval": {
+                            "type": "Cr",
+                            "variant": "CrDegree"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "i"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "i"
+                      },
+                      "op": "add",
+                      "right": {
+                        "u32": 1
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "i"
+                },
+                "op": "lt",
+                "right": {
+                  "var": "tmp2"
+                }
+              }
+            },
+            "variant": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "var": "tmp2"
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "sub",
+                "right": {
+                  "cast": {
+                    "arg": {
+                      "var": "i"
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "cert"
+                    },
+                    "name": "complexity"
+                  }
+                },
+                "op": "eq",
+                "right": {
+                  "enumval": {
+                    "type": "Cc",
+                    "variant": "CcLinear"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "let": {
+                  "init": {
+                    "field": {
+                      "base": {
+                        "var": "root"
+                      },
+                      "name": "cost"
+                    }
+                  },
+                  "name": "tmp9",
+                  "type": {
+                    "struct": "Sum"
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "i"
+                  },
+                  "value": {
+                    "u32": 0
+                  }
+                }
+              },
+              {
+                "while": {
+                  "body": [
+                    {
+                      "let": {
+                        "init": {
+                          "index": {
+                            "base": {
+                              "var": "terms"
+                            },
+                            "index": {
+                              "bin": {
+                                "left": {
+                                  "field": {
+                                    "base": {
+                                      "var": "tmp9"
+                                    },
+                                    "name": "first"
+                                  }
+                                },
+                                "op": "add",
+                                "right": {
+                                  "var": "i"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "name": "tmp10",
+                        "type": {
+                          "struct": "Term"
+                        }
+                      }
+                    },
+                    {
+                      "if": {
+                        "cond": {
+                          "or": {
+                            "left": {
+                              "cmp": {
+                                "left": {
+                                  "field": {
+                                    "base": {
+                                      "var": "tmp10"
+                                    },
+                                    "name": "base"
+                                  }
+                                },
+                                "op": "ne",
+                                "right": {
+                                  "u32": 1
+                                }
+                              }
+                            },
+                            "right": {
+                              "cmp": {
+                                "left": {
+                                  "field": {
+                                    "base": {
+                                      "var": "tmp10"
+                                    },
+                                    "name": "degree"
+                                  }
+                                },
+                                "op": "gt",
+                                "right": {
+                                  "u32": 1
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "else": [],
+                        "then": [
+                          {
+                            "return": {
+                              "value": {
+                                "enumval": {
+                                  "type": "Cr",
+                                  "variant": "CrNotLinear"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "assign": {
+                        "place": {
+                          "var": "i"
+                        },
+                        "value": {
+                          "bin": {
+                            "left": {
+                              "var": "i"
+                            },
+                            "op": "add",
+                            "right": {
+                              "u32": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "var": "i"
+                      },
+                      "op": "lt",
+                      "right": {
+                        "field": {
+                          "base": {
+                            "var": "tmp9"
+                          },
+                          "name": "count"
+                        }
+                      }
+                    }
+                  },
+                  "variant": {
+                    "bin": {
+                      "left": {
+                        "cast": {
+                          "arg": {
+                            "field": {
+                              "base": {
+                                "var": "tmp9"
+                              },
+                              "name": "count"
+                            }
+                          },
+                          "type": "counter"
+                        }
+                      },
+                      "op": "sub",
+                      "right": {
+                        "cast": {
+                          "arg": {
+                            "var": "i"
+                          },
+                          "type": "counter"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "enumval": {
+                "type": "Cr",
+                "variant": "CrOk"
+              }
+            }
+          }
+        }
+      ],
+      "name": "cert_check",
+      "params": [
+        {
+          "mode": "in",
+          "name": "cert",
+          "type": {
+            "struct": "Cert"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "codelen",
+          "type": "u32"
+        }
+      ],
+      "ret": {
+        "enum": "Cr"
+      }
     },
     {
       "body": [
@@ -40186,6 +42558,624 @@
     {
       "body": [
         {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "s"
+                    },
+                    "name": "count"
+                  }
+                },
+                "op": "eq",
+                "right": {
+                  "u32": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": true
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "s"
+                    },
+                    "name": "first"
+                  }
+                },
+                "op": "ge",
+                "right": {
+                  "var": "held"
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "s"
+                    },
+                    "name": "count"
+                  }
+                },
+                "op": "le",
+                "right": {
+                  "bin": {
+                    "left": {
+                      "var": "held"
+                    },
+                    "op": "sub",
+                    "right": {
+                      "field": {
+                        "base": {
+                          "var": "s"
+                        },
+                        "name": "first"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "sum_fits",
+      "params": [
+        {
+          "mode": "in",
+          "name": "s",
+          "type": {
+            "struct": "Sum"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "held",
+          "type": "u32"
+        }
+      ],
+      "ret": "bool"
+    },
+    {
+      "body": [
+        {
+          "let": {
+            "init": {
+              "structval": {
+                "fields": {
+                  "ok": {
+                    "bool": true
+                  },
+                  "value": {
+                    "counter": 0
+                  }
+                },
+                "type": "Bound"
+              }
+            },
+            "name": "out",
+            "type": {
+              "struct": "Bound"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "u32": 0
+            },
+            "name": "i",
+            "type": "u32"
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "let": {
+                  "init": {
+                    "bin": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "var": "s"
+                          },
+                          "name": "first"
+                        }
+                      },
+                      "op": "add",
+                      "right": {
+                        "var": "i"
+                      }
+                    }
+                  },
+                  "name": "tmp1",
+                  "type": "u32"
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "var": "tmp1"
+                      },
+                      "op": "ge",
+                      "right": {
+                        "len": {
+                          "var": "terms"
+                        }
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "structval": {
+                            "fields": {
+                              "ok": {
+                                "bool": false
+                              },
+                              "value": {
+                                "counter": 0
+                              }
+                            },
+                            "type": "Bound"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp2",
+                  "type": {
+                    "struct": "Bound"
+                  }
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "index": {
+                          "base": {
+                            "var": "terms"
+                          },
+                          "index": {
+                            "var": "tmp1"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "n"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp2"
+                  },
+                  "fn": "term_value"
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp3",
+                  "type": {
+                    "struct": "Bound"
+                  }
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "out"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "tmp2"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp3"
+                  },
+                  "fn": "bound_add"
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "out"
+                  },
+                  "value": {
+                    "var": "tmp3"
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "i"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "i"
+                      },
+                      "op": "add",
+                      "right": {
+                        "u32": 1
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "and": {
+                "left": {
+                  "cmp": {
+                    "left": {
+                      "var": "i"
+                    },
+                    "op": "lt",
+                    "right": {
+                      "field": {
+                        "base": {
+                          "var": "s"
+                        },
+                        "name": "count"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "out"
+                    },
+                    "name": "ok"
+                  }
+                }
+              }
+            },
+            "variant": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "field": {
+                        "base": {
+                          "var": "s"
+                        },
+                        "name": "count"
+                      }
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "sub",
+                "right": {
+                  "cast": {
+                    "arg": {
+                      "var": "i"
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "var": "out"
+            }
+          }
+        }
+      ],
+      "name": "sum_value",
+      "params": [
+        {
+          "mode": "in",
+          "name": "terms",
+          "type": {
+            "frozen": {
+              "vec": {
+                "elem": {
+                  "struct": "Term"
+                },
+                "max": 131328
+              }
+            }
+          }
+        },
+        {
+          "mode": "in",
+          "name": "s",
+          "type": {
+            "struct": "Sum"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "n",
+          "type": "counter"
+        }
+      ],
+      "ret": {
+        "struct": "Bound"
+      }
+    },
+    {
+      "body": [
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "t"
+                    },
+                    "name": "coef"
+                  }
+                },
+                "op": "eq",
+                "right": {
+                  "counter": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "structval": {
+                      "fields": {
+                        "ok": {
+                          "bool": true
+                        },
+                        "value": {
+                          "counter": 0
+                        }
+                      },
+                      "type": "Bound"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "growth",
+            "type": {
+              "struct": "Bound"
+            }
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "cast": {
+                    "arg": {
+                      "field": {
+                        "base": {
+                          "var": "t"
+                        },
+                        "name": "base"
+                      }
+                    },
+                    "type": "counter"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "var": "n"
+                }
+              }
+            ],
+            "dest": {
+              "var": "growth"
+            },
+            "fn": "bound_pow"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "power",
+            "type": {
+              "struct": "Bound"
+            }
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "n"
+                }
+              },
+              {
+                "in": {
+                  "cast": {
+                    "arg": {
+                      "field": {
+                        "base": {
+                          "var": "t"
+                        },
+                        "name": "degree"
+                      }
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            ],
+            "dest": {
+              "var": "power"
+            },
+            "fn": "bound_pow"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "scaled",
+            "type": {
+              "struct": "Bound"
+            }
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "structval": {
+                    "fields": {
+                      "ok": {
+                        "bool": true
+                      },
+                      "value": {
+                        "field": {
+                          "base": {
+                            "var": "t"
+                          },
+                          "name": "coef"
+                        }
+                      }
+                    },
+                    "type": "Bound"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "var": "growth"
+                }
+              }
+            ],
+            "dest": {
+              "var": "scaled"
+            },
+            "fn": "bound_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "total",
+            "type": {
+              "struct": "Bound"
+            }
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "scaled"
+                }
+              },
+              {
+                "in": {
+                  "var": "power"
+                }
+              }
+            ],
+            "dest": {
+              "var": "total"
+            },
+            "fn": "bound_mul"
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "var": "total"
+            }
+          }
+        }
+      ],
+      "name": "term_value",
+      "params": [
+        {
+          "mode": "in",
+          "name": "t",
+          "type": {
+            "struct": "Term"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "n",
+          "type": "counter"
+        }
+      ],
+      "ret": {
+        "struct": "Bound"
+      }
+    },
+    {
+      "body": [
+        {
           "let": {
             "init": {
               "var": "top"
@@ -42590,6 +45580,19 @@
     {
       "fields": [
         {
+          "name": "ok",
+          "type": "bool"
+        },
+        {
+          "name": "value",
+          "type": "counter"
+        }
+      ],
+      "name": "Bound"
+    },
+    {
+      "fields": [
+        {
           "name": "pc",
           "type": "u32"
         },
@@ -42603,6 +45606,49 @@
         }
       ],
       "name": "Bt"
+    },
+    {
+      "fields": [
+        {
+          "name": "config",
+          "type": {
+            "enum": "Cfg"
+          }
+        },
+        {
+          "name": "complexity",
+          "type": {
+            "enum": "Cc"
+          }
+        },
+        {
+          "name": "regions",
+          "type": {
+            "frozen": {
+              "vec": {
+                "elem": {
+                  "struct": "Region"
+                },
+                "max": 8208
+              }
+            }
+          }
+        },
+        {
+          "name": "terms",
+          "type": {
+            "frozen": {
+              "vec": {
+                "elem": {
+                  "struct": "Term"
+                },
+                "max": 131328
+              }
+            }
+          }
+        }
+      ],
+      "name": "Cert"
     },
     {
       "fields": [
@@ -42896,6 +45942,47 @@
     {
       "fields": [
         {
+          "name": "kind",
+          "type": {
+            "enum": "Rk"
+          }
+        },
+        {
+          "name": "parent",
+          "type": "u32"
+        },
+        {
+          "name": "lo",
+          "type": "u32"
+        },
+        {
+          "name": "hi",
+          "type": "u32"
+        },
+        {
+          "name": "cost",
+          "type": {
+            "struct": "Sum"
+          }
+        },
+        {
+          "name": "stack",
+          "type": {
+            "struct": "Sum"
+          }
+        },
+        {
+          "name": "mem",
+          "type": {
+            "struct": "Sum"
+          }
+        }
+      ],
+      "name": "Region"
+    },
+    {
+      "fields": [
+        {
           "name": "lo",
           "type": "u32"
         },
@@ -42921,6 +46008,36 @@
         }
       ],
       "name": "Rep"
+    },
+    {
+      "fields": [
+        {
+          "name": "first",
+          "type": "u32"
+        },
+        {
+          "name": "count",
+          "type": "u32"
+        }
+      ],
+      "name": "Sum"
+    },
+    {
+      "fields": [
+        {
+          "name": "coef",
+          "type": "counter"
+        },
+        {
+          "name": "base",
+          "type": "u32"
+        },
+        {
+          "name": "degree",
+          "type": "u32"
+        }
+      ],
+      "name": "Term"
     },
     {
       "fields": [

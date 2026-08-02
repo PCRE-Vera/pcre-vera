@@ -15,7 +15,7 @@ from .. import leanexport
 from ..engine.program import program
 from ..oracle import conformance
 from ..paths import GEN_DIR
-from . import go, js, lowering
+from . import certificates, go, js, lowering
 
 GO_PATH = GEN_DIR / "go" / "internal" / "engine" / "engine.go"
 JS_PATH = GEN_DIR / "js" / "engine.mjs"
@@ -73,6 +73,7 @@ def generate() -> tuple[str, list[Output]]:
         ),
         Output(conformance.PATH, conformance.corpus_text()),
         Output(lowering.PATH, lowering.corpus_text()),
+        Output(certificates.PATH, certificates.corpus_text()),
     ]
 
 
@@ -82,6 +83,7 @@ __all__ = [
     "PROBE_GO_PATH",
     "PROBE_JS_PATH",
     "Output",
+    "certificates",
     "generate",
     "go",
     "js",
