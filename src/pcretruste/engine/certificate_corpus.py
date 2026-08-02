@@ -15,6 +15,12 @@ it with the engine it has and the checker is handed the program that engine
 would really run. Two runners that disagree about the bytecode therefore
 disagree here, which is the point.
 
+The region tree is the compiler's — it emits one while it still has the AST
+in hand — so a case names a pattern and gets the tree that pattern really
+compiles to. The cases about trees that are not trees hand the checker one of
+their own instead, since no compiler would emit those and the rules that refuse
+them still have to be exercised.
+
 The certificates are built by `price` below, which is BOUNDS.md written a
 second time in Python. That is deliberate. Writing out four polynomials per
 region by hand would be transcription, and transcription is where a corpus
@@ -27,6 +33,7 @@ build instead of rewriting the file it is supposed to be held to.
 
 from __future__ import annotations
 
+import functools
 from dataclasses import dataclass, field, replace
 
 from ..oracle import conformance
@@ -34,7 +41,16 @@ from ..paths import CONFORMANCE_DIR
 from ..tir.interp import Frozen, Seq, StructValue, Tag
 from ..tir.types import CAP, CEILING
 from . import spec
-from .driver import ZERO, Certificate, CompiledPattern, Engine, Poly, Region
+from .driver import (
+    ZERO,
+    Certificate,
+    CompiledPattern,
+    Engine,
+    Poly,
+    Price,
+    Region,
+    coef,
+)
 from .program import program
 
 PATH = CONFORMANCE_DIR / "certificates.json"
@@ -61,7 +77,7 @@ refuse rather than wrap at the far end of the range.
 KINDS = (("cost", "BkCost"), ("stack", "BkStack"), ("mem", "BkMem"))
 """What the file calls each bound, and what the engine calls the same one."""
 
-DEGREES = tuple(range(spec.MAX_DEGREE + 1))
+DEGREES = spec.DEGREES
 
 SEQUENCE = ("RkRoot", "RkGroup", "RkBranch")
 """The kinds whose code is read straight through, one instruction at a time."""
@@ -91,11 +107,16 @@ SIMPLE_OPS = frozenset(
 # --- the arithmetic of BOUNDS.md section 2 ---
 
 
-def coef(p: Poly, degree: int) -> int:
-    return p.coefs[degree] if degree < len(p.coefs) else 0
-
-
 def _norm(base: int, coefs) -> Poly:
+    """The canonical form, and the saturation point the checker refuses at.
+
+    Python counts as high as it likes and a counter does not, so a bound this
+    arithmetic could write down and the engine could not hold is refused here
+    rather than later: `price` promises a certificate the checker accepts, and
+    the checker answers `CrOverflow` for exactly this.
+    """
+    if base > CAP or any(one > CAP for one in coefs):
+        raise ValueError("a bound past what a counter holds")
     trimmed = tuple(coefs)
     while trimmed and trimmed[-1] == 0:
         trimmed = trimmed[:-1]
@@ -151,24 +172,33 @@ class Program:
 
     code: tuple[tuple[str, int, int], ...]
     reps: tuple[dict, ...]
+    regions: tuple[Region, ...]
     ncap: int
     nregs: int
 
 
 def read(built: CompiledPattern) -> Program:
     re = built.re
-    code = _items(re.fields["code"])
-    reps = _items(re.fields["reps"])
     return Program(
         code=tuple(
-            (_variant_of(one, "op"), one.fields["arg"], one.fields["alt"]) for one in code
+            (_variant_of(one, "op"), one.fields["arg"], one.fields["alt"])
+            for one in _items(re.fields["code"])
         ),
         reps=tuple(
             {
                 key: value.variant if isinstance(value, Tag) else value
                 for key, value in one.fields.items()
             }
-            for one in reps
+            for one in _items(re.fields["reps"])
+        ),
+        regions=tuple(
+            Region(
+                kind=_variant_of(one, "kind"),
+                parent=one.fields["parent"],
+                lo=one.fields["lo"],
+                hi=one.fields["hi"],
+            )
+            for one in _items(re.fields["regions"])
         ),
         ncap=re.fields["ncap"],
         nregs=re.fields["nregs"],
@@ -188,14 +218,15 @@ def _variant_of(one: StructValue, name: str) -> str:
     return tag.variant
 
 
-def _span(prog: Program, tree, priced, kids: list[int], lo: int, hi: int, acc: Acc):
+def _span(prog: Program, priced, kids: list[int], lo: int, hi: int, acc: Acc) -> None:
     """Read a stretch of bytecode, charging every instruction to the flow."""
+    tree = prog.regions
     pc = lo
     while pc < hi:
         if kids and tree[kids[0]].lo == pc:
             at = kids.pop(0)
             kid = priced[at]
-            if not tree[at].hi > pc or tree[at].hi > hi:
+            if tree[at].hi <= pc or tree[at].hi > hi:
                 raise ValueError(f"region {at} is not a child of this span")
             acc.work = padd(acc.work, pmul(acc.flow, kid.work))
             acc.stack = padd(acc.stack, pmul(acc.flow, kid.stack))
@@ -232,20 +263,20 @@ def _alt(priced, kids: list[int]) -> Acc:
     return acc
 
 
-def _repeat(prog: Program, tree, priced, kids: list[int], at: int) -> Acc:
-    here = tree[at]
+def _repeat(prog: Program, priced, kids: list[int], at: int) -> Acc:
+    here = prog.regions[at]
     lo, hi = here.lo, here.hi
     head = prog.code[lo]
     acc = Acc(ZERO, ZERO, ZERO, const(1))
     if head[0] == "OpSplit":
-        _span(prog, tree, priced, kids, lo + 1, hi, acc)
+        _span(prog, priced, kids, lo + 1, hi, acc)
         acc.work = padd(acc.work, const(1))
         acc.stack = padd(acc.stack, const(1))
         acc.flow = padd(acc.flow, const(1))
         return acc
 
     rep = prog.reps[head[1]]
-    _span(prog, tree, priced, kids, lo + 3, hi - 1, acc)
+    _span(prog, priced, kids, lo + 3, hi - 1, acc)
     ways = flat(acc.flow)
     if ways is None:
         raise ValueError("a repeat body whose ambiguity grows with the subject")
@@ -261,23 +292,25 @@ def _repeat(prog: Program, tree, priced, kids: list[int], at: int) -> Acc:
             raise ValueError("a pass count past what a counter holds")
         rounds = const(raised) if bounded else Poly((raised,), ways)
 
-    body, per = Acc(**vars(acc)), const(ways)
+    body, per = acc, const(ways)
     return Acc(
         work=padd(const(1), pmul(rounds, padd(padd(const(2), body.work), per))),
         stack=pmul(rounds, padd(const(1), body.stack)),
-        trail=padd(
-            const(1), pmul(rounds, padd(padd(const(1), per), body.trail))
-        ),
+        trail=padd(const(1), pmul(rounds, padd(padd(const(1), per), body.trail))),
         flow=pmul(rounds, padd(const(1), per)),
     )
 
 
-def price(prog: Program, tree: tuple[Region, ...]) -> Certificate:
-    """The smallest certificate the checker accepts for this tree.
+def price(prog: Program) -> Certificate:
+    """The smallest certificate the checker accepts for this program.
 
     Bottom up, because a region is priced from what its children cost, which is
-    the same induction the checker walks and the same one Layer A will.
+    the same induction the checker walks and the same one Layer A will. This is
+    what the analyzer will do; here it builds the corpus, so that an
+    exact-minimum case really is exact and a mutation of one really is a unit
+    short.
     """
+    tree = prog.regions
     kids: dict[int, list[int]] = {at: [] for at in range(len(tree))}
     for at, region in enumerate(tree):
         if at:
@@ -288,12 +321,12 @@ def price(prog: Program, tree: tuple[Region, ...]) -> Certificate:
         mine = list(kids[at])
         if region.kind in SEQUENCE:
             acc = Acc(ZERO, ZERO, ZERO, const(1))
-            _span(prog, tree, priced, mine, region.lo, region.hi, acc)
+            _span(prog, priced, mine, region.lo, region.hi, acc)
         elif region.kind == "RkAlt":
             acc = _alt(priced, mine)
             mine = []
         elif region.kind == "RkRepeat":
-            acc = _repeat(prog, tree, priced, mine, at)
+            acc = _repeat(prog, priced, mine, at)
         else:
             raise ValueError(f"no composition rule for {region.kind}")
         if mine:
@@ -302,30 +335,36 @@ def price(prog: Program, tree: tuple[Region, ...]) -> Certificate:
 
     root = priced[0]
     novec = (prog.ncap + 1) * 2
-    setup = (prog.nregs + novec) * 4
-    deliver = novec * 4
-    reset = prog.nregs * 4
+    setup = (prog.nregs + novec) * spec.REG_SIZE
+    deliver = novec * spec.REG_SIZE
+    reset = prog.nregs * spec.REG_SIZE
     scratch = ZERO
     for quantity, esize in (("stack", spec.BT_SIZE), ("trail", spec.UNDO_SIZE)):
         held = getattr(root, quantity)
-        capacity = ZERO if held == ZERO else padd(const(4), pmul(held, const(2)))
+        capacity = (
+            ZERO
+            if held == ZERO
+            else padd(const(spec.GROW_MIN), pmul(held, const(spec.GROW_FACTOR)))
+        )
         scratch = padd(scratch, pmul(capacity, const(esize)))
     return Certificate(
-        regions=tuple(
-            replace(
-                region,
-                work=priced[at].work,
-                outs=priced[at].flow,
-                stack=priced[at].stack,
-                trail=priced[at].trail,
-            )
-            for at, region in enumerate(tree)
+        prices=tuple(
+            Price(work=one.work, outs=one.flow, stack=one.stack, trail=one.trail)
+            for one in (priced[at] for at in range(len(tree)))
         ),
+        # The 3 and the 2 are the two bounds BOUNDS.md section 5 derives from
+        # the growth schedule rather than numbers the matcher holds: the
+        # buffers a doubling run allocates come to twice its final reservation
+        # and the ones it copies out of to one more, and holding both at once
+        # is what makes the memory peak twice the reservation.
         cost=padd(
             const(setup + deliver),
             padd(
                 pmul(
-                    padd(const(reset), padd(root.work, pmul(root.trail, const(4)))),
+                    padd(
+                        const(reset),
+                        padd(root.work, pmul(root.trail, const(spec.REG_SIZE))),
+                    ),
                     STEP,
                 ),
                 pmul(scratch, const(3)),
@@ -349,6 +388,13 @@ class Case:
     pattern: bytes
     cert: Certificate
     config: str = "CfgBacktrack"
+    regions: tuple[Region, ...] | None = None
+    """A region table to put in place of the one the compiler emitted.
+
+    Every rule that holds the tree to the bytecode needs a tree that does not,
+    and since the compiler is what emits trees now, the only way to write one
+    down is to hand it to the checker where the compiler's would have been.
+    """
     bounds: tuple[dict, ...] = field(default=(), compare=False)
     """What the file records this certificate evaluating to.
 
@@ -356,11 +402,23 @@ class Case:
     not about numbers the case never claimed.
     """
 
+    def subject(self) -> CompiledPattern:
+        """The compiled pattern the checker is handed, doctored tree and all."""
+        built = compiled(self.pattern)
+        return built if self.regions is None else built.with_regions(self.regions)
+
 
 ENGINE = Engine()
 
 
+@functools.lru_cache(maxsize=None)
 def compiled(pattern: bytes) -> CompiledPattern:
+    """A compiled pattern, remembered.
+
+    Compiling goes through the reference interpreter, which is slow enough that
+    the corpus and its tests compiling `abc` two dozen times each is worth
+    avoiding. A compiled pattern is immutable, so one serves every caller.
+    """
     built = ENGINE.compile_pattern(pattern)
     if not isinstance(built, CompiledPattern):
         raise AssertionError(f"{pattern!r} does not compile: {built}")
@@ -375,24 +433,31 @@ def root(hi: int) -> Region:
     return region("RkRoot", spec.NONE, 0, hi)
 
 
-def minimal(pattern: bytes, *regions: Region) -> Certificate:
-    """The exact-minimum certificate for a pattern and a hand-written tree."""
-    return price(read(compiled(pattern)), regions)
+def minimal(pattern: bytes) -> Certificate:
+    """The exact-minimum certificate for a pattern's own region tree."""
+    return price(read(compiled(pattern)))
+
+
+def unpriced(count: int) -> Certificate:
+    """A certificate that claims nothing, for the cases about the tree itself."""
+    return Certificate(prices=(Price(),) * count)
 
 
 def less(cert: Certificate, *path) -> Certificate:
     """The same certificate with one coefficient a single unit lower.
 
     The path is either a whole-pattern bound and a power — `("cost", 1)` — or a
-    region, one of its four quantities, and a power.
+    region, one of the four things it is priced for, and a power.
     """
     *where, degree = path
     if len(where) == 1:
         return replace(cert, **{where[0]: _drop(getattr(cert, where[0]), degree)})
     at, quantity = where
-    regions = list(cert.regions)
-    regions[at] = replace(regions[at], **{quantity: _drop(getattr(regions[at], quantity), degree)})
-    return replace(cert, regions=tuple(regions))
+    prices = list(cert.prices)
+    prices[at] = replace(
+        prices[at], **{quantity: _drop(getattr(prices[at], quantity), degree)}
+    )
+    return replace(cert, prices=tuple(prices))
 
 
 def _drop(p: Poly, degree: int) -> Poly:
@@ -407,58 +472,27 @@ def claiming(cert: Certificate, **over) -> Certificate:
     return replace(cert, **over)
 
 
-LITERAL = minimal(b"abc", root(4))
-CAPTURE = minimal(b"(a)", root(4), region("RkGroup", 0, 0, 3))
-ALTERNATION = minimal(
-    b"a|b",
-    root(5),
-    region("RkAlt", 0, 0, 4),
-    region("RkBranch", 1, 1, 2),
-    region("RkBranch", 1, 3, 4),
-)
-OPTIONAL = minimal(b"a?", root(3), region("RkRepeat", 0, 0, 2))
-LAZY = minimal(b"a??", root(3), region("RkRepeat", 0, 0, 2))
-STAR = minimal(b"a*", root(6), region("RkRepeat", 0, 0, 5))
-COUNTED = minimal(b"a{2,5}", root(6), region("RkRepeat", 0, 0, 5))
-GROUPED = minimal(
-    b"(ab)*c",
-    root(10),
-    region("RkRepeat", 0, 0, 8),
-    region("RkGroup", 1, 3, 7),
-)
-LOOPED_ALT = minimal(
-    b"(a|b)*c",
-    root(12),
-    region("RkRepeat", 0, 0, 10),
-    region("RkGroup", 1, 3, 9),
-    region("RkAlt", 2, 4, 8),
-    region("RkBranch", 3, 5, 6),
-    region("RkBranch", 3, 7, 8),
-)
-AMBIGUOUS = minimal(
-    b"(?:a|a){0,3}",
-    root(9),
-    region("RkRepeat", 0, 0, 8),
-    region("RkAlt", 1, 3, 7),
-    region("RkBranch", 2, 4, 5),
-    region("RkBranch", 2, 6, 7),
-)
-EXPONENTIAL = minimal(
-    b"(?:a|a)*",
-    root(9),
-    region("RkRepeat", 0, 0, 8),
-    region("RkAlt", 1, 3, 7),
-    region("RkBranch", 2, 4, 5),
-    region("RkBranch", 2, 6, 7),
-)
+LITERAL = minimal(b"abc")
+CAPTURE = minimal(b"(a)")
+ALTERNATION = minimal(b"a|b")
+OPTIONAL = minimal(b"a?")
+LAZY = minimal(b"a??")
+STAR = minimal(b"a*")
+COUNTED = minimal(b"a{2,5}")
+GROUPED = minimal(b"(ab)*c")
+LOOPED_ALT = minimal(b"(a|b)*c")
+AMBIGUOUS = minimal(b"(?:a|a){0,3}")
+EXPONENTIAL = minimal(b"(?:a|a)*")
+EMPTY_BRANCH = minimal(b"(a|)")
+UNCAPTURED = minimal(b"(?:abc)")
 
 CASES: list[Case] = [
     Case(
         "literal",
         "Three characters and an accept. The whole cost is one visit per "
         "instruction at each of the n + 1 starting positions, plus the register "
-        "file and the ovector, sized and zeroed once and cleared again per "
-        "attempt.",
+        "file and the ovector, sized and zeroed once, cleared again per "
+        "attempt, and copied back out when the match is found.",
         "CrOk",
         b"abc",
         LITERAL,
@@ -483,6 +517,16 @@ CASES: list[Case] = [
         ALTERNATION,
     ),
     Case(
+        "an-empty-alternation-branch",
+        "`(a|)` compiles the second branch to nothing at all, so its region "
+        "covers no instruction. That is legal for a branch and for nothing "
+        "else: the alternation reads its shape off the branch list, so the "
+        "branch has to be there whether or not it holds anything.",
+        "CrOk",
+        b"(a|)",
+        EMPTY_BRANCH,
+    ),
+    Case(
         "optional",
         "One split whose arms are the body and what follows it.",
         "CrOk",
@@ -500,9 +544,9 @@ CASES: list[Case] = [
     Case(
         "star",
         "An unbounded repetition. Past the minimum count an iteration that "
-        "consumed nothing is the last one, so the loop runs at most n + 1 "
-        "times and the cost comes out quadratic once the starting positions "
-        "are counted in.",
+        "consumed nothing is the last one, so the head is reached at most "
+        "n + 2 times and the cost comes out quadratic once the starting "
+        "positions are counted in.",
         "CrOk",
         b"a*",
         STAR,
@@ -540,7 +584,7 @@ CASES: list[Case] = [
         "ambiguous-body-bounded",
         "A body with two ways to match the same character, repeated at most "
         "three times. Each iteration doubles the ways into the next, so the "
-        "flow through the head is 2^3 and the bound stays a number.",
+        "flow through the head is a power of two and the bound stays a number.",
         "CrOk",
         b"(?:a|a){0,3}",
         AMBIGUOUS,
@@ -548,9 +592,10 @@ CASES: list[Case] = [
     Case(
         "exponential",
         "The same body with no upper bound, which is where the growing base "
-        "comes from: the iteration count is n + 1, so the flow is 2^n and the "
-        "bound saturates within a few dozen bytes of subject. That is the "
-        "honest answer rather than a number nobody could budget for.",
+        "comes from: the head is reached n + 2 times, so the flow is a "
+        "multiple of 2^n and the bound saturates within a few dozen bytes of "
+        "subject. That is the honest answer rather than a number nobody could "
+        "budget for.",
         "CrOk",
         b"(?:a|a)*",
         EXPONENTIAL,
@@ -620,13 +665,16 @@ CASES: list[Case] = [
     ),
     # --- the same length, a different program ---
     Case(
-        "literal-certificate-on-a-capture",
-        "Four instructions either way, and the certificate for the literal is "
-        "one undo entry short of what two saves record. A checker given only a "
-        "length could not tell these two programs apart.",
+        "an-uncaptured-certificate-on-a-capture",
+        "Four instructions and the same three regions over the same three "
+        "ranges either way, and the only difference is that two of the "
+        "instructions are saves. A save records an undo entry, so the "
+        "certificate for the group that captures nothing is two entries short "
+        "of the one that does. A checker given only a length could not tell "
+        "these two programs apart at all.",
         "CrRegionTrail",
         b"(a)",
-        LITERAL,
+        UNCAPTURED,
     ),
     Case(
         "straight-line-certificate-on-a-branching-program",
@@ -635,7 +683,8 @@ CASES: list[Case] = [
         "nothing prices the choice it makes.",
         "CrOpcode",
         b"a|b",
-        minimal(b"abcd", root(5)),
+        unpriced(1),
+        regions=(root(5),),
     ),
     Case(
         "branching-certificate-on-a-straight-line-program",
@@ -643,18 +692,25 @@ CASES: list[Case] = [
         "code that has no split in it.",
         "CrShape",
         b"abcd",
-        ALTERNATION,
+        unpriced(4),
+        regions=(
+            root(5),
+            region("RkAlt", 0, 0, 4),
+            region("RkBranch", 1, 1, 2),
+            region("RkBranch", 1, 3, 4),
+        ),
     ),
     Case(
         "repeat-certificate-on-the-other-repetition",
-        "Two repetitions, and a region covering the first one's header and the "
-        "second one's tail. Nothing has to be recorded to make this refusable: "
+        "Two repetitions, and a region covering the first one\'s header and the "
+        "second one\'s tail. Nothing has to be recorded to make this refusable: "
         "each of the four opcodes names its own repetition, and the range pins "
         "the head, the body and the exit, so a repeat region cannot be about a "
         "quantifier other than the one it covers.",
         "CrShape",
         b"a*a*",
-        Certificate(regions=(root(11), region("RkRepeat", 0, 0, 10))),
+        unpriced(2),
+        regions=(root(11), region("RkRepeat", 0, 0, 10)),
     ),
     # --- the configuration the certificate is for ---
     Case(
@@ -681,6 +737,22 @@ CASES: list[Case] = [
         b"abc",
         claiming(LITERAL, config="CfgMemo"),
         config="CfgMemo",
+    ),
+    # --- one price per region ---
+    Case(
+        "fewer-prices-than-regions",
+        "A region nobody priced is a region the composition rules would read a "
+        "zero out of.",
+        "CrPrices",
+        b"a*",
+        claiming(STAR, prices=STAR.prices[:-1]),
+    ),
+    Case(
+        "more-prices-than-regions",
+        "And a price nobody emitted a region for is a claim about nothing.",
+        "CrPrices",
+        b"a*",
+        claiming(STAR, prices=STAR.prices + (Price(),)),
     ),
     # --- a unit short, one bound at a time ---
     #
@@ -736,7 +808,7 @@ CASES: list[Case] = [
     ),
     Case(
         "region-work-one-visit-short",
-        "The root's own price, a visit short. A region is checked against what "
+        "The root\'s own price, a visit short. A region is checked against what "
         "its children claim, so this fails at the region rather than at the "
         "total it feeds.",
         "CrRegionWork",
@@ -749,15 +821,15 @@ CASES: list[Case] = [
         "claims it pushes fewer.",
         "CrRegionStack",
         b"a*",
-        less(STAR, 1, "stack", 1),
+        less(STAR, 2, "stack", 1),
     ),
     Case(
         "region-trail-one-entry-short",
-        "Its undo entries, which the counter's zeroing, its increment and the "
+        "Its undo entries, which the counter\'s zeroing, its increment and the "
         "position it remembers all fill.",
         "CrRegionTrail",
         b"a*",
-        less(STAR, 1, "trail", 0),
+        less(STAR, 2, "trail", 0),
     ),
     Case(
         "region-outs-one-way-short",
@@ -765,122 +837,120 @@ CASES: list[Case] = [
         "everything after the loop be priced for fewer passes than it gets.",
         "CrRegionOuts",
         b"a*",
-        less(STAR, 1, "outs", 1),
+        less(STAR, 2, "outs", 1),
     ),
     Case(
         "inner-region-work-one-visit-short",
-        "A group two levels down, a visit short, to show that the induction "
+        "A group three levels down, a visit short, to show that the induction "
         "reaches the leaves rather than stopping at what the root claims.",
         "CrRegionWork",
         b"(ab)*c",
-        less(GROUPED, 2, "work", 0),
+        less(GROUPED, 3, "work", 0),
     ),
     Case(
         "inner-region-trail-one-entry-short",
         "And the two saves that group is there for.",
         "CrRegionTrail",
         b"(ab)*c",
-        less(GROUPED, 2, "trail", 0),
+        less(GROUPED, 3, "trail", 0),
     ),
     # --- what the composition rules refuse to price ---
     Case(
         "ambiguity-that-grows-with-the-subject",
         "A star inside a star. The inner one hands the outer one more ways to "
-        "match at every extra byte of subject, so the iteration count is a "
-        "power of a polynomial and no bound of this shape has that form. A "
-        "refusal is the honest answer.",
+        "match at every extra byte of subject, so the pass count is a power of "
+        "a polynomial and no bound of this shape has that form. A refusal is "
+        "the honest answer.",
         "CrAmbiguous",
         b"(?:a*)*",
-        Certificate(
-            regions=(
-                root(10),
-                region("RkRepeat", 0, 0, 9),
-                # Priced as the bare star it is, since the inner loop compiles
-                # to the same five instructions wherever it sits.
-                replace(STAR.regions[1], parent=1, lo=3, hi=8),
-            )
-        ),
+        # The inner loop compiles to the same five instructions a bare star
+        # does, so it is priced the same way; the outer one is what has no
+        # answer, and it is reached before anything looks at the claims.
+        Certificate(prices=(Price(),) * 3 + STAR.prices[1:]),
     ),
     Case(
-        "an-iteration-count-past-the-counter",
-        "Two ways round a loop that may go round sixty times is 2^60, which no "
+        "a-pass-count-past-the-counter",
+        "Two ways round a loop that may go round sixty times is 2^61, which no "
         "counter holds. The requirement saturating is not a requirement met.",
         "CrOverflow",
         b"(?:a|a){0,60}",
-        Certificate(
-            regions=(
-                root(9),
-                region("RkRepeat", 0, 0, 8),
-                # The same body as the case above, which compiles to the same
-                # four instructions whatever the quantifier's bound.
-                *AMBIGUOUS.regions[2:],
-            )
-        ),
+        # Same body as the bounded case above, and the same four regions under
+        # the repeat, so the ambiguity is a number and only the count is not.
+        Certificate(prices=(Price(),) * 3 + AMBIGUOUS.prices[3:]),
     ),
     # --- a tree that is not a tree ---
     Case(
         "no-regions",
-        "A certificate with no root has nothing to be the pattern's bound.",
+        "A certificate with no root has nothing to be the pattern\'s bound.",
         "CrNoRegions",
         b"abc",
-        Certificate(regions=()),
+        Certificate(prices=()),
+        regions=(),
     ),
     Case(
         "root-is-not-a-root",
         "Region 0 is the root by position, and has to say so as well.",
         "CrRootKind",
         b"abc",
-        Certificate(regions=(region("RkGroup", spec.NONE, 0, 4),)),
+        unpriced(1),
+        regions=(region("RkGroup", spec.NONE, 0, 4),),
     ),
     Case(
         "root-has-a-parent",
         "Nothing encloses the whole program.",
         "CrRootParent",
         b"abc",
-        Certificate(regions=(region("RkRoot", 0, 0, 4),)),
+        unpriced(1),
+        regions=(region("RkRoot", 0, 0, 4),),
     ),
     Case(
         "root-starts-late",
         "A root that misses the first instruction prices less than the pattern.",
         "CrRootRange",
         b"abc",
-        Certificate(regions=(region("RkRoot", spec.NONE, 1, 4),)),
+        unpriced(1),
+        regions=(region("RkRoot", spec.NONE, 1, 4),),
     ),
     Case(
         "root-stops-early",
         "And a root that stops short of the last one prices less as well.",
         "CrRootRange",
         b"abc",
-        Certificate(regions=(root(3),)),
+        unpriced(1),
+        regions=(root(3),),
     ),
     Case(
         "two-roots",
         "Only region 0 is the root, or the tree has two places to start from.",
         "CrTwoRoots",
         b"abc",
-        Certificate(regions=(root(4), region("RkRoot", 0, 1, 2))),
+        unpriced(2),
+        regions=(root(4), region("RkRoot", 0, 1, 2)),
     ),
     Case(
         "parent-above-its-child",
-        "A parent at or above its child's index is what a cycle looks like from "
+        "A parent at or above its child\'s index is what a cycle looks like from "
         "here, and refusing it is what makes the tree a tree without a walk.",
         "CrParentOrder",
         b"abc",
-        Certificate(regions=(root(4), region("RkGroup", 1, 1, 2))),
+        unpriced(2),
+        regions=(root(4), region("RkGroup", 1, 1, 2)),
     ),
     Case(
         "range-runs-backwards",
         "A region that ends before it starts covers no instruction at all.",
         "CrBackwards",
         b"abc",
-        Certificate(regions=(root(4), region("RkGroup", 0, 3, 2))),
+        unpriced(2),
+        regions=(root(4), region("RkGroup", 0, 3, 2)),
     ),
     Case(
         "child-outside-its-parent",
         "A child reaching past its parent would be priced by neither.",
         "CrNotNested",
         b"abc",
-        Certificate(regions=(root(4), region("RkGroup", 0, 1, 5))),
+        unpriced(2),
+        regions=(root(4), region("RkGroup", 0, 1, 5)),
     ),
     Case(
         "child-starts-before-its-parent",
@@ -889,12 +959,11 @@ CASES: list[Case] = [
         "begins is a tree that does not nest, not two children colliding.",
         "CrNotNested",
         b"abc",
-        Certificate(
-            regions=(
-                root(4),
-                region("RkGroup", 0, 2, 4),
-                region("RkBranch", 1, 1, 3),
-            )
+        unpriced(3),
+        regions=(
+            root(4),
+            region("RkGroup", 0, 2, 4),
+            region("RkBranch", 1, 1, 3),
         ),
     ),
     Case(
@@ -903,13 +972,8 @@ CASES: list[Case] = [
         "whichever of them the composition rule reached first.",
         "CrOverlap",
         b"abc",
-        Certificate(
-            regions=(
-                root(4),
-                region("RkGroup", 0, 0, 3),
-                region("RkGroup", 0, 2, 4),
-            )
-        ),
+        unpriced(3),
+        regions=(root(4), region("RkGroup", 0, 0, 3), region("RkGroup", 0, 2, 4)),
     ),
     Case(
         "siblings-out-of-order",
@@ -918,13 +982,8 @@ CASES: list[Case] = [
         "lets the checker settle both halves of the sibling rule in one pass.",
         "CrOverlap",
         b"abc",
-        Certificate(
-            regions=(
-                root(4),
-                region("RkGroup", 0, 2, 4),
-                region("RkGroup", 0, 0, 2),
-            )
-        ),
+        unpriced(3),
+        regions=(root(4), region("RkGroup", 0, 2, 4), region("RkGroup", 0, 0, 2)),
     ),
     Case(
         "a-bound-with-no-base",
@@ -935,23 +994,28 @@ CASES: list[Case] = [
         claiming(LITERAL, cost=Poly((1,), 0)),
     ),
     Case(
-        "a-region-with-no-base",
+        "a-price-with-no-base",
         "The same rule inside the tree, where the composition rules would go on "
         "to multiply the thing.",
         "CrBase",
         b"abc",
         claiming(
-            LITERAL, regions=(replace(LITERAL.regions[0], work=Poly((4,), 0)),)
+            LITERAL,
+            prices=(replace(LITERAL.prices[0], work=Poly((4,), 0)),)
+            + LITERAL.prices[1:],
         ),
     ),
     # --- the tree has to account for the code it covers ---
     Case(
         "a-child-that-covers-nothing",
         "A region of zero width prices no instruction and says nothing its "
-        "parent does not, so the walk never reaches it and it is left over.",
+        "parent does not, so the walk never reaches it and it is left over. "
+        "The compiler drops one rather than emitting it, which is why this "
+        "tree has to be written by hand.",
         "CrChildren",
         b"abc",
-        Certificate(regions=(root(4), region("RkGroup", 0, 4, 4))),
+        unpriced(2),
+        regions=(root(4), region("RkGroup", 0, 4, 4)),
     ),
     Case(
         "an-alternation-whose-child-is-not-a-branch",
@@ -959,14 +1023,24 @@ CASES: list[Case] = [
         "child of another kind leaves the split arms unaccounted for.",
         "CrChildren",
         b"a|b",
-        Certificate(
-            regions=(
-                root(5),
-                region("RkAlt", 0, 0, 4),
-                region("RkGroup", 1, 1, 2),
-                region("RkBranch", 1, 3, 4),
-            )
+        unpriced(4),
+        regions=(
+            root(5),
+            region("RkAlt", 0, 0, 4),
+            region("RkGroup", 1, 1, 2),
+            region("RkBranch", 1, 3, 4),
         ),
+    ),
+    Case(
+        "a-branch-outside-an-alternation",
+        "A branch is one arm of an alternation and means nothing anywhere "
+        "else. The alternation refuses a child that is not a branch; this is "
+        "the same rule read from the other end, and between them they say that "
+        "the two only ever come in pairs.",
+        "CrChildren",
+        b"abc",
+        unpriced(2),
+        regions=(root(4), region("RkBranch", 0, 0, 3)),
     ),
     Case(
         "an-alternation-of-one",
@@ -974,9 +1048,8 @@ CASES: list[Case] = [
         "so a region claiming to be one prices instructions that are not there.",
         "CrShape",
         b"a|b",
-        Certificate(
-            regions=(root(5), region("RkAlt", 0, 0, 4), region("RkBranch", 1, 1, 2))
-        ),
+        unpriced(3),
+        regions=(root(5), region("RkAlt", 0, 0, 4), region("RkBranch", 1, 1, 2)),
     ),
     Case(
         "a-branch-that-does-not-follow-its-split",
@@ -984,22 +1057,22 @@ CASES: list[Case] = [
         "region starting anywhere else is not the branch that split leads to.",
         "CrShape",
         b"a|b",
-        Certificate(
-            regions=(
-                root(5),
-                region("RkAlt", 0, 0, 4),
-                region("RkBranch", 1, 2, 2),
-                region("RkBranch", 1, 3, 4),
-            )
+        unpriced(4),
+        regions=(
+            root(5),
+            region("RkAlt", 0, 0, 4),
+            region("RkBranch", 1, 2, 2),
+            region("RkBranch", 1, 3, 4),
         ),
     ),
     Case(
         "a-repeat-over-code-that-repeats-nothing",
-        "Neither an optional item's split nor a counted repetition's header, so "
+        "Neither an optional item\'s split nor a counted repetition\'s header, so "
         "there is no rule to price it with.",
         "CrShape",
         b"abc",
-        Certificate(regions=(root(4), region("RkRepeat", 0, 0, 3))),
+        unpriced(2),
+        regions=(root(4), region("RkRepeat", 0, 0, 3)),
     ),
     Case(
         "a-repeat-that-stops-before-its-tail",
@@ -1008,7 +1081,8 @@ CASES: list[Case] = [
         "repetition opcode no region is left to explain.",
         "CrOpcode",
         b"a*",
-        Certificate(regions=(root(6), region("RkRepeat", 0, 0, 4))),
+        unpriced(2),
+        regions=(root(6), region("RkRepeat", 0, 0, 4)),
     ),
     Case(
         "a-repeat-that-reaches-past-its-tail",
@@ -1017,7 +1091,8 @@ CASES: list[Case] = [
         "the repetition table.",
         "CrShape",
         b"a*",
-        Certificate(regions=(root(6), region("RkRepeat", 0, 0, 6))),
+        unpriced(2),
+        regions=(root(6), region("RkRepeat", 0, 0, 6)),
     ),
 ]
 
@@ -1038,6 +1113,24 @@ def _read_poly(body: dict) -> Poly:
     return _norm(body["base"], [body[f"c{d}"] for d in DEGREES])
 
 
+def _region(one: Region) -> dict:
+    return {
+        "kind": _ordinal("Rk", one.kind),
+        "parent": one.parent,
+        "lo": one.lo,
+        "hi": one.hi,
+    }
+
+
+def _read_region(body: dict) -> Region:
+    return Region(
+        kind=_variant("Rk", body["kind"]),
+        parent=body["parent"],
+        lo=body["lo"],
+        hi=body["hi"],
+    )
+
+
 def _cert(cert: Certificate) -> dict:
     return {
         "config": _ordinal("Cfg", cert.config),
@@ -1045,18 +1138,14 @@ def _cert(cert: Certificate) -> dict:
         "cost": _poly(cert.cost),
         "stack": _poly(cert.stack),
         "mem": _poly(cert.mem),
-        "regions": [
+        "prices": [
             {
-                "kind": _ordinal("Rk", one.kind),
-                "parent": one.parent,
-                "lo": one.lo,
-                "hi": one.hi,
                 "work": _poly(one.work),
                 "outs": _poly(one.outs),
                 "stack": _poly(one.stack),
                 "trail": _poly(one.trail),
             }
-            for one in cert.regions
+            for one in cert.prices
         ],
     }
 
@@ -1065,32 +1154,33 @@ def cases() -> list[dict]:
     """Every case, with the verdict and the bounds the reference interpreter gives."""
     out = []
     for case in CASES:
-        built = compiled(case.pattern)
+        built = case.subject()
         verdict = ENGINE.check_certificate(built, case.cert, case.config)
         if verdict != case.check:
             raise AssertionError(
                 f"{case.name}: the checker says {verdict}, the case says {case.check}"
             )
-        out.append(
-            {
-                "name": case.name,
-                "note": case.note,
-                "pattern": case.pattern.hex(),
-                "config": _ordinal("Cfg", case.config),
-                "cert": _cert(case.cert),
-                "check": _ordinal("Cr", case.check),
-                "bounds": [
-                    {
-                        "n": length,
-                        **{
-                            key: ENGINE.bound(case.cert, which, length)
-                            for key, which in KINDS
-                        },
-                    }
-                    for length in LENGTHS
-                ],
-            }
-        )
+        entry = {
+            "name": case.name,
+            "note": case.note,
+            "pattern": case.pattern.hex(),
+            "config": _ordinal("Cfg", case.config),
+            "cert": _cert(case.cert),
+            "check": _ordinal("Cr", case.check),
+            "bounds": [
+                {
+                    "n": length,
+                    **{
+                        key: ENGINE.bound(case.cert, which, length)
+                        for key, which in KINDS
+                    },
+                }
+                for length in LENGTHS
+            ],
+        }
+        if case.regions is not None:
+            entry["regions"] = [_region(one) for one in case.regions]
+        out.append(entry)
     return out
 
 
@@ -1112,6 +1202,7 @@ def load(path=PATH) -> list[Case]:
     out: list[Case] = []
     for entry in conformance.read(path)["cases"]:
         body = entry["cert"]
+        held = entry.get("regions")
         out.append(
             Case(
                 name=entry["name"],
@@ -1119,19 +1210,16 @@ def load(path=PATH) -> list[Case]:
                 check=_variant("Cr", entry["check"]),
                 pattern=bytes.fromhex(entry["pattern"]),
                 config=_variant("Cfg", entry["config"]),
+                regions=None if held is None else tuple(_read_region(o) for o in held),
                 cert=Certificate(
-                    regions=tuple(
-                        Region(
-                            kind=_variant("Rk", one["kind"]),
-                            parent=one["parent"],
-                            lo=one["lo"],
-                            hi=one["hi"],
+                    prices=tuple(
+                        Price(
                             work=_read_poly(one["work"]),
                             outs=_read_poly(one["outs"]),
                             stack=_read_poly(one["stack"]),
                             trail=_read_poly(one["trail"]),
                         )
-                        for one in body["regions"]
+                        for one in body["prices"]
                     ),
                     cost=_read_poly(body["cost"]),
                     stack=_read_poly(body["stack"]),
@@ -1165,4 +1253,5 @@ __all__ = [
     "read",
     "region",
     "root",
+    "unpriced",
 ]

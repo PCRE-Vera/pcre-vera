@@ -153,6 +153,14 @@ and what a whole call pays for setup, for its n + 1 starting positions and for
 the scratch it grows. The subject is the compiled pattern itself, so an
 accepted certificate is about the bytecode the matcher would really run.
 
+The region tree those rules compose over is the compiler's. It emits one while
+it still has the AST in hand, which is the only moment anything knows that this
+stretch of instructions came from that quantifier, and it stores it on the
+compiled pattern. A certificate holds one price per region and no second copy
+of the tree. That does not make the tree trusted: the checker reads it back
+against the bytecode, so a compiler that emitted a tree not describing its own
+output would be refused exactly like a hand-written one.
+
 What `CrOk` means, exactly: for this program, in this configuration, at every
 subject length, every start offset and every combination of match options, the
 matcher charges no more cost, pushes no more backtrack entries and reserves no
@@ -162,10 +170,9 @@ explicit refusal, never as a saturated counter dressed up as a maximum, and the
 two projections with a ceiling of their own refuse past it too, so any number
 an accessor gives back is one the caller can turn round and pass as a limit.
 
-What is not here yet is the analyzer that produces a certificate, and the
-region table the compiler will emit for it to annotate. Those come next, and
-they come with the checker already standing between them and anything that
-believes a bound.
+What is not here yet is the analyzer that produces a certificate. It comes
+next, and it comes with the checker already standing between it and anything
+that believes a bound.
 
 ## Using it
 

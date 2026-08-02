@@ -74,6 +74,7 @@ def _entry(L: Layout) -> None:
     f.freeze(out.field("re").field("code"), w.field("code"))
     f.freeze(out.field("re").field("classes"), w.field("classes"))
     f.freeze(out.field("re").field("reps"), w.field("reps"))
+    f.freeze(out.field("re").field("regions"), w.field("regions"))
     f.freeze(out.field("re").field("names"), w.field("names"))
     f.freeze(out.field("re").field("nameents"), w.field("nameents"))
 

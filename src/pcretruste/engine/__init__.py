@@ -17,8 +17,9 @@ certificate the analyzer will have to produce, the checker that decides whether
 to believe one, and the finite-or-ExceedsBudget arithmetic the accessors report
 in. The checker takes the compiled pattern and prices it opcode by opcode
 against the rules of BOUNDS.md, so an accepted certificate bounds that program
-rather than merely being well formed. What is still missing is the analyzer
-that produces one, and the region table the compiler will emit for it.
+rather than merely being well formed. `compiler` emits the region tree those
+rules compose over, while it still has the AST in hand, and stores it on the
+compiled pattern. What is still missing is the analyzer that annotates one.
 """
 
 from .driver import (
@@ -29,6 +30,7 @@ from .driver import (
     EngineError,
     Limits,
     Poly,
+    Price,
     Region,
     ResourceExceeded,
     TooLarge,
@@ -46,6 +48,7 @@ __all__ = [
     "EngineError",
     "Limits",
     "Poly",
+    "Price",
     "Region",
     "ResourceExceeded",
     "TooLarge",

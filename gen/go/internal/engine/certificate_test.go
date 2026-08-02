@@ -37,23 +37,26 @@ type certPoly struct {
 }
 
 type certRegion struct {
-	Kind   uint32   `json:"kind"`
-	Parent uint32   `json:"parent"`
-	Lo     uint32   `json:"lo"`
-	Hi     uint32   `json:"hi"`
-	Work   certPoly `json:"work"`
-	Outs   certPoly `json:"outs"`
-	Stack  certPoly `json:"stack"`
-	Trail  certPoly `json:"trail"`
+	Kind   uint32 `json:"kind"`
+	Parent uint32 `json:"parent"`
+	Lo     uint32 `json:"lo"`
+	Hi     uint32 `json:"hi"`
+}
+
+type certPrice struct {
+	Work  certPoly `json:"work"`
+	Outs  certPoly `json:"outs"`
+	Stack certPoly `json:"stack"`
+	Trail certPoly `json:"trail"`
 }
 
 type certBody struct {
-	Config     uint32       `json:"config"`
-	Complexity uint32       `json:"complexity"`
-	Cost       certPoly     `json:"cost"`
-	Stack      certPoly     `json:"stack"`
-	Mem        certPoly     `json:"mem"`
-	Regions    []certRegion `json:"regions"`
+	Config     uint32      `json:"config"`
+	Complexity uint32      `json:"complexity"`
+	Cost       certPoly    `json:"cost"`
+	Stack      certPoly    `json:"stack"`
+	Mem        certPoly    `json:"mem"`
+	Prices     []certPrice `json:"prices"`
 }
 
 // A nil bound is the ExceedsBudget of DESIGN.md section 2.4, which is a refusal
@@ -73,6 +76,9 @@ type certCase struct {
 	Cert    certBody     `json:"cert"`
 	Check   uint32       `json:"check"`
 	Bounds  []certBounds `json:"bounds"`
+	// A region table to put in place of the one the compiler emitted, for the
+	// cases about trees no compiler would emit. Absent from every other case.
+	Regions []certRegion `json:"regions"`
 }
 
 func readCertificates(t *testing.T) []certCase {
@@ -102,17 +108,13 @@ func variant(t *testing.T, what string, ordinal uint32, last uint32) uint32 {
 }
 
 func buildCert(t *testing.T, body certBody) Cert {
-	regions := make([]Region, len(body.Regions))
-	for i, one := range body.Regions {
-		regions[i] = Region{
-			kind:   Rk(variant(t, "Rk", one.Kind, uint32(RkRepeat))),
-			parent: one.Parent,
-			lo:     one.Lo,
-			hi:     one.Hi,
-			work:   buildPoly(one.Work),
-			outs:   buildPoly(one.Outs),
-			stack:  buildPoly(one.Stack),
-			trail:  buildPoly(one.Trail),
+	prices := make([]Price, len(body.Prices))
+	for i, one := range body.Prices {
+		prices[i] = Price{
+			work:  buildPoly(one.Work),
+			outs:  buildPoly(one.Outs),
+			stack: buildPoly(one.Stack),
+			trail: buildPoly(one.Trail),
 		}
 	}
 	return Cert{
@@ -121,8 +123,21 @@ func buildCert(t *testing.T, body certBody) Cert {
 		cost:       buildPoly(body.Cost),
 		stack:      buildPoly(body.Stack),
 		mem:        buildPoly(body.Mem),
-		regions:    regions,
+		prices:     prices,
 	}
+}
+
+func buildRegions(t *testing.T, held []certRegion) []Region {
+	regions := make([]Region, len(held))
+	for i, one := range held {
+		regions[i] = Region{
+			kind:   Rk(variant(t, "Rk", one.Kind, uint32(RkRepeat))),
+			parent: one.Parent,
+			lo:     one.Lo,
+			hi:     one.Hi,
+		}
+	}
+	return regions
 }
 
 func buildProgram(t *testing.T, pattern string) Re {
@@ -144,6 +159,9 @@ func TestCertificateCorpus(t *testing.T) {
 		t.Run(one.Name, func(t *testing.T) {
 			cert := buildCert(t, one.Cert)
 			re := buildProgram(t, one.Pattern)
+			if one.Regions != nil {
+				re.regions = buildRegions(t, one.Regions)
+			}
 			asked := Cfg(variant(t, "Cfg", one.Config, uint32(CfgMemo)))
 			got := Tir_cert_check(re, asked, cert)
 			if uint32(got) != one.Check {
@@ -171,5 +189,42 @@ func wantBound(t *testing.T, what string, got Bound, want *uint64, n uint64) {
 	}
 	if got.value != *want {
 		t.Fatalf("%s at n=%d is %d, want %d", what, n, got.value, *want)
+	}
+}
+
+// A region kind outside the enum is not a TIR value at all, and in Go it is a
+// number like any other. What matters is that the checker says so rather than
+// pricing the region at nothing, which would hide every instruction in its
+// range behind a claim of zero.
+func TestARegionKindOutsideTheEnumIsRefused(t *testing.T) {
+	one := Poly{base: 1}
+	re := buildProgram(t, hex.EncodeToString([]byte("a?")))
+	prices := make([]Price, len(re.regions))
+	for i := range prices {
+		prices[i] = Price{work: one, outs: one, stack: one, trail: one}
+	}
+	cert := Cert{cost: one, stack: one, mem: one, prices: prices}
+	if len(prices) < 2 {
+		t.Fatalf("expected a tree with a region under the root, got %d", len(prices))
+	}
+	// Claiming one of everything is far too little, so the answer is about the
+	// numbers. What matters is that it is about the numbers at all.
+	if got := Tir_cert_check(re, CfgBacktrack, cert); got != CrRegionWork {
+		t.Fatalf("cert_check = %d, want CrRegionWork (%d)", got, CrRegionWork)
+	}
+	re.regions[len(re.regions)-1].kind = Rk(999)
+	if got := Tir_cert_check(re, CfgBacktrack, cert); got != CrShape {
+		t.Fatalf("cert_check = %d, want CrShape (%d)", got, CrShape)
+	}
+	// A complexity class outside the enum is the same thing said of a field
+	// rather than of a region: treating it as "not proven linear" would let a
+	// caller name a class the engine has no claim for.
+	re.regions[len(re.regions)-1].kind = RkRepeat
+	cert.complexity = Cc(999)
+	if got := Tir_cert_check(re, CfgBacktrack, cert); got != CrShape {
+		t.Fatalf("cert_check = %d, want CrShape (%d)", got, CrShape)
+	}
+	if got := Tir_cert_bound(Cert{}, Bk(999), 4); got.ok {
+		t.Fatalf("a bound of no kind is %d, want ExceedsBudget", got.value)
 	}
 }

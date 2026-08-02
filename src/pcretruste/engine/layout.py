@@ -141,8 +141,12 @@ class Layout:
                 # The certificate is about this program, in this configuration.
                 "CrNoRules",
                 "CrConfig",
+                "CrPrices",
                 "CrBase",
-                # The tree accounts for the bytecode it claims to cover.
+                # The tree accounts for the bytecode it claims to cover, and
+                # every field of the certificate names something the checker
+                # knows: `CrShape` covers a value that names no variant too,
+                # since an enum is an integer once printed.
                 "CrOpcode",
                 "CrShape",
                 "CrChildren",
@@ -218,6 +222,11 @@ class Layout:
             [("ok", boolean), ("lo", u32), ("hi", u32), ("end", u32)],
         )
 
+        # `here` is the region anything this job emits belongs to. A job that
+        # opens a region of its own overwrites it, so children are pushed with
+        # the innermost one and the closing visit knows what to finish. `arm`
+        # is the alternation branch currently open, which is the one thing a
+        # job can be building two of at once.
         self.Job = m.struct(
             "Job",
             [
@@ -226,6 +235,8 @@ class Layout:
                 ("cur", u32),
                 ("mark", u32),
                 ("base", u32),
+                ("here", u32),
+                ("arm", u32),
             ],
         )
 
@@ -275,18 +286,26 @@ class Layout:
 
         self.Bound = m.struct("Bound", [("ok", boolean), ("value", counter)])
 
-        # What a region costs for one entry into it: instruction visits,
-        # backtrack entries pushed, undo entries recorded, and the forward
-        # exits it hands the construct that follows it. The last one is the
-        # region's ambiguity, and it is the multiplier everything else in
-        # BOUNDS.md composes with.
+        # A region is one source construct the compiler flattened, and it is
+        # the compiler that emits it: it has the AST in hand while it lays out
+        # the bytecode, which is the one moment anything knows that this stretch
+        # of instructions came from that quantifier. The table lives on the
+        # compiled pattern, so there is one of it, and the checker holds it to
+        # the bytecode rather than believing it.
         self.Region = m.struct(
             "Region",
+            [("kind", self.Rk), ("parent", u32), ("lo", u32), ("hi", u32)],
+        )
+
+        # And this is what a certificate says one entry into that region costs:
+        # instruction visits, backtrack entries pushed, undo entries recorded,
+        # and the forward exits it hands the construct that follows it. The
+        # last one is the region's ambiguity, and it is the multiplier
+        # everything else in BOUNDS.md composes with. One price per region, in
+        # the same order, so a claim cannot be about a region nobody emitted.
+        self.Price = m.struct(
+            "Price",
             [
-                ("kind", self.Rk),
-                ("parent", u32),
-                ("lo", u32),
-                ("hi", u32),
                 ("work", self.Poly),
                 ("outs", self.Poly),
                 ("stack", self.Poly),
@@ -324,11 +343,13 @@ class Layout:
         self.Stack = vec(self.Bt, spec.MAX_STACK)
         self.Trail = vec(self.Undo, spec.MAX_TRAIL)
         self.Regions = vec(self.Region, spec.MAX_REGIONS)
+        self.Prices = vec(self.Price, spec.MAX_REGIONS)
         self.Marks = vec(u32, spec.MAX_REGIONS)
 
         self.FrozenCode = frozen(self.Code)
         self.FrozenReps = frozen(self.Reps)
         self.FrozenRegions = frozen(self.Regions)
+        self.FrozenPrices = frozen(self.Prices)
 
         # A certificate is frozen the moment the analyzer is done with it, for
         # the same reason the compiled pattern is: one of them serves any number
@@ -347,7 +368,7 @@ class Layout:
                 ("cost", self.Poly),
                 ("stack", self.Poly),
                 ("mem", self.Poly),
-                ("regions", self.FrozenRegions),
+                ("prices", self.FrozenPrices),
             ],
         )
 
@@ -363,6 +384,7 @@ class Layout:
                 ("code", frozen(self.Code)),
                 ("classes", frozen(bytes_)),
                 ("reps", frozen(self.Reps)),
+                ("regions", self.FrozenRegions),
                 ("names", frozen(bytes_)),
                 ("nameents", frozen(self.NameEnts)),
                 ("ncap", u32),
@@ -386,6 +408,7 @@ class Layout:
                 ("nameents", self.NameEnts),
                 ("code", self.Code),
                 ("reps", self.Reps),
+                ("regions", self.Regions),
                 ("jobs", self.Jobs),
                 ("patches", self.Patches),
                 ("ncap", u32),

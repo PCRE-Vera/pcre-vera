@@ -47,8 +47,7 @@ from . import spec
 from .layout import Layout
 from .parser import down, tmp
 
-DEGREES = tuple(range(spec.MAX_DEGREE + 1))
-"""The powers of (n + 1) a bound polynomial carries, as field suffixes."""
+DEGREES = spec.DEGREES
 
 SIMPLE_OPS = (
     "OpChar",
@@ -80,6 +79,7 @@ def build(L: Layout) -> None:
     _polynomials(L)
     _evaluation(L)
     _walk(L)
+    _charge(L)
     _check(L)
 
 
@@ -118,6 +118,18 @@ def _times(f, L: Layout, a, b, over):
     out = tmp(f, L.Poly)
     f.call("poly_mul", [a, b, inout(over)], dest=out)
     return out
+
+
+def _bump(f, L: Layout, acc, quantity, value, over):
+    """Charge one more of something to an accumulator."""
+    f.set(acc.field(quantity), _plus(f, L, acc.field(quantity), value, over))
+
+
+def _fresh(f, L: Layout, acc, flow):
+    """Start an accumulator: nothing charged, and this much flow arriving."""
+    for quantity in ("work", "stack", "trail"):
+        f.set(acc.field(quantity), _zero(L))
+    f.set(acc.field("flow"), flow)
 
 
 def _flat(p):
@@ -263,7 +275,7 @@ def _polynomials(L: Layout) -> None:
     a = f["a"]
     b = f["b"]
     over = f["over"]
-    out = f.let("out", L.Poly, _zero(L))
+    out = f.let("out", L.Poly)
     f.set(out.field("base"), a.field("base"))
     with f.if_(b.field("base") > a.field("base")):
         f.set(out.field("base"), b.field("base"))
@@ -336,15 +348,22 @@ def _polynomials(L: Layout) -> None:
     power = f.let("power", L.Bound, _finite(L, counter(1)))
     total = f.let("total", L.Bound, _finite(L, p.field("c0")))
     for degree in DEGREES[1:]:
-        raised = tmp(f, L.Bound)
-        f.call("bound_mul", [power, step], dest=raised)
-        f.set(power, raised)
-        with f.if_(p.field(f"c{degree}") != counter(0)):
-            one = tmp(f, L.Bound)
-            f.call("bound_mul", [_finite(L, p.field(f"c{degree}")), power], dest=one)
-            running = tmp(f, L.Bound)
-            f.call("bound_add", [total, one], dest=running)
-            f.set(total, running)
+        # Nothing above here has a coefficient, so the power that would carry
+        # one is not worth raising — and raising it would saturate and refuse a
+        # bound the term it belongs to was never in.
+        spent = p.field(f"c{degree}") != counter(0)
+        for above in DEGREES[degree + 1 :]:
+            spent = lor(spent, p.field(f"c{above}") != counter(0))
+        with f.if_(spent):
+            raised = tmp(f, L.Bound)
+            f.call("bound_mul", [power, step], dest=raised)
+            f.set(power, raised)
+            with f.if_(p.field(f"c{degree}") != counter(0)):
+                one = tmp(f, L.Bound)
+                f.call("bound_mul", [_finite(L, p.field(f"c{degree}")), power], dest=one)
+                running = tmp(f, L.Bound)
+                f.call("bound_add", [total, one], dest=running)
+                f.set(total, running)
     growth = f.let("growth", L.Bound)
     f.call("bound_pow", [p.field("base"), f["n"]], dest=growth)
     out = f.let("out", L.Bound)
@@ -362,15 +381,26 @@ def _evaluation(L: Layout) -> None:
     cert = f["cert"]
     which = f.let("which", L.Poly)
     ceiling = f.let("ceiling", counter, counter(CAP))
+    # A switch that covers its enum may carry no default (TIR-SPEC.md rule
+    # V-032), and it needs none: an enum value is one of the variants it
+    # declares. Printed, though, it is an integer like any other, and a caller
+    # of the generated module who invents one has to be told this is not a
+    # bound rather than handed the zero an untouched slot holds.
+    known = f.let("known", boolean, boolean(False))
     with f.switch(f["kind"]) as arm:
         with arm.case("BkCost"):
             f.set(which, cert.field("cost"))
+            f.set(known, boolean(True))
         with arm.case("BkStack"):
             f.set(which, cert.field("stack"))
             f.set(ceiling, counter(spec.MAX_STACK))
+            f.set(known, boolean(True))
         with arm.case("BkMem"):
             f.set(which, cert.field("mem"))
             f.set(ceiling, counter(CEILING))
+            f.set(known, boolean(True))
+    with f.if_(lnot(known)):
+        f.ret(_exceeds(L))
     out = f.let("out", L.Bound)
     f.call("poly_value", [which, f["n"]], dest=out)
     with f.if_(land(out.field("ok"), out.field("value") > ceiling)):
@@ -398,10 +428,11 @@ def _span(L: Layout) -> None:
         params=[
             ("code", L.FrozenCode),
             ("regions", L.FrozenRegions),
+            ("prices", L.FrozenPrices),
             ("sibs", L.Marks, "inout"),
             ("lo", u32),
             ("hi", u32),
-            ("cursor", u32, "inout"),
+            ("first", u32),
             ("acc", L.Acc, "inout"),
             ("over", boolean, "inout"),
         ],
@@ -409,7 +440,7 @@ def _span(L: Layout) -> None:
     )
     code = f["code"]
     regions = f["regions"]
-    cursor = f["cursor"]
+    cursor = f.let("cursor", u32, f["first"])
     acc = f["acc"]
     over = f["over"]
     pc = f.let("pc", u32, f["lo"])
@@ -426,12 +457,11 @@ def _span(L: Layout) -> None:
                 # parent does not already say.
                 with f.if_(lor(kid.field("hi") <= pc, kid.field("hi") > f["hi"])):
                     f.ret(L.Cr.CrShape)
+                claim = tmp(f, L.Price, f["prices"].at(at))
                 flow = tmp(f, L.Poly, acc.field("flow"))
                 for quantity in ("work", "stack", "trail"):
-                    priced = _times(f, L, flow, kid.field(quantity), over)
-                    running = _plus(f, L, acc.field(quantity), priced, over)
-                    f.set(acc.field(quantity), running)
-                onward = _times(f, L, flow, kid.field("outs"), over)
+                    _bump(f, L, acc, quantity, _times(f, L, flow, claim.field(quantity), over), over)
+                onward = _times(f, L, flow, claim.field("outs"), over)
                 f.set(acc.field("flow"), onward)
                 f.set(pc, kid.field("hi"))
                 f.set(cursor, f["sibs"].at(at))
@@ -444,8 +474,7 @@ def _span(L: Layout) -> None:
                     f.set(acc.field("work"), visited)
             with arm.case("OpSave"):
                 f.set(acc.field("work"), visited)
-                recorded = _plus(f, L, acc.field("trail"), acc.field("flow"), over)
-                f.set(acc.field("trail"), recorded)
+                _bump(f, L, acc, "trail", acc.field("flow"), over)
             with arm.case("OpAccept"):
                 # A match ends the attempt, so nothing after this point is
                 # reached by way of it.
@@ -458,6 +487,10 @@ def _span(L: Layout) -> None:
                 f.ret(L.Cr.CrOpcode)
         f.set(pc, pc + u32(1))
 
+    # A child the walk never reached is one covering code this span does not,
+    # which no rule prices.
+    with f.if_(cursor != u32(spec.NONE)):
+        f.ret(L.Cr.CrChildren)
     f.ret(L.Cr.CrOk)
 
 
@@ -467,9 +500,10 @@ def _alt(L: Layout) -> None:
         params=[
             ("code", L.FrozenCode),
             ("regions", L.FrozenRegions),
-            ("kids", L.Marks, "inout"),
+            ("prices", L.FrozenPrices),
             ("sibs", L.Marks, "inout"),
             ("at", u32),
+            ("first", u32),
             ("acc", L.Acc, "inout"),
             ("over", boolean, "inout"),
         ],
@@ -486,14 +520,13 @@ def _alt(L: Layout) -> None:
     # branch`, with every jump patched to the end and every split's other arm
     # pointing at the next one, so walking the branches walks the code.
     p = f.let("p", u32, here.field("lo"))
-    c = f.let("c", u32, f["kids"].at(f["at"]))
-    seen = f.let("seen", u32, u32(0))
+    c = f.let("c", u32, f["first"])
     k = f.let("k", u32, u32(0))
-    for quantity in ("work", "stack", "trail", "flow"):
-        f.set(acc.field(quantity), _zero(L))
+    _fresh(f, L, acc, _zero(L))
 
     with f.while_(land(k < total, c != u32(spec.NONE)), down(total, k)):
         kid = tmp(f, L.Region, regions.at(c))
+        claim = tmp(f, L.Price, f["prices"].at(c))
         with f.if_(kid.field("kind") != L.Rk.RkBranch):
             f.ret(L.Cr.CrChildren)
         nxt = tmp(f, u32, f["sibs"].at(c))
@@ -519,12 +552,9 @@ def _alt(L: Layout) -> None:
                 f.ret(L.Cr.CrShape)
             # The split is visited once, and the jump once per way the branch
             # found to succeed.
-            extra = _plus(f, L, _const(L, counter(1)), kid.field("outs"), over)
-            f.set(acc.field("work"), _plus(f, L, acc.field("work"), extra, over))
-            f.set(
-                acc.field("stack"),
-                _plus(f, L, acc.field("stack"), _const(L, counter(1)), over),
-            )
+            extra = _plus(f, L, _const(L, counter(1)), claim.field("outs"), over)
+            _bump(f, L, acc, "work", extra, over)
+            _bump(f, L, acc, "stack", _const(L, counter(1)), over)
             f.set(p, end + u32(1))
         with f.else_():
             with f.if_(lor(kid.field("lo") != p, kid.field("hi") != hi)):
@@ -537,11 +567,7 @@ def _alt(L: Layout) -> None:
             ("trail", "trail"),
             ("flow", "outs"),
         ):
-            f.set(
-                acc.field(quantity),
-                _plus(f, L, acc.field(quantity), kid.field(claimed), over),
-            )
-        f.set(seen, seen + u32(1))
+            _bump(f, L, acc, quantity, claim.field(claimed), over)
         f.set(c, nxt)
         f.set(k, k + u32(1))
 
@@ -549,35 +575,34 @@ def _alt(L: Layout) -> None:
         f.ret(L.Cr.CrChildren)
     # One branch is not an alternation: the compiler emits no split for it, so
     # a region claiming to be one is pricing instructions that are not there.
-    with f.if_(seen < u32(2)):
+    with f.if_(k < u32(2)):
         f.ret(L.Cr.CrShape)
     f.ret(L.Cr.CrOk)
 
 
-def _body(f, L: Layout, lo, hi, cursor, acc, over, verdict) -> None:
+def _body(f, L: Layout, lo, hi) -> None:
     """Price the span a repetition repeats, whichever of the two shapes it is.
 
-    Every child of a repeat region lies in that span; one left over is a region
-    covering part of the machinery around it, which no rule prices.
+    This emits a return: a span that does not price is a repeat that does not,
+    and there is nothing after it for `scan_repeat` to do.
     """
     f.call(
         "scan_span",
         [
             f["code"],
             f["regions"],
+            f["prices"],
             inout(f["sibs"]),
             lo,
             hi,
-            inout(cursor),
-            inout(acc),
-            inout(over),
+            f["first"],
+            inout(f["acc"]),
+            inout(f["over"]),
         ],
-        dest=verdict,
+        dest=f["verdict"],
     )
-    with f.if_(verdict != L.Cr.CrOk):
-        f.ret(verdict)
-    with f.if_(cursor != u32(spec.NONE)):
-        f.ret(L.Cr.CrChildren)
+    with f.if_(f["verdict"] != L.Cr.CrOk):
+        f.ret(f["verdict"])
 
 
 def _repeat(L: Layout) -> None:
@@ -587,9 +612,10 @@ def _repeat(L: Layout) -> None:
             ("code", L.FrozenCode),
             ("reps", L.FrozenReps),
             ("regions", L.FrozenRegions),
-            ("kids", L.Marks, "inout"),
+            ("prices", L.FrozenPrices),
             ("sibs", L.Marks, "inout"),
             ("at", u32),
+            ("first", u32),
             ("acc", L.Acc, "inout"),
             ("over", boolean, "inout"),
         ],
@@ -603,12 +629,9 @@ def _repeat(L: Layout) -> None:
     hi = f.let("hi", u32, here.field("hi"))
     with f.if_(hi <= lo):
         f.ret(L.Cr.CrShape)
-    cursor = f.let("cursor", u32, f["kids"].at(f["at"]))
     verdict = f.let("verdict", L.Cr, L.Cr.CrOk)
     head = f.let("head", L.Inst, code.at(lo))
-    for quantity in ("work", "stack", "trail"):
-        f.set(acc.field(quantity), _zero(L))
-    f.set(acc.field("flow"), _const(L, counter(1)))
+    _fresh(f, L, acc, _const(L, counter(1)))
 
     with f.if_(head.field("op") == L.Op.OpSplit):
         # An optional item: one split whose arms are the body and what follows,
@@ -625,12 +648,12 @@ def _repeat(L: Layout) -> None:
         )
         with f.if_(lnot(lor(greedy, lazy))):
             f.ret(L.Cr.CrShape)
-        _body(f, L, lo + u32(1), hi, cursor, acc, over, verdict)
+        _body(f, L, lo + u32(1), hi)
         one = _const(L, counter(1))
-        f.set(acc.field("work"), _plus(f, L, acc.field("work"), one, over))
-        f.set(acc.field("stack"), _plus(f, L, acc.field("stack"), one, over))
+        _bump(f, L, acc, "work", one, over)
+        _bump(f, L, acc, "stack", one, over)
         # Skipping the body is a way out of the region too.
-        f.set(acc.field("flow"), _plus(f, L, acc.field("flow"), one, over))
+        _bump(f, L, acc, "flow", one, over)
         f.ret(L.Cr.CrOk)
 
     with f.if_(head.field("op") != L.Op.OpRepZero):
@@ -665,7 +688,7 @@ def _repeat(L: Layout) -> None:
     ):
         f.ret(L.Cr.CrShape)
 
-    _body(f, L, lo + u32(3), hi - u32(1), cursor, acc, over, verdict)
+    _body(f, L, lo + u32(3), hi - u32(1))
 
     # The body's ambiguity is what one iteration hands the next, so the flow
     # through the head is its powers summed. A body that grows more ambiguous
@@ -723,12 +746,95 @@ def _repeat(L: Layout) -> None:
 
     # The enter remembers a position and every tail counts, both through the
     # trail, and the zeroing outside is on the trail too.
-    writes = _plus(f, L, _plus(f, L, one, per, over), body.field("trail"), over)
+    leaves = f.let("leaves", L.Poly, _plus(f, L, one, per, over))
+    writes = _plus(f, L, leaves, body.field("trail"), over)
     f.set(acc.field("trail"), _plus(f, L, one, _times(f, L, flow, writes, over), over))
 
     # Leaving happens at the head, when the count is spent, and at the tail,
     # when an empty iteration ends it.
-    f.set(acc.field("flow"), _times(f, L, flow, _plus(f, L, one, per, over), over))
+    f.set(acc.field("flow"), _times(f, L, flow, leaves, over))
+    f.ret(L.Cr.CrOk)
+
+
+def _charge(L: Layout) -> None:
+    """What a whole call costs, from BOUNDS.md section 5.
+
+    The register file and the ovector are sized and zeroed once, a match copies
+    the ovector back out once, every starting position pays for clearing the
+    registers again, and the two growing arrays are charged for the buffers
+    they hold and the ones they held while copying. None of it belongs to a
+    region, which is why the three numbers a caller reads sit on the
+    certificate rather than on the root.
+    """
+    f = L.func(
+        "charge_call",
+        params=[
+            ("re", L.Re),
+            ("cert", L.Cert),
+            ("whole", L.Price),
+            ("over", boolean, "inout"),
+        ],
+        ret=L.Cr,
+    )
+    re = f["re"]
+    whole = f["whole"]
+    over = f["over"]
+    novec = f.let(
+        "novec", counter, (re.field("ncap").cast(counter) + counter(1)) * counter(2)
+    )
+    setup = f.let(
+        "setup",
+        counter,
+        (re.field("nregs").cast(counter) + novec) * counter(spec.REG_SIZE),
+    )
+    deliver = f.let("deliver", counter, novec * counter(spec.REG_SIZE))
+    reset = f.let(
+        "reset", counter, re.field("nregs").cast(counter) * counter(spec.REG_SIZE)
+    )
+
+    capacity = f.let("capacity", L.Poly)
+    scratch = f.let("scratch", L.Poly, _zero(L))
+    for quantity, esize in (("stack", spec.BT_SIZE), ("trail", spec.UNDO_SIZE)):
+        claimed = tmp(f, L.Poly, whole.field(quantity))
+        f.set(capacity, _zero(L))
+        # The growth schedule doubles from its floor, so a run that holds at
+        # most k entries never reserves more than twice that, and one that
+        # never pushes never allocates at all.
+        with f.if_(lnot(_nothing(claimed))):
+            grown = _times(f, L, claimed, _const(L, counter(spec.GROW_FACTOR)), over)
+            f.set(capacity, _plus(f, L, _const(L, counter(spec.GROW_MIN)), grown, over))
+        weighed = _times(f, L, capacity, _const(L, counter(esize)), over)
+        f.set(scratch, _plus(f, L, scratch, weighed, over))
+
+    # An undo entry put back costs one unit per IR byte of the register, and
+    # one can only be put back if something recorded it, so the trail bound
+    # prices the replay too.
+    replay = _times(f, L, whole.field("trail"), _const(L, counter(spec.REG_SIZE)), over)
+    attempt = _plus(
+        f, L, _const(L, reset), _plus(f, L, whole.field("work"), replay, over), over
+    )
+    # The 3 and the 2 below are the two bounds BOUNDS.md section 5 derives from
+    # the growth schedule rather than numbers the matcher holds: the buffers a
+    # doubling run allocates come to twice its final reservation and the ones
+    # it copies out of to one more, and holding both at once is what makes the
+    # memory peak twice the reservation.
+    positions = _times(f, L, attempt, _step(L), over)
+    growth = _times(f, L, scratch, _const(L, counter(3)), over)
+    cost = _plus(f, L, _const(L, setup + deliver), _plus(f, L, positions, growth, over), over)
+    held = _times(f, L, scratch, _const(L, counter(2)), over)
+    memory = _plus(f, L, _const(L, setup), held, over)
+
+    with f.if_(over):
+        f.ret(L.Cr.CrOverflow)
+    holds = f.let("holds", boolean, boolean(False))
+    for claim, needed, refusal in (
+        ("cost", cost, L.Cr.CrTotalCost),
+        ("stack", whole.field("stack"), L.Cr.CrTotalStack),
+        ("mem", memory, L.Cr.CrTotalMem),
+    ):
+        f.call("poly_ge", [f["cert"].field(claim), needed], dest=holds)
+        with f.if_(lnot(holds)):
+            f.ret(refusal)
     f.ret(L.Cr.CrOk)
 
 
@@ -756,10 +862,17 @@ def _check(L: Layout) -> None:
         f.ret(L.Cr.CrConfig)
 
     code = f.let("code", L.FrozenCode, re.field("code"))
-    regions = f.let("regions", L.FrozenRegions, cert.field("regions"))
+    # The tree is the compiler's, emitted while it still had the AST in hand,
+    # and the certificate says what each of its regions costs. One price per
+    # region, in the same order, so a claim cannot be about a region nobody
+    # emitted and no region can go unpriced.
+    regions = f.let("regions", L.FrozenRegions, re.field("regions"))
+    prices = f.let("prices", L.FrozenPrices, cert.field("prices"))
     total = f.let("total", u32, regions.len())
     with f.if_(total == u32(0)):
         f.ret(L.Cr.CrNoRegions)
+    with f.if_(prices.len() != total):
+        f.ret(L.Cr.CrPrices)
 
     root = f.let("root", L.Region, regions.at(u32(0)))
     with f.if_(root.field("kind") != L.Rk.RkRoot):
@@ -810,6 +923,17 @@ def _check(L: Layout) -> None:
             f.ret(L.Cr.CrNotNested)
         with f.if_(here.field("lo") < ends.at(parent)):
             f.ret(L.Cr.CrOverlap)
+        # A branch is one arm of an alternation and means nothing anywhere
+        # else. `scan_alt` refuses a child of an alternation that is not one;
+        # this is the same rule read from the other end, so the two together
+        # say that branches and alternations only ever come in pairs.
+        with f.if_(
+            land(
+                here.field("kind") == L.Rk.RkBranch,
+                outer.field("kind") != L.Rk.RkAlt,
+            )
+        ):
+            f.ret(L.Cr.CrChildren)
         f.set(ends.at(parent), here.field("hi"))
         f.set(i, i + u32(1))
 
@@ -819,9 +943,29 @@ def _check(L: Layout) -> None:
     for quantity in ("cost", "stack", "mem"):
         with f.if_(cert.field(quantity).field("base") == counter(0)):
             f.ret(L.Cr.CrBase)
+    # The one claim in a certificate that is not a number, held to the shape it
+    # names: linear means the cost really is at most c * (n + 1), so no growing
+    # base and no power above the first. Classification soundness is a Layer A
+    # obligation (DESIGN.md section 6), and this is the part of it the checker
+    # can settle by looking.
+    with f.if_(
+        land(
+            cert.field("complexity") != L.Cc.CcNotProvenLinear,
+            cert.field("complexity") != L.Cc.CcLinear,
+        )
+    ):
+        f.ret(L.Cr.CrShape)
+    with f.if_(cert.field("complexity") == L.Cc.CcLinear):
+        shape = tmp(f, L.Poly, cert.field("cost"))
+        test = shape.field("base") != counter(1)
+        for degree in DEGREES[2:]:
+            test = lor(test, shape.field(f"c{degree}") != counter(0))
+        with f.if_(test):
+            f.ret(L.Cr.CrNotLinear)
+
     f.set(i, u32(0))
     with f.while_(i < total, down(total, i)):
-        claimed = tmp(f, L.Region, regions.at(i))
+        claimed = tmp(f, L.Price, prices.at(i))
         for quantity in ("work", "outs", "stack", "trail"):
             with f.if_(claimed.field(quantity).field("base") == counter(0)):
                 f.ret(L.Cr.CrBase)
@@ -846,42 +990,36 @@ def _check(L: Layout) -> None:
     with f.while_(i < total, down(total, i)):
         one = tmp(f, L.Region, regions.at(i))
         acc = tmp(f, L.Acc)
-        cursor = tmp(f, u32, kids.at(i))
-        verdict = tmp(f, L.Cr, L.Cr.CrOk)
+        first = tmp(f, u32, kids.at(i))
+        # A switch that covers its enum may carry no default (TIR-SPEC.md rule
+        # V-032), and it needs none: an enum value is one of the variants it
+        # declares. Printed, though, it is an integer like any other, so the
+        # verdict starts as the refusal a caller who invented one has earned,
+        # and every arm that recognises its kind writes over it.
+        verdict = tmp(f, L.Cr, L.Cr.CrShape)
         with f.switch(one.field("kind")) as arm:
             for name in ("RkRoot", "RkGroup", "RkBranch"):
                 with arm.case(name):
-                    for quantity in ("work", "stack", "trail"):
-                        f.set(acc.field(quantity), _zero(L))
-                    f.set(acc.field("flow"), _const(L, counter(1)))
+                    _fresh(f, L, acc, _const(L, counter(1)))
                     f.call(
                         "scan_span",
                         [
                             code,
                             regions,
+                            prices,
                             inout(sibs),
                             one.field("lo"),
                             one.field("hi"),
-                            inout(cursor),
+                            first,
                             inout(acc),
                             inout(over),
                         ],
                         dest=verdict,
                     )
-                    with f.if_(land(verdict == L.Cr.CrOk, cursor != u32(spec.NONE))):
-                        f.set(verdict, L.Cr.CrChildren)
             with arm.case("RkAlt"):
                 f.call(
                     "scan_alt",
-                    [
-                        code,
-                        regions,
-                        inout(kids),
-                        inout(sibs),
-                        i,
-                        inout(acc),
-                        inout(over),
-                    ],
+                    [code, regions, prices, inout(sibs), i, first, inout(acc), inout(over)],
                     dest=verdict,
                 )
             with arm.case("RkRepeat"):
@@ -891,9 +1029,10 @@ def _check(L: Layout) -> None:
                         code,
                         re.field("reps"),
                         regions,
-                        inout(kids),
+                        prices,
                         inout(sibs),
                         i,
+                        first,
                         inout(acc),
                         inout(over),
                     ],
@@ -906,90 +1045,24 @@ def _check(L: Layout) -> None:
         with f.if_(over):
             f.ret(L.Cr.CrOverflow)
         holds = tmp(f, boolean, boolean(False))
+        mine = tmp(f, L.Price, prices.at(i))
         for quantity, needed, refusal in (
             ("work", "work", L.Cr.CrRegionWork),
             ("outs", "flow", L.Cr.CrRegionOuts),
             ("stack", "stack", L.Cr.CrRegionStack),
             ("trail", "trail", L.Cr.CrRegionTrail),
         ):
-            f.call("poly_ge", [one.field(quantity), acc.field(needed)], dest=holds)
+            f.call("poly_ge", [mine.field(quantity), acc.field(needed)], dest=holds)
             with f.if_(lnot(holds)):
                 f.ret(refusal)
         f.set(i, i + u32(1))
 
-    # What a whole call costs, on top of what the tree prices. The register
-    # file and the ovector are sized and zeroed once, a match copies the
-    # ovector back out once, every starting position pays for clearing the
-    # registers again, and the two growing arrays are charged for the buffers
-    # they hold and the ones they held while copying.
-    novec = f.let(
-        "novec", counter, (re.field("ncap").cast(counter) + counter(1)) * counter(2)
-    )
-    setup = f.let(
-        "setup", counter, (re.field("nregs").cast(counter) + novec) * counter(4)
-    )
-    deliver = f.let("deliver", counter, novec * counter(4))
-    reset = f.let("reset", counter, re.field("nregs").cast(counter) * counter(4))
+    # What the call costs on top of what the tree prices, which is the one
+    # part of these rules that will differ most between configurations.
+    whole = f.let("whole", L.Price, prices.at(u32(0)))
+    charged = f.let("charged", L.Cr, L.Cr.CrOk)
+    f.call("charge_call", [re, cert, whole, inout(over)], dest=charged)
+    with f.if_(charged != L.Cr.CrOk):
+        f.ret(charged)
 
-    capacity = f.let("capacity", L.Poly, _zero(L))
-    scratch = f.let("scratch", L.Poly, _zero(L))
-    for quantity, esize in (("stack", spec.BT_SIZE), ("trail", spec.UNDO_SIZE)):
-        claimed = tmp(f, L.Poly, root.field(quantity))
-        f.set(capacity, _zero(L))
-        # The growth schedule doubles from four, so a run that holds at most k
-        # entries never reserves more than 2k of them, and one that never
-        # pushes never allocates at all.
-        with f.if_(lnot(_nothing(claimed))):
-            doubled = _times(f, L, claimed, _const(L, counter(2)), over)
-            f.set(capacity, _plus(f, L, _const(L, counter(4)), doubled, over))
-        weighed = _times(f, L, capacity, _const(L, counter(esize)), over)
-        f.set(scratch, _plus(f, L, scratch, weighed, over))
-
-    # An undo entry put back costs four units, and one can only be put back if
-    # something recorded it, so the trail bound prices the replay too.
-    replay = _times(f, L, root.field("trail"), _const(L, counter(4)), over)
-    attempt = _plus(
-        f, L, _const(L, reset), _plus(f, L, root.field("work"), replay, over), over
-    )
-    cost = _plus(
-        f,
-        L,
-        _const(L, setup + deliver),
-        _plus(
-            f,
-            L,
-            _times(f, L, attempt, _step(L), over),
-            _times(f, L, scratch, _const(L, counter(3)), over),
-            over,
-        ),
-        over,
-    )
-    memory = _plus(
-        f, L, _const(L, setup), _times(f, L, scratch, _const(L, counter(2)), over), over
-    )
-
-    holds = f.let("holds", boolean, boolean(False))
-    with f.if_(over):
-        f.ret(L.Cr.CrOverflow)
-    for claim, needed, refusal in (
-        ("cost", cost, L.Cr.CrTotalCost),
-        ("stack", root.field("stack"), L.Cr.CrTotalStack),
-        ("mem", memory, L.Cr.CrTotalMem),
-    ):
-        f.call("poly_ge", [cert.field(claim), needed], dest=holds)
-        with f.if_(lnot(holds)):
-            f.ret(refusal)
-
-    # The one claim in a certificate that is not a number, held to the shape it
-    # names: linear means the cost really is at most c * (n + 1), so no growing
-    # base and no power above the first. Classification soundness is a Layer A
-    # obligation (DESIGN.md section 6), and this is the part of it the checker
-    # can settle by looking.
-    with f.if_(cert.field("complexity") == L.Cc.CcLinear):
-        shape = tmp(f, L.Poly, cert.field("cost"))
-        test = shape.field("base") != counter(1)
-        for degree in DEGREES[2:]:
-            test = lor(test, shape.field(f"c{degree}") != counter(0))
-        with f.if_(test):
-            f.ret(L.Cr.CrNotLinear)
     f.ret(L.Cr.CrOk)

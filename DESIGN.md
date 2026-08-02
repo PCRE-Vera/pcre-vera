@@ -671,9 +671,10 @@ bytecode, whose control-flow graph is cyclic and unhelpful: the compiler
 has the AST in hand when it flattens, so it also emits a region table
 mapping each source construct (quantifier body, alternation arm,
 lookaround, group) to its instruction range and its place in the nesting
-tree, stored in the compiled pattern. The analyzer walks that tree, and
-its result is not a bare number but a bound certificate: the region tree
-annotated with per-region bound terms. There is one certificate per
+tree, stored in the compiled pattern. The compiled pattern owns that table, and the analyzer walks it; its
+result is not a bare number but a bound certificate: one price per
+region, in the same order, so that the tree exists once and nothing
+carries a second copy of it to disagree with. There is one certificate per
 internal configuration of the pattern (section 6's Config domain modulo
 context parameters), covering the public matchConfig values and the
 test-only backtracking path alike, so the memoized path's memo-table

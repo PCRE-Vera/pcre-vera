@@ -13,7 +13,7 @@ program without going through Python at all, and must agree with it bit for bit.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from ..oracle.client import Compiled, CompileError, Match, NoMatch
 from ..tir.interp import Cell, Frozen, Interpreter, Seq, StructValue, Tag
@@ -101,18 +101,33 @@ class Poly:
 ZERO = Poly()
 
 
+def coef(p: Poly, degree: int) -> int:
+    """A coefficient the polynomial stopped short of is zero."""
+    return p.coefs[degree] if degree < len(p.coefs) else 0
+
+
 @dataclass(frozen=True)
 class Region:
-    """One source construct, its instruction range, and what one entry costs.
+    """One source construct the compiler flattened, and its instruction range.
 
-    `outs` is how many times control can leave the region going forward, which
-    is the ambiguity everything else composes with (BOUNDS.md section 3).
+    The compiled pattern carries these; nothing else does, so a certificate
+    cannot come to disagree with the tree it prices.
     """
 
     kind: str
     parent: int
     lo: int
     hi: int
+
+
+@dataclass(frozen=True)
+class Price:
+    """What a certificate claims one entry into a region costs.
+
+    `outs` is how many times control can leave the region going forward, which
+    is the ambiguity everything else composes with (BOUNDS.md section 3).
+    """
+
     work: Poly = ZERO
     outs: Poly = ZERO
     stack: Poly = ZERO
@@ -123,12 +138,13 @@ class Region:
 class Certificate:
     """What the analyzer will produce and the checker refuses to guess at.
 
-    The three whole-pattern bounds are what the accessors report. They are not
-    the root region's numbers: the root is priced per starting position, and a
-    call pays for setup and for scratch growth on top of that.
+    One price per region of the compiled pattern, in the same order. The three
+    whole-pattern bounds are what the accessors report, and they are not the
+    root region's numbers: the root is priced per starting position, and a call
+    pays for setup, for delivering its answer, and for scratch growth on top.
     """
 
-    regions: tuple[Region, ...]
+    prices: tuple[Price, ...]
     cost: Poly = ZERO
     stack: Poly = ZERO
     mem: Poly = ZERO
@@ -166,22 +182,18 @@ def _certificate(cert: Certificate) -> StructValue:
     # The length first, before converting elements that are about to be thrown
     # away: a table past its declared maximum is refused either way, and
     # building it costs tens of megabytes on the way to the same answer.
-    _fits(cert.regions, spec.MAX_REGIONS, "regions")
-    regions = [
+    _fits(cert.prices, spec.MAX_REGIONS, "prices")
+    prices = [
         _struct(
-            "Region",
+            "Price",
             {
-                "kind": _tag(region.kind, "Rk"),
-                "parent": _scalar(region.parent, U32),
-                "lo": _scalar(region.lo, U32),
-                "hi": _scalar(region.hi, U32),
-                "work": _poly(region.work),
-                "outs": _poly(region.outs),
-                "stack": _poly(region.stack),
-                "trail": _poly(region.trail),
+                "work": _poly(one.work),
+                "outs": _poly(one.outs),
+                "stack": _poly(one.stack),
+                "trail": _poly(one.trail),
             },
         )
-        for region in cert.regions
+        for one in cert.prices
     ]
     return _struct(
         "Cert",
@@ -191,17 +203,43 @@ def _certificate(cert: Certificate) -> StructValue:
             "cost": _poly(cert.cost),
             "stack": _poly(cert.stack),
             "mem": _poly(cert.mem),
-            "regions": _frozen(regions, StructType("Region"), spec.MAX_REGIONS),
+            "prices": _frozen(prices, StructType("Price"), spec.MAX_REGIONS),
         },
     )
 
 
+def _regions(regions: Sequence[Region]) -> Frozen:
+    """A region table as the TIR values that stand for one.
+
+    Only the corpus builds one of these: the compiler emits the real thing.
+    What it is for is the other half of the checker's job — every rule that
+    holds the tree to the bytecode needs a tree that does not, and the only way
+    to write one down is to put it where the compiler would have.
+    """
+    _fits(regions, spec.MAX_REGIONS, "regions")
+    return _frozen(
+        [
+            _struct(
+                "Region",
+                {
+                    "kind": _tag(one.kind, "Rk"),
+                    "parent": _scalar(one.parent, U32),
+                    "lo": _scalar(one.lo, U32),
+                    "hi": _scalar(one.hi, U32),
+                },
+            )
+            for one in regions
+        ],
+        StructType("Region"),
+        spec.MAX_REGIONS,
+    )
+
+
 def _poly(one: Poly) -> StructValue:
-    _fits(one.coefs, spec.MAX_DEGREE + 1, "coefficients")
+    _fits(one.coefs, len(spec.DEGREES), "coefficients")
     fields: dict[str, object] = {"base": _scalar(one.base, COUNTER)}
-    for degree in range(spec.MAX_DEGREE + 1):
-        value = one.coefs[degree] if degree < len(one.coefs) else 0
-        fields[f"c{degree}"] = _scalar(value, COUNTER)
+    for degree in spec.DEGREES:
+        fields[f"c{degree}"] = _scalar(coef(one, degree), COUNTER)
     return _struct("Poly", fields)
 
 
@@ -257,6 +295,20 @@ class CompiledPattern:
     re: StructValue
     captures: int
     names: tuple[tuple[bytes, int], ...]
+
+    def with_regions(self, regions: Sequence[Region]) -> "CompiledPattern":
+        """The same pattern carrying a region table nobody compiled.
+
+        Every rule that holds the tree to the bytecode needs a tree that does
+        not, and since the compiler is what emits trees, the only way to write
+        one down is to put it where the compiler's would have been. Doing that
+        to the pattern rather than to a call means every accessor that takes a
+        compiled pattern takes a doctored one for free, and the fake is visible
+        where it is made.
+        """
+        return replace(
+            self, re=_struct("Re", {**self.re.fields, "regions": _regions(regions)})
+        )
 
 
 class Engine:

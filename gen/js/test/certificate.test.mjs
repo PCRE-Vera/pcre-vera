@@ -17,11 +17,15 @@ import {
   BkCost,
   BkMem,
   BkStack,
+  CfgBacktrack,
+  CrRegionWork,
+  CrShape,
   CcLinear,
   Cert,
   CfgMemo,
   Out,
   Poly,
+  Price,
   Region,
   RkRepeat,
   cert_bound,
@@ -54,14 +58,17 @@ const variant = (what, ordinal, last) => {
 // cannot carry: the nested structs, and the sequence handle.
 const buildPoly = (one) => Object.assign(new Poly(), one);
 
-const buildRegion = (one) =>
-  Object.assign(new Region(), one, {
-    kind: variant("Rk", one.kind, RkRepeat),
+const buildPrice = (one) =>
+  Object.assign(new Price(), {
     work: buildPoly(one.work),
     outs: buildPoly(one.outs),
     stack: buildPoly(one.stack),
     trail: buildPoly(one.trail),
   });
+
+// Only the cases about trees no compiler would emit carry one of these.
+const buildRegion = (one) =>
+  Object.assign(new Region(), one, { kind: variant("Rk", one.kind, RkRepeat) });
 
 const buildCert = (body) =>
   Object.assign(new Cert(), body, {
@@ -70,7 +77,7 @@ const buildCert = (body) =>
     cost: buildPoly(body.cost),
     stack: buildPoly(body.stack),
     mem: buildPoly(body.mem),
-    regions: seq(body.regions.map(buildRegion)),
+    prices: seq(body.prices.map(buildPrice)),
   });
 
 const buildProgram = (pattern, where) => {
@@ -91,6 +98,9 @@ test("the certificate corpus", () => {
     const where = `${one.name}: ${one.note}`;
     const cert = buildCert(one.cert);
     const re = buildProgram(one.pattern, where);
+    if (one.regions !== undefined) {
+      re.regions = seq(one.regions.map(buildRegion));
+    }
     const asked = variant("Cfg", one.config, CfgMemo);
     assert.equal(cert_check(re, asked, cert), one.check, where);
     for (const at of one.bounds) {
@@ -107,4 +117,38 @@ test("the certificate corpus", () => {
       }
     }
   }
+});
+
+// A region kind outside the enum is not a TIR value at all, and in JavaScript
+// it is a number like any other. What matters is that the checker says so
+// rather than pricing the region at nothing, which would hide every
+// instruction in its range behind a claim of zero.
+test("a region kind outside the enum is refused", () => {
+  const one = () => Object.assign(new Poly(), { base: 1, c0: 0, c1: 0, c2: 0, c3: 0, c4: 0 });
+  const re = buildProgram("613f", "a?");
+  const held = re.regions.a.slice(0, re.regions.n);
+  assert.ok(held.length >= 2, "expected a tree with a region under the root");
+  const prices = held.map(() =>
+    Object.assign(new Price(), { work: one(), outs: one(), stack: one(), trail: one() }),
+  );
+  const cert = Object.assign(new Cert(), {
+    config: CfgBacktrack,
+    complexity: 0,
+    cost: one(),
+    stack: one(),
+    mem: one(),
+    prices: seq(prices),
+  });
+  // Claiming one of everything is far too little, so the answer is about the
+  // numbers. What matters is that it is about the numbers at all.
+  assert.equal(cert_check(re, CfgBacktrack, cert), CrRegionWork);
+  held[held.length - 1].kind = 999;
+  assert.equal(cert_check(re, CfgBacktrack, cert), CrShape);
+  // A complexity class outside the enum is the same thing said of a field
+  // rather than of a region: treating it as "not proven linear" would let a
+  // caller name a class the engine has no claim for.
+  held[held.length - 1].kind = RkRepeat;
+  cert.complexity = 999;
+  assert.equal(cert_check(re, CfgBacktrack, cert), CrShape);
+  assert.equal(cert_bound(cert, 999, 4).ok, false);
 });

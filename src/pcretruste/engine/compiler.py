@@ -13,7 +13,7 @@ purpose, because keying a visited set by pc is only sound without counters.
 
 from __future__ import annotations
 
-from ..dsl import boolean, counter, inout, land, u8, u32
+from ..dsl import boolean, counter, inout, land, lnot, u8, u32
 from . import spec
 from .layout import Layout
 from .parser import down, tmp
@@ -43,15 +43,69 @@ def _emit(L: Layout) -> None:
     f.push(w.field("code"), L.Inst.of(op=f["op"], arg=f["arg"], alt=f["alt"]))
     f.ret(pc)
 
-    f = L.func("push_job", params=[("w", L.Work, "inout"), ("node", u32)])
+    f = L.func(
+        "push_job", params=[("w", L.Work, "inout"), ("node", u32), ("here", u32)]
+    )
     w = f["w"]
     with f.if_(w.field("jobs").len() >= u32(spec.MAX_JOBS)):
         f.set(w.field("err"), u32(spec.E_PATTERN_TOO_LARGE))
         f.ret()
     f.push(
         w.field("jobs"),
-        L.Job.of(node=f["node"], phase=u32(0), cur=u32(0), mark=u32(0), base=u32(0)),
+        L.Job.of(
+            node=f["node"],
+            phase=u32(0),
+            cur=u32(0),
+            mark=u32(0),
+            base=u32(0),
+            here=f["here"],
+            arm=u32(spec.NONE),
+        ),
     )
+
+    # The region table of DESIGN.md section 5, emitted while the AST is still
+    # in hand. A region opens where its first instruction is about to go and
+    # closes where the next one will, so both ends are just the code length at
+    # the right moment.
+    f = L.func(
+        "open_region",
+        params=[("w", L.Work, "inout"), ("kind", L.Rk), ("parent", u32)],
+        ret=u32,
+    )
+    w = f["w"]
+    at = tmp(f, u32, w.field("regions").len())
+    with f.if_(at >= u32(spec.MAX_REGIONS)):
+        f.set(w.field("err"), u32(spec.E_PATTERN_TOO_LARGE))
+        f.ret(u32(0))
+    f.push(
+        w.field("regions"),
+        L.Region.of(
+            kind=f["kind"],
+            parent=f["parent"],
+            lo=w.field("code").len(),
+            hi=w.field("code").len(),
+        ),
+    )
+    f.ret(at)
+
+    f = L.func("close_region", params=[("w", L.Work, "inout"), ("at", u32)])
+    w = f["w"]
+    at = tmp(f, u32, f["at"])
+    with f.if_(at >= w.field("regions").len()):
+        f.ret()
+    f.set(w.field("regions").at(at).field("hi"), w.field("code").len())
+
+    f = L.func("drop_empty_region", params=[("w", L.Work, "inout"), ("at", u32)])
+    # A construct that compiled to nothing prices nothing, and a region of zero
+    # width is one the composition rules have no use for. Everything inside it
+    # compiled to nothing too, so it was dropped in its turn and this one is
+    # back on top of the table.
+    w = f["w"]
+    at = tmp(f, u32, f["at"])
+    with f.if_(at >= w.field("regions").len()):
+        f.ret()
+    with f.if_(w.field("regions").at(at).field("lo") == w.field("code").len()):
+        f.truncate(w.field("regions"), at)
 
     f = L.func("push_patch", params=[("w", L.Work, "inout"), ("pc", u32)])
     w = f["w"]
@@ -87,7 +141,9 @@ def _walk(L: Layout) -> None:
     )
     w = f["w"]
     root = tmp(f, u32, w.field("root"))
-    f.call("push_job", [inout(w), root])
+    whole = tmp(f, u32, u32(0))
+    f.call("open_region", [inout(w), L.Rk.RkRoot, u32(spec.NONE)], dest=whole)
+    f.call("push_job", [inout(w), root, whole])
     fuel = tmp(f, counter, counter(WALK_FUEL))
     pc = tmp(f, u32, u32(0))
 
@@ -153,21 +209,30 @@ def _walk(L: Layout) -> None:
                 with f.else_():
                     f.set(w.field("jobs").at(top).field("phase"), u32(1))
                     f.set(w.field("jobs").at(top).field("cur"), child)
-                    f.call("push_job", [inout(w), child])
+                    f.call("push_job", [inout(w), child, job.field("here")])
 
             with arm.case("NdGroup"):
                 with f.if_(job.field("phase") == u32(0)):
+                    mine = tmp(f, u32, u32(0))
+                    f.call(
+                        "open_region",
+                        [inout(w), L.Rk.RkGroup, job.field("here")],
+                        dest=mine,
+                    )
+                    f.set(w.field("jobs").at(top).field("here"), mine)
                     with f.if_(nd.field("val") != u32(0)):
                         slot = tmp(f, u32, nd.field("val") * u32(2))
                         f.call("emit", [inout(w), L.Op.OpSave, slot, u32(0)], dest=pc)
                     f.set(w.field("jobs").at(top).field("phase"), u32(1))
                     body = tmp(f, u32, nd.field("first"))
                     with f.if_(body != u32(0)):
-                        f.call("push_job", [inout(w), body])
+                        f.call("push_job", [inout(w), body, mine])
                 with f.else_():
                     with f.if_(nd.field("val") != u32(0)):
                         slot = tmp(f, u32, nd.field("val") * u32(2) + u32(1))
                         f.call("emit", [inout(w), L.Op.OpSave, slot, u32(0)], dest=pc)
+                    f.call("close_region", [inout(w), job.field("here")])
+                    f.call("drop_empty_region", [inout(w), job.field("here")])
                     f.pop(w.field("jobs"), done)
 
             with arm.case("NdAlt"):
@@ -184,6 +249,9 @@ def _walk(L: Layout) -> None:
     with f.if_(f["endanchored"]):
         f.call("emit", [inout(w), L.Op.OpEod, u32(0), u32(0)], dest=pc)
     f.call("emit", [inout(w), L.Op.OpAccept, u32(0), u32(0)], dest=pc)
+    # The root covers the whole program, the trailing accept included, so it
+    # closes after the last instruction rather than after the last construct.
+    f.call("close_region", [inout(w), whole])
     with f.if_(w.field("err") == u32(0)):
         f.call("scan_first", [inout(w)])
 
@@ -218,6 +286,9 @@ def _alt(L: Layout) -> None:
             p = tmp(f, u32, u32(0))
             f.pop(w.field("patches"), p)
             f.set(w.field("code").at(p).field("arg"), stop)
+        # The last branch and the alternation itself end where the jumps land.
+        f.call("close_region", [inout(w), job.field("arm")])
+        f.call("close_region", [inout(w), job.field("here")])
         f.pop(w.field("jobs"), done)
         f.ret()
 
@@ -229,8 +300,9 @@ def _alt(L: Layout) -> None:
     with f.if_(job.field("phase") == u32(0)):
         f.set(w.field("jobs").at(top).field("base"), w.field("patches").len())
     with f.else_():
-        # The branch just compiled jumps to the end; the split that guarded it
-        # now knows where the next one starts.
+        # The branch just compiled ends where its jump to the end sits, and
+        # the split that guarded it now knows where the next one starts.
+        f.call("close_region", [inout(w), job.field("arm")])
         f.call("emit", [inout(w), L.Op.OpJump, u32(0), u32(0)], dest=pc)
         f.call("push_patch", [inout(w), pc])
         with f.if_(w.field("err") != u32(0)):
@@ -238,9 +310,23 @@ def _alt(L: Layout) -> None:
         f.set(w.field("code").at(job.field("mark")).field("alt"), w.field("code").len())
         f.set(branch, w.field("nodes").at(job.field("cur")).field("nxt"))
 
-    with f.if_(w.field("nodes").at(branch).field("nxt") == u32(0)):
-        f.set(w.field("jobs").at(top).field("phase"), u32(2))
+    last = tmp(f, boolean, w.field("nodes").at(branch).field("nxt") == u32(0))
+    # One branch compiles to no split and no jump, so there is no alternation
+    # to price and no region to claim there is one.
+    single = tmp(f, boolean, land(job.field("phase") == u32(0), last))
+
+    # The alternation opens where its first split will go, so before it goes.
+    inside = tmp(f, u32, job.field("here"))
+    with f.if_(lnot(single)):
         with f.if_(job.field("phase") == u32(0)):
+            f.call(
+                "open_region", [inout(w), L.Rk.RkAlt, job.field("here")], dest=inside
+            )
+            f.set(w.field("jobs").at(top).field("here"), inside)
+
+    with f.if_(last):
+        f.set(w.field("jobs").at(top).field("phase"), u32(2))
+        with f.if_(single):
             f.set(w.field("jobs").at(top).field("phase"), u32(3))
     with f.else_():
         f.call("emit", [inout(w), L.Op.OpSplit, u32(0), u32(0)], dest=pc)
@@ -249,8 +335,16 @@ def _alt(L: Layout) -> None:
         f.set(w.field("code").at(pc).field("arg"), pc + u32(1))
         f.set(w.field("jobs").at(top).field("mark"), pc)
         f.set(w.field("jobs").at(top).field("phase"), u32(1))
+
+    # And a branch opens after the split that guards it, or after the jump the
+    # branch before it left by.
+    with f.if_(lnot(single)):
+        opened = tmp(f, u32, u32(0))
+        f.call("open_region", [inout(w), L.Rk.RkBranch, inside], dest=opened)
+        f.set(w.field("jobs").at(top).field("arm"), opened)
+        f.set(inside, opened)
     f.set(w.field("jobs").at(top).field("cur"), branch)
-    f.call("push_job", [inout(w), branch])
+    f.call("push_job", [inout(w), branch, inside])
 
 
 def _repeat(L: Layout) -> None:
@@ -281,6 +375,7 @@ def _repeat(L: Layout) -> None:
         with f.else_():
             f.set(w.field("code").at(sp).field("arg"), stop)
             f.set(w.field("code").at(sp).field("alt"), sp + u32(1))
+        f.call("close_region", [inout(w), job.field("here")])
         f.pop(w.field("jobs"), done)
         f.ret()
 
@@ -290,6 +385,7 @@ def _repeat(L: Layout) -> None:
         with f.if_(w.field("err") != u32(0)):
             f.ret()
         f.set(w.field("reps").at(r).field("after"), w.field("code").len())
+        f.call("close_region", [inout(w), job.field("here")])
         f.pop(w.field("jobs"), done)
         f.ret()
 
@@ -304,17 +400,25 @@ def _repeat(L: Layout) -> None:
     with f.if_(hi == u32(0)):
         f.pop(w.field("jobs"), done)
         f.ret()
+    # Repeated once is the body and nothing else, so it is priced as the body.
     with f.if_(land(lo == u32(1), hi == u32(1))):
         f.set(w.field("jobs").at(top).field("phase"), u32(3))
-        f.call("push_job", [inout(w), body])
+        f.call("push_job", [inout(w), body, job.field("here")])
         f.ret()
+
+    # Everything below opens a region, and it opens before the first
+    # instruction of the shape BOUNDS.md section 4.4 will read back.
+    mine = tmp(f, u32, u32(0))
+    f.call("open_region", [inout(w), L.Rk.RkRepeat, job.field("here")], dest=mine)
+    f.set(w.field("jobs").at(top).field("here"), mine)
+
     with f.if_(land(lo == u32(0), hi == u32(1))):
         f.call("emit", [inout(w), L.Op.OpSplit, u32(0), u32(0)], dest=pc)
         with f.if_(w.field("err") != u32(0)):
             f.ret()
         f.set(w.field("jobs").at(top).field("mark"), pc)
         f.set(w.field("jobs").at(top).field("phase"), u32(1))
-        f.call("push_job", [inout(w), body])
+        f.call("push_job", [inout(w), body, mine])
         f.ret()
 
     r = tmp(f, u32, u32(0))
@@ -334,7 +438,7 @@ def _repeat(L: Layout) -> None:
     f.set(w.field("reps").at(r).field("body"), head + u32(1))
     f.set(w.field("jobs").at(top).field("mark"), r)
     f.set(w.field("jobs").at(top).field("phase"), u32(2))
-    f.call("push_job", [inout(w), body])
+    f.call("push_job", [inout(w), body, mine])
 
 
 def _first(L: Layout) -> None:

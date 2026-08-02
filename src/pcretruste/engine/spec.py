@@ -81,6 +81,24 @@ BT_SIZE = 12
 UNDO_SIZE = 8
 """IR bytes of one undo entry: two u32."""
 
+REG_SIZE = 4
+"""IR bytes of one register, which is what zeroing or restoring one is charged.
+
+The matcher charges it, the checker prices it and the corpus predicts it, so it
+is here rather than spelled out three times: DESIGN.md section 5 wants one cost
+model shared by the analyzer, both matchers and the Lean accounting, and a
+number the three copies could drift apart on is the easiest way to lose that."""
+
+GROW_MIN = 4
+"""Elements the first growth of a vector reserves."""
+
+GROW_FACTOR = 2
+"""What every growth after the first multiplies the capacity by.
+
+TIR-SPEC.md section 11.3 fixes the schedule so that the peak is the same in
+every target; these two say what it is, for the matcher that follows it and the
+checker that has to bound it."""
+
 MAX_STACK = CEILING // BT_SIZE
 """Declared maximum of the backtrack stack: the whole allocation ceiling divided
 by what one entry weighs. The caller's stack and memory limits are the real
@@ -94,7 +112,7 @@ reason: only the caller's memory limit decides when the trail is too long."""
 # --- resource analysis (DESIGN.md section 5) ---
 
 MAX_REGIONS = MAX_NODES
-"""Regions in one bound certificate.
+"""Regions in one compiled pattern.
 
 A region is a source construct the compiler flattened — a group, an alternation
 branch, a quantifier body — so the AST arena already bounds how many there can
@@ -111,6 +129,9 @@ higher power has no certificate at all, which is a refusal the checker names.
 Four is what the shapes of BOUNDS.md reach: each nested quantifier whose body
 can match empty contributes one power, and the per-attempt loop contributes the
 last."""
+
+DEGREES = tuple(range(MAX_DEGREE + 1))
+"""Those powers, as the suffixes the coefficient fields are named with."""
 
 UNSET = 0xFFFFFFFF
 """What a register holds before anything writes it, reported as -1."""

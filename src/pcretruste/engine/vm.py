@@ -184,23 +184,24 @@ def _scratch(L: Layout) -> None:
         f.ret(boolean(True))
     with f.if_(f["lenv"] >= f["maxv"]):
         f.ret(boolean(False))
-    newcap = tmp(f, u32, u32(4))
-    with f.if_(f["oldcap"] * u32(2) > u32(4)):
-        f.set(newcap, f["oldcap"] * u32(2))
+    newcap = tmp(f, u32, u32(spec.GROW_MIN))
+    grown = tmp(f, u32, f["oldcap"] * u32(spec.GROW_FACTOR))
+    with f.if_(grown > u32(spec.GROW_MIN)):
+        f.set(newcap, grown)
     with f.if_(newcap > f["maxv"]):
         f.set(newcap, f["maxv"])
-    grown = tmp(f, counter, newcap.cast(counter) * f["esize"].cast(counter))
+    taken = tmp(f, counter, newcap.cast(counter) * f["esize"].cast(counter))
     held = tmp(f, counter, f["oldcap"].cast(counter) * f["esize"].cast(counter))
-    with f.if_(grown > f["memlimit"] - f["mem"]):
+    with f.if_(taken > f["memlimit"] - f["mem"]):
         f.ret(boolean(False))
     # Every byte of the new buffer is zeroed and every byte of the old one is
     # copied over it, and both are work: a growth that charged only the copy
     # would let a run allocate its first block for nothing.
-    work = tmp(f, counter, grown + held)
+    work = tmp(f, counter, taken + held)
     with f.if_(work > f["costlimit"] - f["cost"]):
         f.ret(boolean(False))
     f.set(f["cost"], f["cost"] + work)
-    total = tmp(f, counter, f["mem"] + grown)
+    total = tmp(f, counter, f["mem"] + taken)
     with f.if_(total > f["peak"]):
         f.set(f["peak"], total)
     f.set(f["mem"], total - held)
@@ -361,7 +362,7 @@ def _match(L: Layout) -> None:
 
     # The register file and the ovector are sized once, and their zeroing is
     # charged, because setup work is work (DESIGN.md section 5).
-    setup = tmp(f, counter, (nreg + novec).cast(counter) * counter(4))
+    setup = tmp(f, counter, (nreg + novec).cast(counter) * counter(spec.REG_SIZE))
     with f.if_(lor(setup > memlimit, setup > costlimit)):
         f.ret(u32(spec.RESOURCE_EXCEEDED))
     f.set(mem, setup)
@@ -385,7 +386,7 @@ def _match(L: Layout) -> None:
     okv = tmp(f, boolean, boolean(False))
 
     with f.while_(searching, down(n + u32(1), attempt)):
-        reset = tmp(f, counter, nreg.cast(counter) * counter(4))
+        reset = tmp(f, counter, nreg.cast(counter) * counter(spec.REG_SIZE))
         with f.if_(reset > costlimit - cost):
             f.set(result, u32(spec.RESOURCE_EXCEEDED))
             f.set(searching, boolean(False))
@@ -629,7 +630,7 @@ def _match(L: Layout) -> None:
                         f,
                         counter,
                         (trail.len().cast(counter) - entry.field("mark").cast(counter))
-                        * counter(4),
+                        * counter(spec.REG_SIZE),
                     )
                     with f.if_(replay > costlimit - cost):
                         f.set(result, u32(spec.RESOURCE_EXCEEDED))
@@ -677,7 +678,7 @@ def _match(L: Layout) -> None:
     # delivering its own result has gone over it like any other, and says so
     # rather than copying for free.
     with f.if_(result == u32(spec.MATCHED)):
-        deliver = tmp(f, counter, novec.cast(counter) * counter(4))
+        deliver = tmp(f, counter, novec.cast(counter) * counter(spec.REG_SIZE))
         with f.if_(deliver > costlimit - cost):
             f.set(result, u32(spec.RESOURCE_EXCEEDED))
         with f.else_():

@@ -64,11 +64,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -77,7 +74,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -102,6 +98,40 @@
               "c3": 0,
               "c4": 0
             }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
           }
         ],
         "stack": {
@@ -113,10 +143,10 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "literal",
-      "note": "Three characters and an accept. The whole cost is one visit per instruction at each of the n + 1 starting positions, plus the register file and the ovector, sized and zeroed once and cleared again per attempt.",
+      "note": "Three characters and an accept. The whole cost is one visit per instruction at each of the n + 1 starting positions, plus the register file and the ovector, sized and zeroed once, cleared again per attempt, and copied back out when the match is found.",
       "pattern": "616263"
     },
     {
@@ -183,11 +213,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -196,7 +223,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -223,9 +249,6 @@
             }
           },
           {
-            "hi": 3,
-            "kind": 1,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -234,7 +257,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 0,
@@ -270,7 +326,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "capture",
       "note": "The same four instructions, two of them saves. A save records an undo entry, so this pattern needs a trail where the literal needed none \u2014 which is the whole point of pricing the opcodes rather than counting them.",
@@ -340,11 +396,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 5,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -353,7 +406,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -380,9 +432,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 3,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -391,7 +440,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -418,9 +466,40 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 2,
-            "lo": 1,
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 1,
@@ -429,7 +508,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -456,9 +534,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 2,
-            "lo": 3,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -467,7 +542,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -503,11 +577,296 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "alternation",
       "note": "A split, two branches, and the jump the first one leaves by. The region is entered once and both branches are tried, so the ambiguity is two and the accept downstream is charged twice.",
       "pattern": "617c62"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 540,
+          "mem": 336,
+          "n": 0,
+          "stack": 1
+        },
+        {
+          "cost": 576,
+          "mem": 336,
+          "n": 1,
+          "stack": 1
+        },
+        {
+          "cost": 612,
+          "mem": 336,
+          "n": 2,
+          "stack": 1
+        },
+        {
+          "cost": 900,
+          "mem": 336,
+          "n": 10,
+          "stack": 1
+        },
+        {
+          "cost": 2448,
+          "mem": 336,
+          "n": 53,
+          "stack": 1
+        },
+        {
+          "cost": 2359800,
+          "mem": 336,
+          "n": 65535,
+          "stack": 1
+        },
+        {
+          "cost": null,
+          "mem": 336,
+          "n": 9007199254740991,
+          "stack": 1
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 504,
+          "c1": 36,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 336,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 8,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 6,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 6,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 1,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 26,
+      "config": 0,
+      "name": "an-empty-alternation-branch",
+      "note": "`(a|)` compiles the second branch to nothing at all, so its region covers no instruction. That is legal for a branch and for nothing else: the alternation reads its shape off the branch list, so the branch has to be there whether or not it holds anything.",
+      "pattern": "28617c29"
     },
     {
       "bounds": [
@@ -573,11 +932,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 3,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -586,7 +942,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -613,9 +968,6 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -624,7 +976,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -660,7 +1045,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "optional",
       "note": "One split whose arms are the body and what follows it.",
@@ -730,11 +1115,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 3,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -743,7 +1125,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -770,9 +1151,6 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -781,7 +1159,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -817,7 +1228,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "lazy-optional",
       "note": "The same shape with the split's arms the other way round, which costs exactly the same and is why the rule takes either order.",
@@ -887,11 +1298,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -900,7 +1308,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -927,9 +1334,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -938,7 +1342,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -974,10 +1411,10 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "star",
-      "note": "An unbounded repetition. Past the minimum count an iteration that consumed nothing is the last one, so the loop runs at most n + 1 times and the cost comes out quadratic once the starting positions are counted in.",
+      "note": "An unbounded repetition. Past the minimum count an iteration that consumed nothing is the last one, so the head is reached at most n + 2 times and the cost comes out quadratic once the starting positions are counted in.",
       "pattern": "612a"
     },
     {
@@ -1044,11 +1481,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -1057,7 +1491,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 6,
@@ -1084,9 +1517,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 12,
@@ -1095,7 +1525,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 6,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 13,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 25,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 12,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 6,
@@ -1131,7 +1594,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "counted",
       "note": "A bounded one, where the declared maximum is what stops it and the bound has no term in n at all.",
@@ -1201,11 +1664,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 10,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -1214,7 +1674,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -1241,9 +1700,6 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -1252,7 +1708,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 10,
+              "c1": 9,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -1279,9 +1768,6 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 1,
-            "lo": 3,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -1290,7 +1776,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -1326,7 +1811,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "grouped-repeat",
       "note": "A capturing group inside a star, followed by a literal. The group is entered once per iteration and its saves are charged there, so the trail grows with the loop rather than with the program.",
@@ -1396,11 +1881,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 12,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -1409,7 +1891,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 2,
               "c0": 8,
@@ -1436,9 +1917,6 @@
             }
           },
           {
-            "hi": 10,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 2,
               "c0": 12,
@@ -1447,7 +1925,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 2,
+              "c0": 8,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 2,
+              "c0": 25,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 2,
+              "c0": 57,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 2,
+              "c0": 12,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 2,
               "c0": 8,
@@ -1474,9 +1985,6 @@
             }
           },
           {
-            "hi": 9,
-            "kind": 1,
-            "lo": 3,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -1485,7 +1993,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -1512,9 +2019,6 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 3,
-            "lo": 4,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -1523,7 +2027,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 2,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -1550,9 +2053,6 @@
             }
           },
           {
-            "hi": 6,
-            "kind": 2,
-            "lo": 5,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -1561,7 +2061,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 3,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -1588,9 +2087,6 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 2,
-            "lo": 7,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -1599,7 +2095,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 3,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -1635,7 +2130,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "alternation-inside-a-loop",
       "note": "The same shape with two branches in the group, and the bound comes out exponential. Structurally it is: the loop hands the next iteration one flow per way the body finished, and nothing in these rules knows that `a` and `b` cannot both match the same byte. The bound may overestimate and never underestimate (DESIGN.md section 5), and a first-byte disjointness rule is what would sharpen this one.",
@@ -1705,11 +2200,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 9,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -1718,7 +2210,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 32,
@@ -1745,9 +2236,6 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 48,
@@ -1756,7 +2244,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 32,
@@ -1783,9 +2270,40 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 3,
-            "lo": 3,
+            "outs": {
+              "base": 1,
+              "c0": 48,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 32,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 49,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 129,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 2,
@@ -1794,7 +2312,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -1821,9 +2338,40 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 2,
-            "lo": 4,
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 1,
@@ -1832,7 +2380,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 2,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -1859,9 +2406,6 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 2,
-            "lo": 6,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -1870,7 +2414,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 2,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -1906,10 +2449,10 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "ambiguous-body-bounded",
-      "note": "A body with two ways to match the same character, repeated at most three times. Each iteration doubles the ways into the next, so the flow through the head is 2^3 and the bound stays a number.",
+      "note": "A body with two ways to match the same character, repeated at most three times. Each iteration doubles the ways into the next, so the flow through the head is a power of two and the bound stays a number.",
       "pattern": "283f3a617c61297b302c337d"
     },
     {
@@ -1976,11 +2519,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 9,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -1989,7 +2529,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 2,
               "c0": 8,
@@ -2016,9 +2555,6 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 2,
               "c0": 12,
@@ -2027,7 +2563,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 2,
               "c0": 8,
@@ -2054,9 +2589,40 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 3,
-            "lo": 3,
+            "outs": {
+              "base": 2,
+              "c0": 12,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 2,
+              "c0": 8,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 2,
+              "c0": 13,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 2,
+              "c0": 33,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 2,
@@ -2065,7 +2631,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -2092,9 +2657,40 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 2,
-            "lo": 4,
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 1,
@@ -2103,7 +2699,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 2,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -2130,9 +2725,6 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 2,
-            "lo": 6,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -2141,7 +2733,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 2,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -2177,10 +2768,10 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "exponential",
-      "note": "The same body with no upper bound, which is where the growing base comes from: the iteration count is n + 1, so the flow is 2^n and the bound saturates within a few dozen bytes of subject. That is the honest answer rather than a number nobody could budget for.",
+      "note": "The same body with no upper bound, which is where the growing base comes from: the head is reached n + 2 times, so the flow is a multiple of 2^n and the bound saturates within a few dozen bytes of subject. That is the honest answer rather than a number nobody could budget for.",
       "pattern": "283f3a617c61292a"
     },
     {
@@ -2247,11 +2838,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -2260,7 +2848,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -2285,6 +2872,40 @@
               "c3": 0,
               "c4": 0
             }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
           }
         ],
         "stack": {
@@ -2296,7 +2917,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "linear-claim-that-holds",
       "note": "The class claim of DESIGN.md section 6, held to the shape it names: a literal really does cost at most c * (n + 1).",
@@ -2366,11 +2987,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -2379,7 +2997,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -2406,9 +3023,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -2417,7 +3031,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -2453,7 +3100,7 @@
           "c4": 0
         }
       },
-      "check": 24,
+      "check": 25,
       "config": 0,
       "name": "linear-claim-with-a-square",
       "note": "A star does not, and saying so does not make it so.",
@@ -2523,11 +3170,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 9,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -2536,7 +3180,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 2,
               "c0": 8,
@@ -2563,9 +3206,6 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 2,
               "c0": 12,
@@ -2574,7 +3214,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 2,
               "c0": 8,
@@ -2601,9 +3240,40 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 3,
-            "lo": 3,
+            "outs": {
+              "base": 2,
+              "c0": 12,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 2,
+              "c0": 8,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 2,
+              "c0": 13,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 2,
+              "c0": 33,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 2,
@@ -2612,7 +3282,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -2639,9 +3308,40 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 2,
-            "lo": 4,
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 1,
@@ -2650,7 +3350,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 2,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -2677,9 +3376,6 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 2,
-            "lo": 6,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -2688,7 +3384,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 2,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -2724,7 +3419,7 @@
           "c4": 0
         }
       },
-      "check": 24,
+      "check": 25,
       "config": 0,
       "name": "linear-claim-with-a-growing-base",
       "note": "Nor does an exponential bound, however small its coefficient.",
@@ -2794,11 +3489,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -2807,7 +3499,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -2832,6 +3523,40 @@
               "c3": 0,
               "c4": 0
             }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
           }
         ],
         "stack": {
@@ -2843,7 +3568,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "over-claimed-to-every-ceiling",
       "note": "A certificate may be generous, as long as it is generous in every coefficient at once. These reach exactly the three ceilings at n = 0: the counter's saturation point for cost, the deepest stack a limit could name, and the section 3 byte ceiling for memory. What a caller reads back is what the certificate names, not what the checker computed.",
@@ -2913,11 +3638,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -2926,7 +3648,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -2951,6 +3672,40 @@
               "c3": 0,
               "c4": 0
             }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
           }
         ],
         "stack": {
@@ -2962,7 +3717,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "over-claimed-past-every-ceiling",
       "note": "One unit more of each, which no limit could accept, so none of the three is a number any more. The three ceilings differ, which is the whole difference between the projections.",
@@ -3032,11 +3787,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -3045,7 +3797,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -3070,6 +3821,40 @@
               "c3": 0,
               "c4": 0
             }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
           }
         ],
         "stack": {
@@ -3081,7 +3866,7 @@
           "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "past-the-memory-ceiling-and-still-a-cost",
       "note": "One IR byte more than the largest reservation there is, claimed as both. It is refused as memory and is a perfectly ordinary amount of work, which is the whole reason the three projections carry their own ceilings rather than sharing the counter's.",
@@ -3151,11 +3936,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -3164,7 +3946,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -3189,6 +3970,74 @@
               "c3": 0,
               "c4": 0
             }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
           }
         ],
         "stack": {
@@ -3200,53 +4049,53 @@
           "c4": 0
         }
       },
-      "check": 20,
+      "check": 21,
       "config": 0,
-      "name": "literal-certificate-on-a-capture",
-      "note": "Four instructions either way, and the certificate for the literal is one undo entry short of what two saves record. A checker given only a length could not tell these two programs apart.",
+      "name": "an-uncaptured-certificate-on-a-capture",
+      "note": "Four instructions and the same three regions over the same three ranges either way, and the only difference is that two of the instructions are saves. A save records an undo entry, so the certificate for the group that captures nothing is two entries short of the one that does. A checker given only a length could not tell these two programs apart at all.",
       "pattern": "286129"
     },
     {
       "bounds": [
         {
-          "cost": 37,
-          "mem": 16,
+          "cost": 0,
+          "mem": 0,
           "n": 0,
           "stack": 0
         },
         {
-          "cost": 50,
-          "mem": 16,
+          "cost": 0,
+          "mem": 0,
           "n": 1,
           "stack": 0
         },
         {
-          "cost": 63,
-          "mem": 16,
+          "cost": 0,
+          "mem": 0,
           "n": 2,
           "stack": 0
         },
         {
-          "cost": 167,
-          "mem": 16,
+          "cost": 0,
+          "mem": 0,
           "n": 10,
           "stack": 0
         },
         {
-          "cost": 726,
-          "mem": 16,
+          "cost": 0,
+          "mem": 0,
           "n": 53,
           "stack": 0
         },
         {
-          "cost": 851992,
-          "mem": 16,
+          "cost": 0,
+          "mem": 0,
           "n": 65535,
           "stack": 0
         },
         {
-          "cost": null,
-          "mem": 16,
+          "cost": 0,
+          "mem": 0,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -3256,25 +4105,22 @@
         "config": 0,
         "cost": {
           "base": 1,
-          "c0": 24,
-          "c1": 13,
+          "c0": 0,
+          "c1": 0,
           "c2": 0,
           "c3": 0,
           "c4": 0
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 0,
           "c1": 0,
           "c2": 0,
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 5,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -3283,7 +4129,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -3302,7 +4147,7 @@
             },
             "work": {
               "base": 1,
-              "c0": 5,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -3319,55 +4164,63 @@
           "c4": 0
         }
       },
-      "check": 12,
+      "check": 13,
       "config": 0,
       "name": "straight-line-certificate-on-a-branching-program",
       "note": "Five instructions either way. A split is not an instruction a region may hold loose: the tree has to say which construct it belongs to, or nothing prices the choice it makes.",
-      "pattern": "617c62"
+      "pattern": "617c62",
+      "regions": [
+        {
+          "hi": 5,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        }
+      ]
     },
     {
       "bounds": [
         {
-          "cost": 254,
-          "mem": 160,
+          "cost": 0,
+          "mem": 0,
           "n": 0,
-          "stack": 1
+          "stack": 0
         },
         {
-          "cost": 268,
-          "mem": 160,
+          "cost": 0,
+          "mem": 0,
           "n": 1,
-          "stack": 1
+          "stack": 0
         },
         {
-          "cost": 282,
-          "mem": 160,
+          "cost": 0,
+          "mem": 0,
           "n": 2,
-          "stack": 1
+          "stack": 0
         },
         {
-          "cost": 394,
-          "mem": 160,
+          "cost": 0,
+          "mem": 0,
           "n": 10,
-          "stack": 1
+          "stack": 0
         },
         {
-          "cost": 996,
-          "mem": 160,
+          "cost": 0,
+          "mem": 0,
           "n": 53,
-          "stack": 1
+          "stack": 0
         },
         {
-          "cost": 917744,
-          "mem": 160,
+          "cost": 0,
+          "mem": 0,
           "n": 65535,
-          "stack": 1
+          "stack": 0
         },
         {
-          "cost": null,
-          "mem": 160,
+          "cost": 0,
+          "mem": 0,
           "n": 9007199254740991,
-          "stack": 1
+          "stack": 0
         }
       ],
       "cert": {
@@ -3375,25 +4228,22 @@
         "config": 0,
         "cost": {
           "base": 1,
-          "c0": 240,
-          "c1": 14,
+          "c0": 0,
+          "c1": 0,
           "c2": 0,
           "c3": 0,
           "c4": 0
         },
         "mem": {
           "base": 1,
-          "c0": 160,
+          "c0": 0,
           "c1": 0,
           "c2": 0,
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 5,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -3402,10 +4252,9 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
-              "c0": 1,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -3421,7 +4270,7 @@
             },
             "work": {
               "base": 1,
-              "c0": 6,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -3429,21 +4278,17 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 3,
-            "lo": 0,
             "outs": {
               "base": 1,
-              "c0": 2,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
-              "c0": 1,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -3459,7 +4304,7 @@
             },
             "work": {
               "base": 1,
-              "c0": 4,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -3467,18 +4312,14 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 2,
-            "lo": 1,
             "outs": {
               "base": 1,
-              "c0": 1,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -3497,7 +4338,7 @@
             },
             "work": {
               "base": 1,
-              "c0": 1,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -3505,18 +4346,14 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 2,
-            "lo": 3,
             "outs": {
               "base": 1,
-              "c0": 1,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -3535,7 +4372,7 @@
             },
             "work": {
               "base": 1,
-              "c0": 1,
+              "c0": 0,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -3545,18 +4382,44 @@
         ],
         "stack": {
           "base": 1,
-          "c0": 1,
+          "c0": 0,
           "c1": 0,
           "c2": 0,
           "c3": 0,
           "c4": 0
         }
       },
-      "check": 13,
+      "check": 14,
       "config": 0,
       "name": "branching-certificate-on-a-straight-line-program",
       "note": "And the other way round, where the alternation region is pointed at code that has no split in it.",
-      "pattern": "61626364"
+      "pattern": "61626364",
+      "regions": [
+        {
+          "hi": 5,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 4,
+          "kind": 3,
+          "lo": 0,
+          "parent": 0
+        },
+        {
+          "hi": 2,
+          "kind": 2,
+          "lo": 1,
+          "parent": 1
+        },
+        {
+          "hi": 4,
+          "kind": 2,
+          "lo": 3,
+          "parent": 1
+        }
+      ]
     },
     {
       "bounds": [
@@ -3622,11 +4485,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 11,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -3635,7 +4495,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -3662,9 +4521,6 @@
             }
           },
           {
-            "hi": 10,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -3673,7 +4529,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -3709,11 +4564,25 @@
           "c4": 0
         }
       },
-      "check": 13,
+      "check": 14,
       "config": 0,
       "name": "repeat-certificate-on-the-other-repetition",
       "note": "Two repetitions, and a region covering the first one's header and the second one's tail. Nothing has to be recorded to make this refusable: each of the four opcodes names its own repetition, and the range pins the head, the body and the exit, so a repeat region cannot be about a quantifier other than the one it covers.",
-      "pattern": "612a612a"
+      "pattern": "612a612a",
+      "regions": [
+        {
+          "hi": 11,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 10,
+          "kind": 4,
+          "lo": 0,
+          "parent": 0
+        }
+      ]
     },
     {
       "bounds": [
@@ -3779,11 +4648,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -3792,7 +4658,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -3812,6 +4677,40 @@
             "work": {
               "base": 1,
               "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -3898,11 +4797,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -3911,7 +4807,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -3931,6 +4826,40 @@
             "work": {
               "base": 1,
               "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -4017,11 +4946,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -4030,7 +4956,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -4055,6 +4980,40 @@
               "c3": 0,
               "c4": 0
             }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
           }
         ],
         "stack": {
@@ -4071,6 +5030,372 @@
       "name": "no-rules-for-the-memoized-path",
       "note": "And the memoized path waits for M9, memo table and all.",
       "pattern": "616263"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 705,
+          "mem": 440,
+          "n": 0,
+          "stack": 2
+        },
+        {
+          "cost": 950,
+          "mem": 552,
+          "n": 1,
+          "stack": 3
+        },
+        {
+          "cost": 1223,
+          "mem": 664,
+          "n": 2,
+          "stack": 4
+        },
+        {
+          "cost": 4415,
+          "mem": 1560,
+          "n": 10,
+          "stack": 12
+        },
+        {
+          "cost": 52274,
+          "mem": 6376,
+          "n": 53,
+          "stack": 55
+        },
+        {
+          "cost": 60142846440,
+          "mem": 7340360,
+          "n": 65535,
+          "stack": 65537
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 488,
+          "c1": 203,
+          "c2": 14,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 328,
+          "c1": 112,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 7,
+              "c1": 6,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 1,
+          "c1": 1,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 11,
+      "config": 0,
+      "name": "fewer-prices-than-regions",
+      "note": "A region nobody priced is a region the composition rules would read a zero out of.",
+      "pattern": "612a"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 705,
+          "mem": 440,
+          "n": 0,
+          "stack": 2
+        },
+        {
+          "cost": 950,
+          "mem": 552,
+          "n": 1,
+          "stack": 3
+        },
+        {
+          "cost": 1223,
+          "mem": 664,
+          "n": 2,
+          "stack": 4
+        },
+        {
+          "cost": 4415,
+          "mem": 1560,
+          "n": 10,
+          "stack": 12
+        },
+        {
+          "cost": 52274,
+          "mem": 6376,
+          "n": 53,
+          "stack": 55
+        },
+        {
+          "cost": 60142846440,
+          "mem": 7340360,
+          "n": 65535,
+          "stack": 65537
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 488,
+          "c1": 203,
+          "c2": 14,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 328,
+          "c1": 112,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 7,
+              "c1": 6,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 1,
+          "c1": 1,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 11,
+      "config": 0,
+      "name": "more-prices-than-regions",
+      "note": "And a price nobody emitted a region for is a claim about nothing.",
+      "pattern": "612a"
     },
     {
       "bounds": [
@@ -4136,11 +5461,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -4149,7 +5471,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4176,9 +5497,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -4187,7 +5505,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4223,7 +5574,7 @@
           "c4": 0
         }
       },
-      "check": 21,
+      "check": 22,
       "config": 0,
       "name": "cost-one-unit-short",
       "note": "The setup charge, one unit lower than the register file and the ovector really cost to zero.",
@@ -4293,11 +5644,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -4306,7 +5654,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4333,9 +5680,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -4344,7 +5688,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4380,7 +5757,7 @@
           "c4": 0
         }
       },
-      "check": 21,
+      "check": 22,
       "config": 0,
       "name": "cost-one-unit-short-per-position",
       "note": "The term in n, which is the one that decides whether a long subject fits the budget.",
@@ -4450,11 +5827,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -4463,7 +5837,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4490,9 +5863,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -4501,7 +5871,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4537,7 +5940,7 @@
           "c4": 0
         }
       },
-      "check": 21,
+      "check": 22,
       "config": 0,
       "name": "cost-one-unit-short-in-the-square",
       "note": "And the square, which is a linear loop run from every starting position and is what dominates any subject worth the name.",
@@ -4607,11 +6010,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -4620,7 +6020,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4647,9 +6046,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -4658,7 +6054,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4694,7 +6123,7 @@
           "c4": 0
         }
       },
-      "check": 22,
+      "check": 23,
       "config": 0,
       "name": "stack-one-entry-short",
       "note": "One backtrack entry fewer than the deepest the search goes.",
@@ -4764,11 +6193,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -4777,7 +6203,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4804,9 +6229,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -4815,7 +6237,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4851,7 +6306,7 @@
           "c4": 0
         }
       },
-      "check": 23,
+      "check": 24,
       "config": 0,
       "name": "memory-one-byte-short",
       "note": "One IR byte fewer than the peak, which counts the buffer being copied from as well as the one being copied to.",
@@ -4921,11 +6376,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -4934,7 +6386,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -4961,9 +6412,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -4972,7 +6420,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5008,7 +6489,7 @@
           "c4": 0
         }
       },
-      "check": 23,
+      "check": 24,
       "config": 0,
       "name": "memory-one-byte-short-per-position",
       "note": "And one byte fewer of the capacity the two growing arrays reach.",
@@ -5078,11 +6559,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -5091,7 +6569,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5118,9 +6595,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -5129,7 +6603,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5165,7 +6672,7 @@
           "c4": 0
         }
       },
-      "check": 17,
+      "check": 18,
       "config": 0,
       "name": "region-work-one-visit-short",
       "note": "The root's own price, a visit short. A region is checked against what its children claim, so this fails at the region rather than at the total it feeds.",
@@ -5235,11 +6742,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -5248,7 +6752,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5275,9 +6778,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -5286,7 +6786,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5322,7 +6855,7 @@
           "c4": 0
         }
       },
-      "check": 19,
+      "check": 20,
       "config": 0,
       "name": "region-stack-one-entry-short",
       "note": "The repetition pushes one entry per pass through its head, and this claims it pushes fewer.",
@@ -5392,11 +6925,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -5405,7 +6935,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5432,9 +6961,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -5443,7 +6969,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5479,7 +7038,7 @@
           "c4": 0
         }
       },
-      "check": 20,
+      "check": 21,
       "config": 0,
       "name": "region-trail-one-entry-short",
       "note": "Its undo entries, which the counter's zeroing, its increment and the position it remembers all fill.",
@@ -5549,11 +7108,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -5562,7 +7118,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5589,9 +7144,40 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 4,
-            "lo": 0,
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 2,
@@ -5600,7 +7186,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5636,7 +7221,7 @@
           "c4": 0
         }
       },
-      "check": 18,
+      "check": 19,
       "config": 0,
       "name": "region-outs-one-way-short",
       "note": "And its ambiguity, one way out short. Understating that would let everything after the loop be priced for fewer passes than it gets.",
@@ -5706,11 +7291,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 10,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -5719,7 +7301,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5746,9 +7327,6 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -5757,7 +7335,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 10,
+              "c1": 9,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5784,9 +7395,6 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 1,
-            "lo": 3,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -5795,7 +7403,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -5831,10 +7438,10 @@
           "c4": 0
         }
       },
-      "check": 17,
+      "check": 18,
       "config": 0,
       "name": "inner-region-work-one-visit-short",
-      "note": "A group two levels down, a visit short, to show that the induction reaches the leaves rather than stopping at what the root claims.",
+      "note": "A group three levels down, a visit short, to show that the induction reaches the leaves rather than stopping at what the root claims.",
       "pattern": "286162292a63"
     },
     {
@@ -5901,11 +7508,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 10,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -5914,7 +7518,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5941,9 +7544,6 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 2,
@@ -5952,7 +7552,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 10,
+              "c1": 9,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -5979,9 +7612,6 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 1,
-            "lo": 3,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -5990,7 +7620,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6026,7 +7655,7 @@
           "c4": 0
         }
       },
-      "check": 20,
+      "check": 21,
       "config": 0,
       "name": "inner-region-trail-one-entry-short",
       "note": "And the two saves that group is there for.",
@@ -6096,11 +7725,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 10,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -6109,7 +7735,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6136,9 +7761,6 @@
             }
           },
           {
-            "hi": 9,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -6147,7 +7769,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6174,9 +7795,40 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 4,
-            "lo": 3,
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 2,
@@ -6185,7 +7837,40 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
             "stack": {
               "base": 1,
               "c0": 1,
@@ -6221,10 +7906,10 @@
           "c4": 0
         }
       },
-      "check": 15,
+      "check": 16,
       "config": 0,
       "name": "ambiguity-that-grows-with-the-subject",
-      "note": "A star inside a star. The inner one hands the outer one more ways to match at every extra byte of subject, so the iteration count is a power of a polynomial and no bound of this shape has that form. A refusal is the honest answer.",
+      "note": "A star inside a star. The inner one hands the outer one more ways to match at every extra byte of subject, so the pass count is a power of a polynomial and no bound of this shape has that form. A refusal is the honest answer.",
       "pattern": "283f3a612a292a"
     },
     {
@@ -6291,11 +7976,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 9,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -6304,7 +7986,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6331,9 +8012,6 @@
             }
           },
           {
-            "hi": 8,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -6342,7 +8020,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6369,9 +8046,40 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 3,
-            "lo": 3,
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 2,
@@ -6380,7 +8088,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 1,
@@ -6407,9 +8114,40 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 2,
-            "lo": 4,
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
             "outs": {
               "base": 1,
               "c0": 1,
@@ -6418,7 +8156,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 2,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6445,9 +8182,6 @@
             }
           },
           {
-            "hi": 7,
-            "kind": 2,
-            "lo": 6,
             "outs": {
               "base": 1,
               "c0": 1,
@@ -6456,7 +8190,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 2,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6492,10 +8225,10 @@
           "c4": 0
         }
       },
-      "check": 16,
+      "check": 17,
       "config": 0,
-      "name": "an-iteration-count-past-the-counter",
-      "note": "Two ways round a loop that may go round sixty times is 2^60, which no counter holds. The requirement saturating is not a requirement met.",
+      "name": "a-pass-count-past-the-counter",
+      "note": "Two ways round a loop that may go round sixty times is 2^61, which no counter holds. The requirement saturating is not a requirement met.",
       "pattern": "283f3a617c61297b302c36307d"
     },
     {
@@ -6562,7 +8295,7 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [],
+        "prices": [],
         "stack": {
           "base": 1,
           "c0": 0,
@@ -6576,7 +8309,8 @@
       "config": 0,
       "name": "no-regions",
       "note": "A certificate with no root has nothing to be the pattern's bound.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": []
     },
     {
       "bounds": [
@@ -6642,11 +8376,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 1,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -6655,7 +8386,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6695,7 +8425,15 @@
       "config": 0,
       "name": "root-is-not-a-root",
       "note": "Region 0 is the root by position, and has to say so as well.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 1,
+          "lo": 0,
+          "parent": 4294967295
+        }
+      ]
     },
     {
       "bounds": [
@@ -6761,11 +8499,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -6774,7 +8509,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6814,7 +8548,15 @@
       "config": 0,
       "name": "root-has-a-parent",
       "note": "Nothing encloses the whole program.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 0
+        }
+      ]
     },
     {
       "bounds": [
@@ -6880,11 +8622,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 1,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -6893,7 +8632,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -6933,7 +8671,15 @@
       "config": 0,
       "name": "root-starts-late",
       "note": "A root that misses the first instruction prices less than the pattern.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 1,
+          "parent": 4294967295
+        }
+      ]
     },
     {
       "bounds": [
@@ -6999,11 +8745,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 3,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7012,7 +8755,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7052,7 +8794,15 @@
       "config": 0,
       "name": "root-stops-early",
       "note": "And a root that stops short of the last one prices less as well.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 3,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        }
+      ]
     },
     {
       "bounds": [
@@ -7118,11 +8868,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7131,7 +8878,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7158,9 +8904,6 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 0,
-            "lo": 1,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7169,7 +8912,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7209,7 +8951,21 @@
       "config": 0,
       "name": "two-roots",
       "note": "Only region 0 is the root, or the tree has two places to start from.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 2,
+          "kind": 0,
+          "lo": 1,
+          "parent": 0
+        }
+      ]
     },
     {
       "bounds": [
@@ -7275,11 +9031,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7288,7 +9041,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7315,9 +9067,6 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 1,
-            "lo": 1,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7326,7 +9075,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7366,7 +9114,21 @@
       "config": 0,
       "name": "parent-above-its-child",
       "note": "A parent at or above its child's index is what a cycle looks like from here, and refusing it is what makes the tree a tree without a walk.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 2,
+          "kind": 1,
+          "lo": 1,
+          "parent": 1
+        }
+      ]
     },
     {
       "bounds": [
@@ -7432,11 +9194,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7445,7 +9204,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7472,9 +9230,6 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 1,
-            "lo": 3,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7483,7 +9238,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7523,7 +9277,21 @@
       "config": 0,
       "name": "range-runs-backwards",
       "note": "A region that ends before it starts covers no instruction at all.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 2,
+          "kind": 1,
+          "lo": 3,
+          "parent": 0
+        }
+      ]
     },
     {
       "bounds": [
@@ -7589,11 +9357,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7602,7 +9367,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7629,9 +9393,6 @@
             }
           },
           {
-            "hi": 5,
-            "kind": 1,
-            "lo": 1,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7640,7 +9401,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7680,7 +9440,21 @@
       "config": 0,
       "name": "child-outside-its-parent",
       "note": "A child reaching past its parent would be priced by neither.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 5,
+          "kind": 1,
+          "lo": 1,
+          "parent": 0
+        }
+      ]
     },
     {
       "bounds": [
@@ -7746,11 +9520,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7759,7 +9530,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7786,9 +9556,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 1,
-            "lo": 2,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7797,7 +9564,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7824,9 +9590,6 @@
             }
           },
           {
-            "hi": 3,
-            "kind": 2,
-            "lo": 1,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7835,7 +9598,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7875,7 +9637,27 @@
       "config": 0,
       "name": "child-starts-before-its-parent",
       "note": "The other half of the nesting rule, and the reason it is a refusal of its own rather than the sibling one: reaching back before the parent begins is a tree that does not nest, not two children colliding.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 4,
+          "kind": 1,
+          "lo": 2,
+          "parent": 0
+        },
+        {
+          "hi": 3,
+          "kind": 2,
+          "lo": 1,
+          "parent": 1
+        }
+      ]
     },
     {
       "bounds": [
@@ -7941,11 +9723,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7954,7 +9733,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -7981,9 +9759,6 @@
             }
           },
           {
-            "hi": 3,
-            "kind": 1,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -7992,7 +9767,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8019,9 +9793,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 1,
-            "lo": 2,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8030,7 +9801,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8070,7 +9840,27 @@
       "config": 0,
       "name": "siblings-overlap",
       "note": "Two children sharing an instruction would have it counted twice, or by whichever of them the composition rule reached first.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 3,
+          "kind": 1,
+          "lo": 0,
+          "parent": 0
+        },
+        {
+          "hi": 4,
+          "kind": 1,
+          "lo": 2,
+          "parent": 0
+        }
+      ]
     },
     {
       "bounds": [
@@ -8136,11 +9926,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8149,7 +9936,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8176,9 +9962,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 1,
-            "lo": 2,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8187,7 +9970,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8214,9 +9996,6 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 1,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8225,7 +10004,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8265,7 +10043,27 @@
       "config": 0,
       "name": "siblings-out-of-order",
       "note": "Disjoint but backwards is refused too: the compiler emits regions as it flattens the AST, so source order costs a correct analyzer nothing and lets the checker settle both halves of the sibling rule in one pass.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 4,
+          "kind": 1,
+          "lo": 2,
+          "parent": 0
+        },
+        {
+          "hi": 2,
+          "kind": 1,
+          "lo": 0,
+          "parent": 0
+        }
+      ]
     },
     {
       "bounds": [
@@ -8331,11 +10129,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8344,7 +10139,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8369,6 +10163,40 @@
               "c3": 0,
               "c4": 0
             }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
           }
         ],
         "stack": {
@@ -8380,7 +10208,7 @@
           "c4": 0
         }
       },
-      "check": 11,
+      "check": 12,
       "config": 0,
       "name": "a-bound-with-no-base",
       "note": "0^n is 1 at n = 0 and 0 after that. No bound has that shape, and one that vanishes on longer subjects would look like a bound that holds.",
@@ -8450,11 +10278,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8463,7 +10288,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8488,6 +10312,40 @@
               "c3": 0,
               "c4": 0
             }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
           }
         ],
         "stack": {
@@ -8499,9 +10357,9 @@
           "c4": 0
         }
       },
-      "check": 11,
+      "check": 12,
       "config": 0,
-      "name": "a-region-with-no-base",
+      "name": "a-price-with-no-base",
       "note": "The same rule inside the tree, where the composition rules would go on to multiply the thing.",
       "pattern": "616263"
     },
@@ -8569,11 +10427,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8582,7 +10437,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8609,9 +10463,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 1,
-            "lo": 4,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8620,7 +10471,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8656,11 +10506,25 @@
           "c4": 0
         }
       },
-      "check": 14,
+      "check": 15,
       "config": 0,
       "name": "a-child-that-covers-nothing",
-      "note": "A region of zero width prices no instruction and says nothing its parent does not, so the walk never reaches it and it is left over.",
-      "pattern": "616263"
+      "note": "A region of zero width prices no instruction and says nothing its parent does not, so the walk never reaches it and it is left over. The compiler drops one rather than emitting it, which is why this tree has to be written by hand.",
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 4,
+          "kind": 1,
+          "lo": 4,
+          "parent": 0
+        }
+      ]
     },
     {
       "bounds": [
@@ -8726,11 +10590,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 5,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8739,7 +10600,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8766,9 +10626,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 3,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8777,7 +10634,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8804,9 +10660,6 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 1,
-            "lo": 1,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8815,7 +10668,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8842,9 +10694,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 2,
-            "lo": 3,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8853,7 +10702,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8889,11 +10737,37 @@
           "c4": 0
         }
       },
-      "check": 14,
+      "check": 15,
       "config": 0,
       "name": "an-alternation-whose-child-is-not-a-branch",
       "note": "The branches of an alternation are what its shape is read off, so a child of another kind leaves the split arms unaccounted for.",
-      "pattern": "617c62"
+      "pattern": "617c62",
+      "regions": [
+        {
+          "hi": 5,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 4,
+          "kind": 3,
+          "lo": 0,
+          "parent": 0
+        },
+        {
+          "hi": 2,
+          "kind": 1,
+          "lo": 1,
+          "parent": 1
+        },
+        {
+          "hi": 4,
+          "kind": 2,
+          "lo": 3,
+          "parent": 1
+        }
+      ]
     },
     {
       "bounds": [
@@ -8959,11 +10833,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 5,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -8972,7 +10843,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -8999,9 +10869,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 3,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -9010,45 +10877,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
-            "stack": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "trail": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "work": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            }
-          },
-          {
-            "hi": 2,
-            "kind": 2,
-            "lo": 1,
-            "outs": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -9084,11 +10912,228 @@
           "c4": 0
         }
       },
-      "check": 13,
+      "check": 15,
+      "config": 0,
+      "name": "a-branch-outside-an-alternation",
+      "note": "A branch is one arm of an alternation and means nothing anywhere else. The alternation refuses a child that is not a branch; this is the same rule read from the other end, and between them they say that the two only ever come in pairs.",
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 3,
+          "kind": 2,
+          "lo": 0,
+          "parent": 0
+        }
+      ]
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 14,
       "config": 0,
       "name": "an-alternation-of-one",
       "note": "One branch is not an alternation: the compiler emits no split for it, so a region claiming to be one prices instructions that are not there.",
-      "pattern": "617c62"
+      "pattern": "617c62",
+      "regions": [
+        {
+          "hi": 5,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 4,
+          "kind": 3,
+          "lo": 0,
+          "parent": 0
+        },
+        {
+          "hi": 2,
+          "kind": 2,
+          "lo": 1,
+          "parent": 1
+        }
+      ]
     },
     {
       "bounds": [
@@ -9154,11 +11199,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 5,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -9167,7 +11209,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -9194,9 +11235,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 3,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -9205,7 +11243,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -9232,9 +11269,6 @@
             }
           },
           {
-            "hi": 2,
-            "kind": 2,
-            "lo": 2,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -9243,7 +11277,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -9270,9 +11303,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 2,
-            "lo": 3,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -9281,7 +11311,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 1,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -9317,11 +11346,37 @@
           "c4": 0
         }
       },
-      "check": 13,
+      "check": 14,
       "config": 0,
       "name": "a-branch-that-does-not-follow-its-split",
       "note": "The first branch begins right after the split that guards it. A region starting anywhere else is not the branch that split leads to.",
-      "pattern": "617c62"
+      "pattern": "617c62",
+      "regions": [
+        {
+          "hi": 5,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 4,
+          "kind": 3,
+          "lo": 0,
+          "parent": 0
+        },
+        {
+          "hi": 2,
+          "kind": 2,
+          "lo": 2,
+          "parent": 1
+        },
+        {
+          "hi": 4,
+          "kind": 2,
+          "lo": 3,
+          "parent": 1
+        }
+      ]
     },
     {
       "bounds": [
@@ -9387,11 +11442,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 4,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -9400,7 +11452,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -9427,9 +11478,6 @@
             }
           },
           {
-            "hi": 3,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -9438,7 +11486,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -9474,11 +11521,25 @@
           "c4": 0
         }
       },
-      "check": 13,
+      "check": 14,
       "config": 0,
       "name": "a-repeat-over-code-that-repeats-nothing",
       "note": "Neither an optional item's split nor a counted repetition's header, so there is no rule to price it with.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "regions": [
+        {
+          "hi": 4,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 3,
+          "kind": 4,
+          "lo": 0,
+          "parent": 0
+        }
+      ]
     },
     {
       "bounds": [
@@ -9544,11 +11605,8 @@
           "c3": 0,
           "c4": 0
         },
-        "regions": [
+        "prices": [
           {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -9557,7 +11615,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 4294967295,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -9584,9 +11641,6 @@
             }
           },
           {
-            "hi": 4,
-            "kind": 4,
-            "lo": 0,
             "outs": {
               "base": 1,
               "c0": 0,
@@ -9595,164 +11649,6 @@
               "c3": 0,
               "c4": 0
             },
-            "parent": 0,
-            "stack": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "trail": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "work": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            }
-          }
-        ],
-        "stack": {
-          "base": 1,
-          "c0": 0,
-          "c1": 0,
-          "c2": 0,
-          "c3": 0,
-          "c4": 0
-        }
-      },
-      "check": 12,
-      "config": 0,
-      "name": "a-repeat-that-stops-before-its-tail",
-      "note": "The range of a counted repetition ends where the repetition does. One instruction short of that leaves the tail behind, and the tail is a repetition opcode no region is left to explain.",
-      "pattern": "612a"
-    },
-    {
-      "bounds": [
-        {
-          "cost": 0,
-          "mem": 0,
-          "n": 0,
-          "stack": 0
-        },
-        {
-          "cost": 0,
-          "mem": 0,
-          "n": 1,
-          "stack": 0
-        },
-        {
-          "cost": 0,
-          "mem": 0,
-          "n": 2,
-          "stack": 0
-        },
-        {
-          "cost": 0,
-          "mem": 0,
-          "n": 10,
-          "stack": 0
-        },
-        {
-          "cost": 0,
-          "mem": 0,
-          "n": 53,
-          "stack": 0
-        },
-        {
-          "cost": 0,
-          "mem": 0,
-          "n": 65535,
-          "stack": 0
-        },
-        {
-          "cost": 0,
-          "mem": 0,
-          "n": 9007199254740991,
-          "stack": 0
-        }
-      ],
-      "cert": {
-        "complexity": 0,
-        "config": 0,
-        "cost": {
-          "base": 1,
-          "c0": 0,
-          "c1": 0,
-          "c2": 0,
-          "c3": 0,
-          "c4": 0
-        },
-        "mem": {
-          "base": 1,
-          "c0": 0,
-          "c1": 0,
-          "c2": 0,
-          "c3": 0,
-          "c4": 0
-        },
-        "regions": [
-          {
-            "hi": 6,
-            "kind": 0,
-            "lo": 0,
-            "outs": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "parent": 4294967295,
-            "stack": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "trail": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "work": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            }
-          },
-          {
-            "hi": 6,
-            "kind": 4,
-            "lo": 0,
-            "outs": {
-              "base": 1,
-              "c0": 0,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "parent": 0,
             "stack": {
               "base": 1,
               "c0": 0,
@@ -9790,9 +11686,186 @@
       },
       "check": 13,
       "config": 0,
+      "name": "a-repeat-that-stops-before-its-tail",
+      "note": "The range of a counted repetition ends where the repetition does. One instruction short of that leaves the tail behind, and the tail is a repetition opcode no region is left to explain.",
+      "pattern": "612a",
+      "regions": [
+        {
+          "hi": 6,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 4,
+          "kind": 4,
+          "lo": 0,
+          "parent": 0
+        }
+      ]
+    },
+    {
+      "bounds": [
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": 0,
+          "mem": 0,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 14,
+      "config": 0,
       "name": "a-repeat-that-reaches-past-its-tail",
       "note": "One instruction the other way is a range whose last instruction is not a tail at all, which is what ties a repeat region to the entry in the repetition table.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "regions": [
+        {
+          "hi": 6,
+          "kind": 0,
+          "lo": 0,
+          "parent": 4294967295
+        },
+        {
+          "hi": 6,
+          "kind": 4,
+          "lo": 0,
+          "parent": 0
+        }
+      ]
     }
   ],
   "note": "Generated by pcretruste.engine.certificate_corpus. Each case compiles a pattern, hands the engine's bound-certificate checker one certificate for the program that came out, and asks for the three bounds it prices at every subject length below. Every implementation of the engine has to give exactly these answers: the same verdict, and the same number or the same refusal. A bound of null is the ExceedsBudget of DESIGN.md section 2.4, which is a refusal rather than a number and never a saturated counter.",

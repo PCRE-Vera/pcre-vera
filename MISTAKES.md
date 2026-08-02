@@ -632,3 +632,38 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   specification that reaches the right answer through a wrong premise is worse
   than one that says nothing, because it invites the reader to reuse the
   premise.
+- Answered "an unknown enum ordinal falls through every switch arm" by
+  validating the ordinals in the corpus runners, and left the checker itself as
+  it was. The runners are one caller. The generated module exports the checker,
+  the enum is an integer once printed, and a switch that covers its enum is
+  lowered without a default, so any other caller could still hand it a number
+  that matched no arm and get a region priced at nothing. The rule that forbade
+  the default — a value of an enum is one of its variants — is a fact about the
+  IR, not about the code the IR is printed as, and I took it for a reason not
+  to check rather than for the thing that made the check necessary. A boolean
+  set in every arm and tested after says the same thing and is allowed.
+- Wrote in the normative document that a region covering no instruction is
+  always refused, in the same slice that made the compiler emit exactly such a
+  region for an empty alternation arm and made the checker accept it. Both are
+  right — a branch is read off the branch list rather than off the code — but
+  the sentence had no room for the exception, and a specification that
+  contradicts the implementation it specifies is worse than one that is silent.
+- Closed the unknown-ordinal hole for a region's kind and for a bound's kind,
+  and left the certificate's complexity class open, in the same slice. All
+  three are the same shape — an enum field that arrives from outside and is a
+  plain integer once printed — and the third one reads as a comparison against
+  one variant rather than as a switch, so it did not look like the others. A
+  fix that names a class of defect has to be applied to the class.
+- Wrote a reference pricer that promises "the smallest certificate the checker
+  accepts" and let it do unbounded Python arithmetic. The checker refuses a
+  requirement that saturates; the pricer happily returned one twice the size of
+  a counter, so the promise held only for the patterns anybody had tried. Where
+  two implementations of one rule differ in what they can represent, the
+  smaller representation is the specification.
+- Named three constants in `spec.py`, wrote in their docstring that the
+  matcher, the checker and the corpus all read them, and changed two of the
+  three readers. The corpus kept its copies of the numbers, so the sentence was
+  false the moment it was written — the same defect as a docstring describing a
+  guard that is not there, which is already on this list. Centralising a
+  constant is not the edit; replacing every spelling of it is, and the way to
+  know is to change the constant and watch what moves.

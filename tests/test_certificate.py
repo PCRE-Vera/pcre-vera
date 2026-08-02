@@ -24,19 +24,23 @@ import itertools
 
 import pytest
 
-from pcretruste.engine import Certificate, Engine, EngineError, Poly, Region, spec
+from pcretruste.engine import Certificate, Engine, EngineError, Poly, Price, Region, spec
 from pcretruste.engine import certificate_corpus
 from pcretruste.engine.certificate_corpus import (
     CASES,
     KINDS,
     LITERAL,
     STAR,
+    UNCAPTURED,
     compiled,
     minimal,
+    read,
     region,
     root,
+    unpriced,
 )
-from pcretruste.engine.driver import Limits, ResourceExceeded
+from pcretruste.engine.driver import CompiledPattern, Limits, ResourceExceeded
+from pcretruste.oracle import corpus as wave1
 from pcretruste.engine.program import program
 from pcretruste.tir.types import CAP, CEILING
 
@@ -70,8 +74,8 @@ def test_the_corpus_says_the_same_thing_as_the_cases_it_came_from() -> None:
 
 @pytest.mark.parametrize("case", COMMITTED, ids=IDS)
 def test_the_checker_draws_the_verdict_the_case_names(engine, case) -> None:
-    built = compiled(case.pattern)
-    assert engine.check_certificate(built, case.cert, case.config) == case.check, case.note
+    verdict = engine.check_certificate(case.subject(), case.cert, case.config)
+    assert verdict == case.check, case.note
 
 
 @pytest.mark.parametrize("case", COMMITTED, ids=IDS)
@@ -96,7 +100,11 @@ def test_no_two_cases_share_a_name() -> None:
 def test_a_region_names_a_construct_the_compiler_emits() -> None:
     # Every wave 1 region kind, so that adding a lookaround kind in wave 2 is a
     # deliberate act rather than a string that happened to typecheck.
-    kinds = {one.kind for case in COMMITTED for one in case.cert.regions}
+    kinds = {
+        one.kind
+        for pattern in SHAPES + PRICED
+        for one in read(compiled(pattern)).regions
+    }
     assert kinds == set(program().enum_map["Rk"].variants)
 
 
@@ -158,10 +166,11 @@ def test_an_accepted_certificate_bounds_every_run_of_the_matcher(engine, pattern
 
 
 def test_the_certificate_of_one_program_is_not_the_certificate_of_another(engine) -> None:
-    # The whole of what the previous slice could not say. These two programs
-    # are the same length, and the difference between them is two opcodes.
-    assert engine.check_certificate(compiled(b"abc"), LITERAL) == "CrOk"
-    assert engine.check_certificate(compiled(b"(a)"), LITERAL) == "CrRegionTrail"
+    # The whole of what the length could not say. These two programs are four
+    # instructions over the same three regions, and the difference between them
+    # is that two of the instructions are saves.
+    assert engine.check_certificate(compiled(b"(?:abc)"), UNCAPTURED) == "CrOk"
+    assert engine.check_certificate(compiled(b"(a)"), UNCAPTURED) == "CrRegionTrail"
 
 
 # --- evaluating a bound ---
@@ -225,12 +234,92 @@ def test_a_certificate_the_checker_refused_answers_rather_than_traps(engine) -> 
     # The accessors are only ever reached after the checker has accepted, so
     # this is about what the engine does with a certificate nobody vouched for:
     # an answer, never a read past the end of anything.
-    assert engine.bound(Certificate(regions=()), "BkCost", 4) == 0
+    assert engine.bound(Certificate(prices=()), "BkCost", 4) == 0
     assert engine.bound(cert("a-bound-with-no-base"), "BkCost", 4) == 0
     assert engine.bound(cert("a-bound-with-no-base"), "BkCost", 0) == 1
 
 
-# --- the shape of a certificate the analyzer will have to produce ---
+# --- the tree the compiler emits ---
+
+SHAPES = (
+    # Empty alternation arms, which compile to a branch region of no width.
+    b"(a|)", b"(|a)", b"(a||b)", b"(?:|)", b"|", b"a|",
+    # Patched jump boundaries: every branch but the last leaves by one.
+    b"a|b|c|d", b"(a|b|c)x", b"(?:a|bb|ccc)+", b"x(a|b)(c|d)y",
+    # Repetitions beside each other and inside each other.
+    b"a*b*", b"a+b?c{2,3}", b"(a*)(b*)", b"(?:a*)+", b"(a+)+", b"((a|b)*c)*",
+    # Groups, nested and named.
+    b"(a)(b)", b"((a))", b"(?:(?:(a)))", b"(?<n>a)(?P<m>b)",
+    # Optionals, both greedinesses, and the quantifiers that compile to
+    # nothing at all or to the body alone.
+    b"a?", b"a??", b"(ab)?", b"(a|b)?", b"a{0,1}?", b"(?:x)?y",
+    b"a{0}", b"(?:)", b"()", b"a{1}", b"(?:x){1}", b"a{3}", b"a{2,}",
+    b"^(?:ab|cd)*$", rb"\b(?:\w+|\d)*\b", b"[a-z]+(?:[0-9]|_)*",
+)
+
+STRUCTURE = frozenset(
+    {
+        "CrNoRegions", "CrRootKind", "CrRootParent", "CrRootRange", "CrTwoRoots",
+        "CrParentOrder", "CrBackwards", "CrNotNested", "CrOverlap",
+        "CrOpcode", "CrShape", "CrChildren",
+    }
+)
+"""The verdicts that are about the tree rather than about the numbers in it."""
+
+
+def _emitted(patterns):
+    for pattern in patterns:
+        built = certificate_corpus.ENGINE.compile_pattern(pattern)
+        if isinstance(built, CompiledPattern):
+            yield pattern, built
+
+
+def _describes(engine, built) -> str:
+    """The verdict for a certificate that claims nothing, which is about the tree."""
+    return engine.check_certificate(built, unpriced(len(read(built).regions)))
+
+
+@pytest.mark.parametrize("pattern", SHAPES, ids=[p.decode() for p in SHAPES])
+def test_the_tree_the_compiler_emits_describes_the_bytecode(engine, pattern) -> None:
+    """Canonical emission, one shape at a time.
+
+    The certificate claims nothing, so every rule about the numbers refuses;
+    what this asks is the other half, that no rule about the tree does. A
+    region that started in the wrong place, an alternation whose branches do
+    not line up with its splits, an instruction nothing covers — all of those
+    are structural, and none of them may happen for a program this compiler
+    wrote.
+    """
+    built = compiled(pattern)
+    assert _describes(engine, built) not in STRUCTURE, [
+        (one.kind, one.parent, one.lo, one.hi) for one in read(built).regions
+    ]
+
+
+def test_every_pattern_of_the_wave_one_corpus_emits_a_tree_that_checks(engine) -> None:
+    # The shapes above are the ones chosen to be awkward; this is everything
+    # else the engine is held to, which is where a shape nobody thought of
+    # would be.
+    for pattern, built in _emitted(one.pattern for one in wave1.load().cases):
+        assert _describes(engine, built) not in STRUCTURE, pattern
+
+
+def test_almost_every_shape_prices_as_well(engine) -> None:
+    """And the numbers, for the shapes the composition rules have an answer for.
+
+    The four that have none are the nested unbounded loops, where the pass
+    count would be a power of a polynomial. That is a refusal BOUNDS.md names
+    rather than a gap, so it is written down here as the list it is.
+    """
+    refused = []
+    for pattern, built in _emitted(SHAPES):
+        try:
+            priced = certificate_corpus.price(read(built))
+        except ValueError:
+            refused.append(pattern)
+            continue
+        assert engine.check_certificate(built, priced) == "CrOk", pattern
+    assert refused == [rb"(?:a*)+", rb"(a+)+", rb"((a|b)*c)*", rb"\b(?:\w+|\d)*\b"]
 
 
 def test_a_generous_certificate_is_accepted_and_a_short_one_is_not(engine) -> None:
@@ -238,7 +327,7 @@ def test_a_generous_certificate_is_accepted_and_a_short_one_is_not(engine) -> No
     # believed and one that rounds down is not.
     built = compiled(b"a*")
     doubled = certificate_corpus.claiming(
-        STAR, cost=Poly(tuple(2 * c for c in STAR.cost.coefs))
+        STAR, cost=Poly(tuple(2 * one for one in STAR.cost.coefs))
     )
     assert engine.check_certificate(built, doubled) == "CrOk"
     assert engine.check_certificate(built, certificate_corpus.less(STAR, "cost", 2)) == (
@@ -249,9 +338,8 @@ def test_a_generous_certificate_is_accepted_and_a_short_one_is_not(engine) -> No
 def test_domination_is_coefficient_by_coefficient(engine) -> None:
     # A huge constant does not pay for a term in n, and refusing to work that
     # out is what keeps the rule something Layer A can prove in one line.
-    built = compiled(b"abc")
     lumped = certificate_corpus.claiming(LITERAL, cost=certificate_corpus.const(CAP))
-    assert engine.check_certificate(built, lumped) == "CrTotalCost"
+    assert engine.check_certificate(compiled(b"abc"), lumped) == "CrTotalCost"
 
 
 def test_a_pattern_the_rules_cannot_price_gets_no_certificate(engine) -> None:
@@ -259,12 +347,7 @@ def test_a_pattern_the_rules_cannot_price_gets_no_certificate(engine) -> None:
     # statement of the same rules, and it refuses in the same place the checker
     # does (`CrAmbiguous` for this pattern).
     with pytest.raises(ValueError):
-        minimal(
-            b"(?:a*)*",
-            root(10),
-            region("RkRepeat", 0, 0, 9),
-            region("RkRepeat", 1, 3, 8),
-        )
+        minimal(b"(?:a*)*")
 
 
 # --- the boundary between Python and a TIR value ---
@@ -273,14 +356,12 @@ def test_a_pattern_the_rules_cannot_price_gets_no_certificate(engine) -> None:
 @pytest.mark.parametrize(
     "bad",
     [
-        Certificate(regions=(root(4),), cost=Poly((-1,))),
-        Certificate(regions=(root(4),), cost=Poly((CAP + 1,))),
-        Certificate(regions=(root(4),), cost=Poly((1,), base=CAP + 1)),
-        Certificate(regions=(root(4),), cost=Poly((1, 1, 1, 1, 1, 1))),
-        Certificate(regions=(region("RkRoot", spec.NONE, 0, 2**32),)),
-        Certificate(regions=(region("RkWhatever", spec.NONE, 0, 4),)),
-        Certificate(regions=(root(4),), complexity="CcWhatever"),
-        Certificate(regions=(root(4),) * (spec.MAX_REGIONS + 1)),
+        Certificate(prices=(), cost=Poly((-1,))),
+        Certificate(prices=(), cost=Poly((CAP + 1,))),
+        Certificate(prices=(), cost=Poly((1,), base=CAP + 1)),
+        Certificate(prices=(), cost=Poly((1, 1, 1, 1, 1, 1))),
+        Certificate(prices=(Price(),), complexity="CcWhatever"),
+        Certificate(prices=(Price(),) * (spec.MAX_REGIONS + 1)),
     ],
 )
 def test_a_value_no_tir_could_hold_never_reaches_the_checker(engine, bad) -> None:
@@ -291,19 +372,55 @@ def test_a_value_no_tir_could_hold_never_reaches_the_checker(engine, bad) -> Non
         engine.check_certificate(compiled(b"abc"), bad)
 
 
+@pytest.mark.parametrize(
+    "bad",
+    [
+        (region("RkRoot", spec.NONE, 0, 2**32),),
+        (region("RkWhatever", spec.NONE, 0, 4),),
+        (root(4),) * (spec.MAX_REGIONS + 1),
+    ],
+)
+def test_a_region_table_no_tir_could_hold_is_refused_here_too(engine, bad) -> None:
+    with pytest.raises(EngineError):
+        compiled(b"abc").with_regions(bad)
+
+
 def test_a_configuration_is_named_by_a_name_the_engine_knows(engine) -> None:
     with pytest.raises(EngineError):
-        engine.check_certificate(compiled(b"abc"), LITERAL, "CfgWhatever")
+        engine.check_certificate(compiled(b"abc"), unpriced(2), "CfgWhatever")
 
 
 def test_a_bound_is_asked_for_by_a_name_the_engine_knows(engine) -> None:
     with pytest.raises(EngineError):
-        engine.bound(Certificate(regions=(root(4),)), "BkWhatever", 4)
+        engine.bound(Certificate(prices=()), "BkWhatever", 4)
 
 
 def test_a_region_that_is_not_a_region_is_refused_here(engine) -> None:
     with pytest.raises(EngineError):
-        engine.check_certificate(
-            compiled(b"abc"),
-            Certificate(regions=(Region(kind="RkRoot", parent=spec.NONE, lo=0, hi=-1),)),
+        compiled(b"abc").with_regions(
+            (Region(kind="RkRoot", parent=spec.NONE, lo=0, hi=-1),)
         )
+
+
+def test_the_reference_pricer_reads_the_shared_cost_model(monkeypatch) -> None:
+    """The corpus predicts what the matcher charges, from the same constants.
+
+    `spec.py` owns the register width and the growth schedule so that the
+    matcher, the checker and this pricer cannot drift apart; a pricer that had
+    copied the numbers instead would keep agreeing with itself while the other
+    two moved. The checker is built from the same constants at generation time,
+    which is why moving them here is only half a change and this only asks for
+    the half it can see.
+    """
+    before = certificate_corpus.price(read(compiled(b"(a)*")))
+    for name in ("REG_SIZE", "GROW_MIN", "GROW_FACTOR"):
+        monkeypatch.setattr(spec, name, 2 * getattr(spec, name))
+    assert certificate_corpus.price(read(compiled(b"(a)*"))).cost != before.cost
+
+
+def test_the_reference_pricer_refuses_what_a_counter_could_not_hold(engine) -> None:
+    # `price` promises a certificate the checker accepts, and a bound Python
+    # can write down and the engine cannot hold is not one. The checker answers
+    # `CrOverflow` for the same thing.
+    with pytest.raises(ValueError):
+        minimal(b"(?:(?:a){10}){10}")

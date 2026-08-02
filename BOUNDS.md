@@ -31,7 +31,7 @@ combination of match options.
 
 Not because the options only ever remove work. They do not: `NOTEMPTY` refuses
 a match the run had already found, and the search carries on from there, so
-`a??` on one byte costs 76 units with it and 74 without. `NOTBOL` and `NOTEOL`
+`a??` on one byte costs more units with it than without. `NOTBOL` and `NOTEOL`
 can turn an early success into more searching the same way.
 
 It holds because none of the rules below prices a particular run. They price
@@ -134,8 +134,24 @@ Four charges do not appear in the table because they are not per-visit:
 
 ## 4. Regions
 
-A region is a contiguous instruction range with a kind, a parent, and four
-bounds. The four are what one *entry* into the region costs:
+A region is a contiguous instruction range with a kind and a parent, and it is
+the *compiler* that emits it. That is not an implementation detail: while it
+lays out the bytecode it still has the AST in hand, and that is the one moment
+anything knows that this stretch of instructions came from that quantifier.
+Rediscovering it afterwards would mean reading structure back out of a flat,
+cyclic control-flow graph.
+
+So the table lives on the compiled pattern, and there is one of it. A
+certificate holds a *price* per region, in the same order, and nothing else —
+no second copy of the tree that could come to disagree with the first. One
+price per region exactly: a claim about a region nobody emitted is refused, and
+so is a region nobody priced.
+
+None of which makes the tree trusted. Every rule below reads it back against
+the bytecode, and a compiler that emitted a tree not describing its own output
+would be refused the same way a hand-written one is.
+
+A price is what one *entry* into the region costs:
 
 +-------+---------------------------------------------------------------+
 | work  | instruction visits inside the region                          |
@@ -169,9 +185,25 @@ Read the range left to right, carrying a flow that starts at one entry.
 
 `outs` is the flow left at the end of the range.
 
-A child that covers no instruction is refused. It would leave the walk where it
-was, and there is nothing such a region can say that its parent does not
-already say.
+A `RkBranch` is refused here unless its parent is an `RkAlt`. Section 4.2
+refuses a child of an alternation that is not a branch, so between them the two
+rules say that branches and alternations only ever come in pairs. And a region
+whose kind is none of the five is refused outright, which is not the tautology
+it looks like: an enum value is one of its variants in the IR and an ordinary
+integer once printed, so the check is there for a caller of the generated code
+that made one up.
+
+A child met by *this* walk and covering no instruction is refused. It would
+leave the walk where it was, and there is nothing such a region can say that
+its parent does not already say. The compiler drops one rather than emitting
+it: a construct that compiled to nothing has nothing inside it either, so its
+region is still the last one in the table and can simply be taken back off.
+
+The branches of an alternation are the exception, and they are an exception
+because they are not met by this walk at all — section 4.2 reads them off the
+branch list rather than off the code. An alternation of `a|` has a second arm
+that compiles to nothing, and the record of it still has to be there, or the
+shape check has no branch to line up against the split.
 
 The root is a straight-line region whose range is the whole program. Its `outs`
 is not used by anything: nothing follows the program.
@@ -337,11 +369,12 @@ In the order it decides them, near enough:
 +----------------+--------------------------------------------------------+
 | CrNoRules      | this configuration has no rules yet: Pike, memo        |
 | CrConfig       | the certificate is for another configuration           |
+| CrPrices       | one price per region, and this is not that            |
 | CrNoRegions .. | the tree is not a tree, or its ranges do not nest      |
 | CrOverlap      |                                                        |
 | CrBase         | a claimed bound names a growth base of zero            |
 | CrOpcode       | an instruction no region explains                      |
-| CrShape        | the code is not the shape the region's kind requires   |
+| CrShape        | the code, or a field, is not a shape the checker knows |
 | CrChildren     | the children that kind requires are not the ones there |
 | CrAmbiguous    | a repeat body whose ambiguity grows with the subject   |
 | CrOverflow     | the requirement itself is past counter arithmetic      |
