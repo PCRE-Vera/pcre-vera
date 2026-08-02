@@ -104,7 +104,7 @@ limit, and returns ResourceExceeded rather than running long. The bounds those
 limits are compared against are still the caller's; computing them from the
 pattern is M5's analyzer.
 
-`oracle/corpus/wave1.json` is 234 hand-written cases that our engine, the
+`oracle/corpus/wave1.json` is 264 hand-written cases that our engine, the
 pinned pcre2, and the expectation all have to agree on. A generated sweep in
 `tmp/` puts far more than that to both engines at once.
 
