@@ -583,3 +583,9 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   in the same milestone. A placeholder is a promise, and this one had already
   been broken by the commit that read it. Deleting a signpost is not churn when
   the road it points down does not exist.
+- Moved a corpus generator to the package its subject lives in and left its own
+  provenance line naming the old path, which then travelled into the committed
+  JSON as the file's account of where it came from. A generated file that says
+  who made it is only useful while that stays true, and a string is exactly the
+  kind of reference no rename touches. When a module moves, its own name is the
+  first thing to grep for, not the last.
