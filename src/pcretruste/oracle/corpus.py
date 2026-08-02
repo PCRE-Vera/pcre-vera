@@ -31,6 +31,8 @@ from .client import (
 SCHEMA = 1
 
 SEED_PATH = CORPUS_DIR / "seed.json"
+WAVE1_PATH = CORPUS_DIR / "wave1.json"
+"""The subset of DESIGN.md section 2.1 that our own engine answers for too."""
 
 
 @dataclass(frozen=True)

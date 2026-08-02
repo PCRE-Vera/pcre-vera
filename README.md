@@ -24,13 +24,13 @@ detail, from the IR design through the proof layering to the milestones.
 
 ## Where the project is
 
-M0 (scaffolding), M1 (the pcre2 oracle) and M2 (the TIR core) are done.
+M0 (scaffolding), M1 (the pcre2 oracle), M2 (the TIR core) and M3 (the wave 1
+engine) are done.
 
-There is no engine yet: the parser, the bytecode compiler, and the matchers
-arrive in M3, the Go and JavaScript backends in M4, and the Lean proofs from M6
-on.
+The Go and JavaScript backends arrive in M4, the Pike VM and the resource
+analyzer in M5, and the Lean proofs from M6 on.
 
-Two things work today, and everything else leans on them.
+Three things work today, and everything else leans on them.
 
 The first is the language the engine will be written in. `TIR-SPEC.md` pins
 every operator's result on every input, evaluation order, the trap list, the
@@ -62,6 +62,51 @@ behavior in the corpus instead.
 `make oracle-verify` builds that exact library from source and checks it.
 `oracle/pcre2shim/shim.c` answers questions about it over a line protocol so
 the rest of the project can ask pcre2 what a pattern does.
+
+The third is the engine itself. `src/pcretruste/engine/` builds one TIR program
+— a pattern parser, a bytecode compiler, and a backtracking matcher — and
+`driver.py` runs it through the reference interpreter, so it can be tested
+years before either backend exists.
+
+It covers the wave 1 subset of DESIGN.md section 2.1: literals, `.`, character
+classes with ranges, negation, POSIX names and the `\d \w \s \h \v \R` family,
+the anchors, alternation, greedy and lazy quantifiers, capturing, named and
+non-capturing groups, `\Q...\E`, inline option groups, and comment groups, with
+the eight compile options, five newline conventions, both `\R` conventions, and
+the match-time options and start offset.
+
+Anything outside that subset — back references, lookaround, atomic groups,
+possessive quantifiers, `\K`, `\p`, subroutine calls, callouts, verbs — is
+refused with our own UnsupportedFeature or UnsupportedOption code, never a
+repurposed pcre2 one, so a caller can always tell "PCRE says this is wrong"
+from "we do not do this yet". The line sits where pcre2 draws it: a `\g`, `\k`
+or `\p` whose spelling pcre2 itself rejects, or a reference to a group that
+does not exist, is that genuine pcre2 error, and only the well-formed
+construct is our refusal. Two edges of that line stay ours for now: a
+well-shaped `\p` name is not checked against the Unicode property tables,
+which arrive with wave 3, and a pattern that mixes a bad reference with a
+construct we refuse gets the refusal, where pcre2 would finish parsing and
+report the reference.
+
+Eight more shapes are refused for a subtler reason, and `engine/spec.py` names
+them: pcre2 makes a quantifier possessive when it can prove the repeated item
+and the next one never match the same character, and for those eight the proof
+is wrong in 8-bit mode, so pcre2 answers differently from its own semantics.
+Reproducing that needs possessive repetition, which is wave 2, so wave 1
+declines any pattern where one of the eight repetitions has its unsafe partner
+somewhere after it — or anywhere at all when a group is repeated, because
+pcre2 replicates repeated groups and can pair items across the copies. That is
+broader than the exact next-item question, deliberately: refusing too often is
+a smaller sin than answering wrongly.
+
+Every match runs under a cost limit, a stack-entry limit and a scratch-memory
+limit, and returns ResourceExceeded rather than running long. The bounds those
+limits are compared against are still the caller's; computing them from the
+pattern is M5's analyzer.
+
+`oracle/corpus/wave1.json` is 234 hand-written cases that our engine, the
+pinned pcre2, and the expectation all have to agree on. A generated sweep in
+`tmp/` puts far more than that to both engines at once.
 
 ## Getting started
 

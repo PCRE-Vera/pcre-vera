@@ -306,3 +306,155 @@ in memory takes and a decoded one does not.
   walks over the same program still recursed, and so would the Lean decoder and
   both printers. When a claim is about a boundary, either the boundary enforces
   it or the claim comes out of the document — a docstring is not a mechanism.
+
+## The wave 1 engine (M3)
+
+Every one of these was found by asking the pinned pcre2 rather than by
+reasoning about it, which is the whole argument for building the oracle first.
+
+- Applied the empty-iteration break to every quantifier. pcre2 only has one at
+  a *repeating* ket; a bounded `{m,n}` is replicated instead, so all of its
+  copies run and `(|a){1,3}` on `"a"` under NOTEMPTY reaches its third copy.
+  A rule read off one construct was applied to a construct compiled another
+  way entirely.
+- Reported "nothing to repeat" at the end of the whole quantifier, lazy marker
+  included. pcre2 reports it at the end of the quantifier proper, before the
+  `?` that only says how it repeats. An error offset is part of the contract,
+  so where it is taken is a decision, not a detail.
+- Scanned a group name up to its terminator instead of over word characters.
+  That collapsed four distinct pcre2 errors into one: a leading digit, an
+  empty name, a name too long, and a run that stops somewhere other than the
+  terminator each have their own code, and each is reported where the name
+  stops rather than at the end of the pattern.
+- Missed the bumpalong rule entirely: pcre2 declines to start a match between
+  a CR and a LF when the convention makes them one newline and the pattern
+  spells neither out. It is an observable refusal of a position where a match
+  could have started, not an optimization.
+- Then implemented that rule without noticing that pcre2's own start-code-unit
+  filter can jump straight onto the position the rule would have skipped, so
+  the rule only bites when the CR position was actually attempted. The fix is
+  one bit of first-byte analysis over our own bytecode, deliberately
+  conservative: an unknown answer is a yes, which is what pcre2 concludes when
+  its filter is not built at all.
+- Skipped whitespace inside `{m,n}` using the whole space class. The pinned
+  build takes a space or a tab there and nothing else, so `a{\n2}` is a literal
+  brace and not a quantifier.
+- Read `(*VERB)` as a group whose first item is a star, which turned pcre2's
+  "not recognized" into our "nothing to repeat".
+- Left no node behind for a back reference, so a quantifier after one reported
+  "nothing to repeat" instead of the reference's own error. A construct we
+  refuse still has to occupy the place it occupies, or it changes what the
+  rest of the parse sees.
+- Picked round numbers for the AST, bytecode, class and repetition arenas, so
+  a pattern inside the documented length limit could still be refused for
+  running out of nodes. The four are derived from the pattern length now, which
+  is what makes the length limit the one a caller can reason about.
+- Reported the unknown-POSIX-class and unterminated-comment errors one byte
+  short. Both are pinned by the corpus now rather than by arithmetic.
+
+## The wave 1 engine, second pass
+
+Found by a review of the finished code and by an exhaustive sweep over every
+pattern of three bytes from a hostile alphabet — 178382 of them, which is the
+kind of coverage a generator reaches and a hand-written corpus does not.
+
+- Read one byte past the end of the pattern on a `(` that ends it. The guard
+  was written as `land(pat[i] == '*', land(i + 1 < n, ...))`, with the bounds
+  test in the second operand of the short circuit rather than the first. The
+  interpreter's trap turned it into a visible failure rather than a wrong
+  answer, which is the whole argument for having traps, but the exhaustive
+  sweep is what put the case in front of it.
+- Let a negative cost limit through into the interpreter's step budget, where
+  it surfaced as `OutOfFuel` — an outcome only this execution path can give —
+  instead of the BadInput DESIGN.md section 2.4 defines. The limits are
+  checked now against the ceilings that section states, so an impossible limit
+  is refused rather than clamped or acted on.
+- Called the package "parser, bytecode compiler, and the two matchers" in its
+  own docstring while building one matcher. The Pike VM is M5's and the
+  docstring now says which parts of the section 2.4 surface are not here yet.
+- Cleared the character class's "a `]` here is still a literal" flag on
+  `\Q` and `\E`, which add no element. `[\E]` became an empty class where
+  pcre2 sees a class that never closes.
+- Reported "digits missing" for every malformed `\x{...}`, where pcre2
+  distinguishes a brace with nothing in it from a byte that had no business
+  being there, and put the offset in a different place for each. Spaces and
+  tabs are allowed inside those braces too, the same as inside `{m,n}`.
+- Reported a too-large quantifier bound at the closing brace rather than at
+  the end of the number that overflowed, and only checked the lower bound
+  after reading the upper one.
+- Read `\8` and `\9` as literal digits outside a character class. pcre2 takes
+  any digit escape starting with 8 or 9 as a back reference, whatever number
+  it spells, so `\82` is a reference to group 82 and not the two bytes.
+- Refused an unterminated `(?a` as an unsupported option before noticing the
+  group never closed. The option letters we do not implement are read like any
+  other now, and refused only once the group turns out to be well formed.
+- Settled the possessive `+` before "is there anything here to repeat", so
+  `*+` at the start of a pattern came back as an unsupported feature instead
+  of pcre2's "nothing to repeat".
+- Charged a growing scratch array for the elements copied out of the old buffer
+  and not for the new one being zeroed, so the first block a run allocates cost
+  nothing at all. DESIGN.md section 5 charges a unit per IR byte initialized,
+  zeroed *or* copied, and a bound that leaves out the zeroing is a bound on
+  the wrong thing.
+- Applied the auto-possessification refusal only to greedy quantifiers. Over a
+  genuinely disjoint pair a lazy repetition consumes exactly the run a
+  possessive one would, so pcre2 rewrites `\R*?\s` the same way it rewrites
+  `\R*\s`, and gets the same wrong answer.
+- Read a quantifier's lazy marker at the next byte, where pcre2 reads it after
+  the lexer has skipped what it makes invisible. `a*(?#x)?` is a lazy star.
+- Accepted `(?^` anywhere among the option letters. It resets every option and
+  only means that as the first thing after the `(?`, so `(?i^)` is one of
+  pcre2's syntax errors and not an unsupported option.
+- Refused a quantifier bound as too large before the braces had turned out to
+  be a quantifier at all, so `{85125r` — which never closes, and which pcre2
+  reads as the literal text it is — came back as an error.
+
+## The wave 1 engine, third pass
+
+A wider campaign — long and structured subjects, deep nesting, every start
+offset, every convention crossed — plus a review aimed squarely at the parser.
+
+- Recorded an explicitly written CR or LF for `[^\n]`. pcre2 compiles a negated
+  class of exactly one character as "not this character" rather than as a
+  class, so the code that records the flag never runs, and the bumpalong rule
+  of section 4.3 then behaves differently. A range whose two ends are the same
+  character counts as one character there too, because pcre2's parser rewrites
+  it before the class is built.
+- Treated `\Q` and `\E` inside a character class as things the class loop skips
+  rather than as lexer markers, which is what they are. The hyphen test has to
+  see through them on both sides: `[a\E-z]` is the range a to z, `[a-\E]` is
+  the two characters a and -, and `[a-\Qz]` leaves the `]` quoted so the class
+  never closes.
+- Refused a POSIX name as a range endpoint with "range out of order" rather
+  than "invalid range", by reading its `[` as an ordinary byte.
+- Refused `\k` and `\g` inside a character class as unsupported. They name a
+  group, which means nothing there, so pcre2 reads them as the letters they
+  are — and refusing them also broke the ranges they bound.
+- Refused a hyphen that follows another hyphen, or the `^` that clears every
+  option, as an unrecognized character rather than as pcre2's invalid hyphen.
+- Tested for the `^` that negates a class only at the byte right after the `[`,
+  so `[\E^]` read the caret as a member instead of as the negation. The marker
+  has to be looked for past `\Q` and `\E` too, and only when it is not itself
+  quoted, which `[\Q^\E]` is.
+- Refused lookaround, atomic and branch-reset groups the moment the opener was
+  recognized. They are ordinary groups as far as the syntax goes, so the body
+  is parsed and the refusal waits for the closing parenthesis; an unterminated
+  one is then the missing parenthesis it is, with pcre2's code and offset.
+
+## The wave 1 engine, fourth pass (review findings)
+
+- Declared the backtrack stack and undo trail with a fixed 2^20 maximum,
+  which quietly became a third resource limit nobody asked for: a run could
+  fail below every budget the caller set. A declared maximum must be derived
+  from the allocation ceiling, so the caller's limits stay the only ones.
+- Passed a plain `in` argument as `inout` in the first draft of the
+  read_ucp call; the validator's V-013 caught it before anything ran.
+- Computed a braced group name's length after skipping the trailing blanks
+  pcre2 allows, so `\k{ a }` compared "a " against the name table and
+  reported a missing group. Lengths of a delimited token must be taken
+  before the delimiter search moves the cursor.
+- Wrote the first auto-possessification guard against the whole pattern's
+  identity set on the theory that coarseness only over-refuses, and then
+  documented it as the eight adjacent shapes; the README and the code have
+  to describe the same predicate, and the predicate itself only needed
+  parse-order suffix masks to be honest about "the next item".
