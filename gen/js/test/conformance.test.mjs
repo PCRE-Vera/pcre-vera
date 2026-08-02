@@ -3,22 +3,11 @@
 // generated Go, so agreeing with it is what "agreeing bit for bit" means.
 
 import { strict as assert } from "node:assert";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
 
+import { load } from "../corpus.mjs";
 import { BSR, Kind, compile, defaultLimits } from "../index.mjs";
 import { probe } from "../probe.mjs";
-
-const SCHEMA = 1;
-
-function load(name) {
-  const path = fileURLToPath(new URL(`../../../conformance/${name}`, import.meta.url));
-  const document = JSON.parse(readFileSync(path, "utf8"));
-  assert.equal(document.schema, SCHEMA, `${name} has an unexpected schema`);
-  assert.ok(document.cases.length > 0, `${name} holds no cases`);
-  return document;
-}
 
 function unhex(text) {
   const bytes = new Uint8Array(text.length / 2);

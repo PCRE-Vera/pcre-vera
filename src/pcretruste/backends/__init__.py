@@ -12,10 +12,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .. import leanexport
+from ..engine import certificate_corpus
 from ..engine.program import program
 from ..oracle import conformance
 from ..paths import GEN_DIR
-from . import certificates, go, js, lowering
+from . import go, js, lowering
 
 GO_PATH = GEN_DIR / "go" / "internal" / "engine" / "engine.go"
 JS_PATH = GEN_DIR / "js" / "engine.mjs"
@@ -73,7 +74,7 @@ def generate() -> tuple[str, list[Output]]:
         ),
         Output(conformance.PATH, conformance.corpus_text()),
         Output(lowering.PATH, lowering.corpus_text()),
-        Output(certificates.PATH, certificates.corpus_text()),
+        Output(certificate_corpus.PATH, certificate_corpus.corpus_text()),
     ]
 
 
@@ -83,7 +84,6 @@ __all__ = [
     "PROBE_GO_PATH",
     "PROBE_JS_PATH",
     "Output",
-    "certificates",
     "generate",
     "go",
     "js",

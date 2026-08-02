@@ -63,6 +63,15 @@ def build(L: Layout) -> None:
     _check(L)
 
 
+def _exceeds(L: Layout):
+    """ExceedsBudget. The value says nothing, which is what `ok` is for."""
+    return L.Bound.of(ok=boolean(False), value=counter(0))
+
+
+def _finite(L: Layout, value):
+    return L.Bound.of(ok=boolean(True), value=value)
+
+
 def _arithmetic(L: Layout) -> None:
     """Counter arithmetic that says when it ran out of room.
 
@@ -73,10 +82,7 @@ def _arithmetic(L: Layout) -> None:
     number a caller can use and one they cannot. So each operation is
     pre-checked here a second time and the answer carries whether it fits.
     """
-    exceeds = L.Bound.of(ok=boolean(False), value=counter(0))
-
-    def finite(value):
-        return L.Bound.of(ok=boolean(True), value=value)
+    exceeds = _exceeds(L)
 
     f = L.func("bound_add", params=[("a", L.Bound), ("b", L.Bound)], ret=L.Bound)
     with f.if_(lor(lnot(f["a"].field("ok")), lnot(f["b"].field("ok")))):
@@ -85,7 +91,7 @@ def _arithmetic(L: Layout) -> None:
     right = tmp(f, counter, f["b"].field("value"))
     with f.if_(left > counter(CAP) - right):
         f.ret(exceeds)
-    f.ret(finite(left + right))
+    f.ret(_finite(L, left + right))
 
     f = L.func("bound_mul", params=[("a", L.Bound), ("b", L.Bound)], ret=L.Bound)
     with f.if_(lor(lnot(f["a"].field("ok")), lnot(f["b"].field("ok")))):
@@ -93,10 +99,10 @@ def _arithmetic(L: Layout) -> None:
     left = tmp(f, counter, f["a"].field("value"))
     right = tmp(f, counter, f["b"].field("value"))
     with f.if_(lor(left == counter(0), right == counter(0))):
-        f.ret(finite(counter(0)))
+        f.ret(_finite(L, counter(0)))
     with f.if_(left > counter(CAP).div(right, counter(0))):
         f.ret(exceeds)
-    f.ret(finite(left * right))
+    f.ret(_finite(L, left * right))
 
     f = L.func("bound_pow", params=[("base", counter), ("exp", counter)], ret=L.Bound)
     base = f["base"]
@@ -106,16 +112,16 @@ def _arithmetic(L: Layout) -> None:
     # it reaches the cap within the 53 doublings a counter has room for and the
     # loop stops on its own.
     with f.if_(base == counter(1)):
-        f.ret(finite(counter(1)))
+        f.ret(_finite(L, counter(1)))
     with f.if_(base == counter(0)):
         with f.if_(exp == counter(0)):
-            f.ret(finite(counter(1)))
-        f.ret(finite(counter(0)))
-    out = f.let("out", L.Bound, finite(counter(1)))
+            f.ret(_finite(L, counter(1)))
+        f.ret(_finite(L, counter(0)))
+    out = f.let("out", L.Bound, _finite(L, counter(1)))
     i = f.let("i", counter, counter(0))
     step = f.let("step", L.Bound)
     with f.while_(land(i < exp, out.field("ok")), exp - i):
-        f.call("bound_mul", [out, finite(base)], dest=step)
+        f.call("bound_mul", [out, _finite(L, base)], dest=step)
         f.set(out, step)
         f.set(i, i + counter(1))
     f.ret(out)
@@ -123,7 +129,7 @@ def _arithmetic(L: Layout) -> None:
 
 def _evaluation(L: Layout) -> None:
     """One term, one sum, and the three bounds the accessors of section 2.4 ask for."""
-    exceeds = L.Bound.of(ok=boolean(False), value=counter(0))
+    exceeds = _exceeds(L)
 
     f = L.func("term_value", params=[("t", L.Term), ("n", counter)], ret=L.Bound)
     t = f["t"]
@@ -132,7 +138,7 @@ def _evaluation(L: Layout) -> None:
     # gets is an answer rather than a refusal about arithmetic its own value
     # never contained.
     with f.if_(t.field("coef") == counter(0)):
-        f.ret(L.Bound.of(ok=boolean(True), value=counter(0)))
+        f.ret(_finite(L, counter(0)))
     growth = f.let("growth", L.Bound)
     f.call("bound_pow", [t.field("base").cast(counter), f["n"]], dest=growth)
     power = f.let("power", L.Bound)
@@ -140,7 +146,7 @@ def _evaluation(L: Layout) -> None:
     scaled = f.let("scaled", L.Bound)
     f.call(
         "bound_mul",
-        [L.Bound.of(ok=boolean(True), value=t.field("coef")), growth],
+        [_finite(L, t.field("coef")), growth],
         dest=scaled,
     )
     total = f.let("total", L.Bound)
@@ -154,7 +160,7 @@ def _evaluation(L: Layout) -> None:
     )
     terms = f["terms"]
     count = f["s"].field("count")
-    out = f.let("out", L.Bound, L.Bound.of(ok=boolean(True), value=counter(0)))
+    out = f.let("out", L.Bound, _finite(L, counter(0)))
     i = f.let("i", u32, u32(0))
     with f.while_(land(i < count, out.field("ok")), down(count, i)):
         at = tmp(f, u32, f["s"].field("first") + i)

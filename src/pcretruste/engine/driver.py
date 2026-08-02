@@ -149,11 +149,21 @@ def _certificate(cert: Certificate) -> StructValue:
 
     The checker's whole job is to distrust what it is handed, so this refuses
     only what would not be a TIR value at all — a count no u32 holds, a table
-    longer than its declared maximum. Anything that is well typed and still
-    nonsense is exactly what the checker is there to answer for.
+    longer than its declared maximum, a field the struct does not declare.
+    Anything that is well typed and still nonsense is exactly what the checker
+    is there to answer for.
+
+    Nothing outside the engine builds a certificate: the analyzer will, in TIR,
+    where the types are the guarantee. So a malformed one arriving here really
+    is a bug of ours, which is what `EngineError` says.
     """
+    # The lengths first, before converting elements that are about to be
+    # thrown away: a table past its declared maximum is refused either way,
+    # and building it costs tens of megabytes on the way to the same answer.
+    _fits(cert.regions, spec.MAX_REGIONS, "regions")
+    _fits(cert.terms, spec.MAX_TERMS, "terms")
     regions = [
-        StructValue(
+        _struct(
             "Region",
             {
                 "kind": _tag(region.kind, "Rk"),
@@ -168,7 +178,7 @@ def _certificate(cert: Certificate) -> StructValue:
         for region in cert.regions
     ]
     terms = [
-        StructValue(
+        _struct(
             "Term",
             {
                 "coef": _scalar(one.coef, COUNTER),
@@ -178,7 +188,7 @@ def _certificate(cert: Certificate) -> StructValue:
         )
         for one in cert.terms
     ]
-    return StructValue(
+    return _struct(
         "Cert",
         {
             "config": _tag(cert.config, "Cfg"),
@@ -190,16 +200,37 @@ def _certificate(cert: Certificate) -> StructValue:
 
 
 def _sum(one: Sum) -> StructValue:
-    return StructValue(
+    return _struct(
         "Sum", {"first": _scalar(one.first, U32), "count": _scalar(one.count, U32)}
     )
 
 
+def _struct(name: str, fields: dict[str, object]) -> StructValue:
+    """A struct value with every field the declaration names, in its order.
+
+    Naming the fields by hand keeps their types visible, which is worth more
+    here than a walk over the declaration would be. What it does not keep is
+    honest by itself: a field added to the struct and forgotten here would
+    build a value that reads fine until something touches the missing key. So
+    the set is compared, and the order comes from the declaration rather than
+    from the order this file happens to list them in.
+    """
+    declared = [f.name for f in program().struct_map[name].fields]
+    if set(fields) != set(declared):
+        raise EngineError(f"{name} takes {sorted(declared)}, got {sorted(fields)}")
+    return StructValue(name, {f: fields[f] for f in declared})
+
+
+def _fits(items: Sequence, maximum: int, what: str) -> None:
+    if len(items) > maximum:
+        raise EngineError(f"{len(items)} {what} is past the declared maximum {maximum}")
+
+
 def _scalar(value: object, t: Type) -> int:
     """An integer a TIR value of this type could actually hold."""
-    if not _in_range(value, INT_RANGE[t][1]):
+    low, high = INT_RANGE[t]
+    if not isinstance(value, int) or isinstance(value, bool) or not low <= value <= high:
         raise EngineError(f"{value!r} is not a {t}")
-    assert isinstance(value, int)
     return value
 
 

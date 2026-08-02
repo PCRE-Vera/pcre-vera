@@ -32,7 +32,9 @@ export default [
     },
   },
   {
-    files: ["test/**/*.mjs"],
+    // The runners and the loader they share, which sits outside test/ so that
+    // `node --test` does not read a helper as an empty test file.
+    files: ["test/**/*.mjs", "corpus.mjs"],
     languageOptions: {
       globals: { TextDecoder: "readonly", TextEncoder: "readonly", URL: "readonly" },
     },

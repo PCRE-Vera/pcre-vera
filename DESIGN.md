@@ -1203,8 +1203,10 @@ pcre-truste/
   src/pcretruste/
     tir/                    schema, validator, serializer, interpreter
     dsl/                    IR builder API
-    engine/                 the PCRE engine, authored with the DSL
-    analysis/               bounds and classification
+    engine/                 the PCRE engine, authored with the DSL, and the
+                            bounds and classification of section 5, which are
+                            part of the same TIR program rather than a package
+                            of their own
     backends/go/, js/       printers
     leanexport/             canonical artifact emission and hash tooling
     oracle/                 pcre2 harness driver, corpus tools

@@ -5,17 +5,19 @@ package engine
 // generated JavaScript, so agreeing with it is what "agreeing bit for bit"
 // means.
 //
-// This test sits inside the generated package rather than beside the wrapper,
-// because TIR field names are printed verbatim and Go cannot reach a lower-case
-// field from another package. A certificate therefore has to be built here.
+// This test sits inside the generated package rather than beside the wrapper.
+// TIR field names are printed verbatim, so the printer's Tir_ facade can export
+// readers for them but nothing that writes: a certificate can be read from
+// outside the package and not built there. The alternative — teaching the
+// printer to emit a constructor per copyable struct — is a lot of generated
+// surface for one test, and the M5 accessors will read a certificate out of a
+// compiled pattern rather than build one.
 
 import (
-	"encoding/json"
-	"os"
 	"testing"
-)
 
-const certificateSchema = 1
+	"github.com/jedisct1/pcre-truste/gen/go/internal/corpustest"
+)
 
 const certificatePath = "../../../../conformance/certificates.json"
 
@@ -67,24 +69,11 @@ type certCase struct {
 
 func readCertificates(t *testing.T) []certCase {
 	t.Helper()
-	raw, err := os.ReadFile(certificatePath)
+	cases, err := corpustest.Read[certCase](certificatePath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var document struct {
-		Schema int        `json:"schema"`
-		Cases  []certCase `json:"cases"`
-	}
-	if err := json.Unmarshal(raw, &document); err != nil {
-		t.Fatal(err)
-	}
-	if document.Schema != certificateSchema {
-		t.Fatalf("schema %d, want %d", document.Schema, certificateSchema)
-	}
-	if len(document.Cases) == 0 {
-		t.Fatal("the certificate corpus holds no cases")
-	}
-	return document.Cases
+	return cases
 }
 
 func buildSum(one certSum) Sum {

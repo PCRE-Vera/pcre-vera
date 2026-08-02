@@ -6,11 +6,11 @@ believes a bound. So the cases hand the checker certificates directly, well
 formed and otherwise, and they are the specification the analyzer will have to
 be written against.
 
-They live in `backends/certificates.py` rather than here, because the same list
-becomes `conformance/certificates.json` and is answered by the generated Go and
-JavaScript too — and this file reads the committed JSON rather than the objects
-it was written from, so an encoding that lost something fails here instead of
-quietly agreeing with itself.
+They live in `engine/certificate_corpus.py` rather than here, because the same
+list becomes `conformance/certificates.json` and is answered by the generated Go
+and JavaScript too — and this file reads the committed JSON rather than the
+objects it was written from, so an encoding that lost something fails here
+instead of quietly agreeing with itself.
 
 What only Python asks is the rest: the arithmetic at subject lengths worth
 naming one at a time, and the boundary where a value that is not a TIR value at
@@ -21,13 +21,13 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.backends import certificates
-from pcretruste.backends.certificates import CASES, CODE, KINDS, priced, root
+from pcretruste.engine import certificate_corpus
+from pcretruste.engine.certificate_corpus import CASES, CODE, KINDS, priced, root
 from pcretruste.engine import Certificate, Engine, EngineError, Term, spec
 from pcretruste.engine.program import program
 from pcretruste.tir.types import CAP, CEILING
 
-COMMITTED, BOUNDS = certificates.load()
+COMMITTED = certificate_corpus.load()
 """The corpus as the file spells it, which is what the other two runners read."""
 
 IDS = [case.name for case in COMMITTED]
@@ -62,10 +62,9 @@ def test_the_checker_draws_the_verdict_the_case_names(engine, case) -> None:
 
 @pytest.mark.parametrize("case", COMMITTED, ids=IDS)
 def test_the_bounds_are_the_ones_the_corpus_records(engine, case) -> None:
-    for row in BOUNDS[case.name]:
-        for kind in KINDS:
-            got = engine.bound(case.cert, "Bk" + kind.capitalize(), row["n"])
-            assert got == row[kind], f"{kind} at n={row['n']}"
+    for row in case.bounds:
+        for key, which in KINDS:
+            assert engine.bound(case.cert, which, row["n"]) == row[key], f"{key} at n={row['n']}"
 
 
 def test_every_verdict_the_checker_can_give_has_a_case() -> None:
@@ -91,7 +90,7 @@ def test_a_polynomial_bound_evaluates_at_the_subject_length(engine) -> None:
 
 
 def test_a_bound_with_no_terms_is_zero(engine) -> None:
-    assert engine.bound(cert("nothing-priced"), "BkCost", 1000) == 0
+    assert engine.bound(cert("root-only"), "BkCost", 1000) == 0
 
 
 def test_an_exponential_bound_is_finite_until_it_is_not(engine) -> None:
@@ -167,7 +166,7 @@ def test_a_certificate_the_checker_refused_answers_rather_than_traps(engine) -> 
         (Certificate(regions=(root(),)), -1),
         (Certificate(regions=(root(kind="RkWhatever"),)), CODE),
         (Certificate(regions=(root(),), complexity="CcWhatever"), CODE),
-        (priced(*(Term(1) for _ in range(spec.MAX_TERMS + 1))), CODE),
+        (priced(*((Term(1),) * (spec.MAX_TERMS + 1))), CODE),
     ],
 )
 def test_a_value_no_tir_could_hold_never_reaches_the_checker(engine, bad, length) -> None:

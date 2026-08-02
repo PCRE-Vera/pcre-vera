@@ -6,16 +6,13 @@ package pcretruste
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"errors"
-	"os"
 	"slices"
 	"testing"
 
+	"github.com/jedisct1/pcre-truste/gen/go/internal/corpustest"
 	"github.com/jedisct1/pcre-truste/gen/go/internal/probe"
 )
-
-const corpusSchema = 1
 
 type expectation struct {
 	Kind     string         `json:"kind"`
@@ -40,26 +37,9 @@ type conformanceCase struct {
 
 func readCorpus[T any](t *testing.T, path string) []T {
 	t.Helper()
-	raw, err := os.ReadFile(path)
+	cases, err := corpustest.Read[T](path)
 	if err != nil {
 		t.Fatal(err)
-	}
-	var document struct {
-		Schema int             `json:"schema"`
-		Cases  json.RawMessage `json:"cases"`
-	}
-	if err := json.Unmarshal(raw, &document); err != nil {
-		t.Fatal(err)
-	}
-	if document.Schema != corpusSchema {
-		t.Fatalf("%s has schema %d, want %d", path, document.Schema, corpusSchema)
-	}
-	var cases []T
-	if err := json.Unmarshal(document.Cases, &cases); err != nil {
-		t.Fatal(err)
-	}
-	if len(cases) == 0 {
-		t.Fatalf("%s holds no cases", path)
 	}
 	return cases
 }

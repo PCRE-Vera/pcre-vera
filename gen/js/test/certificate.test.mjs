@@ -7,10 +7,9 @@
 // than a certificate — so this reaches into the generated module directly.
 
 import { strict as assert } from "node:assert";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
 
+import { load } from "../corpus.mjs";
 import {
   BkCost,
   BkMem,
@@ -24,51 +23,28 @@ import {
   tir_Seq,
 } from "../engine.mjs";
 
-const SCHEMA = 1;
-
-const path = fileURLToPath(new URL("../../../conformance/certificates.json", import.meta.url));
-const CORPUS = JSON.parse(readFileSync(path, "utf8"));
-
-assert.equal(CORPUS.schema, SCHEMA, "the certificate corpus has an unexpected schema");
-assert.ok(CORPUS.cases.length > 0, "the certificate corpus holds no cases");
+const CORPUS = load("certificates.json");
 
 const seq = (items) => new tir_Seq(items, items.length);
 
-function buildSum(one) {
-  const built = new Sum();
-  built.first = one.first;
-  built.count = one.count;
-  return built;
-}
+// The encoder writes TIR field names verbatim, so every key in the file is the
+// field it names and the copy needs no mapping — only the two shapes the JSON
+// cannot carry: the nested structs, and the sequence handle.
+const buildSum = (one) => Object.assign(new Sum(), one);
+const buildTerm = (one) => Object.assign(new Term(), one);
 
-function buildRegion(one) {
-  const built = new Region();
-  built.kind = one.kind;
-  built.parent = one.parent;
-  built.lo = one.lo;
-  built.hi = one.hi;
-  built.cost = buildSum(one.cost);
-  built.stack = buildSum(one.stack);
-  built.mem = buildSum(one.mem);
-  return built;
-}
+const buildRegion = (one) =>
+  Object.assign(new Region(), one, {
+    cost: buildSum(one.cost),
+    stack: buildSum(one.stack),
+    mem: buildSum(one.mem),
+  });
 
-function buildTerm(one) {
-  const built = new Term();
-  built.coef = one.coef;
-  built.base = one.base;
-  built.degree = one.degree;
-  return built;
-}
-
-function buildCert(body) {
-  const built = new Cert();
-  built.config = body.config;
-  built.complexity = body.complexity;
-  built.regions = seq(body.regions.map(buildRegion));
-  built.terms = seq(body.terms.map(buildTerm));
-  return built;
-}
+const buildCert = (body) =>
+  Object.assign(new Cert(), body, {
+    regions: seq(body.regions.map(buildRegion)),
+    terms: seq(body.terms.map(buildTerm)),
+  });
 
 const WHICH = [
   ["cost", BkCost],

@@ -571,3 +571,15 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   is defensible alone; having both is what made it a bug, and it would have let
   a certificate call itself linear while naming an exponential term that
   happened to be multiplied by zero.
+- Put a conformance corpus in `backends/` because that is where the last one
+  went, without noticing that the last one is there for a reason the new one
+  does not share: `lowering.py` builds a TIR program to test the printers, while
+  the certificate corpus imports nothing from `backends` at all. Copying a
+  file's location is copying the shape of a decision without the decision. The
+  tell was in the test that had to import the engine's specification from
+  `pcretruste.backends` and then explain itself in a paragraph.
+- Left `src/pcretruste/analysis/` in place as an empty package whose docstring
+  said the checker would land there, and then landed the checker somewhere else
+  in the same milestone. A placeholder is a promise, and this one had already
+  been broken by the commit that read it. Deleting a signpost is not churn when
+  the road it points down does not exist.
