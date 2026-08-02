@@ -28,18 +28,33 @@ MAX_DEPTH = 64
 
 PARAM_MODES = ("in", "inout")
 
-RESERVED_PREFIX = "tir_"
-"""Names the printers keep for their own helpers, so a TIR name never collides with one."""
+RESERVED_PREFIXES = ("tir_", "Tir_")
+"""What the printers keep for themselves.
+
+`tir_` is the helpers. `Tir_` is the exported façade the Go printer has to
+emit, because Go cannot reach a lower-case name from another package and TIR
+names are printed verbatim; a second prefix rather than a case-insensitive
+test, since section 2 compares identifiers by exact byte equality.
+"""
 
 # Names a backend could not print verbatim, so TIR refuses them outright
 # rather than inventing a mangling scheme each printer would have to reproduce
 # exactly. Go's keywords and predeclared identifiers come first — shadowing
 # `len` or `cap` at package level would break every generated use of them —
 # then JavaScript's reserved words, its strict-mode and future-reserved ones
-# included, and last the two Go spells but cannot use as names: `_` names
-# nothing that can be referred to, and `init` may only ever be a function that
-# nothing calls. TIR-SPEC.md section 2 carries the same list, and a test
-# compares the two so they cannot drift.
+# included, then the two Go spells but cannot use as names: `_` names nothing
+# that can be referred to, and `init` may only ever be a function that nothing
+# calls.
+#
+# Last are the names the generated scope holds besides the program: the host
+# globals the JavaScript module reads, where a shadowing name would make
+# `Math.imul` mean something else, and the constant each printer stamps the
+# artifact hash into. Those are printer-owned and versioned with this
+# repository, unlike the wrapper's own names, which stay outside TIR because
+# they live in a different scope (TIR-SPEC.md section 16).
+#
+# TIR-SPEC.md section 2 carries the same list, and a test compares the two so
+# they cannot drift.
 RESERVED = frozenset(
     """
     break case chan const continue default defer else fallthrough for func go goto if
@@ -52,6 +67,8 @@ RESERVED = frozenset(
     new null super this throw try typeof void while with yield static implements
     private protected public arguments eval
     _ init
+    Array Error Float64Array Int32Array Math Uint32Array Uint8Array
+    ArtifactSHA256 artifactSha256
     """.split()
 )
 

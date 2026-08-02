@@ -24,13 +24,13 @@ detail, from the IR design through the proof layering to the milestones.
 
 ## Where the project is
 
-M0 (scaffolding), M1 (the pcre2 oracle), M2 (the TIR core) and M3 (the wave 1
-engine) are done.
+M0 (scaffolding), M1 (the pcre2 oracle), M2 (the TIR core), M3 (the wave 1
+engine) and M4 (the Go and JavaScript backends) are done.
 
-The Go and JavaScript backends arrive in M4, the Pike VM and the resource
-analyzer in M5, and the Lean proofs from M6 on.
+The Pike VM and the resource analyzer arrive in M5, and the Lean proofs from M6
+on.
 
-Three things work today, and everything else leans on them.
+Four things work today, and everything else leans on them.
 
 The first is the language the engine will be written in. `TIR-SPEC.md` pins
 every operator's result on every input, evaluation order, the trap list, the
@@ -108,12 +108,115 @@ pattern is M5's analyzer.
 pinned pcre2, and the expectation all have to agree on. A generated sweep in
 `tmp/` puts far more than that to both engines at once.
 
+The fourth is the pair of backends. `make generate` writes
+`gen/engine.tir.json` — the canonical artifact, whose SHA-256 is the identity
+everything downstream is pinned to — and then prints it as a Go package and an
+ES module, each stamped with that hash in a header comment and in a constant.
+Both are committed, and `make generate-verify` refuses a checkout where one is
+not what today's generator produces.
+
+The printers are the dumbest part of the system on purpose: one output
+construct per input node, no optimization, no reordering. `TIR-SPEC.md` section
+16 lists what each language gets wrong if lowered naively, and the two that
+matter are the ones that are silently wrong rather than merely slow. In
+JavaScript a 32-bit product has to go through `Math.imul`, because a plain
+double product loses low bits before any `| 0` could look at them; and a
+copyable struct has to be cloned when it is read out of storage, because a
+class instance is a reference where a Go struct is a value.
+
+Neither of those shows up in the pattern corpus — the engine's own
+multiplications are all small — so `conformance/lowering.json` asks about them
+directly. It is 4040 cases over a small TIR program that multiplies at the
+boundary, saturates counters at the cap, divides `INT_MIN` by -1, grows vectors
+one push at a time and reads the capacity back, writes through a struct it just
+copied, fills one sequence of every element type there is — the engine itself
+only ever uses two — and overflows a named constant, which Go folds at compile
+time and would refuse rather than wrap. `conformance/corpus.json` is the wave 1 corpus restated in a form
+any language can read. Both files run against the Python interpreter, the
+generated Go, and the generated JavaScript, and all three have to give the same
+answers.
+
+M4 is deliberately provisional and both wrappers say so. Compile and match
+work; every pattern runs on the backtracking matcher, because matcher selection
+needs the Pike VM. The analysis accessors of DESIGN.md section 2.4, the
+preallocated match context, and the match configuration argument all arrive
+with M5, together with the bounds that make them mean anything.
+
+## Using it
+
+Go, from `gen/go` (the example is `Example` in `gen/go/example_test.go`, so it
+is run rather than admired):
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	pcretruste "github.com/jedisct1/pcre-truste/gen/go"
+)
+
+func main() {
+	re, err := pcretruste.Compile(`(?<user>\w+)@(?<host>[\w.]+)`, pcretruste.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	subject := []byte("write to alice@example.org, please")
+	ovector, err := re.Match(subject, 0, 0, pcretruste.DefaultLimits())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if ovector == nil {
+		fmt.Println("no match")
+		return
+	}
+
+	group := func(n int) string { return string(subject[ovector[2*n]:ovector[2*n+1]]) }
+	fmt.Printf("%s is %s at %s\n",
+		group(0), group(re.SubexpIndex("user")), group(re.SubexpIndex("host")))
+}
+```
+
+JavaScript, from `gen/js` (and `gen/js/test/example.test.mjs`):
+
+```js
+import { compile, defaultLimits } from "./gen/js/index.mjs";
+
+const re = compile(String.raw`(?<user>\w+)@(?<host>[\w.]+)`);
+
+const subject = new TextEncoder().encode("write to alice@example.org, please");
+const ovector = re.match(subject, { limits: defaultLimits() });
+if (ovector === null) {
+  console.log("no match");
+} else {
+  const group = (n) =>
+    new TextDecoder().decode(subject.subarray(ovector[2 * n], ovector[2 * n + 1]));
+  console.log(`${group(0)} is ${group(re.groupIndex("user"))} at ${group(re.groupIndex("host"))}`);
+}
+```
+
+Both print `alice@example.org is alice at example.org`.
+
+Entries 0 and 1 of the ovector are the whole match, then a pair per capturing
+group, with -1 for both ends of a group that did not take part. A subject that
+does not match is a nil ovector in Go and `null` in JavaScript, not an error.
+Everything else — a budget exhausted, a start offset outside the subject, a
+limit past what any target could honor — is an error with a code the two
+languages agree on. Subjects are byte sequences and stay that way until UTF
+mode arrives in wave 3; a Go pattern is a string because a Go string already is
+an arbitrary byte sequence, and a JavaScript pattern may be a string as long as
+every code unit fits in a byte — one that does not is asking for UTF mode, and
+comes back as UnsupportedFeature at the offset that asked.
+
 ## Getting started
 
 ```
 make setup          # the Python environment, through uv
 make oracle-verify  # build the pinned pcre2 and check it against the pin
 make test           # the Python tests, seed corpus included
+make generate       # rewrite the artifact, both backends, and the corpora
 make check          # all of the above, plus lake build, go test, node --test
 ```
 
@@ -121,6 +224,11 @@ The oracle build downloads a 2 MB tarball and compiles the 8-bit library only,
 which takes a few seconds. `oracle/README.md` covers the protocol, the pin, and
 the environment variables for a build machine with a shared cache or no
 network.
+
+`make check` also runs eslint over the JavaScript, which is the one step that
+wants the npm registry, and only the first time: `gen/js/package-lock.json`
+pins it and the install is skipped once `node_modules` exists. `make js` on its
+own has no dependencies at all.
 
 ## Layout
 
@@ -135,8 +243,9 @@ network.
 | src/pcretruste/   | the generator and all its tooling                    |
 | oracle/           | the pcre2 pin, the C shim, the seed corpus           |
 | lean/             | the lake project: the four proof layers              |
+| gen/              | the canonical artifact everything is pinned to       |
 | gen/go, gen/js    | generated code plus hand-written wrappers            |
-| conformance/      | the language-neutral corpus (arrives with M4)        |
+| conformance/      | the language-neutral corpora, one runner per backend |
 | tmp/              | scratch, never committed                             |
 +-------------------+------------------------------------------------------+
 ```

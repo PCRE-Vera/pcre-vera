@@ -1,18 +1,336 @@
-// The JavaScript form of the pcre-truste engine: the module generated from the
-// TIR artifact, plus the hand-written wrapper that gives it the API of
-// DESIGN.md section 2.4.
+// The JavaScript form of the pcre-truste engine: a thin, hand-written wrapper
+// around the module generated from the TIR artifact, giving it the API of
+// DESIGN.md section 2.4 with JavaScript conventions.
 //
-// Nothing is generated yet. The printer lands in M4, together with the compile
-// and match entry points; the analysis accessors and the preallocated match
-// context follow in M5. Until then this module exists so that the toolchain,
-// the package, and CI are in place, and so that the identity a generated module
-// carries is fixed from the start: every generated file records the SHA-256 of
-// the engine.tir.json it came from.
+// This release is provisional and says so rather than implying otherwise.
+// Every pattern runs on the backtracking matcher, because matcher selection
+// arrives with the Pike VM in M5. The analysis accessors — complexity class,
+// worst-case cost, stack and memory — arrive with the analyzer in the same
+// milestone, and so do the preallocated match context and the match
+// configuration argument. What works today is compile and match, under the
+// caller's hard limits.
+//
+// Patterns and subjects are byte sequences. A pattern may also be a string,
+// as a convenience, when every code unit is at most 0xff and can therefore be
+// read as one byte; a subject may not, until UTF mode arrives in wave 3.
 
-/** SHA-256 of the TIR artifact this module was generated from, empty until one is. */
-export const artifactSha256 = "";
+import {
+  Out,
+  Usage,
+  artifactSha256 as engineArtifactSha256,
+  compile as engineCompile,
+  match as engineMatch,
+  tir_bytes,
+  tir_cell,
+  tir_zero_vec_u32_512,
+} from "./engine.mjs";
 
-/** Whether this module holds a generated engine. */
-export function generated() {
-  return artifactSha256 !== "";
+/** SHA-256 of the TIR artifact the engine was generated from. */
+export const artifactSha256 = engineArtifactSha256;
+
+/** Compile-time options, with the meanings pcre2 gives them. */
+export const Flags = Object.freeze({
+  CASELESS: 1 << 0,
+  MULTILINE: 1 << 1,
+  DOTALL: 1 << 2,
+  EXTENDED: 1 << 3,
+  UNGREEDY: 1 << 4,
+  ANCHORED: 1 << 5,
+  ENDANCHORED: 1 << 6,
+  DOLLAR_ENDONLY: 1 << 7,
+});
+
+const KNOWN_FLAGS = Object.values(Flags).reduce((all, bit) => all | bit, 0);
+
+/** What counts as a newline, for the dot, the anchors, and \R under ANYCRLF. */
+export const Newline = Object.freeze({
+  LF: 0,
+  CR: 1,
+  CRLF: 2,
+  ANYCRLF: 3,
+  ANY: 4,
+});
+
+/** The convention \R matches under. */
+export const BSR = Object.freeze({ UNICODE: 0, ANYCRLF: 1 });
+
+/** The options one match call adds on top of the pattern's. */
+export const MatchFlags = Object.freeze({
+  NOTBOL: 1 << 0,
+  NOTEOL: 1 << 1,
+  NOTEMPTY: 1 << 2,
+  NOTEMPTY_ATSTART: 1 << 3,
+  ANCHORED: 1 << 4,
+});
+
+const KNOWN_MATCH_FLAGS = Object.values(MatchFlags).reduce((all, bit) => all | bit, 0);
+
+/**
+ * Which outcome a PcreError carries. SYNTAX is the only one whose code is
+ * pcre2's; the others are ours, and DESIGN.md section 2.4 forbids ever
+ * repurposing a pcre2 code for them.
+ */
+export const Kind = Object.freeze({
+  SYNTAX: "syntax",
+  UNSUPPORTED_FEATURE: "unsupportedFeature",
+  UNSUPPORTED_OPTION: "unsupportedOption",
+  PATTERN_TOO_LARGE: "patternTooLarge",
+  RESOURCE_EXCEEDED: "resourceExceeded",
+  BAD_INPUT: "badInput",
+  INTERNAL: "internal",
+});
+
+/** The largest value each limit may name. A larger one is refused, never clamped. */
+export const maxCostLimit = 2 ** 53 - 1;
+export const maxMemoryLimit = 2 ** 31 - 1;
+export const maxStackLimit = Math.floor((2 ** 31 - 1) / 12);
+
+/**
+ * The longest byte sequence either a pattern or a subject may be. Every offset
+ * the engine reports is an i32 byte offset, so a longer input could not be
+ * described. The engine's own documented pattern limit is far below this; the
+ * check exists so that a length the engine's u32 could not hold is refused
+ * rather than truncated into an acceptable one.
+ */
+export const maxLength = 2 ** 31 - 1;
+
+/** A budget generous enough for ordinary patterns and still finite. */
+export function defaultLimits() {
+  return { cost: 10_000_000, stack: 100_000, memory: 64 * 1024 * 1024 };
+}
+
+const CODE_UNSUPPORTED_FEATURE = 1000;
+const CODE_UNSUPPORTED_OPTION = 1001;
+const CODE_PATTERN_TOO_LARGE = 1002;
+const CODE_INTERNAL = 1003;
+
+const STATUS_MATCHED = 0;
+const STATUS_NO_MATCH = 1;
+const STATUS_RESOURCE_EXCEEDED = 2;
+const STATUS_BAD_INPUT = 3;
+
+const UNSET = 0xffffffff;
+
+const MESSAGES = {
+  [Kind.SYNTAX]: "syntax error",
+  [Kind.UNSUPPORTED_FEATURE]: "this release does not support that construct",
+  [Kind.UNSUPPORTED_OPTION]: "this release does not support that option",
+  [Kind.PATTERN_TOO_LARGE]: "the pattern is past a documented portable limit",
+  [Kind.RESOURCE_EXCEEDED]: "the match went over its cost, stack or memory limit",
+  [Kind.BAD_INPUT]: "an argument is outside its documented range",
+  [Kind.INTERNAL]: "internal error",
+};
+
+/**
+ * Every way a call can fail. `code` and `offset` are the contract that is
+ * tested against pcre2; the message text is ours and may change.
+ */
+export class PcreError extends Error {
+  constructor(kind, code = 0, offset = 0) {
+    let message = `pcre-truste: ${MESSAGES[kind]}`;
+    if (kind === Kind.SYNTAX) {
+      message += ` ${code} at offset ${offset}`;
+    }
+    super(message);
+    this.name = "PcreError";
+    this.kind = kind;
+    this.code = code;
+    this.offset = offset;
+  }
+}
+
+function badInput() {
+  return new PcreError(Kind.BAD_INPUT);
+}
+
+// Anything the engine does not name as one of ours is pcre2's own syntax
+// error, which is what the SYNTAX default says.
+const KIND_BY_CODE = {
+  [CODE_UNSUPPORTED_FEATURE]: Kind.UNSUPPORTED_FEATURE,
+  [CODE_UNSUPPORTED_OPTION]: Kind.UNSUPPORTED_OPTION,
+  [CODE_PATTERN_TOO_LARGE]: Kind.PATTERN_TOO_LARGE,
+  [CODE_INTERNAL]: Kind.INTERNAL,
+};
+
+function compileError(code, offset) {
+  return new PcreError(KIND_BY_CODE[code] ?? Kind.SYNTAX, code, offset);
+}
+
+function whole(value, ceiling) {
+  return Number.isInteger(value) && value >= 0 && value <= ceiling;
+}
+
+/**
+ * An options or limits argument, which has to be something a property can be
+ * read off. A parameter default only fires on `undefined`, so `null` would
+ * otherwise reach the reads below as a host TypeError rather than as our own
+ * BadInput.
+ */
+function record(value) {
+  if (value === null || typeof value !== "object") {
+    throw badInput();
+  }
+  return value;
+}
+
+/**
+ * The bytes of a pattern. A Uint8Array is the canonical form; a string is a
+ * convenience that only works while every code unit fits in a byte, which is
+ * as far as Latin-1 goes and as far as this release reads.
+ *
+ * A code unit above that is not bad input, it is a pattern that wants UTF
+ * mode, so it comes back as UNSUPPORTED_FEATURE with the offset of the first
+ * code unit that asked for it. A pattern that is neither a string nor bytes is
+ * bad input, because there is nothing there to support later.
+ */
+function patternBytes(pattern) {
+  if (pattern instanceof Uint8Array) {
+    return pattern;
+  }
+  if (typeof pattern !== "string") {
+    throw badInput();
+  }
+  const bytes = new Uint8Array(pattern.length);
+  for (let i = 0; i < pattern.length; i++) {
+    const unit = pattern.charCodeAt(i);
+    if (unit > 0xff) {
+      throw new PcreError(Kind.UNSUPPORTED_FEATURE, CODE_UNSUPPORTED_FEATURE, i);
+    }
+    bytes[i] = unit;
+  }
+  return bytes;
+}
+
+function latin1(bytes) {
+  let text = "";
+  for (let i = 0; i < bytes.length; i++) {
+    text += String.fromCharCode(bytes[i]);
+  }
+  return text;
+}
+
+/** A compiled pattern. It is immutable, so one may be kept and reused freely. */
+export class Regexp {
+  #program;
+  #names;
+
+  constructor(program) {
+    this.#program = program;
+    this.#names = new Map();
+    const entries = program.nameents;
+    for (let i = 0; i < entries.n; i++) {
+      const entry = entries.a[i];
+      const name = program.names.a.subarray(entry.off, entry.off + entry.nlen);
+      this.#names.set(latin1(name), entry.grp);
+    }
+    Object.freeze(this);
+  }
+
+  /** How many capturing groups the pattern has. */
+  get groupCount() {
+    return this.#program.ncap;
+  }
+
+  /** The number of the group with that name, or -1. */
+  groupIndex(name) {
+    const number = this.#names.get(name);
+    return number === undefined ? -1 : number;
+  }
+
+  /** Every named group and its number, as a fresh Map. */
+  groupNames() {
+    return new Map(this.#names);
+  }
+
+  /**
+   * Run the pattern against a subject from a byte offset, under hard limits.
+   *
+   * Returns the ovector — byte offsets of the whole match at entries 0 and 1,
+   * then a pair for every capturing group, with -1 for both ends of a group
+   * that did not participate — or null when the subject does not match.
+   * Everything else throws a PcreError.
+   */
+  match(subject, options = {}) {
+    const { start = 0, flags = 0, limits = defaultLimits() } = record(options);
+    if (!(subject instanceof Uint8Array) || subject.length > maxLength) {
+      throw badInput();
+    }
+    if (!whole(flags, KNOWN_MATCH_FLAGS)) {
+      throw new PcreError(Kind.UNSUPPORTED_OPTION, CODE_UNSUPPORTED_OPTION);
+    }
+    // A start offset the engine's u32 parameter could not hold is refused
+    // here; every other value, the ones past the end of the subject included,
+    // is the engine's own BadInput.
+    if (!whole(start, 0xffffffff)) {
+      throw badInput();
+    }
+    record(limits);
+    if (
+      !whole(limits.cost, maxCostLimit) ||
+      !whole(limits.stack, maxStackLimit) ||
+      !whole(limits.memory, maxMemoryLimit)
+    ) {
+      throw badInput();
+    }
+    const ovector = tir_cell(tir_zero_vec_u32_512());
+    const usage = tir_cell(new Usage());
+    const status = engineMatch(
+      this.#program,
+      tir_bytes(subject),
+      start,
+      flags,
+      limits.cost,
+      limits.stack,
+      limits.memory,
+      ovector,
+      usage,
+    );
+    switch (status) {
+      case STATUS_MATCHED: {
+        const offsets = new Int32Array(ovector.v.n);
+        for (let i = 0; i < offsets.length; i++) {
+          const slot = ovector.v.a[i];
+          offsets[i] = slot === UNSET ? -1 : slot;
+        }
+        return offsets;
+      }
+      case STATUS_NO_MATCH:
+        return null;
+      case STATUS_RESOURCE_EXCEEDED:
+        throw new PcreError(Kind.RESOURCE_EXCEEDED);
+      case STATUS_BAD_INPUT:
+        throw badInput();
+      default:
+        throw new PcreError(Kind.INTERNAL, status);
+    }
+  }
+}
+
+/**
+ * Compile a pattern, or throw a PcreError saying why not.
+ *
+ * A syntax error carries pcre2's own code and a byte offset into the pattern.
+ * A construct pcre2 accepts and this release does not comes back as
+ * UNSUPPORTED_FEATURE rather than as a repurposed pcre2 code, so a caller can
+ * always tell "PCRE says this is wrong" from "we do not do this yet".
+ */
+export function compile(pattern, options = {}) {
+  const { flags = 0, newline = Newline.LF, bsr = BSR.UNICODE } = record(options);
+  const bytes = patternBytes(pattern);
+  if (
+    !whole(flags, KNOWN_FLAGS) ||
+    !whole(newline, Newline.ANY) ||
+    !whole(bsr, BSR.ANYCRLF)
+  ) {
+    throw new PcreError(Kind.UNSUPPORTED_OPTION, CODE_UNSUPPORTED_OPTION);
+  }
+  if (bytes.length > maxLength) {
+    throw new PcreError(Kind.PATTERN_TOO_LARGE, CODE_PATTERN_TOO_LARGE);
+  }
+  const out = tir_cell(new Out());
+  engineCompile(tir_bytes(bytes), flags, newline, bsr, out);
+  if (out.v.err !== 0) {
+    throw compileError(out.v.err, out.v.erroff);
+  }
+  return new Regexp(out.v.re);
 }

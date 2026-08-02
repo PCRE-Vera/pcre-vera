@@ -458,3 +458,74 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   documented it as the eight adjacent shapes; the README and the code have
   to describe the same predicate, and the predicate itself only needed
   parse-order suffix masks to be honest about "the next item".
+
+## The Go and JavaScript printers (M4)
+
+- Cloned every struct-typed read in the JavaScript printer, including linear
+  ones. A linear struct never becomes a value at all — rule V-023 only lets it
+  appear as a projection base — so `w` in `len(w.nodes)` has to reach the
+  sequence itself, not a copy of it, and a copy method was never emitted for
+  it in the first place. The fix was two rules rather than one: clone only what
+  is copyable, and never clone something that is only going to be projected
+  from. The second half is a real optimisation as well, since `re.ncap` was
+  otherwise duplicating a whole compiled pattern to read one field.
+- Wrote the JavaScript coercions as `a & b >>> 0` in the first draft, which is
+  `a & (b >>> 0)`: a shift binds tighter than a bitwise and, so the coercion
+  landed on the wrong operand. Caught by reading it rather than by a test,
+  which is luck — the engine's own operands are small enough that the two
+  spellings agree on almost everything. The rule is that the coerced expression
+  is parenthesized, always, not when it looks like it needs it.
+- Wrote a test asserting that the JavaScript wrapper refuses `"café"` as a
+  pattern, on the theory that it is not Latin-1. Every code unit in it is at
+  most 0xff, so the wrapper accepts it, correctly, and reads it as four bytes.
+  The test passed only because it asserted the wrong thing; a character above
+  the BMP boundary is what actually tests the rule. A test whose premise is
+  wrong is worse than no test, because it also reads as documentation.
+- Encoded the conformance corpus's group names as a list of `[name, number]`
+  pairs, which is fine in Python and JavaScript and cannot be decoded into a
+  Go map without a custom unmarshaller. A corpus that exists so three languages
+  can read it should be written in the shapes all three already have; keying
+  the object by the hex of the name costs nothing and needs no code anywhere.
+- Nearly packed the probe's two-part answers with a multiplier of 2^32, which
+  saturates the counter for any high half past 2^21 and would have turned every
+  interesting case into the same CAP. A packing that loses information still
+  compares equal in every language, so nothing would have failed; it would just
+  have stopped testing anything.
+- Left an `in` call argument to be evaluated inside the call while resolving a
+  later `inout` place first, which reverses the trap order section 13 pins.
+  The excuse at the time was that every trap at a call site is a T-01 and so
+  the order is unobservable — but section 16 asks for exactly this ordering on
+  an assignment, where both traps are also T-01, so the spec's own answer is
+  that it is observable. Reaching for "this cannot be seen" is how a printer
+  stops being a transcription of the semantics.
+- Validated the start offset and all three limits in both wrappers and never
+  the subject length, although DESIGN.md section 2.4 caps subjects at 2^31 - 1
+  bytes for the same reason it caps everything else: the offsets have to fit
+  in an i32. A limit that only exists in prose is not a limit.
+- Wrote the JavaScript options as destructuring defaults, which fire on
+  `undefined` and not on `null`, so `{limits: null}` reached a property read
+  and threw a host TypeError instead of the deterministic BadInput the whole
+  API promises. A default is not a validation.
+- Classified a JavaScript string pattern carrying a code unit above 0xff as
+  BadInput. It compiles once UTF mode exists, which makes it exactly the
+  UnsupportedFeature case — a construct this release does not do yet — and
+  the difference matters to a caller deciding whether to retry with a
+  different release or to fix the call. Reaching for the generic outcome
+  because the specific one took a moment's thought is how an error taxonomy
+  stops meaning anything.
+- Wrote the Go printer's constant-expression predicate as "built from literals
+  alone" when the question Go asks is "will I fold this", and Go folds a named
+  constant exactly as it folds a literal. The docstring described the narrower
+  thing accurately, which is how it survived review: the name and the comment
+  agreed with each other and both disagreed with Go. Two decisions that have to
+  match — what gets emitted as a constant, and what counts as one — are now one
+  function that both callers ask.
+- Put a name-collision guard in each printer instead of in rule V-043, so a
+  program could validate and then fail to print. The validator's own docstring
+  for the neighbouring check spells out why that is wrong — "a program the DSL
+  built would validate and then fail to re-read, which makes `validate` a
+  weaker statement than it looks" — and the same sentence applies word for word
+  to printing. Worse, the two guards then drifted: only one of them knew about
+  the constant its own printer emits, and neither looked at parameters, so a
+  parameter called `Math` printed a JavaScript module where `Math.imul` meant
+  the parameter.

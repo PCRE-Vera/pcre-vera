@@ -5,20 +5,24 @@ UV ?= uv
 # directory of its own and is published in one step.
 .NOTPARALLEL:
 
-.PHONY: help setup test oracle oracle-verify corpus lean go js check clean distclean
+.PHONY: help setup test oracle oracle-verify corpus generate generate-verify \
+        lean go js js-lint check clean distclean
 
 help:
-	@echo "setup          install the Python environment"
-	@echo "test           run the Python tests (builds the oracle if needed)"
-	@echo "oracle         build the pinned pcre2 and the shim"
-	@echo "oracle-verify  build it, then check it field by field against the pin"
-	@echo "corpus         run the seed corpus against the oracle"
-	@echo "lean           lake build"
-	@echo "go             go vet and go test on the generated Go"
-	@echo "js             node --test on the generated JavaScript"
-	@echo "check          all of the above"
-	@echo "clean          remove build trees, keep the downloaded tarball"
-	@echo "distclean      remove the download cache too"
+	@echo "setup            install the Python environment"
+	@echo "test             run the Python tests (builds the oracle if needed)"
+	@echo "oracle           build the pinned pcre2 and the shim"
+	@echo "oracle-verify    build it, then check it field by field against the pin"
+	@echo "corpus           run the seed corpus against the oracle"
+	@echo "generate         write the artifact, both backends, and the corpora"
+	@echo "generate-verify  fail if any committed generated file has drifted"
+	@echo "lean             lake build"
+	@echo "go               go vet and go test on the generated Go"
+	@echo "js               node --test on the generated JavaScript"
+	@echo "js-lint          eslint on the generated JavaScript (needs npm)"
+	@echo "check            all of the above"
+	@echo "clean            remove build trees, keep the downloaded tarball"
+	@echo "distclean        remove the download cache too"
 
 setup:
 	$(UV) sync
@@ -35,6 +39,12 @@ oracle-verify: setup
 corpus: setup
 	$(UV) run python -m pcretruste.oracle corpus
 
+generate: setup
+	$(UV) run python -m pcretruste.backends build
+
+generate-verify: setup
+	$(UV) run python -m pcretruste.backends verify
+
 lean:
 	cd lean && lake build
 
@@ -44,11 +54,21 @@ go:
 js:
 	cd gen/js && node --test
 
-check: oracle-verify test lean go js
+# The one thing here that wants the npm registry, and only when the lockfile
+# moves: this is a file target rather than a phony one, so a bumped lockfile
+# reinstalls and an unchanged one does nothing.
+gen/js/node_modules: gen/js/package-lock.json
+	cd gen/js && npm ci
+	touch $@
+
+js-lint: gen/js/node_modules
+	cd gen/js && npm run --silent lint
+
+check: oracle-verify generate-verify test lean go js js-lint
 
 clean:
 	rm -rf tmp/oracle/pcre2-* lean/.lake .pytest_cache
 	find src tests -name __pycache__ -type d -prune -exec rm -rf {} +
 
 distclean: clean
-	rm -rf tmp/oracle .venv
+	rm -rf tmp/oracle .venv gen/js/node_modules

@@ -510,12 +510,13 @@ class _Validator:
             ):
                 self.fail("V-041", f"{what} is not an identifier: {name!r}")
             if name in ir.RESERVED:
-                self.fail("V-043", f"{what} is {name!r}, which Go or JavaScript reserves")
-            if name.startswith(ir.RESERVED_PREFIX):
-                self.fail(
-                    "V-043",
-                    f"{what} starts with {ir.RESERVED_PREFIX!r}, which the printers keep",
-                )
+                self.fail("V-043", f"{what} is {name!r}, which a target language keeps")
+            for prefix in ir.RESERVED_PREFIXES:
+                if name.startswith(prefix):
+                    self.fail(
+                        "V-043",
+                        f"{what} starts with {prefix!r}, which the printers keep",
+                    )
 
         for decl in self.p.enums:
             check(decl.name, "an enum name")

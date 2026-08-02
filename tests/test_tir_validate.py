@@ -833,7 +833,9 @@ def test_v042_a_name_that_only_claims_to_be_one(program):
     rejects("V-042", program)
 
 
-@pytest.mark.parametrize("name", [*sorted(ir.RESERVED), "tir_helper"])
+@pytest.mark.parametrize(
+    "name", [*sorted(ir.RESERVED), *(prefix + "helper" for prefix in ir.RESERVED_PREFIXES)]
+)
 def test_v043_reserved_names_are_refused(name):
     """The whole set, not a sample: a word added to it should not need a test added too."""
     rejects("V-043", prog(funcs=[func(name=name)]))
@@ -841,9 +843,9 @@ def test_v043_reserved_names_are_refused(name):
 
 @pytest.mark.parametrize("name", sorted(ir.RESERVED))
 def test_v043_reserves_only_names_something_else_would_have_allowed(name):
-    """A reserved word that V-041 refuses anyway is an entry nothing can reach."""
+    """A reserved word that V-041 or a prefix refuses anyway is an entry nothing reaches."""
     assert ir.IDENTIFIER.match(name) and len(name) <= ir.MAX_IDENTIFIER
-    assert not name.startswith(ir.RESERVED_PREFIX)
+    assert not name.startswith(ir.RESERVED_PREFIXES)
 
 
 def test_v043_covers_every_kind_of_declared_name():

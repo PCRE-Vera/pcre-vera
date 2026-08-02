@@ -113,31 +113,52 @@ otherwise validate and then fail to re-read, which would make validation a
 weaker statement than it looks.
 
 **Reserved names.** The printers emit TIR names verbatim, so a name a target
-language cannot spell is refused here rather than mangled (rule V-043). TIR
-does not define a mangling scheme on purpose: two printers would have to
-reproduce one identically, and "refuse the case" is the same answer this
-document gives to out-of-range shift counts. The reserved set is Go's keywords
-and predeclared identifiers, plus JavaScript's reserved words including the
-strict-mode and future-reserved ones, plus the two names Go can spell but
-cannot use: `_`, which names nothing that can be referred to, and `init`, which
-at package level may only ever be a function nothing is allowed to call.
+language cannot spell, or one that would shadow something the generated scope
+already needs, is refused here rather than mangled (rule V-043). TIR does not
+define a mangling scheme on purpose: two printers would have to reproduce one
+identically, and "refuse the case" is the same answer this document gives to
+out-of-range shift counts. Refusing here rather than in a printer is what
+makes validation the boundary it claims to be: a program that validates
+prints, in every target, and a printer's own check of the same thing is
+defense in depth rather than a second gate.
+
+The reserved set is Go's keywords and predeclared identifiers, plus
+JavaScript's reserved words including the strict-mode and future-reserved
+ones, plus the two names Go can spell but cannot use: `_`, which names nothing
+that can be referred to, and `init`, which at package level may only ever be a
+function nothing is allowed to call.
+
+The capitalized entries are the rest of what the generated scope holds. A
+JavaScript module that lowers a multiplication reads `Math.imul`, and a
+sequence reads `Uint8Array`, `Int32Array`, `Uint32Array`, `Float64Array`,
+`Array` and `Error`; a TIR name printed verbatim into module scope would
+shadow any of them, and a *parameter* shadows one just as thoroughly as a
+function would. `ArtifactSHA256` and `artifactSha256` are the constants each
+printer stamps the artifact's hash into (section 16). All of these are
+printer-owned and versioned with this document, which is what separates them
+from the hand-written wrapper's names: those live in a different scope on
+purpose, so that this list never has to grow to cover them.
 
 ```
-_ append arguments any await bool break byte cap case catch chan class clear
-close comparable complex complex64 complex128 const continue copy debugger
-default defer delete do else enum error eval export extends fallthrough false
-finally float32 float64 for func function go goto if imag implements import in
-init instanceof int int8 int16 int32 int64 interface iota len let make map max
-min new nil null package panic print println private protected public range
-real recover return rune select static string struct super switch this throw
-true try type typeof uint uint8 uint16 uint32 uint64 uintptr var void while
-with yield
+Array ArtifactSHA256 Error Float64Array Int32Array Math Uint32Array
+Uint8Array _ any append arguments artifactSha256 await bool break byte cap
+case catch chan class clear close comparable complex complex128 complex64
+const continue copy debugger default defer delete do else enum error eval
+export extends fallthrough false finally float32 float64 for func function
+go goto if imag implements import in init instanceof int int16 int32 int64
+int8 interface iota len let make map max min new nil null package panic
+print println private protected public range real recover return rune select
+static string struct super switch this throw true try type typeof uint
+uint16 uint32 uint64 uint8 uintptr var void while with yield
 ```
 
-No name may begin with `tir_` either: that prefix belongs to the helpers the
-printers generate, so a TIR name can never collide with one. Adding a target
-language means adding its words to this list, which is a deliberate,
-documented compatibility change like a pcre2 or Unicode bump.
+No name may begin with `tir_` or `Tir_` either. The first belongs to the
+helpers the printers generate. The second belongs to the exported façade the
+Go printer has to emit, because Go cannot reach a lower-case name from another
+package and TIR names go out verbatim; it is a second prefix rather than a
+case-insensitive test because identifiers here compare by exact byte equality.
+Adding a target language means adding its words to this list, which is a
+deliberate, documented compatibility change like a pcre2 or Unicode bump.
 
 **One top-level namespace.** Every enum name, enum *variant*, struct,
 constant and function name lives in one namespace and they must be pairwise
@@ -1325,7 +1346,7 @@ V-042  every node is a form this document defines: a statement where a
        arguments. Whether a payload fits is the rule that governs that
        payload: V-014, V-015, V-007, V-012
 V-043  no declared name is a reserved word of section 2, and none begins
-       with the printers' 'tir_' prefix
+       with either of the printers' prefixes, 'tir_' and 'Tir_'
 V-044  nothing nests more than 64 deep, counted as section 2 counts it:
        statements and the expressions and places inside them, a constant's
        value, a chain of struct containment, a path through the call graph
@@ -1426,7 +1447,10 @@ and nothing in it is a claim about code that exists today.
   wrapper is a *different* one that imports it. Otherwise the wrapper's own
   `Compile`, `Regexp` or `Generated` would sit in the same scope as the
   program's names, and V-043 would have to grow a list of names that live
-  outside TIR and change without notice.
+  outside TIR and change without notice. What the generated scope *does* hold
+  besides the program — the `tir_` helpers, the `Tir_` façade, the hash
+  constant, and the host globals the module reads — is in V-043 precisely
+  because it is printer-owned and moves only when this document does.
 - A printer may recurse over the program without a depth guard of its own, and
   emit nesting verbatim without one either. Rule V-044 is what buys that, and
   it is the reason the rule exists rather than a happy consequence of it.

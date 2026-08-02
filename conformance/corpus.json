@@ -1,0 +1,4021 @@
+{
+  "cases": [
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          5
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "literal-found",
+      "newline": 0,
+      "pattern": "616263",
+      "start": 0,
+      "subject": "78786162637878"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "literal-absent",
+      "newline": 0,
+      "pattern": "616263",
+      "start": 0,
+      "subject": "616264"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          0
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "literal-empty-pattern",
+      "newline": 0,
+      "pattern": "",
+      "start": 0,
+      "subject": "616263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "literal-empty-subject",
+      "newline": 0,
+      "pattern": "61",
+      "start": 0,
+      "subject": ""
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          6
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "literal-nul-byte",
+      "newline": 0,
+      "note": "a NUL is an ordinary byte in a pattern and in a subject",
+      "pattern": "6100620063",
+      "start": 0,
+      "subject": "78610062006300"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "literal-high-byte",
+      "newline": 0,
+      "pattern": "ff",
+      "start": 0,
+      "subject": "61ff62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "literal-leftmost-wins",
+      "newline": 0,
+      "pattern": "61",
+      "start": 0,
+      "subject": "626162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "dot-skips-newline",
+      "newline": 0,
+      "pattern": "612e63",
+      "start": 0,
+      "subject": "610a63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 4,
+      "matchFlags": 0,
+      "name": "dot-dotall",
+      "newline": 0,
+      "pattern": "612e63",
+      "start": 0,
+      "subject": "610a63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "dot-matches-high-byte",
+      "newline": 0,
+      "pattern": "612e63",
+      "start": 0,
+      "subject": "61ff63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "dot-excludes-cr-in-cr-mode",
+      "newline": 1,
+      "pattern": "612e63",
+      "start": 0,
+      "subject": "610d63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "dot-matches-cr-in-lf-mode",
+      "newline": 0,
+      "pattern": "612e63",
+      "start": 0,
+      "subject": "610d63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "dot-matches-lone-cr-in-crlf-mode",
+      "newline": 2,
+      "note": "a CR with no LF after it is not a newline under the CRLF convention",
+      "pattern": "612e63",
+      "start": 0,
+      "subject": "610d63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "dot-excludes-nel-in-any-mode",
+      "newline": 4,
+      "pattern": "612e63",
+      "start": 0,
+      "subject": "618563"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-range",
+      "newline": 0,
+      "pattern": "5b612d635d2b",
+      "start": 0,
+      "subject": "786162636479"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          3,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-negated",
+      "newline": 0,
+      "pattern": "5b5e612d635d",
+      "start": 0,
+      "subject": "61626364"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-negated-matches-newline",
+      "newline": 0,
+      "pattern": "5b5e615d",
+      "start": 0,
+      "subject": "610a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-posix-alpha",
+      "newline": 0,
+      "pattern": "5b5b3a616c7068613a5d5d2b",
+      "start": 0,
+      "subject": "313261623334"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-posix-negated",
+      "newline": 0,
+      "pattern": "5b5b3a5e64696769743a5d5d",
+      "start": 0,
+      "subject": "3161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          5
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-posix-xdigit",
+      "newline": 0,
+      "pattern": "5b5b3a7864696769743a5d5d2b",
+      "start": 0,
+      "subject": "7a7a4146397a7a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-posix-punct",
+      "newline": 0,
+      "pattern": "5b5b3a70756e63743a5d5d",
+      "start": 0,
+      "subject": "613b62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-caret-is-literal-when-not-first",
+      "newline": 0,
+      "pattern": "5b615e5d",
+      "start": 0,
+      "subject": "5e"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-hyphen-at-end-is-literal",
+      "newline": 0,
+      "pattern": "5b612d5d",
+      "start": 0,
+      "subject": "2d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-hyphen-at-start-is-literal",
+      "newline": 0,
+      "pattern": "5b2d615d",
+      "start": 0,
+      "subject": "2d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-bracket-first-is-literal",
+      "newline": 0,
+      "pattern": "5b5d615d",
+      "start": 0,
+      "subject": "5d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-negated-bracket-first-is-literal",
+      "newline": 0,
+      "pattern": "5b5e5d615d",
+      "start": 0,
+      "subject": "62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-bracket-range",
+      "newline": 0,
+      "pattern": "5b5d2d615d",
+      "start": 0,
+      "subject": "5e"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-escape-inside",
+      "newline": 0,
+      "pattern": "5b5c645f5d2b",
+      "start": 0,
+      "subject": "61315f3262"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-backspace-escape",
+      "newline": 0,
+      "note": "\\b is a backspace inside a class and a word boundary outside one",
+      "pattern": "5b5c625d",
+      "start": 0,
+      "subject": "6108"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-quoted-run",
+      "newline": 0,
+      "pattern": "5b5c51612d635c455d",
+      "start": 0,
+      "subject": "2d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-quoted-run-excludes-range",
+      "newline": 0,
+      "pattern": "5b5c51612d635c455d",
+      "start": 0,
+      "subject": "62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-hex-range",
+      "newline": 0,
+      "pattern": "5b5c7834312d5c7834335d",
+      "start": 0,
+      "subject": "42"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-negated-set-escape",
+      "newline": 0,
+      "pattern": "5b5c445d",
+      "start": 0,
+      "subject": "3161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          5
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-digit",
+      "newline": 0,
+      "pattern": "5c642b",
+      "start": 0,
+      "subject": "61623132336364"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-word",
+      "newline": 0,
+      "pattern": "5c772b",
+      "start": 0,
+      "subject": "20615f312020"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-space",
+      "newline": 0,
+      "pattern": "5c732b",
+      "start": 0,
+      "subject": "6120092062"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-space-includes-vertical-tab",
+      "newline": 0,
+      "pattern": "5c73",
+      "start": 0,
+      "subject": "610b"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-horizontal-space",
+      "newline": 0,
+      "pattern": "5c68",
+      "start": 0,
+      "subject": "610962"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-horizontal-space-nbsp",
+      "newline": 0,
+      "pattern": "5c68",
+      "start": 0,
+      "subject": "61a0"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-vertical-space",
+      "newline": 0,
+      "pattern": "5c76",
+      "start": 0,
+      "subject": "610a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-not-digit",
+      "newline": 0,
+      "pattern": "5c44",
+      "start": 0,
+      "subject": "313261"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-not-word",
+      "newline": 0,
+      "pattern": "5c57",
+      "start": 0,
+      "subject": "61622e"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-not-space",
+      "newline": 0,
+      "pattern": "5c53",
+      "start": 0,
+      "subject": "202061"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-not-horizontal-space",
+      "newline": 0,
+      "pattern": "5c48",
+      "start": 0,
+      "subject": "202061"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-not-vertical-space",
+      "newline": 0,
+      "pattern": "5c56",
+      "start": 0,
+      "subject": "0a0a61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-tab",
+      "newline": 0,
+      "pattern": "5c74",
+      "start": 0,
+      "subject": "610962"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-hex-two-digits",
+      "newline": 0,
+      "pattern": "5c783431",
+      "start": 0,
+      "subject": "7841"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-hex-one-digit",
+      "newline": 0,
+      "pattern": "5c7834",
+      "start": 0,
+      "subject": "0004"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-hex-braces",
+      "newline": 0,
+      "pattern": "5c787b34317d",
+      "start": 0,
+      "subject": "7841"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-octal",
+      "newline": 0,
+      "pattern": "5c313031",
+      "start": 0,
+      "subject": "7841"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-octal-nul",
+      "newline": 0,
+      "pattern": "5c30",
+      "start": 0,
+      "subject": "6100"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-octal-braces",
+      "newline": 0,
+      "pattern": "5c6f7b3130317d",
+      "start": 0,
+      "subject": "7841"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-control",
+      "newline": 0,
+      "pattern": "5c6341",
+      "start": 0,
+      "subject": "6101"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-control-lowercase",
+      "newline": 0,
+      "pattern": "5c6361",
+      "start": 0,
+      "subject": "6101"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-punctuation-is-itself",
+      "newline": 0,
+      "pattern": "5c2e",
+      "start": 0,
+      "subject": "612e62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-underscore-is-itself",
+      "newline": 0,
+      "pattern": "5c5f",
+      "start": 0,
+      "subject": "5f"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "bsr-crlf-is-one-newline",
+      "newline": 0,
+      "pattern": "5c52",
+      "start": 0,
+      "subject": "610d0a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "bsr-unicode-matches-vertical-tab",
+      "newline": 0,
+      "pattern": "5c52",
+      "start": 0,
+      "subject": "610b"
+    },
+    {
+      "bsr": 1,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "bsr-anycrlf-rejects-vertical-tab",
+      "newline": 0,
+      "pattern": "5c52",
+      "start": 0,
+      "subject": "610b"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "bsr-unicode-matches-nel",
+      "newline": 0,
+      "pattern": "5c52",
+      "start": 0,
+      "subject": "6185"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "bsr-matches-lone-cr",
+      "newline": 0,
+      "pattern": "5c52",
+      "start": 0,
+      "subject": "610d62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "anchor-caret",
+      "newline": 0,
+      "pattern": "5e616263",
+      "start": 0,
+      "subject": "78616263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "anchor-caret-at-start",
+      "newline": 0,
+      "pattern": "5e616263",
+      "start": 0,
+      "subject": "61626378"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 2,
+      "matchFlags": 0,
+      "name": "anchor-caret-multiline",
+      "newline": 0,
+      "pattern": "5e62",
+      "start": 0,
+      "subject": "610a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          0
+        ]
+      },
+      "flags": 2,
+      "matchFlags": 0,
+      "name": "anchor-caret-multiline-not-at-end",
+      "newline": 0,
+      "note": "multiline ^ does not match at the very end of the subject",
+      "pattern": "5e",
+      "start": 0,
+      "subject": "610a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          3,
+          4
+        ]
+      },
+      "flags": 2,
+      "matchFlags": 0,
+      "name": "anchor-caret-multiline-crlf",
+      "newline": 2,
+      "pattern": "5e62",
+      "start": 0,
+      "subject": "610d0a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "anchor-dollar-before-final-newline",
+      "newline": 0,
+      "pattern": "6324",
+      "start": 0,
+      "subject": "6162630a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "anchor-dollar-not-before-inner-newline",
+      "newline": 0,
+      "pattern": "6124",
+      "start": 0,
+      "subject": "610a0a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 128,
+      "matchFlags": 0,
+      "name": "anchor-dollar-endonly",
+      "newline": 0,
+      "pattern": "6324",
+      "start": 0,
+      "subject": "6162630a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 2,
+      "matchFlags": 0,
+      "name": "anchor-dollar-multiline",
+      "newline": 0,
+      "pattern": "6124",
+      "start": 0,
+      "subject": "610a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 2,
+      "matchFlags": 0,
+      "name": "anchor-dollar-multiline-crlf",
+      "newline": 2,
+      "pattern": "6224",
+      "start": 0,
+      "subject": "620d0a63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 2,
+      "matchFlags": 0,
+      "name": "anchor-dollar-lf-ignores-cr",
+      "newline": 0,
+      "pattern": "6224",
+      "start": 0,
+      "subject": "620d63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "anchor-subject-start",
+      "newline": 0,
+      "pattern": "5c4161",
+      "start": 0,
+      "subject": "6261"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "anchor-absolute-end",
+      "newline": 0,
+      "pattern": "635c7a",
+      "start": 0,
+      "subject": "6162630a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "anchor-end-allowing-newline",
+      "newline": 0,
+      "pattern": "635c5a",
+      "start": 0,
+      "subject": "6162630a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          5
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "word-boundary",
+      "newline": 0,
+      "pattern": "5c626361745c62",
+      "start": 0,
+      "subject": "61206361742e"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "word-boundary-at-subject-start",
+      "newline": 0,
+      "pattern": "5c6261",
+      "start": 0,
+      "subject": "61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "word-boundary-negated",
+      "newline": 0,
+      "pattern": "5c426174",
+      "start": 0,
+      "subject": "636174"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "word-boundary-sees-before-start-offset",
+      "newline": 0,
+      "note": "a start offset does not shorten the subject a boundary looks at",
+      "pattern": "5c6261",
+      "start": 1,
+      "subject": "6261"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "alternation-first-branch-wins",
+      "newline": 0,
+      "pattern": "617c6162",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "alternation-second-branch",
+      "newline": 0,
+      "pattern": "787c6162",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          0
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "alternation-empty-branch",
+      "newline": 0,
+      "pattern": "617c",
+      "start": 0,
+      "subject": "62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "alternation-three-branches",
+      "newline": 0,
+      "pattern": "617c627c63",
+      "start": 0,
+      "subject": "7a63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1,
+          -1,
+          -1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "alternation-nested",
+      "newline": 0,
+      "pattern": "28617c62297c63",
+      "start": 0,
+      "subject": "63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-greedy-star",
+      "newline": 0,
+      "pattern": "612a",
+      "start": 0,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          0
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-star-matches-empty",
+      "newline": 0,
+      "pattern": "612a",
+      "start": 0,
+      "subject": "626262"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          0
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-lazy-star",
+      "newline": 0,
+      "pattern": "612a3f",
+      "start": 0,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-lazy-plus",
+      "newline": 0,
+      "pattern": "612b3f",
+      "start": 0,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-greedy-question",
+      "newline": 0,
+      "pattern": "61623f",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-lazy-question",
+      "newline": 0,
+      "pattern": "61623f3f",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-counted-exact",
+      "newline": 0,
+      "pattern": "617b337d",
+      "start": 0,
+      "subject": "61616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-counted-range",
+      "newline": 0,
+      "pattern": "617b322c337d",
+      "start": 0,
+      "subject": "61616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-counted-open",
+      "newline": 0,
+      "pattern": "617b322c7d",
+      "start": 0,
+      "subject": "61616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-counted-lazy",
+      "newline": 0,
+      "pattern": "617b322c337d3f",
+      "start": 0,
+      "subject": "61616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-counted-zero",
+      "newline": 0,
+      "pattern": "617b307d62",
+      "start": 0,
+      "subject": "62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-counted-open-low",
+      "newline": 0,
+      "note": "the pinned pcre2 reads {,n} as {0,n}",
+      "pattern": "617b2c337d",
+      "start": 0,
+      "subject": "61616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-brace-is-literal-when-not-a-quantifier",
+      "newline": 0,
+      "pattern": "617b",
+      "start": 0,
+      "subject": "617b"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-brace-with-spaces",
+      "newline": 0,
+      "pattern": "617b2032207d",
+      "start": 0,
+      "subject": "6161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 16,
+      "matchFlags": 0,
+      "name": "quantifier-ungreedy-option",
+      "newline": 0,
+      "pattern": "612b",
+      "start": 0,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 16,
+      "matchFlags": 0,
+      "name": "quantifier-ungreedy-question-restores-greed",
+      "newline": 0,
+      "pattern": "612b3f",
+      "start": 0,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-backtracks",
+      "newline": 0,
+      "pattern": "612b62",
+      "start": 0,
+      "subject": "61616162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-over-group",
+      "newline": 0,
+      "pattern": "283f3a6162292b",
+      "start": 0,
+      "subject": "6162616278"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          5
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-nested",
+      "newline": 0,
+      "pattern": "283f3a612b62292b",
+      "start": 0,
+      "subject": "6161626162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-empty-body-does-not-loop",
+      "newline": 0,
+      "pattern": "28613f292a",
+      "start": 0,
+      "subject": "62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3,
+          3,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-empty-body-after-progress",
+      "newline": 0,
+      "pattern": "28612a292a",
+      "start": 0,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-empty-alternative-stops-the-loop",
+      "newline": 0,
+      "pattern": "287c61292a",
+      "start": 0,
+      "subject": "6161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 4,
+      "name": "quantifier-bounded-copies-all-run",
+      "newline": 0,
+      "note": "a bounded repetition is replicated, so it has no empty-loop break",
+      "pattern": "287c61297b312c337d",
+      "start": 0,
+      "subject": "61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2,
+          0,
+          1,
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-two-groups",
+      "newline": 0,
+      "pattern": "286129286229",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1,
+          -1,
+          -1,
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-unset-group-is-minus-one",
+      "newline": 0,
+      "pattern": "2861297c286229",
+      "start": 0,
+      "subject": "62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2,
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-non-capturing-group",
+      "newline": 0,
+      "pattern": "283f3a6129286229",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2,
+          0,
+          2,
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-nested",
+      "newline": 0,
+      "pattern": "282861296229",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2,
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-repeated-keeps-last",
+      "newline": 0,
+      "pattern": "28617c62292b",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          0,
+          -1,
+          -1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-zero-count-leaves-group-unset",
+      "newline": 0,
+      "pattern": "2861297b307d",
+      "start": 0,
+      "subject": "62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2,
+          0,
+          1,
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-named",
+      "newline": 0,
+      "pattern": "283f3c783e6129283f3c793e6229",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-named-perl-spelling",
+      "newline": 0,
+      "pattern": "283f503c783e6129",
+      "start": 0,
+      "subject": "61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-named-quote-spelling",
+      "newline": 0,
+      "pattern": "283f2778276129",
+      "start": 0,
+      "subject": "61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2,
+          -1,
+          -1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "capture-backtracking-restores-groups",
+      "newline": 0,
+      "note": "a group set on a path that later failed must come back unset",
+      "pattern": "283f3a286129787c616229",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "captures": 2,
+        "kind": "compiled",
+        "names": {}
+      },
+      "flags": 0,
+      "name": "compile-group-count",
+      "newline": 0,
+      "pattern": "286129283f3a6229286329"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "captures": 2,
+        "kind": "compiled",
+        "names": {
+          "6d6f6e7468": 2,
+          "79656172": 1
+        }
+      },
+      "flags": 0,
+      "name": "compile-group-names",
+      "newline": 0,
+      "pattern": "283f3c796561723e5c647b347d292d283f3c6d6f6e74683e5c647b327d29"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "captures": 2,
+        "kind": "compiled",
+        "names": {
+          "7461696c": 2
+        }
+      },
+      "flags": 0,
+      "name": "compile-name-and-number-mixed",
+      "newline": 0,
+      "pattern": "286129283f3c7461696c3e6229"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "captures": 0,
+        "kind": "compiled",
+        "names": {}
+      },
+      "flags": 0,
+      "name": "compile-no-groups",
+      "newline": 0,
+      "pattern": "616263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 1,
+      "matchFlags": 0,
+      "name": "option-caseless",
+      "newline": 0,
+      "pattern": "616263",
+      "start": 0,
+      "subject": "416243"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 1,
+      "matchFlags": 0,
+      "name": "option-caseless-class",
+      "newline": 0,
+      "pattern": "5b612d635d",
+      "start": 0,
+      "subject": "42"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 1,
+      "matchFlags": 0,
+      "name": "option-caseless-negated-class",
+      "newline": 0,
+      "pattern": "5b5e612d635d",
+      "start": 0,
+      "subject": "42"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 1,
+      "matchFlags": 0,
+      "name": "option-caseless-posix-lower",
+      "newline": 0,
+      "pattern": "5b5b3a6c6f7765723a5d5d",
+      "start": 0,
+      "subject": "41"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 1,
+      "matchFlags": 0,
+      "name": "option-caseless-negated-posix-lower",
+      "newline": 0,
+      "pattern": "5b5b3a5e6c6f7765723a5d5d",
+      "start": 0,
+      "subject": "61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "option-inline-caseless",
+      "newline": 0,
+      "pattern": "283f6929616263",
+      "start": 0,
+      "subject": "414243"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "option-inline-caseless-scoped",
+      "newline": 0,
+      "pattern": "283f693a61622963",
+      "start": 0,
+      "subject": "414263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "option-inline-caseless-scope-ends",
+      "newline": 0,
+      "pattern": "283f693a61622963",
+      "start": 0,
+      "subject": "414243"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3,
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "option-inline-ends-with-its-group",
+      "newline": 0,
+      "pattern": "2861283f6929622963",
+      "start": 0,
+      "subject": "614263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "option-inline-cleared",
+      "newline": 0,
+      "pattern": "283f6929286129283f2d692962",
+      "start": 0,
+      "subject": "4142"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "option-inline-dotall",
+      "newline": 0,
+      "pattern": "283f7329612e63",
+      "start": 0,
+      "subject": "610a63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "option-inline-multiline",
+      "newline": 0,
+      "pattern": "283f6d295e62",
+      "start": 0,
+      "subject": "610a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "option-inline-ungreedy",
+      "newline": 0,
+      "pattern": "283f5529612b",
+      "start": 0,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 8,
+      "matchFlags": 0,
+      "name": "option-extended",
+      "newline": 0,
+      "pattern": "61202320636f6d6d656e740a62",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 8,
+      "matchFlags": 0,
+      "name": "option-extended-keeps-class-space",
+      "newline": 0,
+      "pattern": "5b6120625d",
+      "start": 0,
+      "subject": "20"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "option-extended-inline",
+      "newline": 0,
+      "pattern": "283f783a6120622963",
+      "start": 0,
+      "subject": "616263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 32,
+      "matchFlags": 0,
+      "name": "option-anchored",
+      "newline": 0,
+      "pattern": "62",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 64,
+      "matchFlags": 0,
+      "name": "option-endanchored",
+      "newline": 0,
+      "pattern": "61",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 64,
+      "matchFlags": 0,
+      "name": "option-endanchored-matches-at-end",
+      "newline": 0,
+      "pattern": "62",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quote-escape",
+      "newline": 0,
+      "pattern": "5c51612e635c45",
+      "start": 0,
+      "subject": "612e63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quote-escape-is-literal",
+      "newline": 0,
+      "pattern": "5c51612e635c45",
+      "start": 0,
+      "subject": "616263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quote-escape-runs-to-end",
+      "newline": 0,
+      "pattern": "5c51612e63",
+      "start": 0,
+      "subject": "612e63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 8,
+      "matchFlags": 0,
+      "name": "quote-escape-survives-extended",
+      "newline": 0,
+      "pattern": "5c516120625c45",
+      "start": 0,
+      "subject": "612062"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quote-escape-empty",
+      "newline": 0,
+      "pattern": "615c515c4562",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "comment-group",
+      "newline": 0,
+      "pattern": "61283f2369676e6f7265642962",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "comment-group-does-not-hide-the-previous-item",
+      "newline": 0,
+      "pattern": "61283f2378292a",
+      "start": 0,
+      "subject": "6161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 1,
+      "matchFlags": 0,
+      "name": "tables-caseless-does-not-fold-high-bytes",
+      "newline": 0,
+      "pattern": "e0",
+      "start": 0,
+      "subject": "c0"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "tables-word-class-excludes-high-bytes",
+      "newline": 0,
+      "pattern": "5c77",
+      "start": 0,
+      "subject": "e9"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "start-offset",
+      "newline": 0,
+      "pattern": "61",
+      "start": 1,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          3,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "start-offset-at-end",
+      "newline": 0,
+      "pattern": "612a",
+      "start": 3,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 1,
+      "name": "match-option-notbol",
+      "newline": 0,
+      "pattern": "5e61",
+      "start": 0,
+      "subject": "616263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 2,
+      "matchFlags": 1,
+      "name": "match-option-notbol-keeps-multiline",
+      "newline": 0,
+      "pattern": "5e62",
+      "start": 0,
+      "subject": "610a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 2,
+      "name": "match-option-noteol",
+      "newline": 0,
+      "pattern": "6324",
+      "start": 0,
+      "subject": "616263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 2,
+      "name": "match-option-noteol-does-not-touch-absolute-end",
+      "newline": 0,
+      "pattern": "635c7a",
+      "start": 0,
+      "subject": "616263"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 4,
+      "name": "match-option-notempty",
+      "newline": 0,
+      "pattern": "612a",
+      "start": 0,
+      "subject": "626262"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 8,
+      "name": "match-option-notempty-atstart",
+      "newline": 0,
+      "pattern": "612a",
+      "start": 0,
+      "subject": "6261"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 16,
+      "name": "match-option-anchored",
+      "newline": 0,
+      "pattern": "62",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 24,
+      "name": "notempty-atstart-anchored-refuses-an-empty-match",
+      "newline": 0,
+      "pattern": "612a",
+      "start": 0,
+      "subject": "6261"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "newline-crlf-bumpalong-skips-the-lf",
+      "newline": 2,
+      "note": "no match starts between a CR and a LF when the pattern spells neither",
+      "pattern": "5c42",
+      "start": 0,
+      "subject": "610d0a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "newline-crlf-bumpalong-yields-to-an-explicit-lf",
+      "newline": 2,
+      "pattern": "5c6e",
+      "start": 0,
+      "subject": "610d0a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "newline-crlf-bumpalong-yields-to-a-first-byte-filter",
+      "newline": 2,
+      "note": "the CR position is never attempted, so the rule never applies",
+      "pattern": "5b5c7830382d5c7830635d",
+      "start": 0,
+      "subject": "610d0a62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 2,
+      "matchFlags": 0,
+      "name": "newline-any-mode-dollar",
+      "newline": 4,
+      "pattern": "6124",
+      "start": 0,
+      "subject": "6185"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 114,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-missing-closing-paren",
+      "newline": 0,
+      "pattern": "2861"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 122,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-unmatched-closing-paren",
+      "newline": 0,
+      "pattern": "6129"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 109,
+        "kind": "compileError",
+        "offset": 1
+      },
+      "flags": 0,
+      "name": "cerror-nothing-to-repeat",
+      "newline": 0,
+      "pattern": "2b61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 109,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-nothing-to-repeat-after-assertion",
+      "newline": 0,
+      "pattern": "5e2a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 109,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-nothing-to-repeat-twice",
+      "newline": 0,
+      "pattern": "612a2a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 109,
+        "kind": "compileError",
+        "offset": 6
+      },
+      "flags": 0,
+      "name": "cerror-nothing-to-repeat-after-inline-option",
+      "newline": 0,
+      "pattern": "61283f69292a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 109,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-nothing-to-repeat-lazy",
+      "newline": 0,
+      "pattern": "242b3f"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 106,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-missing-closing-bracket",
+      "newline": 0,
+      "pattern": "5b61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 108,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-class-range-out-of-order",
+      "newline": 0,
+      "pattern": "5b7a2d615d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 150,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-class-range-with-a-set",
+      "newline": 0,
+      "pattern": "5b5c642d7a5d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 150,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-class-range-ending-in-a-set",
+      "newline": 0,
+      "pattern": "5b612d5c645d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 107,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-class-escape-not-allowed",
+      "newline": 0,
+      "pattern": "5b5c415d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 104,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-quantifier-numbers-out-of-order",
+      "newline": 0,
+      "pattern": "617b332c327d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 105,
+        "kind": "compileError",
+        "offset": 7
+      },
+      "flags": 0,
+      "name": "cerror-quantifier-number-too-big",
+      "newline": 0,
+      "pattern": "617b36353533367d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 101,
+        "kind": "compileError",
+        "offset": 1
+      },
+      "flags": 0,
+      "name": "cerror-backslash-at-end",
+      "newline": 0,
+      "pattern": "5c"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 102,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-control-at-end",
+      "newline": 0,
+      "pattern": "5c63"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 168,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-control-not-printable",
+      "newline": 0,
+      "pattern": "5c6301"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 103,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-unrecognized-escape",
+      "newline": 0,
+      "pattern": "5c79"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 137,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-unsupported-escape",
+      "newline": 0,
+      "pattern": "5c55"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-backref-to-nothing",
+      "newline": 0,
+      "pattern": "5c31"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 111,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-unknown-after-question",
+      "newline": 0,
+      "pattern": "283f5a29"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 130,
+        "kind": "compileError",
+        "offset": 8
+      },
+      "flags": 0,
+      "name": "cerror-unknown-posix-class",
+      "newline": 0,
+      "pattern": "5b5b3a666f6f3a5d5d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 112,
+        "kind": "compileError",
+        "offset": 9
+      },
+      "flags": 0,
+      "name": "cerror-posix-class-outside-a-class",
+      "newline": 0,
+      "pattern": "5b3a616c7068613a5d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 178,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-hex-digits-missing",
+      "newline": 0,
+      "pattern": "5c78"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 167,
+        "kind": "compileError",
+        "offset": 6
+      },
+      "flags": 0,
+      "name": "cerror-hex-brace-not-closed",
+      "newline": 0,
+      "pattern": "5c787b3431"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 134,
+        "kind": "compileError",
+        "offset": 6
+      },
+      "flags": 0,
+      "name": "cerror-hex-value-too-big",
+      "newline": 0,
+      "pattern": "5c787b3130307d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 155,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-octal-brace-missing",
+      "newline": 0,
+      "pattern": "5c6f"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 164,
+        "kind": "compileError",
+        "offset": 6
+      },
+      "flags": 0,
+      "name": "cerror-octal-brace-not-closed",
+      "newline": 0,
+      "pattern": "5c6f7b3430"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 151,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-octal-value-too-big",
+      "newline": 0,
+      "pattern": "5c343030"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 118,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-comment-group-not-closed",
+      "newline": 0,
+      "pattern": "283f2378"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 142,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-group-name-not-terminated",
+      "newline": 0,
+      "pattern": "283f3c61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 162,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-group-name-empty",
+      "newline": 0,
+      "pattern": "283f3c3e6129"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 144,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-group-name-starts-with-a-digit",
+      "newline": 0,
+      "pattern": "283f3c31613e7829"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 143,
+        "kind": "compileError",
+        "offset": 12
+      },
+      "flags": 0,
+      "name": "cerror-duplicate-group-name",
+      "newline": 0,
+      "pattern": "283f3c613e7829283f3c613e7929"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "possessive-safe-pair-still-compiles",
+      "newline": 0,
+      "note": "pcre2 possessifies this pair soundly, so both engines answer the same",
+      "pattern": "5c522a5c64",
+      "start": 0,
+      "subject": "0a31"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "possessive-sound-negation",
+      "newline": 0,
+      "pattern": "5c642a5c44",
+      "start": 0,
+      "subject": "3161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantified-dot-then-literal",
+      "newline": 0,
+      "pattern": "2e2a78",
+      "start": 0,
+      "subject": "616278"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantified-nonspace-then-space",
+      "newline": 0,
+      "pattern": "5c532b5c73",
+      "start": 0,
+      "subject": "616220"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantified-set-then-end-anchor",
+      "newline": 0,
+      "pattern": "5c532a5c7a",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantified-exact-count-then-dot",
+      "newline": 0,
+      "pattern": "5c527b327d2e",
+      "start": 0,
+      "subject": "0a0a61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          8
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "quantifier-brace-that-never-closes-is-literal",
+      "newline": 0,
+      "note": "a bound too large only matters once the braces read as a quantifier",
+      "pattern": "7b383531323572",
+      "start": 0,
+      "subject": "787b383531323572"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 105,
+        "kind": "compileError",
+        "offset": 7
+      },
+      "flags": 0,
+      "name": "cerror-quantifier-lower-bound-too-big",
+      "newline": 0,
+      "pattern": "617b37303030302c317d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 105,
+        "kind": "compileError",
+        "offset": 9
+      },
+      "flags": 0,
+      "name": "cerror-quantifier-upper-bound-too-big",
+      "newline": 0,
+      "pattern": "617b312c37303030307d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 104,
+        "kind": "compileError",
+        "offset": 7
+      },
+      "flags": 0,
+      "name": "cerror-quantifier-order-with-spaces",
+      "newline": 0,
+      "pattern": "617b33202c2032207d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 106,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "class-quoted-escape-adds-no-element",
+      "newline": 0,
+      "note": "\\E adds nothing, so the ] after it is still the literal one",
+      "pattern": "5b5c455d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-quoted-range-end",
+      "newline": 0,
+      "pattern": "5b612d5c517a5c455d",
+      "start": 0,
+      "subject": "6d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "escape-hex-brace-with-blanks",
+      "newline": 0,
+      "pattern": "5c787b203431207d",
+      "start": 0,
+      "subject": "7841"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 167,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-hex-brace-non-hex-byte",
+      "newline": 0,
+      "pattern": "5c787b29"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 164,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-octal-brace-non-octal-byte",
+      "newline": 0,
+      "pattern": "5c6f7b29"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-digit-escape-eight-is-a-back-reference",
+      "newline": 0,
+      "pattern": "5c3832"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 114,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-option-group-that-never-closes",
+      "newline": 0,
+      "pattern": "283f61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 111,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-option-reset-only-comes-first",
+      "newline": 0,
+      "pattern": "283f695e29"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 109,
+        "kind": "compileError",
+        "offset": 1
+      },
+      "flags": 0,
+      "name": "cerror-possessive-marker-after-nothing",
+      "newline": 0,
+      "pattern": "2a2b"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          0
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "comment-between-a-quantifier-and-its-lazy-marker",
+      "newline": 0,
+      "note": "the lexer makes a comment invisible, so this is a lazy star",
+      "pattern": "612a283f2378293f",
+      "start": 0,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 109,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "verb-group-is-not-a-quantified-group",
+      "newline": 0,
+      "pattern": "282a29"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          4,
+          4
+        ]
+      },
+      "flags": 64,
+      "matchFlags": 0,
+      "name": "class-negated-single-char-is-not-a-class",
+      "newline": 2,
+      "note": "pcre2 compiles [^x] as 'not this character', so the \\n in it is not an explicit one for the bumpalong rule",
+      "pattern": "785b5e5c6e5d7c5b5b3a73706163653a5d5d3f3f",
+      "start": 0,
+      "subject": "0d0a0d0a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          3,
+          4
+        ]
+      },
+      "flags": 64,
+      "matchFlags": 0,
+      "name": "class-negated-pair-is-a-class",
+      "newline": 2,
+      "pattern": "785b5e5c6e5c725d7c5b5b3a73706163653a5d5d3f3f",
+      "start": 0,
+      "subject": "0d0a0d0a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-quote-marker-before-a-hyphen",
+      "newline": 0,
+      "note": "\\Q and \\E are lexer markers, so the hyphen test sees through them",
+      "pattern": "5b615c452d7a5d",
+      "start": 0,
+      "subject": "6d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-quote-marker-instead-of-a-range-end",
+      "newline": 0,
+      "pattern": "5b612d5c455d",
+      "start": 0,
+      "subject": "2d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "nomatch"
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-quote-marker-instead-of-a-range-end-excludes",
+      "newline": 0,
+      "pattern": "5b612d5c455d",
+      "start": 0,
+      "subject": "62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 106,
+        "kind": "compileError",
+        "offset": 7
+      },
+      "flags": 0,
+      "name": "class-quoted-range-end-keeps-quoting",
+      "newline": 0,
+      "pattern": "5b612d5c517a5d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-group-escape-is-a-letter-inside",
+      "newline": 0,
+      "pattern": "5b5c6b5d",
+      "start": 0,
+      "subject": "6b"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-group-escape-bounds-a-range",
+      "newline": 0,
+      "pattern": "5b612d5c675d",
+      "start": 0,
+      "subject": "65"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 150,
+        "kind": "compileError",
+        "offset": 12
+      },
+      "flags": 0,
+      "name": "cerror-posix-name-as-a-range-end",
+      "newline": 0,
+      "pattern": "5b612d5b3a616c7068613a5d5d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 194,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-second-hyphen-in-an-option-group",
+      "newline": 0,
+      "pattern": "283f692d2d29"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 194,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-hyphen-after-the-option-reset",
+      "newline": 0,
+      "pattern": "283f5e2d6929"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 114,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-lookahead-that-never-closes",
+      "newline": 0,
+      "note": "an unsupported group is still a group, so an unterminated one is the missing parenthesis",
+      "pattern": "283f3d61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 114,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-lookbehind-that-never-closes",
+      "newline": 0,
+      "pattern": "283f3c3d61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-negation-past-a-quote-marker",
+      "newline": 0,
+      "pattern": "5b5c455e615d",
+      "start": 0,
+      "subject": "62"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-quoted-caret-is-a-member",
+      "newline": 0,
+      "pattern": "5b5c515e5c455d",
+      "start": 0,
+      "subject": "5e"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 106,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-class-negation-past-a-quote-marker",
+      "newline": 0,
+      "pattern": "5b5c455e5d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 157,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-bare-g",
+      "newline": 0,
+      "pattern": "5c67"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 157,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-g-letter-is-no-delimiter",
+      "newline": 0,
+      "pattern": "5c6761"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 157,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-g-sign-without-digits",
+      "newline": 0,
+      "pattern": "5c672d61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-g-plain-number-missing-group",
+      "newline": 0,
+      "pattern": "5c6731"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-g-braced-number-missing-group",
+      "newline": 0,
+      "pattern": "5c677b327d286129"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-g-relative-underflow",
+      "newline": 0,
+      "pattern": "5c677b2d317d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-g-zero-reference",
+      "newline": 0,
+      "pattern": "5c677b307d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 126,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-g-relative-zero",
+      "newline": 0,
+      "pattern": "5c677b2b307d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 126,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-g-plain-relative-zero",
+      "newline": 0,
+      "pattern": "5c672d30"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 219,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-g-number-unterminated",
+      "newline": 0,
+      "pattern": "5c677b31617d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 161,
+        "kind": "compileError",
+        "offset": 7
+      },
+      "flags": 0,
+      "name": "cerror-g-plain-number-too-big",
+      "newline": 0,
+      "pattern": "5c673939393939"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 161,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-g-braced-number-too-big",
+      "newline": 0,
+      "pattern": "5c677b39393939397d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 162,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-g-empty-name",
+      "newline": 0,
+      "pattern": "5c677b7d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-g-name-missing-group",
+      "newline": 0,
+      "pattern": "5c673c613e"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 169,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-bare-k",
+      "newline": 0,
+      "pattern": "5c6b"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 144,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-k-digit-starts-the-name",
+      "newline": 0,
+      "pattern": "5c6b3c313e"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 142,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-k-name-unterminated",
+      "newline": 0,
+      "pattern": "5c6b3c61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-k-name-missing-group",
+      "newline": 0,
+      "pattern": "5c6b3c613e"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 7
+      },
+      "flags": 0,
+      "name": "cerror-backrefs-checked-in-pattern-order",
+      "newline": 0,
+      "pattern": "2861295c315c32"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 115,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-backref-first-bad-one-wins",
+      "newline": 0,
+      "pattern": "2861295c325c31"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 161,
+        "kind": "compileError",
+        "offset": 9
+      },
+      "flags": 0,
+      "name": "cerror-backref-number-too-big",
+      "newline": 0,
+      "pattern": "5c3839393939393939"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 146,
+        "kind": "compileError",
+        "offset": 2
+      },
+      "flags": 0,
+      "name": "cerror-bare-p",
+      "newline": 0,
+      "pattern": "5c70"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 146,
+        "kind": "compileError",
+        "offset": 3
+      },
+      "flags": 0,
+      "name": "cerror-p-nonletter",
+      "newline": 0,
+      "pattern": "5c7030"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 146,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-p-brace-unterminated",
+      "newline": 0,
+      "pattern": "5c707b4c"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 146,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-p-bad-name-byte",
+      "newline": 0,
+      "pattern": "5c707b4c217d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 147,
+        "kind": "compileError",
+        "offset": 4
+      },
+      "flags": 0,
+      "name": "cerror-p-empty-name",
+      "newline": 0,
+      "pattern": "5c707b7d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "code": 147,
+        "kind": "compileError",
+        "offset": 5
+      },
+      "flags": 0,
+      "name": "cerror-p-negation-alone",
+      "newline": 0,
+      "pattern": "5c707b5e7d"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "class-g-and-k-are-letters-inside",
+      "newline": 0,
+      "pattern": "5b5c676b5d",
+      "start": 0,
+      "subject": "6b"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "possess-partner-before-the-repeat",
+      "newline": 0,
+      "pattern": "5c735c522a",
+      "start": 0,
+      "subject": "200a0a"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "possess-partner-in-the-other-branch",
+      "newline": 0,
+      "pattern": "5c737c5c522a",
+      "start": 0,
+      "subject": "0a"
+    }
+  ],
+  "note": "Generated from oracle/corpus/wave1.json by pcretruste.oracle.conformance. Every implementation of the engine must give exactly these answers, so a disagreement between two of them is a disagreement with this file first.",
+  "schema": 1
+}
