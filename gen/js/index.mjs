@@ -1,4 +1,4 @@
-// The JavaScript form of the pcre-truste engine: a thin, hand-written wrapper
+// The JavaScript form of the pcre-vera engine: a thin, hand-written wrapper
 // around the module generated from the TIR artifact, giving it the API of
 // DESIGN.md section 2.4 with JavaScript conventions.
 //
@@ -127,7 +127,7 @@ const MESSAGES = {
  */
 export class PcreError extends Error {
   constructor(kind, code = 0, offset = 0) {
-    let message = `pcre-truste: ${MESSAGES[kind]}`;
+    let message = `pcre-vera: ${MESSAGES[kind]}`;
     if (kind === Kind.SYNTAX) {
       message += ` ${code} at offset ${offset}`;
     }

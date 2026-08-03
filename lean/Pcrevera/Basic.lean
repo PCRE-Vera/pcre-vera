@@ -1,8 +1,8 @@
 /-!
-# pcre-truste, the Lean side
+# pcre-vera, the Lean side
 
 This is where the four proof layers of DESIGN.md section 6 will live, each as a
-namespace under `Pcretruste`:
+namespace under `Pcrevera`:
 
 * `Spec`     — layer S, the pattern semantics and the per-configuration
                execution semantics that define what "correct PCRE" means here
@@ -18,7 +18,7 @@ first commit, plus the one piece of arithmetic every later layer meters work
 with.
 -/
 
-namespace Pcretruste
+namespace Pcrevera
 
 /-- The saturation point of TIR's `counter` type.
 
@@ -49,4 +49,4 @@ theorem counterAdd_exact {a b : Nat} (h : a + b ≤ counterMax) :
   unfold counterAdd
   simp [Nat.not_lt_of_le h]
 
-end Pcretruste
+end Pcrevera

@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.engine import Engine
-from pcretruste.oracle import corpus as corpus_module
+from pcrevera.engine import Engine
+from pcrevera.oracle import corpus as corpus_module
 
 
 @pytest.fixture(scope="module")
@@ -45,7 +45,7 @@ def _comparable(outcome) -> object:
     The message text of a compile error is ours, deliberately, so it is not part
     of what the two engines have to agree on; the code and the byte offset are.
     """
-    from pcretruste.oracle.client import Compiled, CompileError
+    from pcrevera.oracle.client import Compiled, CompileError
 
     if isinstance(outcome, CompileError):
         return ("cerror", outcome.code, outcome.offset)

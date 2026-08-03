@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.tir import Cell, Trap, ir, run, validate
-from pcretruste.tir.interp import Frozen, OutOfFuel, Seq, StructValue, VariantViolation
-from pcretruste.tir.types import (
+from pcrevera.tir import Cell, Trap, ir, run, validate
+from pcrevera.tir.interp import Frozen, OutOfFuel, Seq, StructValue, VariantViolation
+from pcrevera.tir.types import (
     BOOL,
     BYTES,
     CAP,

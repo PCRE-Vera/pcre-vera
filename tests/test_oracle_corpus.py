@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from pcretruste.oracle import corpus as corpus_module
+from pcrevera.oracle import corpus as corpus_module
 
 CORPUS = corpus_module.load()
 

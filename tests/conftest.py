@@ -12,10 +12,10 @@ from pathlib import Path
 
 import pytest
 
-from pcretruste.oracle import Oracle, OracleBuild, Pin  # noqa: F401 - Oracle is a type here
-from pcretruste.oracle import build as build_module
-from pcretruste.oracle import pin as pin_module
-from pcretruste.tir.validate import ValidationError
+from pcrevera.oracle import Oracle, OracleBuild, Pin  # noqa: F401 - Oracle is a type here
+from pcrevera.oracle import build as build_module
+from pcrevera.oracle import pin as pin_module
+from pcrevera.tir.validate import ValidationError
 
 
 @pytest.fixture(scope="session")

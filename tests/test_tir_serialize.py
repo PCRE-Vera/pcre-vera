@@ -10,9 +10,9 @@ import json
 
 import pytest
 
-from pcretruste.tir import dumps, ir, is_canonical, loads
-from pcretruste.tir.serialize import TirSyntaxError, _render_string
-from pcretruste.tir.types import U32, EnumDecl, Field, StructDecl
+from pcrevera.tir import dumps, ir, is_canonical, loads
+from pcrevera.tir.serialize import TirSyntaxError, _render_string
+from pcrevera.tir.types import U32, EnumDecl, Field, StructDecl
 
 EMPTY = """{
   "consts": [],

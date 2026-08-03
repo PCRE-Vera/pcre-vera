@@ -1,11 +1,11 @@
 """Command line access to the oracle, for building it and looking at it.
 
-    python -m pcretruste.oracle build      build if there is nothing usable yet
-    python -m pcretruste.oracle rebuild    build again from scratch
-    python -m pcretruste.oracle verify     check the build against the pin
-    python -m pcretruste.oracle config     print the library configuration
-    python -m pcretruste.oracle corpus     run the seed corpus
-    python -m pcretruste.oracle match ...  ask pcre2 about one pattern
+    python -m pcrevera.oracle build      build if there is nothing usable yet
+    python -m pcrevera.oracle rebuild    build again from scratch
+    python -m pcrevera.oracle verify     check the build against the pin
+    python -m pcrevera.oracle config     print the library configuration
+    python -m pcrevera.oracle corpus     run the seed corpus
+    python -m pcrevera.oracle match ...  ask pcre2 about one pattern
 """
 
 from __future__ import annotations
@@ -90,7 +90,7 @@ def command_match(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="pcretruste.oracle", description=__doc__)
+    parser = argparse.ArgumentParser(prog="pcrevera.oracle", description=__doc__)
     subcommands = parser.add_subparsers(required=True)
 
     # Each subcommand carries its own handler, so there is one list of commands

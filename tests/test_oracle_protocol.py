@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.oracle.protocol import (
+from pcrevera.oracle.protocol import (
     ProtocolError,
     decode_blob,
     encode_blob,

@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 
-from pcretruste.oracle import Limits, Oracle, OracleError
-from pcretruste.oracle.protocol import ProtocolError
+from pcrevera.oracle import Limits, Oracle, OracleError
+from pcrevera.oracle.protocol import ProtocolError
 
 LIMITS = Limits(match_limit=1000, depth_limit=100, heap_limit_kib=1024)
 

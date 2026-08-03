@@ -1,4 +1,4 @@
-// Types for the pcre-truste wrapper. The engine module next door is generated
+// Types for the pcre-vera wrapper. The engine module next door is generated
 // and not part of the public surface, so nothing here describes it.
 //
 // This release is provisional: compile and match only, every pattern on the

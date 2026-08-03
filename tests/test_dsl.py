@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.dsl import Module, bytes_, counter, frozen, inout, land, lnot, lor, u8, u32, vec
-from pcretruste.dsl.builder import Expr
-from pcretruste.tir import ir, validate
-from pcretruste.tir.types import U32, EnumType, FrozenType, StructType, VecType
+from pcrevera.dsl import Module, bytes_, counter, frozen, inout, land, lnot, lor, u8, u32, vec
+from pcrevera.dsl.builder import Expr
+from pcrevera.tir import ir, validate
+from pcrevera.tir.types import U32, EnumType, FrozenType, StructType, VecType
 
 
 def test_a_literal_is_written_through_its_type():
@@ -39,7 +39,7 @@ def test_operators_build_the_nodes_they_name():
 
 
 def test_the_boolean_helpers_build_conditionals():
-    from pcretruste.dsl import boolean
+    from pcrevera.dsl import boolean
 
     t, f = boolean(True), boolean(False)
     assert land(t, f).node == ir.Logical("and", t.node, f.node)

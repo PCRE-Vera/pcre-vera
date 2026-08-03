@@ -31,19 +31,19 @@ test: setup
 	$(UV) run pytest
 
 oracle: setup
-	$(UV) run python -m pcretruste.oracle build
+	$(UV) run python -m pcrevera.oracle build
 
 oracle-verify: setup
-	$(UV) run python -m pcretruste.oracle verify
+	$(UV) run python -m pcrevera.oracle verify
 
 corpus: setup
-	$(UV) run python -m pcretruste.oracle corpus
+	$(UV) run python -m pcrevera.oracle corpus
 
 generate: setup
-	$(UV) run python -m pcretruste.backends build
+	$(UV) run python -m pcrevera.backends build
 
 generate-verify: setup
-	$(UV) run python -m pcretruste.backends verify
+	$(UV) run python -m pcrevera.backends verify
 
 lean:
 	cd lean && lake build

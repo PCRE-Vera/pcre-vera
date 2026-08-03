@@ -1,22 +1,22 @@
 // The README's Go example, kept here so that it is run rather than admired.
 
-package pcretruste_test
+package pcrevera_test
 
 import (
 	"fmt"
 	"log"
 
-	pcretruste "github.com/jedisct1/pcre-truste/gen/go"
+	pcrevera "github.com/PCRE-Vera/pcre-vera/gen/go"
 )
 
 func Example() {
-	re, err := pcretruste.Compile(`(?<user>\w+)@(?<host>[\w.]+)`, pcretruste.Options{})
+	re, err := pcrevera.Compile(`(?<user>\w+)@(?<host>[\w.]+)`, pcrevera.Options{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	subject := []byte("write to alice@example.org, please")
-	ovector, err := re.Match(subject, 0, 0, pcretruste.DefaultLimits())
+	ovector, err := re.Match(subject, 0, 0, pcrevera.DefaultLimits())
 	if err != nil {
 		log.Fatal(err)
 	}

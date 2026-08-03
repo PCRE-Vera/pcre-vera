@@ -104,7 +104,7 @@ TRAP_NOTE = (
 )
 
 ENGINE_SUMMARY = (
-    "The wave 1 pcre-truste engine as printed from its TIR artifact: the pattern "
+    "The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern "
     "parser, the bytecode compiler, and the backtracking matcher. The public API "
     "is the hand-written wrapper in index.mjs."
 )
@@ -645,7 +645,7 @@ SUPPORT = r"""
 /** What a checked operation throws, per TIR-SPEC.md section 12. */
 export class tir_Trap extends Error {
   constructor(code, what) {
-    super(`pcretruste: TIR trap ${code}: ${what}`);
+    super(`pcrevera: TIR trap ${code}: ${what}`);
     this.name = "tir_Trap";
     this.code = code;
   }

@@ -26,7 +26,7 @@ from dataclasses import replace
 import pytest
 
 import test_engine_differential as differential
-from pcretruste.engine import (
+from pcrevera.engine import (
     Certificate,
     Engine,
     EngineError,
@@ -36,8 +36,8 @@ from pcretruste.engine import (
     Region,
     spec,
 )
-from pcretruste.engine import certificate_corpus
-from pcretruste.engine.certificate_corpus import (
+from pcrevera.engine import certificate_corpus
+from pcrevera.engine.certificate_corpus import (
     CASES,
     KINDS,
     LENGTHS,
@@ -51,12 +51,12 @@ from pcretruste.engine.certificate_corpus import (
     root,
     unpriced,
 )
-from pcretruste.engine import driver
-from pcretruste.engine.driver import CompiledPattern, Limits, ResourceExceeded
-from pcretruste.oracle import corpus as wave1
-from pcretruste.engine.program import program
-from pcretruste.tir.interp import Cell
-from pcretruste.tir.types import CAP, CEILING, StructType
+from pcrevera.engine import driver
+from pcrevera.engine.driver import CompiledPattern, Limits, ResourceExceeded
+from pcrevera.oracle import corpus as wave1
+from pcrevera.engine.program import program
+from pcrevera.tir.interp import Cell
+from pcrevera.tir.types import CAP, CEILING, StructType
 
 COMMITTED = certificate_corpus.load()
 """The corpus as the file spells it, which is what the other two runners read."""

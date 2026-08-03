@@ -1,4 +1,4 @@
-package pcretruste
+package pcrevera
 
 // The conformance corpus of DESIGN.md section 8, run against the generated Go.
 // The same file runs against the Python interpreter and the generated
@@ -10,8 +10,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jedisct1/pcre-truste/gen/go/internal/corpustest"
-	"github.com/jedisct1/pcre-truste/gen/go/internal/probe"
+	"github.com/PCRE-Vera/pcre-vera/gen/go/internal/corpustest"
+	"github.com/PCRE-Vera/pcre-vera/gen/go/internal/probe"
 )
 
 type expectation struct {

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pcretruste.dsl import (
+from pcrevera.dsl import (
     Module,
     boolean,
     bytes_,
@@ -26,7 +26,7 @@ from pcretruste.dsl import (
     u32,
     vec,
 )
-from pcretruste.tir import ir
+from pcrevera.tir import ir
 
 STACK_MAX = 64
 FUEL = 10_000
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     # `python tests/toy.py` rewrites the golden artifact. Changing it is a
     # deliberate act, so it is a command rather than something a test run does
     # quietly on its way past.
-    from pcretruste.tir import dumps, validate
+    from pcrevera.tir import dumps, validate
 
     program = build()
     validate(program)

@@ -12,13 +12,13 @@ import re
 
 import pytest
 
-from pcretruste import leanexport
-from pcretruste.backends import GO_PATH, JS_PATH, PROBE_GO_PATH, PROBE_JS_PATH
-from pcretruste.backends import generate, go, js
-from pcretruste.dsl import Module, bytes_, counter, frozen, inout, u8, u32, vec
-from pcretruste.engine.program import program
-from pcretruste.tir import serialize
-from pcretruste.tir.types import CAP
+from pcrevera import leanexport
+from pcrevera.backends import GO_PATH, JS_PATH, PROBE_GO_PATH, PROBE_JS_PATH
+from pcrevera.backends import generate, go, js
+from pcrevera.dsl import Module, bytes_, counter, frozen, inout, u8, u32, vec
+from pcrevera.engine.program import program
+from pcrevera.tir import serialize
+from pcrevera.tir.types import CAP
 
 import toy
 

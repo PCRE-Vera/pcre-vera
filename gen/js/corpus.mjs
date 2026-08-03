@@ -1,7 +1,7 @@
 // Reading a conformance corpus, for the runners under test/.
 //
 // The envelope — the schema number and what a well-formed document looks like —
-// lives in one place on the Python side (src/pcretruste/oracle/conformance.py)
+// lives in one place on the Python side (src/pcrevera/oracle/conformance.py)
 // for the reason its docstring gives: the runners check one schema against
 // every corpus and would otherwise each have to be told which is which. This is
 // that one place on the JavaScript side.

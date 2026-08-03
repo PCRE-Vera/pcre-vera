@@ -21,7 +21,7 @@ export const artifactSha256 = "32df7a0b0f41f6b4594832e9eecccc6714817c19d73733de4
 /** What a checked operation throws, per TIR-SPEC.md section 12. */
 export class tir_Trap extends Error {
   constructor(code, what) {
-    super(`pcretruste: TIR trap ${code}: ${what}`);
+    super(`pcrevera: TIR trap ${code}: ${what}`);
     this.name = "tir_Trap";
     this.code = code;
   }

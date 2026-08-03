@@ -577,8 +577,8 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   the certificate corpus imports nothing from `backends` at all. Copying a
   file's location is copying the shape of a decision without the decision. The
   tell was in the test that had to import the engine's specification from
-  `pcretruste.backends` and then explain itself in a paragraph.
-- Left `src/pcretruste/analysis/` in place as an empty package whose docstring
+  `pcrevera.backends` and then explain itself in a paragraph.
+- Left `src/pcrevera/analysis/` in place as an empty package whose docstring
   said the checker would land there, and then landed the checker somewhere else
   in the same milestone. A placeholder is a promise, and this one had already
   been broken by the commit that read it. Deleting a signpost is not churn when
@@ -724,3 +724,10 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   been wrong for the first one that did not. A classification computed from a
   value is only as good as that value's injectivity, and an enum whose
   description contains the word "or" is where to look first.
+- Renamed the project inside the LOG.md entry that records how the name was
+  chosen, turning "fifty candidate names to replace pcre-truste" into a search
+  to replace pcre-vera with itself. A journal entry about a change is one of the
+  few places where the old name is the correct name, and a global sweep cannot
+  tell the difference between a reference to a thing and a mention of what it
+  used to be called. Before running a rename over prose, look for the sentences
+  whose subject is the rename.

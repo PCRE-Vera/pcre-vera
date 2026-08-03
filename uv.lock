@@ -30,7 +30,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pcretruste"
+name = "pcrevera"
 version = "0.0.0"
 source = { editable = "." }
 

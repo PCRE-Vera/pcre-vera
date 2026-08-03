@@ -21,11 +21,11 @@ from pathlib import Path
 
 import pytest
 
-from pcretruste.oracle import Pin, check_configuration
-from pcretruste.oracle import build as build_module
-from pcretruste.oracle import pin as pin_module
-from pcretruste.oracle import chartables
-from pcretruste.paths import oracle_cache
+from pcrevera.oracle import Pin, check_configuration
+from pcrevera.oracle import build as build_module
+from pcrevera.oracle import pin as pin_module
+from pcrevera.oracle import chartables
+from pcrevera.paths import oracle_cache
 
 HEX_DIGEST = re.compile(r"^[0-9a-f]{64}$")
 
@@ -120,8 +120,8 @@ def test_oracle_refuses_a_tarball_that_is_not_the_pinned_one(pin: Pin, tmp_path,
     """Substituting the source is the one thing a pin has to catch."""
     impostor = tmp_path / "pcre2.tar.bz2"
     impostor.write_bytes(b"this is not pcre2")
-    monkeypatch.setenv("PCRETRUSTE_ORACLE_CACHE", str(tmp_path / "cache"))
-    monkeypatch.setenv("PCRETRUSTE_PCRE2_TARBALL", str(impostor))
+    monkeypatch.setenv("PCREVERA_ORACLE_CACHE", str(tmp_path / "cache"))
+    monkeypatch.setenv("PCREVERA_PCRE2_TARBALL", str(impostor))
 
     with pytest.raises(build_module.BuildError, match="sha256"):
         build_module.ensure(pin=pin)
@@ -333,7 +333,7 @@ def test_oracle_builds_concurrently_into_one_cache(pin: Pin, oracle_build, tmp_p
     (cache / "downloads").mkdir(parents=True)
     tarball = oracle_cache() / "downloads" / pin.tarball
     shutil.copy2(tarball, cache / "downloads" / pin.tarball)
-    monkeypatch.setenv("PCRETRUSTE_ORACLE_CACHE", str(cache))
+    monkeypatch.setenv("PCREVERA_ORACLE_CACHE", str(cache))
 
     results = _build_concurrently(pin, 2)
 
@@ -367,8 +367,8 @@ def test_oracle_copies_a_local_tarball_into_place_in_one_step(
     cache = tmp_path / "cache"
     local = tmp_path / "pcre2.tar.bz2"
     shutil.copy2(oracle_cache() / "downloads" / pin.tarball, local)
-    monkeypatch.setenv("PCRETRUSTE_ORACLE_CACHE", str(cache))
-    monkeypatch.setenv("PCRETRUSTE_PCRE2_TARBALL", str(local))
+    monkeypatch.setenv("PCREVERA_ORACLE_CACHE", str(cache))
+    monkeypatch.setenv("PCREVERA_PCRE2_TARBALL", str(local))
 
     results = _build_concurrently(pin, 3)
 

@@ -123,7 +123,7 @@ def _recipe_digest() -> str:
 def build_id(pin: Pin) -> str:
     """A short digest over everything the build depends on."""
     digest = hashlib.sha256()
-    digest.update(b"pcretruste-oracle\0")
+    digest.update(b"pcrevera-oracle\0")
     digest.update(_recipe_digest().encode() + b"\0")
     digest.update(pin.digest.encode() + b"\0")
     digest.update(file_digest(SHIM_SOURCE).encode() + b"\0")
@@ -159,7 +159,7 @@ def _download(pin: Pin, cache: Path, log: Logger) -> Path:
             # tolerate another process having just done the same.
             tarball.unlink(missing_ok=True)
 
-    local = os.environ.get("PCRETRUSTE_PCRE2_TARBALL")
+    local = os.environ.get("PCREVERA_PCRE2_TARBALL")
     handle = tempfile.NamedTemporaryFile(dir=downloads, delete=False)
     partial_path = Path(handle.name)
     try:
@@ -208,7 +208,7 @@ def _run(command: list[str], cwd: Path, log: Logger, step: str) -> None:
         stderr=subprocess.STDOUT,
         text=True,
     )
-    (cwd / f"pcretruste-{step}.log").write_text(result.stdout)
+    (cwd / f"pcrevera-{step}.log").write_text(result.stdout)
     if result.returncode != 0:
         tail = "\n".join(result.stdout.splitlines()[-30:])
         raise BuildError(f"{step} failed with status {result.returncode}:\n{tail}")

@@ -5,7 +5,7 @@ directory holds that one: `pcre2-pin.toml` names the release, its tarball hash,
 the complete configure flags, and everything the linked library must report
 back about itself. `pcre2shim/shim.c` is a small C program that links the
 pinned library and answers questions about it. The Python side that builds and
-drives both lives in `src/pcretruste/oracle/`.
+drives both lives in `src/pcrevera/oracle/`.
 
 ## Building it
 
@@ -17,8 +17,8 @@ make oracle-verify   # build, then check the result against the pin
 or, equivalently:
 
 ```
-uv run python -m pcretruste.oracle build
-uv run python -m pcretruste.oracle verify
+uv run python -m pcrevera.oracle build
+uv run python -m pcrevera.oracle verify
 ```
 
 The build downloads the pinned tarball into `tmp/oracle/downloads`, verifies its
@@ -28,8 +28,8 @@ library — a couple of seconds, not a minute. Everything lands in a directory
 named after a digest of the inputs, described below.
 
 Two environment variables are useful on a build machine:
-`PCRETRUSTE_ORACLE_CACHE` moves the cache somewhere shared, and
-`PCRETRUSTE_PCRE2_TARBALL` points at a local copy of the tarball for a machine
+`PCREVERA_ORACLE_CACHE` moves the cache somewhere shared, and
+`PCREVERA_PCRE2_TARBALL` points at a local copy of the tarball for a machine
 with no network. The copy is hash-checked exactly like a download.
 
 ## What gets checked

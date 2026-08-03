@@ -1,4 +1,4 @@
-# pcre-truste
+# pcre-vera
 
 An experiment to see if AI can build PCRE-compatible regex engines that aren't garbage.
 
@@ -38,13 +38,13 @@ storage sizes, and the linearity rules.
 Those are the corners where Go and JavaScript disagree and where a Lean
 decoder, a Go printer, and a JS printer would otherwise each guess differently.
 
-`src/pcretruste/tir/` implements it: the type model, a canonical JSON codec
+`src/pcrevera/tir/` implements it: the type model, a canonical JSON codec
 whose output is a function of the program alone, a validator whose 43 rules
 each have a test that trips them, and a reference interpreter that follows the
 specification literally, checks declared loop variants at run time, and stops
 at a step bound rather than hanging.
 
-`src/pcretruste/dsl/` is the untrusted builder API the engine gets authored
+`src/pcrevera/dsl/` is the untrusted builder API the engine gets authored
 against. `tests/golden/toy.tir.json` is a small program — bounded Fibonacci
 with an explicit stack — that round-trips from the DSL through the artifact and
 back into the interpreter.
@@ -62,7 +62,7 @@ behavior in the corpus instead.
 `oracle/pcre2shim/shim.c` answers questions about it over a line protocol so
 the rest of the project can ask pcre2 what a pattern does.
 
-The third is the engine itself. `src/pcretruste/engine/` builds one TIR program
+The third is the engine itself. `src/pcrevera/engine/` builds one TIR program
 — a pattern parser, a bytecode compiler, and a backtracking matcher — and
 `driver.py` runs it through the reference interpreter, so it can be tested
 years before either backend exists.
@@ -194,17 +194,17 @@ import (
 	"fmt"
 	"log"
 
-	pcretruste "github.com/jedisct1/pcre-truste/gen/go"
+	pcrevera "github.com/PCRE-Vera/pcre-vera/gen/go"
 )
 
 func main() {
-	re, err := pcretruste.Compile(`(?<user>\w+)@(?<host>[\w.]+)`, pcretruste.Options{})
+	re, err := pcrevera.Compile(`(?<user>\w+)@(?<host>[\w.]+)`, pcrevera.Options{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	subject := []byte("write to alice@example.org, please")
-	ovector, err := re.Match(subject, 0, 0, pcretruste.DefaultLimits())
+	ovector, err := re.Match(subject, 0, 0, pcrevera.DefaultLimits())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -281,7 +281,7 @@ own has no dependencies at all.
 | LOG.md            | what was asked and what was done, step by step       |
 | MISTAKES.md       | what earlier drafts got wrong, kept as a trap list   |
 | api-faq.md        | APIs that did not behave the way we first assumed    |
-| src/pcretruste/   | the generator and all its tooling                    |
+| src/pcrevera/     | the generator and all its tooling                    |
 | oracle/           | the pcre2 pin, the C shim, the seed corpus           |
 | lean/             | the lake project: the four proof layers              |
 | gen/              | the canonical artifact everything is pinned to       |

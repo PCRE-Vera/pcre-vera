@@ -30,12 +30,12 @@ type Tir_Trap struct {
 }
 
 func (t Tir_Trap) Error() string {
-	return "pcretruste: TIR trap " + t.Code + ": " + t.What
+	return "pcrevera: TIR trap " + t.Code + ": " + t.What
 }
 
 const tir_CAP uint64 = 9007199254740991
 
-const tir_fellOff = "pcretruste: a value-returning function reached its end"
+const tir_fellOff = "pcrevera: a value-returning function reached its end"
 
 func tir_oob(index uint32, bound uint32) {
 	panic(Tir_Trap{Code: "T-01", What: "index past the end of a sequence", Index: index, Bound: bound})

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.tir.types import (
+from pcrevera.tir.types import (
     BOOL,
     BYTES,
     CAP,

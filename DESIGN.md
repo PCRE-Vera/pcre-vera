@@ -1,6 +1,6 @@
-# pcre-truste — design plan
+# pcre-vera — design plan
 
-This document describes how we plan to build pcre-truste: a Python tool that
+This document describes how we plan to build pcre-vera: a Python tool that
 produces a formally verified PCRE engine as an intermediate representation
 (IR), from which idiomatic Go and JavaScript libraries are generated. It is
 the working plan for the whole project, from the first commit to the first
@@ -1203,10 +1203,10 @@ matcher as a middle path.
 ## 11. Repository layout
 
 ```
-pcre-truste/
+pcre-vera/
   objective.md, DESIGN.md, BOUNDS.md, LOG.md, api-faq.md
   pyproject.toml            uv project: the generator and all tooling
-  src/pcretruste/
+  src/pcrevera/
     tir/                    schema, validator, serializer, interpreter
     dsl/                    IR builder API
     engine/                 the PCRE engine, authored with the DSL, and the

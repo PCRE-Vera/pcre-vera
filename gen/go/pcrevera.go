@@ -1,4 +1,4 @@
-// Package pcretruste is the Go form of the pcre-truste engine: a thin,
+// Package pcrevera is the Go form of the pcre-vera engine: a thin,
 // hand-written wrapper around the code generated from the TIR artifact, giving
 // it the API of DESIGN.md section 2.4 with Go conventions.
 //
@@ -17,13 +17,13 @@
 // The subject is a byte sequence and stays one: string conveniences arrive
 // with UTF mode in wave 3. The pattern is a Go string because a Go string
 // already is an arbitrary byte sequence.
-package pcretruste
+package pcrevera
 
 import (
 	"maps"
 	"strconv"
 
-	"github.com/jedisct1/pcre-truste/gen/go/internal/engine"
+	"github.com/PCRE-Vera/pcre-vera/gen/go/internal/engine"
 )
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact the engine was generated
@@ -150,21 +150,21 @@ type Error struct {
 func (e *Error) Error() string {
 	switch e.Kind {
 	case Syntax:
-		return "pcre-truste: syntax error " + strconv.Itoa(e.Code) +
+		return "pcre-vera: syntax error " + strconv.Itoa(e.Code) +
 			" at offset " + strconv.Itoa(e.Offset)
 	case UnsupportedFeature:
-		return "pcre-truste: this release does not support that construct, at offset " +
+		return "pcre-vera: this release does not support that construct, at offset " +
 			strconv.Itoa(e.Offset)
 	case UnsupportedOption:
-		return "pcre-truste: this release does not support that option"
+		return "pcre-vera: this release does not support that option"
 	case PatternTooLarge:
-		return "pcre-truste: the pattern is past a documented portable limit"
+		return "pcre-vera: the pattern is past a documented portable limit"
 	case ResourceExceeded:
-		return "pcre-truste: the match went over its cost, stack or memory limit"
+		return "pcre-vera: the match went over its cost, stack or memory limit"
 	case BadInput:
-		return "pcre-truste: an argument is outside its documented range"
+		return "pcre-vera: an argument is outside its documented range"
 	}
-	return "pcre-truste: internal error " + strconv.Itoa(e.Code)
+	return "pcre-vera: internal error " + strconv.Itoa(e.Code)
 }
 
 // The engine's own error codes, above the range pcre2 uses, and its match

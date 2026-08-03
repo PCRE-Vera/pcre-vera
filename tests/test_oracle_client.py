@@ -6,7 +6,7 @@ import subprocess
 
 import pytest
 
-from pcretruste.oracle import Compiled, CompileError, Match, MatchError, NoMatch, Oracle, OracleError
+from pcrevera.oracle import Compiled, CompileError, Match, MatchError, NoMatch, Oracle, OracleError
 
 
 def test_oracle_reports_its_library_version(oracle: Oracle, pin):

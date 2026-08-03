@@ -3,9 +3,9 @@
 // Artifact SHA-256:
 //   96eea5f450b4b9d8cf1005ceccc4410cef0b66071639d896dedeee234fbcbf11
 //
-// The wave 1 pcre-truste engine as printed from its TIR artifact: the
-// pattern parser, the bytecode compiler, and the backtracking matcher. The
-// public API is the hand-written wrapper in index.mjs.
+// The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
+// parser, the bytecode compiler, and the backtracking matcher. The public
+// API is the hand-written wrapper in index.mjs.
 //
 // The module holds the program and the printer's own tir_ helpers and
 // nothing else, which is what lets TIR names be printed verbatim.
@@ -20,7 +20,7 @@ export const artifactSha256 = "96eea5f450b4b9d8cf1005ceccc4410cef0b66071639d896d
 /** What a checked operation throws, per TIR-SPEC.md section 12. */
 export class tir_Trap extends Error {
   constructor(code, what) {
-    super(`pcretruste: TIR trap ${code}: ${what}`);
+    super(`pcrevera: TIR trap ${code}: ${what}`);
     this.name = "tir_Trap";
     this.code = code;
   }

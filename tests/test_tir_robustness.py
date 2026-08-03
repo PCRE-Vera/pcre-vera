@@ -21,7 +21,7 @@ from dataclasses import fields, is_dataclass, replace
 import pytest
 import toy
 
-from pcretruste.tir import (
+from pcrevera.tir import (
     Cell,
     TirSyntaxError,
     Trap,
@@ -32,8 +32,8 @@ from pcretruste.tir import (
     run,
     validate,
 )
-from pcretruste.tir.interp import OutOfFuel, VariantViolation
-from pcretruste.tir.types import (
+from pcrevera.tir.interp import OutOfFuel, VariantViolation
+from pcrevera.tir.types import (
     BOOL,
     BYTES,
     COUNTER,

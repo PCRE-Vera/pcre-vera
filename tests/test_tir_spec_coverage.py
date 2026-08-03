@@ -20,7 +20,7 @@ from typing import get_args
 
 import pytest
 
-from pcretruste.tir import ir, types
+from pcrevera.tir import ir, types
 
 SPEC = (Path(__file__).parents[1] / "TIR-SPEC.md").read_text()
 SERIALIZE_TESTS = (Path(__file__).parent / "test_tir_serialize.py").read_text()

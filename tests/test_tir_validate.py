@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.tir import ir, validate
-from pcretruste.tir.types import (
+from pcrevera.tir import ir, validate
+from pcrevera.tir.types import (
     BOOL,
     BYTES,
     CEILING,
@@ -30,7 +30,7 @@ from pcretruste.tir.types import (
     StructType,
     VecType,
 )
-from pcretruste.tir.validate import ValidationError, provably_disjoint
+from pcrevera.tir.validate import ValidationError, provably_disjoint
 
 WORDS = VecType(U32, 8)
 
@@ -946,7 +946,7 @@ def test_v044_admits_a_program_that_reaches_the_bound(build, levels):
     printers. So the deepest program the rule admits gets run through every
     one of them that exists today.
     """
-    from pcretruste.tir import dumps, loads, run
+    from pcrevera.tir import dumps, loads, run
 
     program = build(levels)
     validate(program)
@@ -969,7 +969,7 @@ def test_v044_refuses_one_level_more(build, levels):
 
 def test_a_validated_program_can_always_be_written_and_read_back():
     """What V-041 is for: validation is meant to imply the artifact round-trips."""
-    from pcretruste.tir import dumps, loads
+    from pcrevera.tir import dumps, loads
 
     program = prog(
         enums=[EnumDecl("E", ("A",))],

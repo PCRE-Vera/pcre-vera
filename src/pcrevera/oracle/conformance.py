@@ -39,7 +39,7 @@ SCHEMA = 1
 PATH = CONFORMANCE_DIR / "corpus.json"
 
 NOTE = (
-    "Generated from oracle/corpus/wave1.json by pcretruste.oracle.conformance. "
+    "Generated from oracle/corpus/wave1.json by pcrevera.oracle.conformance. "
     "Every implementation of the engine must give exactly these answers, so a "
     "disagreement between two of them is a disagreement with this file first."
 )

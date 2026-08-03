@@ -1,7 +1,7 @@
 {
-  "name": "pcre-truste",
+  "name": "pcre-vera",
   "version": "0.0.0",
-  "description": "The JavaScript form of the pcre-truste engine",
+  "description": "The JavaScript form of the pcre-vera engine",
   "type": "module",
   "private": true,
   "exports": "./index.mjs",

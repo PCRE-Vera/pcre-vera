@@ -1,4 +1,4 @@
-"""pcre-truste: a generator for a formally verified PCRE engine.
+"""pcre-vera: a generator for a formally verified PCRE engine.
 
 The engine itself is authored once, in TIR (the small typed IR described in
 DESIGN.md section 3), and everything else in this package either produces

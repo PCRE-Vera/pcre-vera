@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.engine import program, spec
-from pcretruste.tir import dumps, ir, is_canonical, loads, validate
+from pcrevera.engine import program, spec
+from pcrevera.tir import dumps, ir, is_canonical, loads, validate
 
 
 @pytest.fixture(scope="module")

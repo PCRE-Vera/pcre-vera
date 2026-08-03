@@ -20,7 +20,7 @@ pcre2 for the same reason the Python engine does.
 broadly but not squarely: every multiplication it performs is on a small
 offset, so a JavaScript printer that forgot `Math.imul` would pass all 264
 pattern cases and then be wrong the first time a product went past 2^53. So
-`src/pcretruste/backends/lowering.py` is a small TIR program that does those
+`src/pcrevera/backends/lowering.py` is a small TIR program that does those
 things on purpose, with operands sitting on the boundary — the 32-bit widths,
 the sign changes, `INT_MIN / -1`, counter saturation at the cap, the growth
 schedule read back through `cap`, a struct written through after being copied —

@@ -105,7 +105,7 @@ TRAP_NOTE = (
 )
 
 ENGINE_SUMMARY = (
-    "The wave 1 pcre-truste engine as printed from its TIR artifact: the pattern "
+    "The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern "
     "parser, the bytecode compiler, and the backtracking matcher. The public API "
     "lives in the package next door."
 )
@@ -650,12 +650,12 @@ type Tir_Trap struct {
 }
 
 func (t Tir_Trap) Error() string {
-	return "pcretruste: TIR trap " + t.Code + ": " + t.What
+	return "pcrevera: TIR trap " + t.Code + ": " + t.What
 }
 
 const tir_CAP uint64 = 9007199254740991
 
-const tir_fellOff = "pcretruste: a value-returning function reached its end"
+const tir_fellOff = "pcrevera: a value-returning function reached its end"
 
 func tir_oob(index uint32, bound uint32) {
 	panic(Tir_Trap{Code: "T-01", What: "index past the end of a sequence", Index: index, Bound: bound})

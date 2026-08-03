@@ -24,7 +24,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/jedisct1/pcre-truste/gen/go/internal/corpustest"
+	"github.com/PCRE-Vera/pcre-vera/gen/go/internal/corpustest"
 )
 
 const certificatePath = "../../../../conformance/certificates.json"

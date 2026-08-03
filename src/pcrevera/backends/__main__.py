@@ -1,7 +1,7 @@
 """Write the generated files, or check that the committed ones are current.
 
-    python -m pcretruste.backends build     write them
-    python -m pcretruste.backends verify    fail on any that has drifted
+    python -m pcrevera.backends build     write them
+    python -m pcrevera.backends verify    fail on any that has drifted
 
 The generated Go and JavaScript are committed, so that a diff is reviewable
 and the libraries are usable without running the generator. `verify` is what

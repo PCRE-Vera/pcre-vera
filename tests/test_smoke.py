@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import pcretruste
-from pcretruste import paths
+import pcrevera
+from pcrevera import paths
 
 
 def test_package_imports():
-    assert pcretruste.__version__
+    assert pcrevera.__version__
 
 
 def test_repository_root_is_the_checkout():

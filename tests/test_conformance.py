@@ -16,11 +16,11 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.backends import lowering
-from pcretruste.engine import Engine
-from pcretruste.engine import certificate_corpus
-from pcretruste.oracle import conformance
-from pcretruste.oracle import corpus as wave1
+from pcrevera.backends import lowering
+from pcrevera.engine import Engine
+from pcrevera.engine import certificate_corpus
+from pcrevera.oracle import conformance
+from pcrevera.oracle import corpus as wave1
 
 
 @pytest.fixture(scope="module")

@@ -21,7 +21,7 @@ import random
 
 import pytest
 
-from pcretruste.engine import (
+from pcrevera.engine import (
     BadInput,
     Engine,
     Limits,
@@ -29,7 +29,7 @@ from pcretruste.engine import (
     TooLarge,
     Unsupported,
 )
-from pcretruste.oracle.client import Compiled, CompileError, Match, NoMatch
+from pcrevera.oracle.client import Compiled, CompileError, Match, NoMatch
 
 ATOMS = (
     "a", "b", ".", "[a-c]", "[^a-c]", r"\d", r"\D", r"\w", r"\s", r"\S",

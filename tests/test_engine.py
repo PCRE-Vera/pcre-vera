@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from pcretruste.engine import (
+from pcrevera.engine import (
     BadInput,
     Engine,
     Limits,
@@ -18,7 +18,7 @@ from pcretruste.engine import (
     Unsupported,
     spec,
 )
-from pcretruste.oracle.client import CompileError, Compiled, Match, NoMatch
+from pcrevera.oracle.client import CompileError, Compiled, Match, NoMatch
 
 
 @pytest.fixture(scope="module")
@@ -160,8 +160,8 @@ def test_the_scratch_arrays_have_no_limit_of_their_own(engine: Engine) -> None:
     the declared maxima are exactly what the allocation ceiling admits, so the
     accepted stack limit reaches the declared maximum and every trail the
     memory limit allows fits under its own."""
-    from pcretruste.engine.driver import MAX_MEMORY_LIMIT, MAX_STACK_LIMIT
-    from pcretruste.tir.types import CEILING
+    from pcrevera.engine.driver import MAX_MEMORY_LIMIT, MAX_STACK_LIMIT
+    from pcrevera.tir.types import CEILING
 
     assert spec.MAX_STACK == CEILING // spec.BT_SIZE == MAX_STACK_LIMIT
     assert spec.MAX_TRAIL == CEILING // spec.UNDO_SIZE
@@ -322,7 +322,7 @@ def test_an_impossible_limit_is_bad_input(engine: Engine, limits: Limits) -> Non
 
 
 def test_the_limits_at_their_ceilings_are_accepted(engine: Engine) -> None:
-    from pcretruste.engine.driver import (
+    from pcrevera.engine.driver import (
         MAX_COST_LIMIT,
         MAX_MEMORY_LIMIT,
         MAX_STACK_LIMIT,

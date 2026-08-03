@@ -1,3 +1,3 @@
-module github.com/jedisct1/pcre-truste/gen/go
+module github.com/PCRE-Vera/pcre-vera/gen/go
 
 go 1.24

@@ -12,7 +12,7 @@ import hashlib
 import pytest
 import toy
 
-from pcretruste.tir import Cell, Trap, dumps, loads, run, validate
+from pcrevera.tir import Cell, Trap, dumps, loads, run, validate
 
 
 @pytest.fixture(scope="module")

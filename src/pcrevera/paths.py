@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-REPO_ROOT = Path(os.environ.get("PCRETRUSTE_ROOT") or Path(__file__).resolve().parents[2])
+REPO_ROOT = Path(os.environ.get("PCREVERA_ROOT") or Path(__file__).resolve().parents[2])
 
 ORACLE_DIR = REPO_ROOT / "oracle"
 PIN_PATH = ORACLE_DIR / "pcre2-pin.toml"
@@ -29,5 +29,5 @@ def oracle_cache() -> Path:
     Builds are keyed by the pin contents, so several of them can coexist and
     switching pins never reuses stale objects.
     """
-    override = os.environ.get("PCRETRUSTE_ORACLE_CACHE")
+    override = os.environ.get("PCREVERA_ORACLE_CACHE")
     return Path(override) if override else TMP_DIR / "oracle"

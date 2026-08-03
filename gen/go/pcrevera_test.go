@@ -1,4 +1,4 @@
-package pcretruste
+package pcrevera
 
 import (
 	"errors"

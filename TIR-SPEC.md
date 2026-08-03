@@ -1,6 +1,6 @@
 # TIR — the normative specification
 
-TIR ("trusted IR") is the small typed imperative language the pcre-truste
+TIR ("trusted IR") is the small typed imperative language the pcre-vera
 engine is written in. This document defines it: every type, every operator,
 every statement, the exact result of every operation on every input, and the
 rules a validator enforces before a program is accepted.
