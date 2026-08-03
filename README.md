@@ -78,25 +78,29 @@ Anything outside that subset — back references, lookaround, atomic groups,
 possessive quantifiers, `\K`, `\p`, subroutine calls, callouts, verbs — is
 refused with our own UnsupportedFeature or UnsupportedOption code, never a
 repurposed pcre2 one, so a caller can always tell "PCRE says this is wrong"
-from "we do not do this yet". The line sits where pcre2 draws it: a `\g`, `\k`
-or `\p` whose spelling pcre2 itself rejects, or a reference to a group that
-does not exist, is that genuine pcre2 error, and only the well-formed
-construct is our refusal. Two edges of that line stay ours for now: a
-well-shaped `\p` name is not checked against the Unicode property tables,
-which arrive with wave 3, and a pattern that mixes a bad reference with a
-construct we refuse gets the refusal, where pcre2 would finish parsing and
-report the reference.
+from "we do not do this yet".
+
+The line sits where pcre2 draws it: a `\g`, `\k` or `\p` whose spelling pcre2
+itself rejects, or a reference to a group that does not exist, is that genuine
+pcre2 error, and only the well-formed construct is our refusal.
+
+Two edges of that line stay ours for now: a well-shaped `\p` name is not
+checked against the Unicode property tables, which arrive with wave 3, and a
+pattern that mixes a bad reference with a construct we refuse gets the
+refusal, where pcre2 would finish parsing and report the reference.
 
 Eight more shapes are refused for a subtler reason, and `engine/spec.py` names
 them: pcre2 makes a quantifier possessive when it can prove the repeated item
-and the next one never match the same character, and for those eight the proof
-is wrong in 8-bit mode, so pcre2 answers differently from its own semantics.
+and the next one never match the same character. For those eight, the proof is
+wrong in 8-bit mode, so pcre2 answers differently from its own semantics.
+
 Reproducing that needs possessive repetition, which is wave 2, so wave 1
 declines any pattern where one of the eight repetitions has its unsafe partner
 somewhere after it — or anywhere at all when a group is repeated, because
-pcre2 replicates repeated groups and can pair items across the copies. That is
-broader than the exact next-item question, deliberately: refusing too often is
-a smaller sin than answering wrongly.
+pcre2 replicates repeated groups and can pair items across the copies.
+
+That is broader than the exact next-item question, deliberately: refusing too
+often is a smaller sin than answering wrongly.
 
 Every match runs under a cost limit, a stack-entry limit and a scratch-memory
 limit, and returns ResourceExceeded rather than running long. Compilation now
@@ -115,26 +119,31 @@ Both are committed, and `make generate-verify` refuses a checkout where one is
 not what today's generator produces.
 
 The printers are the dumbest part of the system on purpose: one output
-construct per input node, no optimization, no reordering. `TIR-SPEC.md` section
-16 lists what each language gets wrong if lowered naively, and the two that
-matter are the ones that are silently wrong rather than merely slow. In
-JavaScript a 32-bit product has to go through `Math.imul`, because a plain
-double product loses low bits before any `| 0` could look at them; and a
-copyable struct has to be cloned when it is read out of storage, because a
-class instance is a reference where a Go struct is a value.
+construct per input node, no optimization, no reordering.
+
+`TIR-SPEC.md` section 16 lists what each language gets wrong if lowered
+naively, and the two that matter are silently wrong rather than merely slow.
+In JavaScript a 32-bit product has to go through `Math.imul`, because a plain
+double product loses low bits before any `| 0` could look at them. A copyable
+struct has to be cloned when it is read out of storage, because a class instance
+is a reference where a Go struct is a value.
 
 Neither of those shows up in the pattern corpus — the engine's own
 multiplications are all small — so `conformance/lowering.json` asks about them
-directly. It is 4040 cases over a small TIR program that multiplies at the
-boundary, saturates counters at the cap, divides `INT_MIN` by -1, grows vectors
-one push at a time and reads the capacity back, writes through a struct it just
-copied, fills one sequence of every element type there is — the engine itself
-only ever uses two — and overflows a named constant, which Go folds at compile
-time and would refuse rather than wrap. `conformance/corpus.json` is the wave 1
-corpus restated in a form any language can read, and
-`conformance/certificates.json` does the same for the analysis below.
-All three files run against the Python interpreter, the generated Go, and the
-generated JavaScript, and all three languages have to give the same answers.
+directly.
+
+It is 4040 cases over a small TIR program that multiplies at the boundary,
+saturates counters at the cap, divides `INT_MIN` by -1, grows vectors one push
+at a time and reads the capacity back, writes through a struct it just copied,
+fills one sequence of every element type there is — the engine itself only ever
+uses two — and overflows a named constant, which Go folds at compile time and
+would refuse rather than wrap.
+
+`conformance/corpus.json` is the wave 1 corpus restated in a form any language
+can read, and `conformance/certificates.json` does the same for the analysis
+below. All three files run against the Python interpreter, the generated Go,
+and the generated JavaScript, and all three languages have to give the same
+answers.
 
 M4 is deliberately provisional and both wrappers say so. Compile and match
 work; every pattern runs on the backtracking matcher, because matcher selection
@@ -145,42 +154,52 @@ with M5, together with the bounds that make them mean anything.
 M5 has started with the resource analysis. DESIGN.md section 5 does not have
 one analyzer computing numbers everything then trusts; it has an analyzer that
 searches for a bound certificate and a deliberately small checker that decides
-whether to believe one. Only the checker gets proved, which is why it was built
-first. `engine/certificate.py` is that checker, `engine/analyzer.py` is the
-search, and [BOUNDS.md](BOUNDS.md) is the rule set they both apply: what every
-opcode costs, what every region kind composes to, and what a whole call pays
-for setup, for its n + 1 starting positions and for the scratch it grows. They
-share the arithmetic and state the composition twice, because a checker whose
-verdict restated the analyzer's own working would not be worth running. The
-subject is the compiled pattern itself, so an accepted certificate is about the
-bytecode the matcher would really run.
+whether to believe one.
+
+Only the checker gets proved, which is why it was built first.
+`engine/certificate.py` is that checker, `engine/analyzer.py` is the search,
+and [BOUNDS.md](BOUNDS.md) is the rule set they both apply: what every opcode
+costs, what every region kind composes to, and what a whole call pays for setup,
+for its n + 1 starting positions and for the scratch it grows.
+
+They share the arithmetic and state the composition twice, because a checker
+whose verdict restated the analyzer's own working would not be worth running.
+The subject is the compiled pattern itself, so an accepted certificate is about
+the bytecode the matcher would really run.
 
 The region tree those rules compose over is the compiler's. It emits one while
 it still has the AST in hand, which is the only moment anything knows that this
 stretch of instructions came from that quantifier, and it stores it on the
-compiled pattern. A certificate holds one price per region and no second copy
-of the tree. That does not make the tree trusted: the checker reads it back
-against the bytecode, so a compiler that emitted a tree not describing its own
-output would be refused exactly like a hand-written one.
+compiled pattern.
+
+A certificate holds one price per region and no second copy of the tree. That
+does not make the tree trusted: the checker reads it back against the bytecode,
+so a compiler that emitted a tree not describing its own output would be
+refused exactly like a hand-written one.
 
 Compiling a pattern now runs both halves, and what comes out is stored only
-after the checker has said `CrOk` — which means, exactly: for this program, in
-this configuration, at every subject length, every start offset and every
-combination of match options, the matcher charges no more cost, pushes no more
-backtrack entries and reserves no more scratch than the certificate names. Take
-one unit off any of those numbers and the checker says which one and why. A
-bound comes back as a number or as an explicit refusal, never as a saturated
-counter dressed up as a maximum, and the two projections with a ceiling of
-their own refuse past it too, so any number an accessor gives back is one the
-caller can turn round and pass as a limit.
+after the checker has said `CrOk`.
+
+That means, exactly: for this program, in this configuration, at every subject
+length, every start offset and every combination of match options, the matcher
+charges no more cost, pushes no more backtrack entries and reserves no more
+scratch than the certificate names.
+
+Take one unit off any of those numbers and the checker says which one and why.
+A bound comes back as a number or as an explicit refusal, never as a saturated
+counter dressed up as a maximum. The two projections with a ceiling of their
+own refuse past it too, so any number an accessor gives back is one the caller
+can turn round and pass as a limit.
 
 Some patterns get no certificate at all. `(?:a*)*` hands its outer loop more
 ways to match at every extra byte of subject, so the pass count is a power of a
-polynomial and no bound of this shape has that form; `a*b*c*d*` needs a fifth
-power of n where there are four; `(?:a|a){0,44}` needs a coefficient no counter
-holds. Those patterns compile and match like any other and simply have no
-bound, which is the honest answer rather than a number that would be wrong. The
-accessors that report it are what comes next.
+polynomial and no bound of this shape has that form. `a*b*c*d*` needs a fifth
+power of n where there are four. `(?:a|a){0,44}` needs a coefficient no counter
+holds.
+
+Those patterns compile and match like any other and simply have no bound, which
+is the honest answer rather than a number that would be wrong. The accessors
+that report it are what comes next.
 
 ## Using it
 
@@ -242,13 +261,16 @@ Both print `alice@example.org is alice at example.org`.
 Entries 0 and 1 of the ovector are the whole match, then a pair per capturing
 group, with -1 for both ends of a group that did not take part. A subject that
 does not match is a nil ovector in Go and `null` in JavaScript, not an error.
+
 Everything else — a budget exhausted, a start offset outside the subject, a
 limit past what any target could honor — is an error with a code the two
-languages agree on. Subjects are byte sequences and stay that way until UTF
-mode arrives in wave 3; a Go pattern is a string because a Go string already is
-an arbitrary byte sequence, and a JavaScript pattern may be a string as long as
-every code unit fits in a byte — one that does not is asking for UTF mode, and
-comes back as UnsupportedFeature at the offset that asked.
+languages agree on.
+
+Subjects are byte sequences and stay that way until UTF mode arrives in wave 3.
+A Go pattern is a string because a Go string already is an arbitrary byte
+sequence. A JavaScript pattern may be a string as long as every code unit fits
+in a byte — one that does not is asking for UTF mode, and comes back as
+UnsupportedFeature at the offset that asked.
 
 ## Getting started
 
@@ -261,12 +283,13 @@ make check          # all of the above, plus lake build, go test, node --test
 ```
 
 The oracle build downloads a 2 MB tarball and compiles the 8-bit library only,
-which takes a few seconds. `oracle/README.md` covers the protocol, the pin, and
-the environment variables for a build machine with a shared cache or no
-network.
+which takes a few seconds.
+
+`oracle/README.md` covers the protocol, the pin, and the environment variables
+for a build machine with a shared cache or no network.
 
 `make check` also runs eslint over the JavaScript, which is the one step that
-wants the npm registry, and only the first time: `gen/js/package-lock.json`
+wants the npm registry, and only the first time. `gen/js/package-lock.json`
 pins it and the install is skipped once `node_modules` exists. `make js` on its
 own has no dependencies at all.
 
