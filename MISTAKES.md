@@ -731,3 +731,27 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   tell the difference between a reference to a thing and a mention of what it
   used to be called. Before running a rename over prose, look for the sentences
   whose subject is the rename.
+
+## The accessors and the Pike VM (M5)
+
+- Typed Go's MatchConfig as uint32, the exact width the engine takes, so a
+  caller's conversion of an out-of-range value wrapped it into the valid
+  default instead of being refused — while Python and JavaScript rejected the
+  same value as BadInput. The start offset had already solved this the right
+  way, an `int` validated down to u32, and consistency with the sibling
+  parameter should have been the first thing checked. A public type as narrow
+  as the engine's parameter delegates range validation to the caller's cast,
+  which is a silent clamp wearing type safety.
+- Designed the first Pike closure around "an empty loop iteration dies at the
+  visited set, and the exit was already forked with the captures in hand".
+  Wrong: the preferred empty iteration re-executes body instructions — its
+  Saves included — that the closure already marked, because the thread it
+  grows from was suspended mid-body, so the marks kill the path pcre2
+  prefers and a lower-priority capture wins. `(a?)*` on "a" says (0,1) where
+  the backtracker says (1,1). A pc-keyed visited set is exact for match
+  extents but not for captures unless the non-consuming transition graph is
+  acyclic; the fix was to make that acyclicity the eligibility rule itself —
+  no star whose body can complete emptily — rather than to keep patching the
+  closure. The differential test found it on the fourth hand-written case,
+  which is why the cross-matcher obligation exists; a design argued only on
+  the whiteboard would have shipped it.

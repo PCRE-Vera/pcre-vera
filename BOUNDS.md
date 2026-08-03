@@ -7,10 +7,13 @@ the analyzer existed on purpose — the analyzer may only claim things the
 checker can verify, so the rules had to be settled first, or the analyzer would
 have ended up introducing facts nothing can check.
 
-Everything here is about `CfgBacktrack`, the backtracking VM of
-`engine/vm.py`. The Pike VM and the memoized path charge differently and get
-their own sections when they land; until then the checker refuses them by name
-rather than borrowing these rules.
+Sections 1 through 8 are about `CfgBacktrack`, the backtracking VM of
+`engine/vm.py`. Section 9 is `CfgPike`, the lockstep VM of `engine/pike.py`,
+whose accounting is a whole-call closed form rather than a composition over
+regions; the checker still answers CrNoRules for it until that section is
+transcribed, which is the same order this document imposed on the backtracking
+rules — settled here first, implemented against it second. The memoized path
+waits for M9 and is refused by name until then.
 
 There are two implementations, and that is the point. `engine/analyzer.py`
 walks the compiler's region tree in reverse emission order and computes a price
@@ -32,11 +35,13 @@ document is `conformance/certificates.json`.
 Three numbers, the ones `match` reports back in its `Usage` and the ones
 DESIGN.md section 2.4 exposes on the compiled pattern:
 
+```text
 +-------+----------------------------------------------------------------+
 | cost  | cost units charged over the whole call                         |
 | stack | the deepest the backtrack stack ever gets, in entries          |
 | mem   | the peak scratch reservation, in IR bytes                      |
 +-------+----------------------------------------------------------------+
+```
 
 A bound holds for every subject of length n, every start offset, and every
 combination of match options.
@@ -100,6 +105,7 @@ requirement that is also zero.
 One cost unit per instruction visit, from the shared cost model of DESIGN.md
 section 5. On top of that, three opcode groups touch the two growing arrays:
 
+```text
 +---------------------------------------+-------+-------+-------+
 | opcode                                | visit | stack | trail |
 +---------------------------------------+-------+-------+-------+
@@ -115,6 +121,7 @@ section 5. On top of that, three opcode groups touch the two growing arrays:
 | RepEnter                              |   1   |   0   |   1   |
 | RepNext                               |   1   |   0   |   1   |
 +---------------------------------------+-------+-------+-------+
+```
 
 "stack" is backtrack entries pushed per visit and "trail" is undo entries
 recorded per visit. Both are upper bounds rather than exact counts: `RepLoop`
@@ -174,12 +181,14 @@ have been reported for none of them.
 
 A price is what one *entry* into the region costs:
 
+```text
 +-------+---------------------------------------------------------------+
 | work  | instruction visits inside the region                          |
 | stack | backtrack entries pushed inside it                            |
 | trail | undo entries recorded inside it                               |
 | outs  | times control leaves it going forward                         |
 +-------+---------------------------------------------------------------+
+```
 
 `outs` is the region's ambiguity, and it is the multiplier everything else
 composes with: a construct that can succeed in three different ways hands the
@@ -387,6 +396,7 @@ DESIGN.md section 5: the bound may overestimate, never underestimate.
 
 In the order it decides them, near enough:
 
+```text
 +----------------+--------------------------------------------------------+
 | CrNoRules      | this configuration has no rules yet: Pike, memo        |
 | CrConfig       | the certificate is for another configuration           |
@@ -403,6 +413,7 @@ In the order it decides them, near enough:
 | CrTotal*       | the pattern claims less than section 5 produced        |
 | CrNotLinear    | the class claim does not match the shape of the bound  |
 +----------------+--------------------------------------------------------+
+```
 
 `CrOk` means: for this program, in this configuration, at every subject length,
 every start offset and every combination of match options, the matcher charges
@@ -414,12 +425,14 @@ than this certificate names.
 Three refusals and a certificate, and the difference between the refusals is
 the difference between an inability and a bug:
 
+```text
 +----------------+--------------------------------------------------------+
 | ArAmbiguous    | a repeat body whose ambiguity grows with the subject   |
 | ArOverflow     | a coefficient, a power or a pass count with no room    |
 | ArShape        | something in the tree the analyzer had no rule for     |
 | ArOk           | a certificate, which the checker still has to accept   |
 +----------------+--------------------------------------------------------+
+```
 
 The first two are the honest "no bound of the shape section 2 writes down".
 The pattern compiles, carries no certificate, and the accessors report
@@ -436,3 +449,82 @@ and be refused there.
 That refusal, and `ArShape`, are the same thing: the two halves of this
 document disagreeing about one program, which no pattern can cause and only a
 bug of ours can. Compilation reports it rather than quietly dropping a bound.
+
+## 9. The Pike configuration
+
+The lockstep matcher does different work, so it gets its own accounting, and
+the shape of that accounting is different too. The backtracking rules compose
+prices over the region tree because the work a construct causes depends on
+what surrounds it. In the Pike VM it does not: the visited set admits every
+instruction at most once per list build, whatever the pattern's structure, so
+the whole call has a closed form in a handful of counts read straight off the
+program. A `CfgPike` certificate therefore carries no region prices — its
+`prices` table is empty, and a checker met with a nonempty one refuses — and
+its three bounds are checked by recomputing the same closed form and asking
+for domination, coefficient by coefficient.
+
+The counts, for a program of `C` instructions:
+
+    V = 2 * (ncap + 1)          capture slots in one block
+    B = 4 * V                   IR bytes of one block, and of the ovector
+    W = floor(C / 8) + 1        bytes of the per-position visited set
+    S = OpSave instructions     the most copy-on-write can trigger per build
+
+What one position costs. Building one thread list expands the closure: each
+instruction is marked and charged at most once, so the marks are at most `C`.
+Each `OpSave` processed can force at most one copy-on-write, at `B` cost
+units; there are at most `S` of them per build. Stepping the finished list
+charges one unit per suspended thread, and threads are deduplicated by pc, so
+at most `C`; an accepting thread writes the match end through the same
+copy-on-write, one more `B`. Seeding fills one fresh block, `B`, and clearing
+the visited set is `W`. A pop the visited set turns away is not charged — it
+does no instruction's work — and there are at most two per mark plus one per
+suspended thread, so the uncharged bookkeeping stays a constant factor of the
+charged work and the interpreter's fuel derivation holds.
+
+    position = 2*C + (S + 2) * B + W
+
+What the scratch reserves. Both thread lists hold at most `C` entries of 8
+IR bytes; the closure stack at most `2*C`, since each mark pushes at most two
+continuations; and every live capture handle sits in a list, on the closure
+stack, or is the recorded match or the seed in flight, so the pool never
+holds more than `4*C + 2` blocks, with a refcount and a free-list slot each.
+Every one of these grows by the schedule of section 5, so with
+`capacity(x) = 0 if x is zero, else 4 + 2x`:
+
+    R = 8*capacity(C) * 2               the two thread lists
+      + 8*capacity(2*C)                 the closure stack
+      + 4*capacity(4*C + 2) * 2         refcounts and the free list
+      + 4*capacity((4*C + 2) * V)       the pool
+    setup = B + W                       the ovector and the visited set, zeroed once
+
+And the whole call, with `n + 1` starting positions, growth charged at most
+three times the reservation and holding at most twice of it at a peak, by the
+same argument section 5 makes:
+
+    cost  = setup + B + (n + 1) * position + 3*R
+    stack = 0
+    mem   = setup + 2*R
+
+`stack` is zero because no backtrack stack exists on this path: the
+stack-entry limit has nothing to refuse, and a certificate claiming otherwise
+is refused instead. `mem` does not depend on `n` at all, which is the number
+a context sizes once; `cost` is `c1 * (n + 1) + c0` with base 1 and nothing
+above the first power, so every accepted `CfgPike` certificate claims
+`CcLinear` and the checker requires exactly that — here linearity is the
+shape of the rule, not a property to be read off the bound.
+
+These are deliberately generous per-position counts — most builds mark far
+fewer than `C` instructions — and the honest direction is the same as
+everywhere else in this document: the bound may overestimate, never
+underestimate. What keeps it meaningful is that every term is a compile-time
+constant of the pattern, so the whole thing is one multiplication away from a
+budget at any subject length.
+
+A certificate for `CfgPike` is only accepted for a program `pike_ok` admits:
+every repetition a pure star whose body cannot complete emptily, and nothing
+that consumes a variable number of bytes. On such a program the four Rep
+opcodes are control flow only, which is what lets the closure treat them as
+epsilon forks, and the non-consuming transition graph is acyclic, which is
+what makes first arrival at a pc the backtracking preference order and the
+per-build mark count at most `C`.

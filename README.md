@@ -103,9 +103,9 @@ That is broader than the exact next-item question, deliberately: refusing too
 often is a smaller sin than answering wrongly.
 
 Every match runs under a cost limit, a stack-entry limit and a scratch-memory
-limit, and returns ResourceExceeded rather than running long. Compilation now
-computes what those limits would have to be, which is the analysis below; what
-is still missing is the accessors that report it.
+limit, and returns ResourceExceeded rather than running long. Compilation
+computes what those limits would have to be, which is the analysis below, and
+the accessors on the compiled pattern report it before anything runs.
 
 `oracle/corpus/wave1.json` is 264 hand-written cases that our engine, the
 pinned pcre2, and the expectation all have to agree on. A generated sweep in
@@ -145,11 +145,15 @@ below. All three files run against the Python interpreter, the generated Go,
 and the generated JavaScript, and all three languages have to give the same
 answers.
 
-M4 is deliberately provisional and both wrappers say so. Compile and match
-work; every pattern runs on the backtracking matcher, because matcher selection
-needs the Pike VM. The analysis accessors of DESIGN.md section 2.4, the
-preallocated match context, and the match configuration argument all arrive
-with M5, together with the bounds that make them mean anything.
+The wrappers are still provisional in one respect and say so: every pattern
+runs on the backtracking matcher, because matcher selection needs the Pike VM.
+What works is compile, match under the hard limits, and the analysis accessors
+of DESIGN.md section 2.4 — `complexityClass`, and the worst-case cost, stack
+and memory at a subject length, each answering a number a caller can pass
+straight back as the matching limit, an explicit ExceedsBudget, or BadInput.
+The match configuration argument is in its final shape too, though only the
+default value exists until M9 activates memoization; the preallocated match
+context arrives with the rest of M5.
 
 M5 has started with the resource analysis. DESIGN.md section 5 does not have
 one analyzer computing numbers everything then trusts; it has an analyzer that
@@ -197,9 +201,9 @@ polynomial and no bound of this shape has that form. `a*b*c*d*` needs a fifth
 power of n where there are four. `(?:a|a){0,44}` needs a coefficient no counter
 holds.
 
-Those patterns compile and match like any other and simply have no bound, which
-is the honest answer rather than a number that would be wrong. The accessors
-that report it are what comes next.
+Those patterns compile and match like any other and simply have no bound, and
+the accessors report the explicit ExceedsBudget for them, which is the honest
+answer rather than a number that would be wrong.
 
 ## Using it
 
@@ -223,7 +227,7 @@ func main() {
 	}
 
 	subject := []byte("write to alice@example.org, please")
-	ovector, err := re.Match(subject, 0, 0, pcrevera.DefaultLimits())
+	ovector, err := re.Match(subject, 0, 0, pcrevera.DefaultLimits(), pcrevera.DefaultConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
