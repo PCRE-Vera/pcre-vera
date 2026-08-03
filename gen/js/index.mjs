@@ -5,10 +5,10 @@
 // This release is provisional and says so rather than implying otherwise.
 // Every pattern runs on the backtracking matcher, because matcher selection
 // arrives with the Pike VM in M5. The analysis accessors — complexity class,
-// worst-case cost, stack and memory — arrive with the analyzer in the same
-// milestone, and so do the preallocated match context and the match
-// configuration argument. What works today is compile and match, under the
-// caller's hard limits.
+// worst-case cost, stack and memory — are the next slice of it: compiling
+// already prices a pattern, and nothing reads the answer out yet. The
+// preallocated match context and the match configuration argument follow. What
+// works today is compile and match, under the caller's hard limits.
 //
 // Patterns and subjects are byte sequences. A pattern may also be a string,
 // as a convenience, when every code unit is at most 0xff and can therefore be

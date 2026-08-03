@@ -2,8 +2,10 @@
 // generated JavaScript. The same file runs against the Python interpreter and
 // the generated Go, so agreeing with it is what "agreeing bit for bit" means.
 //
-// Every case names a pattern rather than a bytecode listing, so this compiles
-// it here and hands the checker the program this backend would really run.
+// It has two halves, and so does this. The cases hand the checker a
+// certificate; the analyses compile a pattern and read the one compilation
+// produced. Either way the pattern is compiled here rather than described, so
+// the engine is handed the program this backend would really run.
 //
 // A certificate has no way in through the public API — the analysis accessors
 // do not exist yet, and when they do they will take a subject length rather
@@ -12,7 +14,7 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
 
-import { load, unhex } from "../corpus.mjs";
+import { load, section, unhex } from "../corpus.mjs";
 import {
   BkCost,
   BkMem,
@@ -29,7 +31,9 @@ import {
   Region,
   RkRepeat,
   cert_bound,
+  cert_build,
   cert_check,
+  cert_shape,
   compile,
   tir_Seq,
   tir_bytes,
@@ -93,6 +97,22 @@ const WHICH = [
   ["mem", BkMem],
 ];
 
+// A null bound is ExceedsBudget, which is a refusal rather than a number, so
+// the value carries nothing and is not compared.
+const wantBounds = (cert, rows, where) => {
+  for (const at of rows) {
+    for (const [kind, which] of WHICH) {
+      const got = cert_bound(cert, which, at.n);
+      const want = at[kind];
+      const at_n = `${where}: ${kind} at n=${at.n}`;
+      assert.equal(got.ok, want !== null, at_n);
+      if (want !== null) {
+        assert.equal(got.value, want, at_n);
+      }
+    }
+  }
+};
+
 test("the certificate corpus", () => {
   for (const one of CORPUS.cases) {
     const where = `${one.name}: ${one.note}`;
@@ -103,18 +123,37 @@ test("the certificate corpus", () => {
     }
     const asked = variant("Cfg", one.config, CfgMemo);
     assert.equal(cert_check(re, asked, cert), one.check, where);
-    for (const at of one.bounds) {
-      for (const [kind, which] of WHICH) {
-        const got = cert_bound(cert, which, at.n);
-        const want = at[kind];
-        const at_n = `${one.name}: ${kind} at n=${at.n}`;
-        // A null bound is ExceedsBudget, which is a refusal rather than a
-        // number, so the value carries nothing and is not compared.
-        assert.equal(got.ok, want !== null, at_n);
-        if (want !== null) {
-          assert.equal(got.value, want, at_n);
-        }
-      }
+    // The checker without the certificate, which compilation runs on its own.
+    // Which of the two halves answers each case is recorded rather than
+    // derived here, so a check that moved from one half to the other fails
+    // rather than passing either way.
+    assert.equal(cert_shape(re), one.shape, `${where} (cert_shape)`);
+    wantBounds(cert, one.bounds, one.name);
+  }
+});
+
+// The other half: no certificate is handed in, because compiling the pattern
+// is what produces one. What the corpus records is the analyzer's own verdict,
+// then the class and the bounds of whatever compilation stored — and for a
+// pattern with no representable bound, that the slot stayed empty.
+test("the analyses of the certificate corpus", () => {
+  for (const one of section(CORPUS, "analyses", "certificates.json")) {
+    const where = `${one.name}: ${one.note}`;
+    const re = buildProgram(one.pattern, where);
+    const cand = tir_cell(new Cert());
+    assert.equal(cert_build(re, cand), one.found, where);
+    if (one.complexity === null) {
+      assert.equal(re.hascert, false, `${where} (a pattern with no bound carries one)`);
+      continue;
+    }
+    assert.equal(re.hascert, true, `${where} (compiling stored no certificate)`);
+    // Both of them: the certificate compiling stored, and the one the analyzer
+    // just handed back. A backend where those two differ has a compilation
+    // that kept something other than what it computed, which nothing else here
+    // would notice.
+    for (const [what, cert] of [["stored", re.cert], ["built", cand.v]]) {
+      assert.equal(cert.complexity, one.complexity, `${where} (${what})`);
+      wantBounds(cert, one.bounds, `${one.name} (${what})`);
     }
   }
 });

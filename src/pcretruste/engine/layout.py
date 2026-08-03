@@ -125,6 +125,15 @@ class Layout:
 
         self.Bk = m.enum("Bk", ["BkCost", "BkStack", "BkMem"])
 
+        # And what the analyzer came back with. Two of these are the honest
+        # answer for a pattern that has no bound of the shape BOUNDS.md section
+        # 2 writes down, and compilation goes on without a certificate.
+        # `ArShape` is the other kind: the analyzer met something in the region
+        # tree it had no rule for, which for a tree the compiler emitted is a
+        # bug of ours. It is first so that a verdict nobody assigned says
+        # exactly that, and `ArOk` is last so that one never claims success.
+        self.Ar = m.enum("Ar", ["ArShape", "ArAmbiguous", "ArOverflow", "ArOk"])
+
         self.Cr = m.enum(
             "Cr",
             [
@@ -395,6 +404,19 @@ class Layout:
                 ("bsr", u32),
                 ("hascrlf", u32),
                 ("crfirst", u32),
+                # The bound certificate for the backtracking configuration, and
+                # whether there is one. Compilation runs the analyzer and then
+                # the checker, and only a `CrOk` puts anything here, so the
+                # flag is what separates "certified" from "the analyzer found
+                # no bound of a shape this arithmetic can write down".
+                #
+                # It is a flag rather than something read off the certificate
+                # because a zero-valued `Cert` is a perfectly well-formed
+                # claim — `CfgBacktrack`, not proven linear, and nothing costs
+                # anything — and that is the one reading a caller must never
+                # get from a pattern nobody priced.
+                ("hascert", boolean),
+                ("cert", self.Cert),
             ],
         )
 

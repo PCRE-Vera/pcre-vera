@@ -5,10 +5,12 @@ package engine
 // generated JavaScript, so agreeing with it is what "agreeing bit for bit"
 // means.
 //
-// Every case names a pattern rather than a bytecode listing, so this compiles
-// it here and hands the checker the program this backend would really run. Two
+// It has two halves, and so does this. The cases hand the checker a
+// certificate; the analyses compile a pattern and read the one compilation
+// produced. Either way the pattern is compiled here rather than described, so
+// the engine is handed the program this backend would really run, and two
 // backends that disagree about the bytecode therefore disagree about the
-// verdict, which is the point.
+// answer.
 //
 // This test sits inside the generated package rather than beside the wrapper.
 // TIR field names are printed verbatim, so the printer's Tir_ facade can export
@@ -75,10 +77,23 @@ type certCase struct {
 	Config  uint32       `json:"config"`
 	Cert    certBody     `json:"cert"`
 	Check   uint32       `json:"check"`
+	Shape   uint32       `json:"shape"`
 	Bounds  []certBounds `json:"bounds"`
 	// A region table to put in place of the one the compiler emitted, for the
 	// cases about trees no compiler would emit. Absent from every other case.
 	Regions []certRegion `json:"regions"`
+}
+
+// A null complexity is a pattern the analyzer found no representable bound
+// for, which is an answer rather than a failure: the pattern compiles and has
+// no certificate.
+type certAnalysis struct {
+	Name       string       `json:"name"`
+	Note       string       `json:"note"`
+	Pattern    string       `json:"pattern"`
+	Found      uint32       `json:"found"`
+	Complexity *uint32      `json:"complexity"`
+	Bounds     []certBounds `json:"bounds"`
 }
 
 func readCertificates(t *testing.T) []certCase {
@@ -88,6 +103,15 @@ func readCertificates(t *testing.T) []certCase {
 		t.Fatal(err)
 	}
 	return cases
+}
+
+func readAnalyses(t *testing.T) []certAnalysis {
+	t.Helper()
+	held, err := corpustest.Section[certAnalysis](certificatePath, "analyses")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return held
 }
 
 func buildPoly(one certPoly) Poly {
@@ -167,10 +191,63 @@ func TestCertificateCorpus(t *testing.T) {
 			if uint32(got) != one.Check {
 				t.Fatalf("cert_check = %d, want %d (%s)", got, one.Check, one.Note)
 			}
+			// The checker without the certificate, which compilation runs on
+			// its own. Which of the two halves answers each case is recorded
+			// rather than derived here, so a check that moved from one half to
+			// the other fails rather than passing either way.
+			if shape := Tir_cert_shape(re); uint32(shape) != one.Shape {
+				t.Fatalf("cert_shape = %d, want %d (%s)", shape, one.Shape, one.Note)
+			}
 			for _, at := range one.Bounds {
 				wantBound(t, "cost", Tir_cert_bound(cert, BkCost, at.N), at.Cost, at.N)
 				wantBound(t, "stack", Tir_cert_bound(cert, BkStack, at.N), at.Stack, at.N)
 				wantBound(t, "mem", Tir_cert_bound(cert, BkMem, at.N), at.Mem, at.N)
+			}
+		})
+	}
+}
+
+// The other half: no certificate is handed in, because compiling the pattern
+// is what produces one. What the corpus records is the analyzer's own verdict,
+// then the class and the bounds of whatever compilation stored — and for a
+// pattern with no representable bound, that the slot stayed empty.
+func TestCertificateAnalysis(t *testing.T) {
+	for _, one := range readAnalyses(t) {
+		t.Run(one.Name, func(t *testing.T) {
+			re := buildProgram(t, one.Pattern)
+			var cand Cert
+			if found := Tir_cert_build(re, &cand); uint32(found) != one.Found {
+				t.Fatalf("cert_build = %d, want %d (%s)", found, one.Found, one.Note)
+			}
+			if one.Complexity == nil {
+				if re.hascert {
+					t.Fatalf("a pattern with no bound carries one (%s)", one.Note)
+				}
+				return
+			}
+			if !re.hascert {
+				t.Fatalf("compiling stored no certificate (%s)", one.Note)
+			}
+			// Both of them: the certificate compiling stored, and the one the
+			// analyzer just handed back. A backend where those two differ has
+			// a compilation that kept something other than what it computed,
+			// which nothing else here would notice.
+			for _, pair := range []struct {
+				what string
+				cert Cert
+			}{{"stored", re.cert}, {"built", cand}} {
+				what, cert := pair.what, pair.cert
+				if uint32(cert.complexity) != *one.Complexity {
+					t.Fatalf(
+						"%s complexity = %d, want %d (%s)",
+						what, cert.complexity, *one.Complexity, one.Note,
+					)
+				}
+				for _, at := range one.Bounds {
+					wantBound(t, what+" cost", Tir_cert_bound(cert, BkCost, at.N), at.Cost, at.N)
+					wantBound(t, what+" stack", Tir_cert_bound(cert, BkStack, at.N), at.Stack, at.N)
+					wantBound(t, what+" mem", Tir_cert_bound(cert, BkMem, at.N), at.Mem, at.N)
+				}
 			}
 		})
 	}

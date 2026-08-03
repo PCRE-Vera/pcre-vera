@@ -30,6 +30,17 @@ export function load(name) {
   const path = fileURLToPath(new URL(`../../conformance/${name}`, import.meta.url));
   const document = JSON.parse(readFileSync(path, "utf8"));
   assert.equal(document.schema, SCHEMA, `${name} has an unexpected schema`);
-  assert.ok(document.cases.length > 0, `${name} holds no cases`);
+  section(document, "cases", name);
   return document;
+}
+
+// One named array of a corpus, which may carry more than one: the certificate
+// corpus holds the checker's cases and the analyzer's patterns separately,
+// because the two halves of DESIGN.md section 5 are reached differently.
+// Asking for a section by name is what keeps the "is this a corpus at all"
+// rule here rather than at every place that reads a second one.
+export function section(document, key, name) {
+  const held = document[key];
+  assert.ok(Array.isArray(held) && held.length > 0, `${name} holds no ${key}`);
+  return held;
 }

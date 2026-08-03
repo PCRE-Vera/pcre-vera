@@ -5,10 +5,10 @@
 // This release is provisional and says so rather than implying otherwise.
 // Every pattern runs on the backtracking matcher, because matcher selection
 // arrives with the Pike VM in M5. The analysis accessors — complexity class,
-// worst-case cost, stack and memory — arrive with the analyzer in the same
-// milestone, and so do the preallocated match context and the match
-// configuration argument. What works today is compile and match, under the
-// caller's hard limits.
+// worst-case cost, stack and memory — are the next slice of it: compiling
+// already prices a pattern, and nothing reads the answer out yet. The
+// preallocated match context and the match configuration argument follow. What
+// works today is compile and match, under the caller's hard limits.
 //
 // A compiled pattern is immutable, so one may be shared across goroutines; a
 // match call keeps all of its state on its own stack and in scratch it
@@ -92,8 +92,8 @@ const knownMatchFlags = NotBOL | NotEOL | NotEmpty | NotEmptyAtStart | MatchAnch
 
 // Limits are the hard budgets one match call runs under: cost in engine cost
 // units, stack in backtrack entries, memory in IR bytes of scratch. Those are
-// the units the M5 analyzer will state its bounds in, so a bound it reports
-// can be passed here unchanged.
+// the units the analyzer states its bounds in, so a bound it reports can be
+// passed here unchanged.
 type Limits struct {
 	Cost   uint64
 	Stack  uint32

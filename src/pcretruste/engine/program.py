@@ -1,9 +1,15 @@
 """Assembling the engine into one TIR program.
 
 `compile` is the only entry point a caller needs for compilation: it parses,
-generates code, and freezes the result into the copyable `Re` value that
-`match` then takes by value. Freezing is what lets one compiled pattern serve
-any number of match calls while every mutable scratch value stays linear.
+generates code, freezes the result into the copyable `Re` value that `match`
+then takes by value, and prices what came out. Freezing is what lets one
+compiled pattern serve any number of match calls while every mutable scratch
+value stays linear.
+
+Pricing is last because it is about the finished program, and it is two steps
+rather than one: the analyzer of DESIGN.md section 5 searches for a bound
+certificate, and the checker decides whether the compiled pattern gets to carry
+it.
 """
 
 from __future__ import annotations
@@ -12,7 +18,7 @@ import functools
 
 from ..dsl import boolean, inout, u32
 from ..tir import ir
-from . import certificate, compiler, parser, spec, vm
+from . import analyzer, bounds, certificate, compiler, parser, spec, vm
 from .layout import Layout
 
 
@@ -78,6 +84,25 @@ def _entry(L: Layout) -> None:
     f.freeze(out.field("re").field("names"), w.field("names"))
     f.freeze(out.field("re").field("nameents"), w.field("nameents"))
 
+    # And the resource analysis, which is the last phase because it prices the
+    # program that came out of everything above it. It writes the last two
+    # fields of `re` unconditionally, so a caller who compiled one pattern into
+    # this result and then another is never handed the first pattern's
+    # certificate for the second pattern's bytecode.
+    #
+    # A refusal here is not a pattern this release declines. It is the two
+    # halves of BOUNDS.md disagreeing about one program, which no pattern can
+    # cause and only a bug of ours can.
+    cand = f.let("cand", L.Cert)
+    has = parser.tmp(f, boolean, boolean(False))
+    verdict = parser.tmp(f, L.Cr, L.Cr.CrOk)
+    f.call("cert_install", [out.field("re"), inout(cand), inout(has)], dest=verdict)
+    with f.if_(verdict != L.Cr.CrOk):
+        f.set(out.field("err"), u32(spec.E_INTERNAL))
+        f.ret()
+    f.set(out.field("re").field("cert"), cand)
+    f.set(out.field("re").field("hascert"), has)
+
 
 def build() -> ir.Program:
     """The whole engine, as one TIR program."""
@@ -85,7 +110,9 @@ def build() -> ir.Program:
     parser.build(L)
     compiler.build(L)
     vm.build(L)
+    bounds.build(L)
     certificate.build(L)
+    analyzer.build(L)
     _entry(L)
     return L.build()
 

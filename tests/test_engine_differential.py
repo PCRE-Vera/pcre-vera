@@ -9,7 +9,9 @@ being run. The generators in `tmp/` are the same shapes at a much larger scale.
 Cases our engine declines are skipped rather than compared, which is the oracle
 policy of DESIGN.md section 1: a construct outside the claimed subset, a
 pattern past a documented limit, and a run over budget are all outcomes pcre2
-has no opinion about.
+has no opinion about. Our own internal error is not one of them, and it is not
+in `DECLINED` — it is a bug of ours, and a skip would hide it on exactly the
+patterns nobody wrote down.
 """
 
 from __future__ import annotations
@@ -19,7 +21,14 @@ import random
 
 import pytest
 
-from pcretruste.engine import BadInput, Engine, Limits, ResourceExceeded, TooLarge, Unsupported
+from pcretruste.engine import (
+    BadInput,
+    Engine,
+    Limits,
+    ResourceExceeded,
+    TooLarge,
+    Unsupported,
+)
 from pcretruste.oracle.client import Compiled, CompileError, Match, NoMatch
 
 ATOMS = (

@@ -63,6 +63,22 @@ class TooLarge:
 
 
 @dataclass(frozen=True)
+class InternalError:
+    """The engine contradicted itself about a pattern it accepted.
+
+    A type of its own rather than one more code inside `Unsupported`, whose
+    meaning is the opposite: an unsupported construct is a thing this release
+    does not do, and a caller who skips those is right to. This is a bug of
+    ours, and a caller who skipped it would be skipping the report. Every sweep
+    that treats "the engine declined" as "nothing to compare" therefore has to
+    see a different type, or the bug is invisible on exactly the patterns
+    nobody wrote down.
+    """
+
+    code: int = spec.E_INTERNAL
+
+
+@dataclass(frozen=True)
 class ResourceExceeded:
     """The run went over the cost, stack, or scratch-memory limit."""
 
@@ -106,6 +122,21 @@ def coef(p: Poly, degree: int) -> int:
     return p.coefs[degree] if degree < len(p.coefs) else 0
 
 
+def canonical(base: int, coefs) -> Poly:
+    """The one spelling of a bound, so that two of them compare equal.
+
+    A `Poly` stops where its coefficients do, and a bound worth nothing carries
+    no growth either. Both readers of a certificate go through here — the one
+    that decodes what the engine built and the one the corpus prices with — so
+    that a certificate compared against another is compared as a number rather
+    than as however it happened to be written down.
+    """
+    trimmed = tuple(coefs)
+    while trimmed and trimmed[-1] == 0:
+        trimmed = trimmed[:-1]
+    return ZERO if not trimmed else Poly(trimmed, base)
+
+
 @dataclass(frozen=True)
 class Region:
     """One source construct the compiler flattened, and its instruction range.
@@ -136,7 +167,7 @@ class Price:
 
 @dataclass(frozen=True)
 class Certificate:
-    """What the analyzer will produce and the checker refuses to guess at.
+    """What the analyzer produces and the checker refuses to guess at.
 
     One price per region of the compiled pattern, in the same order. The three
     whole-pattern bounds are what the accessors report, and they are not the
@@ -175,7 +206,7 @@ def _certificate(cert: Certificate) -> StructValue:
     Anything that is well typed and still nonsense is exactly what the checker
     is there to answer for.
 
-    Nothing outside the engine builds a certificate: the analyzer will, in TIR,
+    Nothing outside the engine builds a certificate: the analyzer does, in TIR,
     where the types are the guarantee. So a malformed one arriving here really
     is a bug of ours, which is what `EngineError` says.
     """
@@ -279,6 +310,57 @@ def _tag(variant: str, enum: str) -> Tag:
     return Tag(enum, variant)
 
 
+# --- and the same values read back out ---
+#
+# A certificate the engine built is a TIR value like any other, so reading one
+# is the mirror of writing one. The only thing that is not a field copy is the
+# trailing zeros: `Poly` in Python stops where its coefficients do, so that two
+# certificates for the same program compare equal whichever side wrote them.
+
+
+def _read_poly(value: object) -> Poly:
+    assert isinstance(value, StructValue)
+    return canonical(
+        value.fields["base"], [value.fields[f"c{d}"] for d in spec.DEGREES]
+    )
+
+
+def _read_price(value: object) -> Price:
+    assert isinstance(value, StructValue)
+    return Price(
+        **{
+            quantity: _read_poly(value.fields[quantity])
+            for quantity in ("work", "outs", "stack", "trail")
+        }
+    )
+
+
+def _read_cert(value: object) -> Certificate:
+    assert isinstance(value, StructValue)
+    return Certificate(
+        prices=tuple(_read_price(one) for one in items(value.fields["prices"])),
+        cost=_read_poly(value.fields["cost"]),
+        stack=_read_poly(value.fields["stack"]),
+        mem=_read_poly(value.fields["mem"]),
+        config=variant_of(value.fields["config"]),
+        complexity=variant_of(value.fields["complexity"]),
+    )
+
+
+def items(value: object) -> list:
+    """What a sequence holds, whether or not it is frozen."""
+    if isinstance(value, Frozen):
+        value = value.inner
+    assert isinstance(value, Seq)
+    return value.items
+
+
+def variant_of(value: object) -> str:
+    """A tag is a name rather than a number, which is what makes it readable."""
+    assert isinstance(value, Tag)
+    return value.variant
+
+
 def _options(names: Sequence[str], table: dict[str, int], what: str) -> int | None:
     bits = 0
     for name in names:
@@ -296,6 +378,23 @@ class CompiledPattern:
     captures: int
     names: tuple[tuple[bytes, int], ...]
 
+    @property
+    def certificate(self) -> Certificate | None:
+        """The bound certificate compilation produced, or None if it found none.
+
+        Not the public accessor of DESIGN.md section 2.4 — that one answers a
+        bound at a subject length and never hands out a certificate at all.
+        This is how Python reads the slot, so that the tests and the corpus can
+        ask what the analyzer came up with for a program.
+
+        None means the analyzer found no bound of a shape the arithmetic can
+        write down. It never means the slot is half filled: compilation writes
+        it only after the checker has accepted what is in it.
+        """
+        if not self.re.fields["hascert"]:
+            return None
+        return _read_cert(self.re.fields["cert"])
+
     def with_regions(self, regions: Sequence[Region]) -> "CompiledPattern":
         """The same pattern carrying a region table nobody compiled.
 
@@ -305,9 +404,22 @@ class CompiledPattern:
         to the pattern rather than to a call means every accessor that takes a
         compiled pattern takes a doctored one for free, and the fake is visible
         where it is made.
+
+        The certificate goes with it. It prices the tree the compiler emitted,
+        so against another tree it is a claim about nothing, and leaving it
+        behind would be leaving something for a reader to trip over.
         """
         return replace(
-            self, re=_struct("Re", {**self.re.fields, "regions": _regions(regions)})
+            self,
+            re=_struct(
+                "Re",
+                {
+                    **self.re.fields,
+                    "regions": _regions(regions),
+                    "hascert": False,
+                    "cert": _certificate(Certificate(prices=())),
+                },
+            ),
         )
 
 
@@ -335,7 +447,7 @@ class Engine:
         options: Sequence[str] = (),
         newline: str | None = "LF",
         bsr: str | None = "UNICODE",
-    ) -> CompiledPattern | CompileError | Unsupported | TooLarge:
+    ) -> CompiledPattern | CompileError | Unsupported | TooLarge | InternalError:
         bits = _options(options, spec.COMPILE_OPTIONS, "a compile option")
         if bits is None:
             return Unsupported(
@@ -363,6 +475,8 @@ class Engine:
         assert isinstance(offset, int)
         if err == spec.E_PATTERN_TOO_LARGE:
             return TooLarge()
+        if err == spec.E_INTERNAL:
+            return InternalError()
         if err in spec.OUR_ERRORS:
             return Unsupported(err, offset, spec.OUR_ERRORS[err])
         return CompileError(code=err, offset=offset, message=_message(err))
@@ -477,9 +591,33 @@ class Engine:
 
     # --- bound certificates ---
     #
-    # Nothing produces a certificate yet, so these two take one from the
-    # caller. When the analyzer lands, compilation runs the same checker over
-    # what it produced before any of it is believed.
+    # Compilation produces one and stores it, so the production path needs
+    # nothing from here: `CompiledPattern.certificate` reads the slot. These
+    # are what the corpus and the tests need on top — a verdict on a
+    # certificate nobody compiled, a bound off one, a bound off the one a
+    # pattern carries, and the reason the analyzer gave for not finding one.
+
+    def analyze(self, built: CompiledPattern) -> tuple[str, Certificate | None]:
+        """The analyzer's verdict for this program, named, and what it produced.
+
+        Compilation ran this already and kept the certificate; what it did not
+        keep is why there was none, because nothing downstream of a compiled
+        pattern has a use for the difference. A corpus does: `ArAmbiguous` and
+        `ArOverflow` are the two honest inabilities, and `ArShape` is a bug of
+        ours wearing the same clothes.
+        """
+        interp = self._interp()
+        cand = Cell(interp.zero(StructType("Cert")))
+        found = variant_of(interp.call("cert_build", [built.re, cand]))
+        return found, _read_cert(cand.value) if found == "ArOk" else None
+
+    def check_shape(self, built: CompiledPattern) -> str:
+        """The checker's verdict on the region tree alone, named.
+
+        The half of the checker that takes no certificate, which is the half
+        compilation runs whether or not the analyzer found a bound.
+        """
+        return variant_of(self._interp().call("cert_shape", [built.re]))
 
     def check_certificate(
         self,
@@ -492,17 +630,35 @@ class Engine:
         The subject is the compiled pattern itself, so what the checker prices
         is the bytecode the matcher would run rather than a description of it.
         """
-        answer = self._interp().call(
-            "cert_check", [built.re, _tag(config, "Cfg"), _certificate(cert)]
+        return variant_of(
+            self._interp().call(
+                "cert_check", [built.re, _tag(config, "Cfg"), _certificate(cert)]
+            )
         )
-        assert isinstance(answer, Tag)
-        return answer.variant
 
     def bound(self, cert: Certificate, kind: str, subject_len: int) -> int | None:
         """A certified bound at that subject length, or None for ExceedsBudget."""
+        return self._evaluate(_certificate(cert), kind, subject_len)
+
+    def bound_of(
+        self, built: CompiledPattern, kind: str, subject_len: int
+    ) -> int | None:
+        """The same, off the certificate a compiled pattern carries.
+
+        Which is what the Go and JavaScript runners ask, so this is how Python
+        asks the same question: `bound` takes a certificate that has been out
+        of the engine and back in, and a round trip is not what the other two
+        are testing. None here is a pattern with no certificate at all, which
+        is the ExceedsBudget the accessors of DESIGN.md section 2.4 will report
+        for one.
+        """
+        if not built.re.fields["hascert"]:
+            return None
+        return self._evaluate(built.re.fields["cert"], kind, subject_len)
+
+    def _evaluate(self, cert: object, kind: str, subject_len: int) -> int | None:
         answer = self._interp().call(
-            "cert_bound",
-            [_certificate(cert), _tag(kind, "Bk"), _scalar(subject_len, COUNTER)],
+            "cert_bound", [cert, _tag(kind, "Bk"), _scalar(subject_len, COUNTER)]
         )
         assert isinstance(answer, StructValue)
         return answer.fields["value"] if answer.fields["ok"] else None
@@ -519,20 +675,14 @@ def _offset(value: object) -> int:
 
 
 def _names(re: StructValue) -> tuple[tuple[bytes, int], ...]:
-    blob = re.fields["names"]
-    entries = re.fields["nameents"]
-    assert isinstance(blob, Frozen) and isinstance(entries, Frozen)
-    text = blob.inner
-    table = entries.inner
-    assert isinstance(text, Seq) and isinstance(table, Seq)
+    text = items(re.fields["names"])
     out = []
-    for entry in table.items:
+    for entry in items(re.fields["nameents"]):
         assert isinstance(entry, StructValue)
         off = entry.fields["off"]
         length = entry.fields["nlen"]
         assert isinstance(off, int) and isinstance(length, int)
-        name = bytes(text.items[off : off + length])
-        out.append((name, entry.fields["grp"]))
+        out.append((bytes(text[off : off + length]), entry.fields["grp"]))
     return tuple(out)
 
 

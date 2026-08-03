@@ -99,9 +99,9 @@ broader than the exact next-item question, deliberately: refusing too often is
 a smaller sin than answering wrongly.
 
 Every match runs under a cost limit, a stack-entry limit and a scratch-memory
-limit, and returns ResourceExceeded rather than running long. The bounds those
-limits are compared against are still the caller's; computing them from the
-pattern is M5's analyzer.
+limit, and returns ResourceExceeded rather than running long. Compilation now
+computes what those limits would have to be, which is the analysis below; what
+is still missing is the accessors that report it.
 
 `oracle/corpus/wave1.json` is 264 hand-written cases that our engine, the
 pinned pcre2, and the expectation all have to agree on. A generated sweep in
@@ -132,7 +132,7 @@ copied, fills one sequence of every element type there is — the engine itself
 only ever uses two — and overflows a named constant, which Go folds at compile
 time and would refuse rather than wrap. `conformance/corpus.json` is the wave 1
 corpus restated in a form any language can read, and
-`conformance/certificates.json` does the same for the bound checker below.
+`conformance/certificates.json` does the same for the analysis below.
 All three files run against the Python interpreter, the generated Go, and the
 generated JavaScript, and all three languages have to give the same answers.
 
@@ -142,16 +142,18 @@ needs the Pike VM. The analysis accessors of DESIGN.md section 2.4, the
 preallocated match context, and the match configuration argument all arrive
 with M5, together with the bounds that make them mean anything.
 
-M5 has started at the far end of that work, with the thing the bounds have to
-pass through. DESIGN.md section 5 does not have one analyzer computing numbers
-everything then trusts; it has an analyzer that searches for a bound
-certificate and a deliberately small checker that decides whether to believe
-one. Only the checker gets proved, which is why it exists first.
-`engine/certificate.py` is that checker, and [BOUNDS.md](BOUNDS.md) is the rule
-set it applies: what every opcode costs, what every region kind composes to,
-and what a whole call pays for setup, for its n + 1 starting positions and for
-the scratch it grows. The subject is the compiled pattern itself, so an
-accepted certificate is about the bytecode the matcher would really run.
+M5 has started with the resource analysis. DESIGN.md section 5 does not have
+one analyzer computing numbers everything then trusts; it has an analyzer that
+searches for a bound certificate and a deliberately small checker that decides
+whether to believe one. Only the checker gets proved, which is why it was built
+first. `engine/certificate.py` is that checker, `engine/analyzer.py` is the
+search, and [BOUNDS.md](BOUNDS.md) is the rule set they both apply: what every
+opcode costs, what every region kind composes to, and what a whole call pays
+for setup, for its n + 1 starting positions and for the scratch it grows. They
+share the arithmetic and state the composition twice, because a checker whose
+verdict restated the analyzer's own working would not be worth running. The
+subject is the compiled pattern itself, so an accepted certificate is about the
+bytecode the matcher would really run.
 
 The region tree those rules compose over is the compiler's. It emits one while
 it still has the AST in hand, which is the only moment anything knows that this
@@ -161,18 +163,24 @@ of the tree. That does not make the tree trusted: the checker reads it back
 against the bytecode, so a compiler that emitted a tree not describing its own
 output would be refused exactly like a hand-written one.
 
-What `CrOk` means, exactly: for this program, in this configuration, at every
-subject length, every start offset and every combination of match options, the
-matcher charges no more cost, pushes no more backtrack entries and reserves no
-more scratch than the certificate names. Take one unit off any of those numbers
-and the checker says which one and why. A bound comes back as a number or as an
-explicit refusal, never as a saturated counter dressed up as a maximum, and the
-two projections with a ceiling of their own refuse past it too, so any number
-an accessor gives back is one the caller can turn round and pass as a limit.
+Compiling a pattern now runs both halves, and what comes out is stored only
+after the checker has said `CrOk` — which means, exactly: for this program, in
+this configuration, at every subject length, every start offset and every
+combination of match options, the matcher charges no more cost, pushes no more
+backtrack entries and reserves no more scratch than the certificate names. Take
+one unit off any of those numbers and the checker says which one and why. A
+bound comes back as a number or as an explicit refusal, never as a saturated
+counter dressed up as a maximum, and the two projections with a ceiling of
+their own refuse past it too, so any number an accessor gives back is one the
+caller can turn round and pass as a limit.
 
-What is not here yet is the analyzer that produces a certificate. It comes
-next, and it comes with the checker already standing between it and anything
-that believes a bound.
+Some patterns get no certificate at all. `(?:a*)*` hands its outer loop more
+ways to match at every extra byte of subject, so the pass count is a power of a
+polynomial and no bound of this shape has that form; `a*b*c*d*` needs a fifth
+power of n where there are four; `(?:a|a){0,44}` needs a coefficient no counter
+holds. Those patterns compile and match like any other and simply have no
+bound, which is the honest answer rather than a number that would be wrong. The
+accessors that report it are what comes next.
 
 ## Using it
 

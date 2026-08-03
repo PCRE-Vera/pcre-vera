@@ -27,21 +27,44 @@ schedule read back through `cap`, a struct written through after being copied �
 and this file says what every call has to answer.
 
 `certificates.json` is the bound certificates of DESIGN.md section 5 and
-BOUNDS.md, each with the pattern it prices, the verdict the checker has to
-draw, and the three bounds it has to evaluate at seven subject lengths from
-zero to the counter's saturation point. A case names a pattern rather than a
-bytecode listing, so every runner compiles it with the engine it has and the
-checker is handed the program that engine would really run, region tree
-included — two backends that disagree about the bytecode or about the tree
-therefore disagree here. The handful of cases about trees no compiler would
-emit carry one of their own, which the runner puts in place of the compiler's.
+BOUNDS.md, and it has two arrays because that section has two halves.
+
+Its `cases` are the checker's: each carries the pattern it prices, the verdict
+the checker has to draw, which of its two halves drew it, and the three bounds
+it has to evaluate at seven subject lengths from zero to the counter's
+saturation point. The half is there because the checker answers two questions
+and only one of them needs a certificate — whether the tree describes the
+program, and whether the certificate bounds it — and compilation runs the first
+on its own. A case names a
+pattern rather than a bytecode listing, so every runner compiles it with the
+engine it has and the checker is handed the program that engine would really
+run, region tree included — two backends that disagree about the bytecode or
+about the tree therefore disagree here. The handful of cases about trees no
+compiler would emit carry one of their own, which the runner puts in place of
+the compiler's.
+
+Its `analysis` entries are the analyzer's, and they hand nothing in: compiling
+a pattern is what runs it. Each records the analyzer's verdict, the complexity
+class it claimed, and the same three bounds — or, for a pattern with no bound
+of a representable shape, that the verdict was a refusal and the slot stayed
+empty. What the runners evaluate is both the certificate compilation stored and
+the one a direct call to the analyzer returns, so a backend that kept something
+other than what it computed disagrees here too.
+
+What it does not record is the price of every region, because that is a great
+many numbers to pin from the side and the checker already holds each of them to
+the bytecode: a backend whose analyzer under-prices a region never reaches this
+file, since compiling refuses to store a certificate the checker did not
+accept. Python asks the stronger question — that the whole certificate is
+exactly what an independent statement of BOUNDS.md computes — in
+`tests/test_certificate.py`.
 
 The verdicts are hand-written and the bounds are recorded, which is the honest
-split: what the checker refuses is a contract, and transcribing twenty-one
-numbers per case by hand would be copying rather than specifying. This corpus
-exists because a certificate has no way in through the public API, so without
-it the checker would be the one piece of the engine that both backends carried
-and neither ran.
+split: what the engine refuses is a contract, and transcribing twenty-one
+numbers per case by hand would be copying rather than specifying. The checker's
+half of this corpus exists because a certificate has no way in through the
+public API, so without it the checker would be the one piece of the engine that
+both backends carried and neither ran.
 
 The runners, one row per file and one column per language:
 
@@ -66,6 +89,7 @@ the wrapper, because TIR field names are printed verbatim and Go cannot reach a
 lower-case field from another package, so a certificate has to be built there.
 The JavaScript one needs no such thing.
 
-Expected match bounds are the other half of what DESIGN.md section 8 asks for,
-and they arrive with the M5 analyzer, when compilation starts producing the
-certificates this file so far builds from the side.
+The bounds DESIGN.md section 8 asks for are in the `analysis` entries above,
+now that compilation produces the certificates the `cases` still build from the
+side. What they do not yet cover is the public accessors, which report the same
+numbers and do not exist.

@@ -667,3 +667,60 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   guard that is not there, which is already on this list. Centralising a
   constant is not the edit; replacing every spelling of it is, and the way to
   know is to change the constant and watch what moves.
+- Wrote an analyzer that indexes the bytecode from region ranges and checked
+  none of them, on the reasoning that the tree comes from our own compiler. The
+  checker validates the same tree and reads the same array, and it is safe
+  because the nesting rules run first; the analyzer had nothing running first,
+  so a range past the end of the program was a trap rather than a refusal. A
+  component called untrusted has to be untrusted in both directions: it may not
+  be believed, and it may not fall over on the way to being disbelieved.
+- Left the one new failure mode invisible to the sweep that would have found
+  it. The generated differential test skips every outcome our engine declines,
+  which is the right oracle policy for a construct pcre2 has no opinion about —
+  and an internal error wears the same type while meaning the opposite. So a
+  disagreement between the analyzer and the checker on a random pattern would
+  have passed as a skip. When a change adds an outcome, look at what already
+  swallows outcomes.
+- Wrote the certificate into the compiled pattern only on success, in a
+  function whose result is the caller's to reuse. Every other field of `Re` is
+  written unconditionally, so a caller compiling a second pattern into the same
+  result would have got the second pattern's bytecode with the first pattern's
+  bound — the exact pairing the availability flag was added to prevent, arrived
+  at by leaving the flag alone rather than by setting it wrongly. A field that
+  means "this is about the value beside it" has to be written on every path
+  that writes the value.
+- Wrote down that a skip had hidden the new failure mode, fixed the sweep I had
+  just read, and left the same skip in three other places: two more differential
+  sweeps, and the helper my own new "priced or refused" tests are built on,
+  which drops every pattern that does not compile — an internal error included.
+  So the test whose docstring says it exists to catch the analyzer and the
+  checker disagreeing could not have caught it. Writing a mistake down is not
+  the fix; finding every instance of it is, and the search is the same one
+  either way.
+- Ran the checker only where there was a certificate to check. The checker
+  answers two different questions — does this tree describe this program, and
+  does this certificate bound it — and only the second one needs a certificate.
+  Gating both on the analyzer succeeding meant a compiler that emitted a bad
+  tree went unreported for exactly the patterns the analyzer gives up on, which
+  is the worst possible correlation: the shapes hardest to price are the ones
+  most likely to be compiled wrongly. When one function answers two questions,
+  look at what each of them actually depends on before deciding when to call it.
+- Split the checker in two and moved the easy half. The topology rules were the
+  ones that read as generic, so those went into `cert_shape` and the rules that
+  say what a region kind means stayed behind in the pricing walk — where they
+  were still gated on the analyzer having produced something. The fix looked
+  like the fix and closed about a third of the hole. When extracting a concern,
+  the test is not "does this code look like the concern" but "is anything left
+  behind that has the same dependencies".
+- Wrote the invariant as "either CrOk or the verdict", which a function that
+  returned CrOk for everything satisfies. An invariant with an escape hatch for
+  the failure mode is not an invariant; the corpus records which half answered
+  each case, and the relation that decides it is checked where the file is
+  written.
+- Derived which half of the checker answered a case from the name of the
+  verdict, when one of the names means two things: `CrShape` is a program the
+  checker cannot read, and it is also a certificate field naming no variant of
+  its enum. The derivation was right for every case that exists and would have
+  been wrong for the first one that did not. A classification computed from a
+  value is only as good as that value's injectivity, and an enum whose
+  description contains the word "or" is where to look first.

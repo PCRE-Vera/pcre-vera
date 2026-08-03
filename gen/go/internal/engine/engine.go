@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   85a766de476e7d708023a93d347e4db5a9d6634f4d41d4630395e38a8c7a5775
+//   96eea5f450b4b9d8cf1005ceccc4410cef0b66071639d896dedeee234fbcbf11
 //
 // The wave 1 pcre-truste engine as printed from its TIR artifact: the
 // pattern parser, the bytecode compiler, and the backtracking matcher. The
@@ -18,7 +18,7 @@ package engine
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact this package was printed
 // from.
-const ArtifactSHA256 = "85a766de476e7d708023a93d347e4db5a9d6634f4d41d4630395e38a8c7a5775"
+const ArtifactSHA256 = "96eea5f450b4b9d8cf1005ceccc4410cef0b66071639d896dedeee234fbcbf11"
 
 // Tir_Trap is what a checked operation panics with, per TIR-SPEC.md section 12.
 type Tir_Trap struct {
@@ -205,6 +205,13 @@ func tir_reserve[T any](s *[]T, capacity uint32, limit int) {
 		*s = tir_grow(*s, int(capacity))
 	}
 }
+
+type Ar int32
+
+const ArShape Ar = 0
+const ArAmbiguous Ar = 1
+const ArOverflow Ar = 2
+const ArOk Ar = 3
 
 type Bk int32
 
@@ -444,6 +451,8 @@ type Re struct {
 	bsr uint32
 	hascrlf uint32
 	crfirst uint32
+	hascert bool
+	cert Cert
 }
 
 type Ref struct {
@@ -880,11 +889,11 @@ func bound_pow(base uint64, exp uint64) Bound {
 	}
 	var out Bound = (Bound{ok: true, value: uint64(1)})
 	var i uint64 = uint64(0)
-	var step Bound
+	var one Bound
 	for ((i < exp) && out.ok) {
 		tir_t1 := bound_mul(out, (Bound{ok: true, value: base}))
-		step = tir_t1
-		out = step
+		one = tir_t1
+		out = one
 		i = tir_cadd(i, uint64(1))
 	}
 	return out
@@ -943,6 +952,94 @@ func cert_bound(cert Cert, kind Bk, n uint64) Bound {
 	return out
 }
 
+func cert_build(re Re, cert *Cert) Ar {
+	var over bool = false
+	var regions []Region = re.regions
+	var total uint32 = uint32(len(regions))
+	if (total == uint32(0)) {
+		return ArShape
+	}
+	var prices []Price
+	var kids []uint32
+	var sibs []uint32
+	_ = sibs
+	var stop uint32 = uint32(len(re.code))
+	var i uint32 = uint32(0)
+	for (i < total) {
+		var tmp1 Region = regions[i]
+		if ((tmp1.lo > tmp1.hi) || (tmp1.hi > stop)) {
+			return ArShape
+		}
+		if ((i > uint32(0)) && (tmp1.parent >= i)) {
+			return ArShape
+		}
+		tir_push(&prices, 8208, (Price{work: (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), outs: (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), stack: (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), trail: (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})}))
+		i = (i + uint32(1))
+	}
+	region_kids(regions, &kids, &sibs)
+	i = total
+	for (i > uint32(0)) {
+		i = (i - uint32(1))
+		var tmp2 Region = regions[i]
+		var tmp3 Acc
+		var tmp4 uint32 = kids[i]
+		var tmp5 Ar = ArShape
+		switch tmp2.kind {
+		case RkRoot:
+			tmp3.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tir_t1 := price_span(re.code, regions, &prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
+			tmp5 = tir_t1
+		case RkGroup:
+			tmp3.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tir_t2 := price_span(re.code, regions, &prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
+			tmp5 = tir_t2
+		case RkBranch:
+			tmp3.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tir_t3 := price_span(re.code, regions, &prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
+			tmp5 = tir_t3
+		case RkAlt:
+			tir_t4 := price_alt(&prices, &sibs, tmp4, &tmp3, &over)
+			tmp5 = tir_t4
+		case RkRepeat:
+			tir_t5 := price_repeat(re.code, re.reps, regions, &prices, &sibs, i, tmp4, &tmp3, &over)
+			tmp5 = tir_t5
+		}
+		if (tmp5 != ArOk) {
+			return tmp5
+		}
+		if over {
+			return ArOverflow
+		}
+		tir_t6 := i
+		if tir_t6 >= uint32(len(prices)) {
+			tir_oob(tir_t6, uint32(len(prices)))
+		}
+		prices[tir_t6] = (Price{work: tmp3.work, outs: tmp3.flow, stack: tmp3.stack, trail: tmp3.trail})
+	}
+	var root Price = prices[uint32(0)]
+	price_call(re, root, cert, &over)
+	if over {
+		return ArOverflow
+	}
+	(*cert).config = CfgBacktrack
+	(*cert).complexity = CcNotProvenLinear
+	if (((((*cert).cost.base == uint64(1)) && ((*cert).cost.c2 == uint64(0))) && ((*cert).cost.c3 == uint64(0))) && ((*cert).cost.c4 == uint64(0))) {
+		(*cert).complexity = CcLinear
+	}
+	(*cert).prices = prices
+	prices = nil
+	return ArOk
+}
+
 func cert_check(re Re, config Cfg, cert Cert) Cr {
 	var over bool = false
 	if (config != CfgBacktrack) {
@@ -951,15 +1048,165 @@ func cert_check(re Re, config Cfg, cert Cert) Cr {
 	if (cert.config != config) {
 		return CrConfig
 	}
+	var shape Cr = CrOk
+	tir_t1 := cert_shape(re)
+	shape = tir_t1
+	if (shape != CrOk) {
+		return shape
+	}
 	var code []Inst = re.code
 	var regions []Region = re.regions
 	var prices []Price = cert.prices
 	var total uint32 = uint32(len(regions))
-	if (total == uint32(0)) {
-		return CrNoRegions
-	}
 	if (total != uint32(len(prices))) {
 		return CrPrices
+	}
+	if (cert.cost.base == uint64(0)) {
+		return CrBase
+	}
+	if (cert.stack.base == uint64(0)) {
+		return CrBase
+	}
+	if (cert.mem.base == uint64(0)) {
+		return CrBase
+	}
+	if ((cert.complexity != CcNotProvenLinear) && (cert.complexity != CcLinear)) {
+		return CrShape
+	}
+	if (cert.complexity == CcLinear) {
+		if (!((((cert.cost.base == uint64(1)) && (cert.cost.c2 == uint64(0))) && (cert.cost.c3 == uint64(0))) && (cert.cost.c4 == uint64(0)))) {
+			return CrNotLinear
+		}
+	}
+	var i uint32 = uint32(0)
+	for (i < total) {
+		var tmp1 Price = prices[i]
+		if (tmp1.work.base == uint64(0)) {
+			return CrBase
+		}
+		if (tmp1.outs.base == uint64(0)) {
+			return CrBase
+		}
+		if (tmp1.stack.base == uint64(0)) {
+			return CrBase
+		}
+		if (tmp1.trail.base == uint64(0)) {
+			return CrBase
+		}
+		i = (i + uint32(1))
+	}
+	var kids []uint32
+	var sibs []uint32
+	_ = sibs
+	region_kids(regions, &kids, &sibs)
+	i = uint32(0)
+	for (i < total) {
+		var tmp2 Region = regions[i]
+		var tmp3 Acc
+		var tmp4 uint32 = kids[i]
+		var tmp5 Cr = CrShape
+		switch tmp2.kind {
+		case RkRoot:
+			tmp3.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tir_t2 := scan_span(code, regions, prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
+			tmp5 = tir_t2
+		case RkGroup:
+			tmp3.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tir_t3 := scan_span(code, regions, prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
+			tmp5 = tir_t3
+		case RkBranch:
+			tmp3.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tir_t4 := scan_span(code, regions, prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
+			tmp5 = tir_t4
+		case RkAlt:
+			tir_t5 := scan_alt(prices, &sibs, tmp4, &tmp3, &over)
+			tmp5 = tir_t5
+		case RkRepeat:
+			tir_t6 := scan_repeat(code, re.reps, regions, prices, &sibs, i, tmp4, &tmp3, &over)
+			tmp5 = tir_t6
+		}
+		if (tmp5 != CrOk) {
+			return tmp5
+		}
+		if over {
+			return CrOverflow
+		}
+		var tmp6 bool = false
+		var tmp7 Price = prices[i]
+		tir_t7 := poly_ge(tmp7.work, tmp3.work)
+		tmp6 = tir_t7
+		if (!tmp6) {
+			return CrRegionWork
+		}
+		tir_t8 := poly_ge(tmp7.outs, tmp3.flow)
+		tmp6 = tir_t8
+		if (!tmp6) {
+			return CrRegionOuts
+		}
+		tir_t9 := poly_ge(tmp7.stack, tmp3.stack)
+		tmp6 = tir_t9
+		if (!tmp6) {
+			return CrRegionStack
+		}
+		tir_t10 := poly_ge(tmp7.trail, tmp3.trail)
+		tmp6 = tir_t10
+		if (!tmp6) {
+			return CrRegionTrail
+		}
+		i = (i + uint32(1))
+	}
+	var whole Price = prices[uint32(0)]
+	var charged Cr = CrOk
+	tir_t11 := charge_call(re, cert, whole, &over)
+	charged = tir_t11
+	if (charged != CrOk) {
+		return charged
+	}
+	return CrOk
+}
+
+func cert_install(re Re, cert *Cert, has *bool) Cr {
+	(*has) = false
+	var shape Cr = CrOk
+	tir_t1 := cert_shape(re)
+	shape = tir_t1
+	if (shape != CrOk) {
+		return shape
+	}
+	var found Ar = ArShape
+	tir_t2 := cert_build(re, cert)
+	found = tir_t2
+	if (found == ArShape) {
+		return CrShape
+	}
+	if (found != ArOk) {
+		return CrOk
+	}
+	var verdict Cr = CrOk
+	tir_t3 := cert_check(re, CfgBacktrack, (*cert))
+	verdict = tir_t3
+	if (verdict != CrOk) {
+		return verdict
+	}
+	(*has) = true
+	return CrOk
+}
+
+func cert_shape(re Re) Cr {
+	var code []Inst = re.code
+	var regions []Region = re.regions
+	var total uint32 = uint32(len(regions))
+	if (total == uint32(0)) {
+		return CrNoRegions
 	}
 	var root Region = regions[uint32(0)]
 	if (root.kind != RkRoot) {
@@ -972,14 +1219,9 @@ func cert_check(re Re, config Cfg, cert Cert) Cr {
 		return CrRootRange
 	}
 	var ends []uint32
-	var kids []uint32
-	var sibs []uint32
-	_ = sibs
 	var i uint32 = uint32(0)
 	for (i < total) {
 		tir_push(&ends, 8208, regions[i].lo)
-		tir_push(&kids, 8208, uint32(4294967295))
-		tir_push(&sibs, 8208, uint32(4294967295))
 		i = (i + uint32(1))
 	}
 	i = uint32(1)
@@ -1012,127 +1254,36 @@ func cert_check(re Re, config Cfg, cert Cert) Cr {
 		ends[tir_t1] = tmp1.hi
 		i = (i + uint32(1))
 	}
-	if (cert.cost.base == uint64(0)) {
-		return CrBase
-	}
-	if (cert.stack.base == uint64(0)) {
-		return CrBase
-	}
-	if (cert.mem.base == uint64(0)) {
-		return CrBase
-	}
-	if ((cert.complexity != CcNotProvenLinear) && (cert.complexity != CcLinear)) {
-		return CrShape
-	}
-	if (cert.complexity == CcLinear) {
-		var tmp4 Poly = cert.cost
-		if ((((tmp4.base != uint64(1)) || (tmp4.c2 != uint64(0))) || (tmp4.c3 != uint64(0))) || (tmp4.c4 != uint64(0))) {
-			return CrNotLinear
-		}
-	}
+	var kids []uint32
+	var sibs []uint32
+	_ = sibs
+	region_kids(regions, &kids, &sibs)
 	i = uint32(0)
 	for (i < total) {
-		var tmp5 Price = prices[i]
-		if (tmp5.work.base == uint64(0)) {
-			return CrBase
-		}
-		if (tmp5.outs.base == uint64(0)) {
-			return CrBase
-		}
-		if (tmp5.stack.base == uint64(0)) {
-			return CrBase
-		}
-		if (tmp5.trail.base == uint64(0)) {
-			return CrBase
-		}
-		i = (i + uint32(1))
-	}
-	i = total
-	for (i > uint32(1)) {
-		i = (i - uint32(1))
-		var tmp6 uint32 = regions[i].parent
-		tir_t2 := i
-		if tir_t2 >= uint32(len(sibs)) {
-			tir_oob(tir_t2, uint32(len(sibs)))
-		}
-		sibs[tir_t2] = kids[tmp6]
-		tir_t3 := tmp6
-		if tir_t3 >= uint32(len(kids)) {
-			tir_oob(tir_t3, uint32(len(kids)))
-		}
-		kids[tir_t3] = i
-	}
-	i = uint32(0)
-	for (i < total) {
-		var tmp7 Region = regions[i]
-		var tmp8 Acc
-		var tmp9 uint32 = kids[i]
-		var tmp10 Cr = CrShape
-		switch tmp7.kind {
+		var tmp4 Region = regions[i]
+		var tmp5 uint32 = kids[i]
+		var tmp6 Cr = CrShape
+		switch tmp4.kind {
 		case RkRoot:
-			tmp8.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp8.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp8.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp8.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tir_t4 := scan_span(code, regions, prices, &sibs, tmp7.lo, tmp7.hi, tmp9, &tmp8, &over)
-			tmp10 = tir_t4
+			tir_t2 := shape_span(code, regions, &sibs, tmp4.lo, tmp4.hi, tmp5)
+			tmp6 = tir_t2
 		case RkGroup:
-			tmp8.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp8.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp8.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp8.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tir_t5 := scan_span(code, regions, prices, &sibs, tmp7.lo, tmp7.hi, tmp9, &tmp8, &over)
-			tmp10 = tir_t5
+			tir_t3 := shape_span(code, regions, &sibs, tmp4.lo, tmp4.hi, tmp5)
+			tmp6 = tir_t3
 		case RkBranch:
-			tmp8.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp8.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp8.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp8.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tir_t6 := scan_span(code, regions, prices, &sibs, tmp7.lo, tmp7.hi, tmp9, &tmp8, &over)
-			tmp10 = tir_t6
+			tir_t4 := shape_span(code, regions, &sibs, tmp4.lo, tmp4.hi, tmp5)
+			tmp6 = tir_t4
 		case RkAlt:
-			tir_t7 := scan_alt(code, regions, prices, &sibs, i, tmp9, &tmp8, &over)
-			tmp10 = tir_t7
+			tir_t5 := shape_alt(code, regions, &sibs, i, tmp5)
+			tmp6 = tir_t5
 		case RkRepeat:
-			tir_t8 := scan_repeat(code, re.reps, regions, prices, &sibs, i, tmp9, &tmp8, &over)
-			tmp10 = tir_t8
+			tir_t6 := shape_repeat(code, re.reps, regions, &sibs, i, tmp5)
+			tmp6 = tir_t6
 		}
-		if (tmp10 != CrOk) {
-			return tmp10
-		}
-		if over {
-			return CrOverflow
-		}
-		var tmp11 bool = false
-		var tmp12 Price = prices[i]
-		tir_t9 := poly_ge(tmp12.work, tmp8.work)
-		tmp11 = tir_t9
-		if (!tmp11) {
-			return CrRegionWork
-		}
-		tir_t10 := poly_ge(tmp12.outs, tmp8.flow)
-		tmp11 = tir_t10
-		if (!tmp11) {
-			return CrRegionOuts
-		}
-		tir_t11 := poly_ge(tmp12.stack, tmp8.stack)
-		tmp11 = tir_t11
-		if (!tmp11) {
-			return CrRegionStack
-		}
-		tir_t12 := poly_ge(tmp12.trail, tmp8.trail)
-		tmp11 = tir_t12
-		if (!tmp11) {
-			return CrRegionTrail
+		if (tmp6 != CrOk) {
+			return tmp6
 		}
 		i = (i + uint32(1))
-	}
-	var whole Price = prices[uint32(0)]
-	var charged Cr = CrOk
-	tir_t13 := charge_call(re, cert, whole, &over)
-	charged = tir_t13
-	if (charged != CrOk) {
-		return charged
 	}
 	return CrOk
 }
@@ -1621,6 +1772,17 @@ func compile(pat []byte, popts uint32, nltype uint32, bsr uint32, out *Out) {
 	w.names = nil
 	(*out).re.nameents = w.nameents
 	w.nameents = nil
+	var cand Cert
+	var tmp4 bool = false
+	var tmp5 Cr = CrOk
+	tir_t1 := cert_install((*out).re, &cand, &tmp4)
+	tmp5 = tir_t1
+	if (tmp5 != CrOk) {
+		(*out).err = uint32(1003)
+		return
+	}
+	(*out).re.cert = cand
+	(*out).re.hascert = tmp4
 }
 
 func ct(c uint8, bit uint8) bool {
@@ -3129,113 +3291,141 @@ func poly_mul(a Poly, b Poly, over *bool) Poly {
 	tir_t1 := sat_mul(a.base, b.base, over)
 	base = tir_t1
 	out.base = base
-	var tmp1 uint64
-	tir_t2 := sat_mul(a.c0, b.c0, over)
-	tmp1 = tir_t2
-	var tmp2 uint64
-	tir_t3 := sat_add(out.c0, tmp1, over)
-	tmp2 = tir_t3
-	out.c0 = tmp2
-	var tmp3 uint64
-	tir_t4 := sat_mul(a.c0, b.c1, over)
-	tmp3 = tir_t4
-	var tmp4 uint64
-	tir_t5 := sat_add(out.c1, tmp3, over)
-	tmp4 = tir_t5
-	out.c1 = tmp4
-	var tmp5 uint64
-	tir_t6 := sat_mul(a.c0, b.c2, over)
-	tmp5 = tir_t6
-	var tmp6 uint64
-	tir_t7 := sat_add(out.c2, tmp5, over)
-	tmp6 = tir_t7
-	out.c2 = tmp6
-	var tmp7 uint64
-	tir_t8 := sat_mul(a.c0, b.c3, over)
-	tmp7 = tir_t8
-	var tmp8 uint64
-	tir_t9 := sat_add(out.c3, tmp7, over)
-	tmp8 = tir_t9
-	out.c3 = tmp8
-	var tmp9 uint64
-	tir_t10 := sat_mul(a.c0, b.c4, over)
-	tmp9 = tir_t10
-	var tmp10 uint64
-	tir_t11 := sat_add(out.c4, tmp9, over)
-	tmp10 = tir_t11
-	out.c4 = tmp10
-	var tmp11 uint64
-	tir_t12 := sat_mul(a.c1, b.c0, over)
-	tmp11 = tir_t12
-	var tmp12 uint64
-	tir_t13 := sat_add(out.c1, tmp11, over)
-	tmp12 = tir_t13
-	out.c1 = tmp12
-	var tmp13 uint64
-	tir_t14 := sat_mul(a.c1, b.c1, over)
-	tmp13 = tir_t14
-	var tmp14 uint64
-	tir_t15 := sat_add(out.c2, tmp13, over)
-	tmp14 = tir_t15
-	out.c2 = tmp14
-	var tmp15 uint64
-	tir_t16 := sat_mul(a.c1, b.c2, over)
-	tmp15 = tir_t16
-	var tmp16 uint64
-	tir_t17 := sat_add(out.c3, tmp15, over)
-	tmp16 = tir_t17
-	out.c3 = tmp16
-	var tmp17 uint64
-	tir_t18 := sat_mul(a.c1, b.c3, over)
-	tmp17 = tir_t18
-	var tmp18 uint64
-	tir_t19 := sat_add(out.c4, tmp17, over)
-	tmp18 = tir_t19
-	out.c4 = tmp18
+	if ((a.c0 != uint64(0)) && (b.c0 != uint64(0))) {
+		var tmp1 uint64
+		tir_t2 := sat_mul(a.c0, b.c0, over)
+		tmp1 = tir_t2
+		var tmp2 uint64
+		tir_t3 := sat_add(out.c0, tmp1, over)
+		tmp2 = tir_t3
+		out.c0 = tmp2
+	}
+	if ((a.c0 != uint64(0)) && (b.c1 != uint64(0))) {
+		var tmp3 uint64
+		tir_t4 := sat_mul(a.c0, b.c1, over)
+		tmp3 = tir_t4
+		var tmp4 uint64
+		tir_t5 := sat_add(out.c1, tmp3, over)
+		tmp4 = tir_t5
+		out.c1 = tmp4
+	}
+	if ((a.c0 != uint64(0)) && (b.c2 != uint64(0))) {
+		var tmp5 uint64
+		tir_t6 := sat_mul(a.c0, b.c2, over)
+		tmp5 = tir_t6
+		var tmp6 uint64
+		tir_t7 := sat_add(out.c2, tmp5, over)
+		tmp6 = tir_t7
+		out.c2 = tmp6
+	}
+	if ((a.c0 != uint64(0)) && (b.c3 != uint64(0))) {
+		var tmp7 uint64
+		tir_t8 := sat_mul(a.c0, b.c3, over)
+		tmp7 = tir_t8
+		var tmp8 uint64
+		tir_t9 := sat_add(out.c3, tmp7, over)
+		tmp8 = tir_t9
+		out.c3 = tmp8
+	}
+	if ((a.c0 != uint64(0)) && (b.c4 != uint64(0))) {
+		var tmp9 uint64
+		tir_t10 := sat_mul(a.c0, b.c4, over)
+		tmp9 = tir_t10
+		var tmp10 uint64
+		tir_t11 := sat_add(out.c4, tmp9, over)
+		tmp10 = tir_t11
+		out.c4 = tmp10
+	}
+	if ((a.c1 != uint64(0)) && (b.c0 != uint64(0))) {
+		var tmp11 uint64
+		tir_t12 := sat_mul(a.c1, b.c0, over)
+		tmp11 = tir_t12
+		var tmp12 uint64
+		tir_t13 := sat_add(out.c1, tmp11, over)
+		tmp12 = tir_t13
+		out.c1 = tmp12
+	}
+	if ((a.c1 != uint64(0)) && (b.c1 != uint64(0))) {
+		var tmp13 uint64
+		tir_t14 := sat_mul(a.c1, b.c1, over)
+		tmp13 = tir_t14
+		var tmp14 uint64
+		tir_t15 := sat_add(out.c2, tmp13, over)
+		tmp14 = tir_t15
+		out.c2 = tmp14
+	}
+	if ((a.c1 != uint64(0)) && (b.c2 != uint64(0))) {
+		var tmp15 uint64
+		tir_t16 := sat_mul(a.c1, b.c2, over)
+		tmp15 = tir_t16
+		var tmp16 uint64
+		tir_t17 := sat_add(out.c3, tmp15, over)
+		tmp16 = tir_t17
+		out.c3 = tmp16
+	}
+	if ((a.c1 != uint64(0)) && (b.c3 != uint64(0))) {
+		var tmp17 uint64
+		tir_t18 := sat_mul(a.c1, b.c3, over)
+		tmp17 = tir_t18
+		var tmp18 uint64
+		tir_t19 := sat_add(out.c4, tmp17, over)
+		tmp18 = tir_t19
+		out.c4 = tmp18
+	}
 	if ((a.c1 != uint64(0)) && (b.c4 != uint64(0))) {
 		(*over) = true
 	}
-	var tmp19 uint64
-	tir_t20 := sat_mul(a.c2, b.c0, over)
-	tmp19 = tir_t20
-	var tmp20 uint64
-	tir_t21 := sat_add(out.c2, tmp19, over)
-	tmp20 = tir_t21
-	out.c2 = tmp20
-	var tmp21 uint64
-	tir_t22 := sat_mul(a.c2, b.c1, over)
-	tmp21 = tir_t22
-	var tmp22 uint64
-	tir_t23 := sat_add(out.c3, tmp21, over)
-	tmp22 = tir_t23
-	out.c3 = tmp22
-	var tmp23 uint64
-	tir_t24 := sat_mul(a.c2, b.c2, over)
-	tmp23 = tir_t24
-	var tmp24 uint64
-	tir_t25 := sat_add(out.c4, tmp23, over)
-	tmp24 = tir_t25
-	out.c4 = tmp24
+	if ((a.c2 != uint64(0)) && (b.c0 != uint64(0))) {
+		var tmp19 uint64
+		tir_t20 := sat_mul(a.c2, b.c0, over)
+		tmp19 = tir_t20
+		var tmp20 uint64
+		tir_t21 := sat_add(out.c2, tmp19, over)
+		tmp20 = tir_t21
+		out.c2 = tmp20
+	}
+	if ((a.c2 != uint64(0)) && (b.c1 != uint64(0))) {
+		var tmp21 uint64
+		tir_t22 := sat_mul(a.c2, b.c1, over)
+		tmp21 = tir_t22
+		var tmp22 uint64
+		tir_t23 := sat_add(out.c3, tmp21, over)
+		tmp22 = tir_t23
+		out.c3 = tmp22
+	}
+	if ((a.c2 != uint64(0)) && (b.c2 != uint64(0))) {
+		var tmp23 uint64
+		tir_t24 := sat_mul(a.c2, b.c2, over)
+		tmp23 = tir_t24
+		var tmp24 uint64
+		tir_t25 := sat_add(out.c4, tmp23, over)
+		tmp24 = tir_t25
+		out.c4 = tmp24
+	}
 	if ((a.c2 != uint64(0)) && (b.c3 != uint64(0))) {
 		(*over) = true
 	}
 	if ((a.c2 != uint64(0)) && (b.c4 != uint64(0))) {
 		(*over) = true
 	}
-	var tmp25 uint64
-	tir_t26 := sat_mul(a.c3, b.c0, over)
-	tmp25 = tir_t26
-	var tmp26 uint64
-	tir_t27 := sat_add(out.c3, tmp25, over)
-	tmp26 = tir_t27
-	out.c3 = tmp26
-	var tmp27 uint64
-	tir_t28 := sat_mul(a.c3, b.c1, over)
-	tmp27 = tir_t28
-	var tmp28 uint64
-	tir_t29 := sat_add(out.c4, tmp27, over)
-	tmp28 = tir_t29
-	out.c4 = tmp28
+	if ((a.c3 != uint64(0)) && (b.c0 != uint64(0))) {
+		var tmp25 uint64
+		tir_t26 := sat_mul(a.c3, b.c0, over)
+		tmp25 = tir_t26
+		var tmp26 uint64
+		tir_t27 := sat_add(out.c3, tmp25, over)
+		tmp26 = tir_t27
+		out.c3 = tmp26
+	}
+	if ((a.c3 != uint64(0)) && (b.c1 != uint64(0))) {
+		var tmp27 uint64
+		tir_t28 := sat_mul(a.c3, b.c1, over)
+		tmp27 = tir_t28
+		var tmp28 uint64
+		tir_t29 := sat_add(out.c4, tmp27, over)
+		tmp28 = tir_t29
+		out.c4 = tmp28
+	}
 	if ((a.c3 != uint64(0)) && (b.c2 != uint64(0))) {
 		(*over) = true
 	}
@@ -3245,13 +3435,15 @@ func poly_mul(a Poly, b Poly, over *bool) Poly {
 	if ((a.c3 != uint64(0)) && (b.c4 != uint64(0))) {
 		(*over) = true
 	}
-	var tmp29 uint64
-	tir_t30 := sat_mul(a.c4, b.c0, over)
-	tmp29 = tir_t30
-	var tmp30 uint64
-	tir_t31 := sat_add(out.c4, tmp29, over)
-	tmp30 = tir_t31
-	out.c4 = tmp30
+	if ((a.c4 != uint64(0)) && (b.c0 != uint64(0))) {
+		var tmp29 uint64
+		tir_t30 := sat_mul(a.c4, b.c0, over)
+		tmp29 = tir_t30
+		var tmp30 uint64
+		tir_t31 := sat_add(out.c4, tmp29, over)
+		tmp30 = tir_t31
+		out.c4 = tmp30
+	}
 	if ((a.c4 != uint64(0)) && (b.c1 != uint64(0))) {
 		(*over) = true
 	}
@@ -3281,14 +3473,14 @@ func poly_value(p Poly, n uint64) Bound {
 	if (((((p.c0 == uint64(0)) && (p.c1 == uint64(0))) && (p.c2 == uint64(0))) && (p.c3 == uint64(0))) && (p.c4 == uint64(0))) {
 		return (Bound{ok: true, value: uint64(0)})
 	}
-	var step Bound
+	var rise Bound
 	tir_t1 := bound_add((Bound{ok: true, value: n}), (Bound{ok: true, value: uint64(1)}))
-	step = tir_t1
+	rise = tir_t1
 	var power Bound = (Bound{ok: true, value: uint64(1)})
 	var total Bound = (Bound{ok: true, value: p.c0})
 	if ((((p.c1 != uint64(0)) || (p.c2 != uint64(0))) || (p.c3 != uint64(0))) || (p.c4 != uint64(0))) {
 		var tmp1 Bound
-		tir_t2 := bound_mul(power, step)
+		tir_t2 := bound_mul(power, rise)
 		tmp1 = tir_t2
 		power = tmp1
 		if (p.c1 != uint64(0)) {
@@ -3303,7 +3495,7 @@ func poly_value(p Poly, n uint64) Bound {
 	}
 	if (((p.c2 != uint64(0)) || (p.c3 != uint64(0))) || (p.c4 != uint64(0))) {
 		var tmp4 Bound
-		tir_t5 := bound_mul(power, step)
+		tir_t5 := bound_mul(power, rise)
 		tmp4 = tir_t5
 		power = tmp4
 		if (p.c2 != uint64(0)) {
@@ -3318,7 +3510,7 @@ func poly_value(p Poly, n uint64) Bound {
 	}
 	if ((p.c3 != uint64(0)) || (p.c4 != uint64(0))) {
 		var tmp7 Bound
-		tir_t8 := bound_mul(power, step)
+		tir_t8 := bound_mul(power, rise)
 		tmp7 = tir_t8
 		power = tmp7
 		if (p.c3 != uint64(0)) {
@@ -3333,7 +3525,7 @@ func poly_value(p Poly, n uint64) Bound {
 	}
 	if (p.c4 != uint64(0)) {
 		var tmp10 Bound
-		tir_t11 := bound_mul(power, step)
+		tir_t11 := bound_mul(power, rise)
 		tmp10 = tir_t11
 		power = tmp10
 		if (p.c4 != uint64(0)) {
@@ -3425,6 +3617,347 @@ func posix_set(pat []byte, off uint32, nlen uint32) uint32 {
 		tmp1 = ((tmp1 + uint32(2)) + tmp3)
 	}
 	return uint32(255)
+}
+
+func price_alt(prices *[]Price, sibs *[]uint32, first uint32, acc *Acc, over *bool) Ar {
+	var total uint32 = uint32(len((*prices)))
+	var c uint32 = first
+	var k uint32 = uint32(0)
+	(*acc).work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*acc).stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*acc).trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*acc).flow = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	for ((k < total) && (c != uint32(4294967295))) {
+		var tmp1 Price = (*prices)[c]
+		var tmp2 uint32 = (*sibs)[c]
+		if (tmp2 != uint32(4294967295)) {
+			var tmp3 Poly
+			tir_t1 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp1.outs, over)
+			tmp3 = tir_t1
+			var tmp4 Poly
+			tir_t2 := poly_add((*acc).work, tmp3, over)
+			tmp4 = tir_t2
+			(*acc).work = tmp4
+			var tmp5 Poly
+			tir_t3 := poly_add((*acc).stack, (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+			tmp5 = tir_t3
+			(*acc).stack = tmp5
+		}
+		var tmp6 Poly
+		tir_t4 := poly_add((*acc).work, tmp1.work, over)
+		tmp6 = tir_t4
+		(*acc).work = tmp6
+		var tmp7 Poly
+		tir_t5 := poly_add((*acc).stack, tmp1.stack, over)
+		tmp7 = tir_t5
+		(*acc).stack = tmp7
+		var tmp8 Poly
+		tir_t6 := poly_add((*acc).trail, tmp1.trail, over)
+		tmp8 = tir_t6
+		(*acc).trail = tmp8
+		var tmp9 Poly
+		tir_t7 := poly_add((*acc).flow, tmp1.outs, over)
+		tmp9 = tir_t7
+		(*acc).flow = tmp9
+		c = tmp2
+		k = (k + uint32(1))
+	}
+	return ArOk
+}
+
+func price_call(re Re, whole Price, cert *Cert, over *bool) {
+	var novec uint64 = tir_cmul(tir_cadd(uint64(re.ncap), uint64(1)), uint64(2))
+	var setup uint64 = tir_cmul(tir_cadd(uint64(re.nregs), novec), uint64(4))
+	var deliver uint64 = tir_cmul(novec, uint64(4))
+	var reset uint64 = tir_cmul(uint64(re.nregs), uint64(4))
+	var capacity Poly
+	var scratch Poly = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	var tmp1 Poly = whole.stack
+	capacity = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	if (!(((((tmp1.c0 == uint64(0)) && (tmp1.c1 == uint64(0))) && (tmp1.c2 == uint64(0))) && (tmp1.c3 == uint64(0))) && (tmp1.c4 == uint64(0)))) {
+		var tmp2 Poly
+		tir_t1 := poly_mul(tmp1, (Poly{base: uint64(1), c0: uint64(2), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+		tmp2 = tir_t1
+		var tmp3 Poly
+		tir_t2 := poly_add((Poly{base: uint64(1), c0: uint64(4), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp2, over)
+		tmp3 = tir_t2
+		capacity = tmp3
+	}
+	var tmp4 Poly
+	tir_t3 := poly_mul(capacity, (Poly{base: uint64(1), c0: uint64(12), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+	tmp4 = tir_t3
+	var tmp5 Poly
+	tir_t4 := poly_add(scratch, tmp4, over)
+	tmp5 = tir_t4
+	scratch = tmp5
+	var tmp6 Poly = whole.trail
+	capacity = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	if (!(((((tmp6.c0 == uint64(0)) && (tmp6.c1 == uint64(0))) && (tmp6.c2 == uint64(0))) && (tmp6.c3 == uint64(0))) && (tmp6.c4 == uint64(0)))) {
+		var tmp7 Poly
+		tir_t5 := poly_mul(tmp6, (Poly{base: uint64(1), c0: uint64(2), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+		tmp7 = tir_t5
+		var tmp8 Poly
+		tir_t6 := poly_add((Poly{base: uint64(1), c0: uint64(4), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp7, over)
+		tmp8 = tir_t6
+		capacity = tmp8
+	}
+	var tmp9 Poly
+	tir_t7 := poly_mul(capacity, (Poly{base: uint64(1), c0: uint64(8), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+	tmp9 = tir_t7
+	var tmp10 Poly
+	tir_t8 := poly_add(scratch, tmp9, over)
+	tmp10 = tir_t8
+	scratch = tmp10
+	var tmp11 Poly
+	tir_t9 := poly_mul(whole.trail, (Poly{base: uint64(1), c0: uint64(4), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+	tmp11 = tir_t9
+	var tmp12 Poly
+	tir_t10 := poly_add(whole.work, tmp11, over)
+	tmp12 = tir_t10
+	var tmp13 Poly
+	tir_t11 := poly_add((Poly{base: uint64(1), c0: reset, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp12, over)
+	tmp13 = tir_t11
+	var tmp14 Poly
+	tir_t12 := poly_mul(tmp13, (Poly{base: uint64(1), c0: uint64(0), c1: uint64(1), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+	tmp14 = tir_t12
+	var tmp15 Poly
+	tir_t13 := poly_mul(scratch, (Poly{base: uint64(1), c0: uint64(3), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+	tmp15 = tir_t13
+	var tmp16 Poly
+	tir_t14 := poly_add(tmp14, tmp15, over)
+	tmp16 = tir_t14
+	var tmp17 Poly
+	tir_t15 := poly_add((Poly{base: uint64(1), c0: tir_cadd(setup, deliver), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp16, over)
+	tmp17 = tir_t15
+	(*cert).cost = tmp17
+	(*cert).stack = whole.stack
+	var tmp18 Poly
+	tir_t16 := poly_mul(scratch, (Poly{base: uint64(1), c0: uint64(2), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+	tmp18 = tir_t16
+	var tmp19 Poly
+	tir_t17 := poly_add((Poly{base: uint64(1), c0: setup, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp18, over)
+	tmp19 = tir_t17
+	(*cert).mem = tmp19
+}
+
+func price_repeat(code []Inst, reps []Rep, regions []Region, prices *[]Price, sibs *[]uint32, at uint32, first uint32, acc *Acc, over *bool) Ar {
+	var here Region = regions[at]
+	var lo uint32 = here.lo
+	var hi uint32 = here.hi
+	if (hi <= lo) {
+		return ArShape
+	}
+	var verdict Ar = ArOk
+	var head Inst = code[lo]
+	(*acc).work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*acc).stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*acc).trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*acc).flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	if (head.op == OpSplit) {
+		tir_t1 := price_span(code, regions, prices, sibs, (lo + uint32(1)), hi, first, acc, over)
+		verdict = tir_t1
+		if (verdict != ArOk) {
+			return verdict
+		}
+		var tmp1 Poly
+		tir_t2 := poly_add((*acc).work, (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+		tmp1 = tir_t2
+		(*acc).work = tmp1
+		var tmp2 Poly
+		tir_t3 := poly_add((*acc).stack, (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+		tmp2 = tir_t3
+		(*acc).stack = tmp2
+		var tmp3 Poly
+		tir_t4 := poly_add((*acc).flow, (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
+		tmp3 = tir_t4
+		(*acc).flow = tmp3
+		return ArOk
+	}
+	if (head.op != OpRepZero) {
+		return ArShape
+	}
+	if ((hi - lo) < uint32(4)) {
+		return ArShape
+	}
+	var which uint32 = head.arg
+	if (which >= uint32(len(reps))) {
+		return ArShape
+	}
+	var rep Rep = reps[which]
+	tir_t5 := price_span(code, regions, prices, sibs, (lo + uint32(3)), (hi - uint32(1)), first, acc, over)
+	verdict = tir_t5
+	if (verdict != ArOk) {
+		return verdict
+	}
+	var branching Poly = (*acc).flow
+	if (!(((((branching.base == uint64(1)) && (branching.c1 == uint64(0))) && (branching.c2 == uint64(0))) && (branching.c3 == uint64(0))) && (branching.c4 == uint64(0)))) {
+		return ArAmbiguous
+	}
+	var ways uint64 = branching.c0
+	var bounded bool = (rep.hi != uint32(4294967295))
+	var ceiling uint64 = uint64(rep.lo)
+	if (bounded && (ceiling < uint64(rep.hi))) {
+		ceiling = uint64(rep.hi)
+	}
+	var rounds Poly = (Poly{base: uint64(1), c0: tir_cadd(ceiling, uint64(1)), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	if (!bounded) {
+		rounds = (Poly{base: uint64(1), c0: tir_cadd(uint64(rep.lo), uint64(1)), c1: uint64(1), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	}
+	var flow Poly = rounds
+	if (ways > uint64(1)) {
+		var tmp4 uint64 = tir_cadd(ceiling, uint64(1))
+		if (!bounded) {
+			tmp4 = tir_cadd(uint64(rep.lo), uint64(2))
+		}
+		var tmp5 Bound
+		tir_t6 := bound_pow(ways, tmp4)
+		tmp5 = tir_t6
+		if (!tmp5.ok) {
+			return ArOverflow
+		}
+		flow = (Poly{base: uint64(1), c0: tmp5.value, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+		if (!bounded) {
+			flow = (Poly{base: ways, c0: tmp5.value, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+		}
+	}
+	var body Acc = (*acc)
+	var per Poly = (Poly{base: uint64(1), c0: ways, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	var tmp6 Poly
+	tir_t7 := poly_add(body.work, per, over)
+	tmp6 = tir_t7
+	var tmp7 Poly
+	tir_t8 := poly_add((Poly{base: uint64(1), c0: uint64(2), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp6, over)
+	tmp7 = tir_t8
+	var tmp8 Poly
+	tir_t9 := poly_mul(flow, tmp7, over)
+	tmp8 = tir_t9
+	var tmp9 Poly
+	tir_t10 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp8, over)
+	tmp9 = tir_t10
+	(*acc).work = tmp9
+	var tmp10 Poly
+	tir_t11 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), body.stack, over)
+	tmp10 = tir_t11
+	var tmp11 Poly
+	tir_t12 := poly_mul(flow, tmp10, over)
+	tmp11 = tir_t12
+	(*acc).stack = tmp11
+	var tmp12 Poly
+	tir_t13 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), per, over)
+	tmp12 = tir_t13
+	var leaves Poly = tmp12
+	var tmp13 Poly
+	tir_t14 := poly_add(leaves, body.trail, over)
+	tmp13 = tir_t14
+	var tmp14 Poly
+	tir_t15 := poly_mul(flow, tmp13, over)
+	tmp14 = tir_t15
+	var tmp15 Poly
+	tir_t16 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp14, over)
+	tmp15 = tir_t16
+	(*acc).trail = tmp15
+	var tmp16 Poly
+	tir_t17 := poly_mul(flow, leaves, over)
+	tmp16 = tir_t17
+	(*acc).flow = tmp16
+	return ArOk
+}
+
+func price_span(code []Inst, regions []Region, prices *[]Price, sibs *[]uint32, lo uint32, hi uint32, first uint32, acc *Acc, over *bool) Ar {
+	var cursor uint32 = first
+	var pc uint32 = lo
+	tir_loop1:
+	for (pc < hi) {
+		var tmp1 uint32 = cursor
+		if (tmp1 != uint32(4294967295)) {
+			var tmp2 Region = regions[tmp1]
+			if (tmp2.lo == pc) {
+				if (tmp2.hi <= pc) {
+					return ArShape
+				}
+				var tmp3 Price = (*prices)[tmp1]
+				var tmp4 Poly = (*acc).flow
+				var tmp5 Poly
+				tir_t1 := poly_mul(tmp4, tmp3.work, over)
+				tmp5 = tir_t1
+				var tmp6 Poly
+				tir_t2 := poly_add((*acc).work, tmp5, over)
+				tmp6 = tir_t2
+				(*acc).work = tmp6
+				var tmp7 Poly
+				tir_t3 := poly_mul(tmp4, tmp3.stack, over)
+				tmp7 = tir_t3
+				var tmp8 Poly
+				tir_t4 := poly_add((*acc).stack, tmp7, over)
+				tmp8 = tir_t4
+				(*acc).stack = tmp8
+				var tmp9 Poly
+				tir_t5 := poly_mul(tmp4, tmp3.trail, over)
+				tmp9 = tir_t5
+				var tmp10 Poly
+				tir_t6 := poly_add((*acc).trail, tmp9, over)
+				tmp10 = tir_t6
+				(*acc).trail = tmp10
+				var tmp11 Poly
+				tir_t7 := poly_mul(tmp4, tmp3.outs, over)
+				tmp11 = tir_t7
+				(*acc).flow = tmp11
+				pc = tmp2.hi
+				cursor = (*sibs)[tmp1]
+				continue tir_loop1
+			}
+		}
+		var tmp12 Poly
+		tir_t8 := poly_add((*acc).work, (*acc).flow, over)
+		tmp12 = tir_t8
+		switch code[pc].op {
+		case OpChar:
+			(*acc).work = tmp12
+		case OpCharCI:
+			(*acc).work = tmp12
+		case OpClass:
+			(*acc).work = tmp12
+		case OpAny:
+			(*acc).work = tmp12
+		case OpAnyNoNL:
+			(*acc).work = tmp12
+		case OpBsr:
+			(*acc).work = tmp12
+		case OpCirc:
+			(*acc).work = tmp12
+		case OpCircM:
+			(*acc).work = tmp12
+		case OpDoll:
+			(*acc).work = tmp12
+		case OpDollE:
+			(*acc).work = tmp12
+		case OpDollM:
+			(*acc).work = tmp12
+		case OpSod:
+			(*acc).work = tmp12
+		case OpEod:
+			(*acc).work = tmp12
+		case OpEodn:
+			(*acc).work = tmp12
+		case OpWordB:
+			(*acc).work = tmp12
+		case OpNotWordB:
+			(*acc).work = tmp12
+		case OpSave:
+			(*acc).work = tmp12
+			var tmp13 Poly
+			tir_t9 := poly_add((*acc).trail, (*acc).flow, over)
+			tmp13 = tir_t9
+			(*acc).trail = tmp13
+		case OpAccept:
+			(*acc).work = tmp12
+			(*acc).flow = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+		default:
+			return ArShape
+		}
+		pc = (pc + uint32(1))
+	}
+	return ArOk
 }
 
 func push_bt(bt *[]Bt, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64, stacklimit uint32, pcv uint32, posv uint32, mark uint32) bool {
@@ -4287,6 +4820,31 @@ func ref_number_ahead(pat []byte, at uint32) bool {
 	return tmp3
 }
 
+func region_kids(regions []Region, kids *[]uint32, sibs *[]uint32) {
+	var total uint32 = uint32(len(regions))
+	var i uint32 = uint32(0)
+	for (i < total) {
+		tir_push(&(*kids), 8208, uint32(4294967295))
+		tir_push(&(*sibs), 8208, uint32(4294967295))
+		i = (i + uint32(1))
+	}
+	i = total
+	for (i > uint32(1)) {
+		i = (i - uint32(1))
+		var tmp1 uint32 = regions[i].parent
+		tir_t1 := i
+		if tir_t1 >= uint32(len((*sibs))) {
+			tir_oob(tir_t1, uint32(len((*sibs))))
+		}
+		(*sibs)[tir_t1] = (*kids)[tmp1]
+		tir_t2 := tmp1
+		if tir_t2 >= uint32(len((*kids))) {
+			tir_oob(tir_t2, uint32(len((*kids))))
+		}
+		(*kids)[tir_t2] = i
+	}
+}
+
 func sat_add(a uint64, b uint64, over *bool) uint64 {
 	if (a > tir_csub(uint64(9007199254740991), b)) {
 		(*over) = true
@@ -4306,11 +4864,8 @@ func sat_mul(a uint64, b uint64, over *bool) uint64 {
 	return tir_cmul(a, b)
 }
 
-func scan_alt(code []Inst, regions []Region, prices []Price, sibs *[]uint32, at uint32, first uint32, acc *Acc, over *bool) Cr {
-	var here Region = regions[at]
-	var hi uint32 = here.hi
-	var total uint32 = uint32(len(regions))
-	var p uint32 = here.lo
+func scan_alt(prices []Price, sibs *[]uint32, first uint32, acc *Acc, over *bool) Cr {
+	var total uint32 = uint32(len(prices))
 	var c uint32 = first
 	var k uint32 = uint32(0)
 	(*acc).work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
@@ -4318,78 +4873,39 @@ func scan_alt(code []Inst, regions []Region, prices []Price, sibs *[]uint32, at 
 	(*acc).trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 	(*acc).flow = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 	for ((k < total) && (c != uint32(4294967295))) {
-		var tmp1 Region = regions[c]
-		var tmp2 Price = prices[c]
-		if (tmp1.kind != RkBranch) {
-			return CrChildren
-		}
-		var tmp3 uint32 = (*sibs)[c]
-		if (tmp3 != uint32(4294967295)) {
-			if (p >= hi) {
-				return CrShape
-			}
-			var tmp4 Inst = code[p]
-			if (tmp4.op != OpSplit) {
-				return CrShape
-			}
-			if (tmp4.arg != (p + uint32(1))) {
-				return CrShape
-			}
-			if (tmp1.lo != (p + uint32(1))) {
-				return CrShape
-			}
-			var tmp5 uint32 = tmp1.hi
-			if (tmp5 >= hi) {
-				return CrShape
-			}
-			var tmp6 Inst = code[tmp5]
-			if ((tmp6.op != OpJump) || (tmp6.arg != hi)) {
-				return CrShape
-			}
-			if (tmp4.alt != (tmp5 + uint32(1))) {
-				return CrShape
-			}
-			var tmp7 Poly
-			tir_t1 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp2.outs, over)
-			tmp7 = tir_t1
-			var tmp8 Poly
-			tir_t2 := poly_add((*acc).work, tmp7, over)
-			tmp8 = tir_t2
-			(*acc).work = tmp8
-			var tmp9 Poly
+		var tmp1 Price = prices[c]
+		var tmp2 uint32 = (*sibs)[c]
+		if (tmp2 != uint32(4294967295)) {
+			var tmp3 Poly
+			tir_t1 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp1.outs, over)
+			tmp3 = tir_t1
+			var tmp4 Poly
+			tir_t2 := poly_add((*acc).work, tmp3, over)
+			tmp4 = tir_t2
+			(*acc).work = tmp4
+			var tmp5 Poly
 			tir_t3 := poly_add((*acc).stack, (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
-			tmp9 = tir_t3
-			(*acc).stack = tmp9
-			p = (tmp5 + uint32(1))
-		} else {
-			if ((tmp1.lo != p) || (tmp1.hi != hi)) {
-				return CrShape
-			}
+			tmp5 = tir_t3
+			(*acc).stack = tmp5
 		}
-		var tmp10 Poly
-		tir_t4 := poly_add((*acc).work, tmp2.work, over)
-		tmp10 = tir_t4
-		(*acc).work = tmp10
-		var tmp11 Poly
-		tir_t5 := poly_add((*acc).stack, tmp2.stack, over)
-		tmp11 = tir_t5
-		(*acc).stack = tmp11
-		var tmp12 Poly
-		tir_t6 := poly_add((*acc).trail, tmp2.trail, over)
-		tmp12 = tir_t6
-		(*acc).trail = tmp12
-		var tmp13 Poly
-		tir_t7 := poly_add((*acc).flow, tmp2.outs, over)
-		tmp13 = tir_t7
-		(*acc).flow = tmp13
-		c = tmp3
+		var tmp6 Poly
+		tir_t4 := poly_add((*acc).work, tmp1.work, over)
+		tmp6 = tir_t4
+		(*acc).work = tmp6
+		var tmp7 Poly
+		tir_t5 := poly_add((*acc).stack, tmp1.stack, over)
+		tmp7 = tir_t5
+		(*acc).stack = tmp7
+		var tmp8 Poly
+		tir_t6 := poly_add((*acc).trail, tmp1.trail, over)
+		tmp8 = tir_t6
+		(*acc).trail = tmp8
+		var tmp9 Poly
+		tir_t7 := poly_add((*acc).flow, tmp1.outs, over)
+		tmp9 = tir_t7
+		(*acc).flow = tmp9
+		c = tmp2
 		k = (k + uint32(1))
-	}
-	if (c != uint32(4294967295)) {
-		return CrChildren
-	}
-	if (k < uint32(2)) {
-		return CrShape
 	}
 	return CrOk
 }
@@ -4494,28 +5010,23 @@ func scan_repeat(code []Inst, reps []Rep, regions []Region, prices []Price, sibs
 	(*acc).trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 	(*acc).flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 	if (head.op == OpSplit) {
-		var tmp1 bool = ((head.arg == (lo + uint32(1))) && (head.alt == hi))
-		var tmp2 bool = ((head.arg == hi) && (head.alt == (lo + uint32(1))))
-		if (!(tmp1 || tmp2)) {
-			return CrShape
-		}
 		tir_t1 := scan_span(code, regions, prices, sibs, (lo + uint32(1)), hi, first, acc, over)
 		verdict = tir_t1
 		if (verdict != CrOk) {
 			return verdict
 		}
-		var tmp3 Poly
+		var tmp1 Poly
 		tir_t2 := poly_add((*acc).work, (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
-		tmp3 = tir_t2
-		(*acc).work = tmp3
-		var tmp4 Poly
+		tmp1 = tir_t2
+		(*acc).work = tmp1
+		var tmp2 Poly
 		tir_t3 := poly_add((*acc).stack, (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
-		tmp4 = tir_t3
-		(*acc).stack = tmp4
-		var tmp5 Poly
+		tmp2 = tir_t3
+		(*acc).stack = tmp2
+		var tmp3 Poly
 		tir_t4 := poly_add((*acc).flow, (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
-		tmp5 = tir_t4
-		(*acc).flow = tmp5
+		tmp3 = tir_t4
+		(*acc).flow = tmp3
 		return CrOk
 	}
 	if (head.op != OpRepZero) {
@@ -4528,22 +5039,7 @@ func scan_repeat(code []Inst, reps []Rep, regions []Region, prices []Price, sibs
 	if (which >= uint32(len(reps))) {
 		return CrShape
 	}
-	var tmp6 Inst = code[(lo + uint32(1))]
-	if ((tmp6.op != OpRepLoop) || (tmp6.arg != which)) {
-		return CrShape
-	}
-	var tmp7 Inst = code[(lo + uint32(2))]
-	if ((tmp7.op != OpRepEnter) || (tmp7.arg != which)) {
-		return CrShape
-	}
-	var tail Inst = code[(hi - uint32(1))]
-	if ((tail.op != OpRepNext) || (tail.arg != which)) {
-		return CrShape
-	}
 	var rep Rep = reps[which]
-	if ((rep.head != (lo + uint32(1))) || ((rep.body != (lo + uint32(2))) || (rep.after != hi))) {
-		return CrShape
-	}
 	tir_t5 := scan_span(code, regions, prices, sibs, (lo + uint32(3)), (hi - uint32(1)), first, acc, over)
 	verdict = tir_t5
 	if (verdict != CrOk) {
@@ -4565,61 +5061,61 @@ func scan_repeat(code []Inst, reps []Rep, regions []Region, prices []Price, sibs
 	}
 	var flow Poly = rounds
 	if (ways > uint64(1)) {
-		var tmp8 uint64 = tir_cadd(ceiling, uint64(1))
+		var tmp4 uint64 = tir_cadd(ceiling, uint64(1))
 		if (!bounded) {
-			tmp8 = tir_cadd(uint64(rep.lo), uint64(2))
+			tmp4 = tir_cadd(uint64(rep.lo), uint64(2))
 		}
-		var tmp9 Bound
-		tir_t6 := bound_pow(ways, tmp8)
-		tmp9 = tir_t6
-		if (!tmp9.ok) {
+		var tmp5 Bound
+		tir_t6 := bound_pow(ways, tmp4)
+		tmp5 = tir_t6
+		if (!tmp5.ok) {
 			(*over) = true
 		}
-		flow = (Poly{base: uint64(1), c0: tmp9.value, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+		flow = (Poly{base: uint64(1), c0: tmp5.value, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 		if (!bounded) {
-			flow = (Poly{base: ways, c0: tmp9.value, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			flow = (Poly{base: ways, c0: tmp5.value, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 		}
 	}
 	var body Acc = (*acc)
 	var per Poly = (Poly{base: uint64(1), c0: ways, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-	var tmp10 Poly
+	var tmp6 Poly
 	tir_t7 := poly_add(body.work, per, over)
-	tmp10 = tir_t7
-	var tmp11 Poly
-	tir_t8 := poly_add((Poly{base: uint64(1), c0: uint64(2), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp10, over)
-	tmp11 = tir_t8
-	var tmp12 Poly
-	tir_t9 := poly_mul(flow, tmp11, over)
-	tmp12 = tir_t9
-	var tmp13 Poly
-	tir_t10 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp12, over)
-	tmp13 = tir_t10
-	(*acc).work = tmp13
-	var tmp14 Poly
+	tmp6 = tir_t7
+	var tmp7 Poly
+	tir_t8 := poly_add((Poly{base: uint64(1), c0: uint64(2), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp6, over)
+	tmp7 = tir_t8
+	var tmp8 Poly
+	tir_t9 := poly_mul(flow, tmp7, over)
+	tmp8 = tir_t9
+	var tmp9 Poly
+	tir_t10 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp8, over)
+	tmp9 = tir_t10
+	(*acc).work = tmp9
+	var tmp10 Poly
 	tir_t11 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), body.stack, over)
-	tmp14 = tir_t11
-	var tmp15 Poly
-	tir_t12 := poly_mul(flow, tmp14, over)
-	tmp15 = tir_t12
-	(*acc).stack = tmp15
-	var tmp16 Poly
+	tmp10 = tir_t11
+	var tmp11 Poly
+	tir_t12 := poly_mul(flow, tmp10, over)
+	tmp11 = tir_t12
+	(*acc).stack = tmp11
+	var tmp12 Poly
 	tir_t13 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), per, over)
-	tmp16 = tir_t13
-	var leaves Poly = tmp16
-	var tmp17 Poly
+	tmp12 = tir_t13
+	var leaves Poly = tmp12
+	var tmp13 Poly
 	tir_t14 := poly_add(leaves, body.trail, over)
-	tmp17 = tir_t14
-	var tmp18 Poly
-	tir_t15 := poly_mul(flow, tmp17, over)
-	tmp18 = tir_t15
-	var tmp19 Poly
-	tir_t16 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp18, over)
-	tmp19 = tir_t16
-	(*acc).trail = tmp19
-	var tmp20 Poly
+	tmp13 = tir_t14
+	var tmp14 Poly
+	tir_t15 := poly_mul(flow, tmp13, over)
+	tmp14 = tir_t15
+	var tmp15 Poly
+	tir_t16 := poly_add((Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp14, over)
+	tmp15 = tir_t16
+	(*acc).trail = tmp15
+	var tmp16 Poly
 	tir_t17 := poly_mul(flow, leaves, over)
-	tmp20 = tir_t17
-	(*acc).flow = tmp20
+	tmp16 = tir_t17
+	(*acc).flow = tmp16
 	return CrOk
 }
 
@@ -4631,11 +5127,8 @@ func scan_span(code []Inst, regions []Region, prices []Price, sibs *[]uint32, lo
 		var tmp1 uint32 = cursor
 		if (tmp1 != uint32(4294967295)) {
 			var tmp2 Region = regions[tmp1]
-			if (tmp2.lo < pc) {
-				return CrShape
-			}
 			if (tmp2.lo == pc) {
-				if ((tmp2.hi <= pc) || (tmp2.hi > hi)) {
+				if (tmp2.hi <= pc) {
 					return CrShape
 				}
 				var tmp3 Price = prices[tmp1]
@@ -4720,9 +5213,6 @@ func scan_span(code []Inst, regions []Region, prices []Price, sibs *[]uint32, lo
 		}
 		pc = (pc + uint32(1))
 	}
-	if (cursor != uint32(4294967295)) {
-		return CrChildren
-	}
 	return CrOk
 }
 
@@ -4765,6 +5255,179 @@ func set_union(w *Work, base uint32, which uint32, neg bool) {
 		(*w).classes[tir_t1] = ((*w).classes[tmp4] | tmp3)
 		tmp1 = (tmp1 + uint32(1))
 	}
+}
+
+func shape_alt(code []Inst, regions []Region, sibs *[]uint32, at uint32, first uint32) Cr {
+	var here Region = regions[at]
+	var hi uint32 = here.hi
+	var total uint32 = uint32(len(regions))
+	var p uint32 = here.lo
+	var c uint32 = first
+	var k uint32 = uint32(0)
+	for ((k < total) && (c != uint32(4294967295))) {
+		var tmp1 Region = regions[c]
+		if (tmp1.kind != RkBranch) {
+			return CrChildren
+		}
+		var tmp2 uint32 = (*sibs)[c]
+		if (tmp2 != uint32(4294967295)) {
+			if (p >= hi) {
+				return CrShape
+			}
+			var tmp3 Inst = code[p]
+			if (tmp3.op != OpSplit) {
+				return CrShape
+			}
+			if (tmp3.arg != (p + uint32(1))) {
+				return CrShape
+			}
+			if (tmp1.lo != (p + uint32(1))) {
+				return CrShape
+			}
+			var tmp4 uint32 = tmp1.hi
+			if (tmp4 >= hi) {
+				return CrShape
+			}
+			var tmp5 Inst = code[tmp4]
+			if ((tmp5.op != OpJump) || (tmp5.arg != hi)) {
+				return CrShape
+			}
+			if (tmp3.alt != (tmp4 + uint32(1))) {
+				return CrShape
+			}
+			p = (tmp4 + uint32(1))
+		} else {
+			if ((tmp1.lo != p) || (tmp1.hi != hi)) {
+				return CrShape
+			}
+		}
+		c = tmp2
+		k = (k + uint32(1))
+	}
+	if (c != uint32(4294967295)) {
+		return CrChildren
+	}
+	if (k < uint32(2)) {
+		return CrShape
+	}
+	return CrOk
+}
+
+func shape_repeat(code []Inst, reps []Rep, regions []Region, sibs *[]uint32, at uint32, first uint32) Cr {
+	var here Region = regions[at]
+	var lo uint32 = here.lo
+	var hi uint32 = here.hi
+	if (hi <= lo) {
+		return CrShape
+	}
+	var head Inst = code[lo]
+	var body Cr = CrOk
+	if (head.op == OpSplit) {
+		var tmp1 bool = ((head.arg == (lo + uint32(1))) && (head.alt == hi))
+		var tmp2 bool = ((head.arg == hi) && (head.alt == (lo + uint32(1))))
+		if (!(tmp1 || tmp2)) {
+			return CrShape
+		}
+		tir_t1 := shape_span(code, regions, sibs, (lo + uint32(1)), hi, first)
+		body = tir_t1
+		return body
+	}
+	if (head.op != OpRepZero) {
+		return CrShape
+	}
+	if ((hi - lo) < uint32(4)) {
+		return CrShape
+	}
+	var which uint32 = head.arg
+	if (which >= uint32(len(reps))) {
+		return CrShape
+	}
+	var tmp3 Inst = code[(lo + uint32(1))]
+	if ((tmp3.op != OpRepLoop) || (tmp3.arg != which)) {
+		return CrShape
+	}
+	var tmp4 Inst = code[(lo + uint32(2))]
+	if ((tmp4.op != OpRepEnter) || (tmp4.arg != which)) {
+		return CrShape
+	}
+	var tail Inst = code[(hi - uint32(1))]
+	if ((tail.op != OpRepNext) || (tail.arg != which)) {
+		return CrShape
+	}
+	var rep Rep = reps[which]
+	if ((rep.head != (lo + uint32(1))) || ((rep.body != (lo + uint32(2))) || (rep.after != hi))) {
+		return CrShape
+	}
+	tir_t2 := shape_span(code, regions, sibs, (lo + uint32(3)), (hi - uint32(1)), first)
+	body = tir_t2
+	return body
+}
+
+func shape_span(code []Inst, regions []Region, sibs *[]uint32, lo uint32, hi uint32, first uint32) Cr {
+	var cursor uint32 = first
+	var pc uint32 = lo
+	tir_loop1:
+	for (pc < hi) {
+		var tmp1 uint32 = cursor
+		if (tmp1 != uint32(4294967295)) {
+			var tmp2 Region = regions[tmp1]
+			if (tmp2.lo < pc) {
+				return CrShape
+			}
+			if (tmp2.lo == pc) {
+				if ((tmp2.hi <= pc) || (tmp2.hi > hi)) {
+					return CrShape
+				}
+				pc = tmp2.hi
+				cursor = (*sibs)[tmp1]
+				continue tir_loop1
+			}
+		}
+		switch code[pc].op {
+		case OpChar:
+			pc = (pc + uint32(1))
+		case OpCharCI:
+			pc = (pc + uint32(1))
+		case OpClass:
+			pc = (pc + uint32(1))
+		case OpAny:
+			pc = (pc + uint32(1))
+		case OpAnyNoNL:
+			pc = (pc + uint32(1))
+		case OpBsr:
+			pc = (pc + uint32(1))
+		case OpCirc:
+			pc = (pc + uint32(1))
+		case OpCircM:
+			pc = (pc + uint32(1))
+		case OpDoll:
+			pc = (pc + uint32(1))
+		case OpDollE:
+			pc = (pc + uint32(1))
+		case OpDollM:
+			pc = (pc + uint32(1))
+		case OpSod:
+			pc = (pc + uint32(1))
+		case OpEod:
+			pc = (pc + uint32(1))
+		case OpEodn:
+			pc = (pc + uint32(1))
+		case OpWordB:
+			pc = (pc + uint32(1))
+		case OpNotWordB:
+			pc = (pc + uint32(1))
+		case OpSave:
+			pc = (pc + uint32(1))
+		case OpAccept:
+			pc = (pc + uint32(1))
+		default:
+			return CrOpcode
+		}
+	}
+	if (cursor != uint32(4294967295)) {
+		return CrChildren
+	}
+	return CrOk
 }
 
 func skip_blanks(pat []byte, at *uint32) {
@@ -5180,8 +5843,20 @@ func Tir_cert_bound(cert Cert, kind Bk, n uint64) Bound {
 	return cert_bound(cert, kind, n)
 }
 
+func Tir_cert_build(re Re, cert *Cert) Ar {
+	return cert_build(re, cert)
+}
+
 func Tir_cert_check(re Re, config Cfg, cert Cert) Cr {
 	return cert_check(re, config, cert)
+}
+
+func Tir_cert_install(re Re, cert *Cert, has *bool) Cr {
+	return cert_install(re, cert, has)
+}
+
+func Tir_cert_shape(re Re) Cr {
+	return cert_shape(re)
 }
 
 func Tir_charge_call(re Re, cert Cert, whole Price, over *bool) Cr {
@@ -5344,6 +6019,22 @@ func Tir_posix_set(pat []byte, off uint32, nlen uint32) uint32 {
 	return posix_set(pat, off, nlen)
 }
 
+func Tir_price_alt(prices *[]Price, sibs *[]uint32, first uint32, acc *Acc, over *bool) Ar {
+	return price_alt(prices, sibs, first, acc, over)
+}
+
+func Tir_price_call(re Re, whole Price, cert *Cert, over *bool) {
+	price_call(re, whole, cert, over)
+}
+
+func Tir_price_repeat(code []Inst, reps []Rep, regions []Region, prices *[]Price, sibs *[]uint32, at uint32, first uint32, acc *Acc, over *bool) Ar {
+	return price_repeat(code, reps, regions, prices, sibs, at, first, acc, over)
+}
+
+func Tir_price_span(code []Inst, regions []Region, prices *[]Price, sibs *[]uint32, lo uint32, hi uint32, first uint32, acc *Acc, over *bool) Ar {
+	return price_span(code, regions, prices, sibs, lo, hi, first, acc, over)
+}
+
 func Tir_push_bt(bt *[]Bt, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64, stacklimit uint32, pcv uint32, posv uint32, mark uint32) bool {
 	return push_bt(bt, mem, peak, cost, memlimit, costlimit, stacklimit, pcv, posv, mark)
 }
@@ -5400,6 +6091,10 @@ func Tir_ref_number_ahead(pat []byte, at uint32) bool {
 	return ref_number_ahead(pat, at)
 }
 
+func Tir_region_kids(regions []Region, kids *[]uint32, sibs *[]uint32) {
+	region_kids(regions, kids, sibs)
+}
+
 func Tir_sat_add(a uint64, b uint64, over *bool) uint64 {
 	return sat_add(a, b, over)
 }
@@ -5408,8 +6103,8 @@ func Tir_sat_mul(a uint64, b uint64, over *bool) uint64 {
 	return sat_mul(a, b, over)
 }
 
-func Tir_scan_alt(code []Inst, regions []Region, prices []Price, sibs *[]uint32, at uint32, first uint32, acc *Acc, over *bool) Cr {
-	return scan_alt(code, regions, prices, sibs, at, first, acc, over)
+func Tir_scan_alt(prices []Price, sibs *[]uint32, first uint32, acc *Acc, over *bool) Cr {
+	return scan_alt(prices, sibs, first, acc, over)
 }
 
 func Tir_scan_first(w *Work) {
@@ -5434,6 +6129,18 @@ func Tir_set_range(w *Work, base uint32, lo uint32, hi uint32, fold bool) {
 
 func Tir_set_union(w *Work, base uint32, which uint32, neg bool) {
 	set_union(w, base, which, neg)
+}
+
+func Tir_shape_alt(code []Inst, regions []Region, sibs *[]uint32, at uint32, first uint32) Cr {
+	return shape_alt(code, regions, sibs, at, first)
+}
+
+func Tir_shape_repeat(code []Inst, reps []Rep, regions []Region, sibs *[]uint32, at uint32, first uint32) Cr {
+	return shape_repeat(code, reps, regions, sibs, at, first)
+}
+
+func Tir_shape_span(code []Inst, regions []Region, sibs *[]uint32, lo uint32, hi uint32, first uint32) Cr {
+	return shape_span(code, regions, sibs, lo, hi, first)
 }
 
 func Tir_skip_blanks(pat []byte, at *uint32) {
@@ -5549,6 +6256,8 @@ func (v *Re) Tir_nltype() uint32 { return v.nltype }
 func (v *Re) Tir_bsr() uint32 { return v.bsr }
 func (v *Re) Tir_hascrlf() uint32 { return v.hascrlf }
 func (v *Re) Tir_crfirst() uint32 { return v.crfirst }
+func (v *Re) Tir_hascert() bool { return v.hascert }
+func (v *Re) Tir_cert() Cert { return v.cert }
 
 func (v *Ref) Tir_num() uint32 { return v.num }
 func (v *Ref) Tir_off() uint32 { return v.off }

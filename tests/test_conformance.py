@@ -18,6 +18,7 @@ import pytest
 
 from pcretruste.backends import lowering
 from pcretruste.engine import Engine
+from pcretruste.engine import certificate_corpus
 from pcretruste.oracle import conformance
 from pcretruste.oracle import corpus as wave1
 
@@ -71,3 +72,32 @@ def test_the_probe_asks_about_every_branch(probe: dict) -> None:
     for case in probe["cases"]:
         assert case["kind"] == numbers[case["name"]]
     assert probe["shift"] == lowering.SHIFT
+
+
+@pytest.mark.parametrize(
+    "held",
+    [None, [], {}, {"a": 1}, "cases", 0, 1],
+    ids=["absent", "empty", "empty-object", "object", "string", "zero", "number"],
+)
+def test_a_section_is_a_list_with_something_in_it(tmp_path, held) -> None:
+    """A corpus is one thing in three languages, so a bad one is refused in three.
+
+    JavaScript wants an array and Go decodes into a slice or fails, and both
+    then ask whether it is empty. Python asking only whether the value is
+    truthy would take an object or a string, which is a corpus none of the
+    other two would read.
+    """
+    path = tmp_path / "corpus.json"
+    document = {"schema": conformance.SCHEMA, "cases": [{}]}
+    if held is not None:
+        document["analyses"] = held
+    path.write_text(conformance.text(document))
+    with pytest.raises(ValueError, match="holds no analyses"):
+        conformance.section(conformance.read(path), "analyses", path)
+
+
+def test_the_two_sections_of_a_corpus_are_read_the_same_way() -> None:
+    """The certificate corpus is the one that carries more than one array."""
+    built = conformance.read(certificate_corpus.PATH)
+    for name in ("cases", "analyses"):
+        assert conformance.section(built, name, certificate_corpus.PATH)

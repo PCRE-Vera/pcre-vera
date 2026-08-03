@@ -1,4 +1,768 @@
 {
+  "analyses": [
+    {
+      "bounds": [
+        {
+          "cost": 36,
+          "mem": 16,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 48,
+          "mem": 16,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 60,
+          "mem": 16,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 156,
+          "mem": 16,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 672,
+          "mem": 16,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 786456,
+          "mem": 16,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 16,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "literal",
+      "note": "Four instructions, no forks, nothing on either growing array. The cost is linear in the subject length because the only thing that repeats is the attempt at each starting position.",
+      "pattern": "616263"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 33,
+          "mem": 16,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 42,
+          "mem": 16,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 51,
+          "mem": 16,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 123,
+          "mem": 16,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 510,
+          "mem": 16,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 589848,
+          "mem": 16,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 16,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "nothing-at-all",
+      "note": "The empty pattern is one accept under one region, which is the smallest tree there is and still has to price.",
+      "pattern": ""
+    },
+    {
+      "bounds": [
+        {
+          "cost": 268,
+          "mem": 160,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 296,
+          "mem": 160,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 324,
+          "mem": 160,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 548,
+          "mem": 160,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 1752,
+          "mem": 160,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 1835248,
+          "mem": 160,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 160,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "capture",
+      "note": "Two saves, so a trail where the literal needed none, so a scratch reservation the literal did not pay for.",
+      "pattern": "286129"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 254,
+          "mem": 160,
+          "n": 0,
+          "stack": 1
+        },
+        {
+          "cost": 268,
+          "mem": 160,
+          "n": 1,
+          "stack": 1
+        },
+        {
+          "cost": 282,
+          "mem": 160,
+          "n": 2,
+          "stack": 1
+        },
+        {
+          "cost": 394,
+          "mem": 160,
+          "n": 10,
+          "stack": 1
+        },
+        {
+          "cost": 996,
+          "mem": 160,
+          "n": 53,
+          "stack": 1
+        },
+        {
+          "cost": 917744,
+          "mem": 160,
+          "n": 65535,
+          "stack": 1
+        },
+        {
+          "cost": null,
+          "mem": 160,
+          "n": 9007199254740991,
+          "stack": 1
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "alternation",
+      "note": "A fork costs a backtrack entry, and the certificate says how many: one, whatever the subject is.",
+      "pattern": "617c62"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 540,
+          "mem": 336,
+          "n": 0,
+          "stack": 1
+        },
+        {
+          "cost": 576,
+          "mem": 336,
+          "n": 1,
+          "stack": 1
+        },
+        {
+          "cost": 612,
+          "mem": 336,
+          "n": 2,
+          "stack": 1
+        },
+        {
+          "cost": 900,
+          "mem": 336,
+          "n": 10,
+          "stack": 1
+        },
+        {
+          "cost": 2448,
+          "mem": 336,
+          "n": 53,
+          "stack": 1
+        },
+        {
+          "cost": 2359800,
+          "mem": 336,
+          "n": 65535,
+          "stack": 1
+        },
+        {
+          "cost": null,
+          "mem": 336,
+          "n": 9007199254740991,
+          "stack": 1
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "an-empty-alternation-branch",
+      "note": "The second arm of `(a|)` compiles to nothing, and the branch region for it is still there. A tree the analyzer walked differently from the checker would be refused rather than stored.",
+      "pattern": "28617c29"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 252,
+          "mem": 160,
+          "n": 0,
+          "stack": 1
+        },
+        {
+          "cost": 264,
+          "mem": 160,
+          "n": 1,
+          "stack": 1
+        },
+        {
+          "cost": 276,
+          "mem": 160,
+          "n": 2,
+          "stack": 1
+        },
+        {
+          "cost": 372,
+          "mem": 160,
+          "n": 10,
+          "stack": 1
+        },
+        {
+          "cost": 888,
+          "mem": 160,
+          "n": 53,
+          "stack": 1
+        },
+        {
+          "cost": 786672,
+          "mem": 160,
+          "n": 65535,
+          "stack": 1
+        },
+        {
+          "cost": null,
+          "mem": 160,
+          "n": 9007199254740991,
+          "stack": 1
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "optional",
+      "note": "One split, whose two arms are the body and what follows it.",
+      "pattern": "613f"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 705,
+          "mem": 440,
+          "n": 0,
+          "stack": 2
+        },
+        {
+          "cost": 950,
+          "mem": 552,
+          "n": 1,
+          "stack": 3
+        },
+        {
+          "cost": 1223,
+          "mem": 664,
+          "n": 2,
+          "stack": 4
+        },
+        {
+          "cost": 4415,
+          "mem": 1560,
+          "n": 10,
+          "stack": 12
+        },
+        {
+          "cost": 52274,
+          "mem": 6376,
+          "n": 53,
+          "stack": 55
+        },
+        {
+          "cost": 60142846440,
+          "mem": 7340360,
+          "n": 65535,
+          "stack": 65537
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "complexity": 0,
+      "found": 3,
+      "name": "star",
+      "note": "The head of an unbounded repetition is reached n + 2 times, and the whole of that is run again from every starting position, so the cost is quadratic and the class claim says so.",
+      "pattern": "612a"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 1433,
+          "mem": 888,
+          "n": 0,
+          "stack": 6
+        },
+        {
+          "cost": 1538,
+          "mem": 888,
+          "n": 1,
+          "stack": 6
+        },
+        {
+          "cost": 1643,
+          "mem": 888,
+          "n": 2,
+          "stack": 6
+        },
+        {
+          "cost": 2483,
+          "mem": 888,
+          "n": 10,
+          "stack": 6
+        },
+        {
+          "cost": 6998,
+          "mem": 888,
+          "n": 53,
+          "stack": 6
+        },
+        {
+          "cost": 6882608,
+          "mem": 888,
+          "n": 65535,
+          "stack": 6
+        },
+        {
+          "cost": null,
+          "mem": 888,
+          "n": 9007199254740991,
+          "stack": 6
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "counted",
+      "note": "Bounded above, the declared maximum is what stops it, so there is no term in n inside the loop and the pattern is linear after all.",
+      "pattern": "617b322c357d"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 11927893,
+          "mem": 7340248,
+          "n": 0,
+          "stack": 65536
+        },
+        {
+          "cost": 12845418,
+          "mem": 7340248,
+          "n": 1,
+          "stack": 65536
+        },
+        {
+          "cost": 13762943,
+          "mem": 7340248,
+          "n": 2,
+          "stack": 65536
+        },
+        {
+          "cost": 21103143,
+          "mem": 7340248,
+          "n": 10,
+          "stack": 65536
+        },
+        {
+          "cost": 60556718,
+          "mem": 7340248,
+          "n": 53,
+          "stack": 65536
+        },
+        {
+          "cost": 60141928768,
+          "mem": 7340248,
+          "n": 65535,
+          "stack": 65536
+        },
+        {
+          "cost": null,
+          "mem": 7340248,
+          "n": 9007199254740991,
+          "stack": 65536
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "a-repetition-at-the-declared-maximum",
+      "note": "The largest count a quantifier may name. Nothing here is near the counter's range; the numbers are simply large, which is what a caller asking for a budget wanted to know.",
+      "pattern": "617b36353533357d"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 955,
+          "mem": 584,
+          "n": 0,
+          "stack": 2
+        },
+        {
+          "cost": 1356,
+          "mem": 760,
+          "n": 1,
+          "stack": 3
+        },
+        {
+          "cost": 1811,
+          "mem": 936,
+          "n": 2,
+          "stack": 4
+        },
+        {
+          "cost": 7395,
+          "mem": 2344,
+          "n": 10,
+          "stack": 12
+        },
+        {
+          "cost": 96620,
+          "mem": 9912,
+          "n": 53,
+          "stack": 55
+        },
+        {
+          "cost": 115985089120,
+          "mem": 11534744,
+          "n": 65535,
+          "stack": 65537
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "complexity": 0,
+      "found": 3,
+      "name": "grouped-repeat",
+      "note": "A capturing group inside a star: the saves are charged per iteration, so the trail grows with the loop rather than with the program.",
+      "pattern": "286162292a63"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 2265,
+          "mem": 1384,
+          "n": 0,
+          "stack": 8
+        },
+        {
+          "cost": 4916,
+          "mem": 2768,
+          "n": 1,
+          "stack": 16
+        },
+        {
+          "cost": 10604,
+          "mem": 5536,
+          "n": 2,
+          "stack": 32
+        },
+        {
+          "cost": 4295680,
+          "mem": 1417216,
+          "n": 10,
+          "stack": 8192
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 53,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "complexity": 0,
+      "found": 3,
+      "name": "alternation-inside-a-loop",
+      "note": "Two ways round the loop, and nothing in these rules knows that `a` and `b` cannot match the same byte, so the bound is exponential. It overestimates and never underestimates, which is the contract.",
+      "pattern": "28617c62292a63"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 1585,
+          "mem": 984,
+          "n": 0,
+          "stack": 8
+        },
+        {
+          "cost": 3396,
+          "mem": 1968,
+          "n": 1,
+          "stack": 16
+        },
+        {
+          "cost": 7244,
+          "mem": 3936,
+          "n": 2,
+          "stack": 32
+        },
+        {
+          "cost": 2780160,
+          "mem": 1007616,
+          "n": 10,
+          "stack": 8192
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 53,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "complexity": 0,
+      "found": 3,
+      "name": "exponential",
+      "note": "The same shape with the ambiguity written out, where the growing base makes every bound saturate within a few dozen bytes of subject.",
+      "pattern": "283f3a617c61292a"
+    },
+    {
+      "bounds": [],
+      "complexity": null,
+      "found": 1,
+      "name": "nested-unbounded-ambiguity",
+      "note": "A star inside a star. The inner one hands the outer one more ways to match at every extra byte, so the pass count is a power of a polynomial and no bound of this shape has that form. The pattern compiles and has no certificate, which is the honest answer.",
+      "pattern": "283f3a612a292a"
+    },
+    {
+      "bounds": [],
+      "complexity": null,
+      "found": 1,
+      "name": "a-loop-around-a-loop",
+      "note": "`(a+)+` the same way, which is the shape a reader is likelier to write than the one above.",
+      "pattern": "28612b292b"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 9057,
+          "mem": 5576,
+          "n": 0,
+          "stack": 42
+        },
+        {
+          "cost": 28046,
+          "mem": 16024,
+          "n": 1,
+          "stack": 129
+        },
+        {
+          "cost": 66087,
+          "mem": 35240,
+          "n": 2,
+          "stack": 292
+        },
+        {
+          "cost": 2378207,
+          "mem": 827176,
+          "n": 10,
+          "stack": 7212
+        },
+        {
+          "cost": 623788794,
+          "mem": 75610712,
+          "n": 53,
+          "stack": 671605
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "complexity": 0,
+      "found": 3,
+      "name": "the-last-power-that-fits",
+      "note": "Each unbounded repetition puts one more power of n on the flow leaving it, and the attempt loop puts on the last. Three in a row is the fourth power, which is the top one a bound has a field for.",
+      "pattern": "612a622a632a"
+    },
+    {
+      "bounds": [],
+      "complexity": null,
+      "found": 2,
+      "name": "one-power-too-many",
+      "note": "A fourth is a term with nowhere to go, and dropping it would be the one rounding that goes the wrong way. So there is no certificate rather than a bound missing its largest term.",
+      "pattern": "612a622a632a642a"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 5471169859813717,
+          "mem": null,
+          "n": 0,
+          "stack": null
+        },
+        {
+          "cost": 5875790138835306,
+          "mem": null,
+          "n": 1,
+          "stack": null
+        },
+        {
+          "cost": 6280410417856895,
+          "mem": null,
+          "n": 2,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 10,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 53,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "the-largest-coefficient-that-fits",
+      "note": "Two ways round a loop that may go round forty-three times is 2^44 passes, and everything the tree multiplies by that still lands inside a counter.",
+      "pattern": "283f3a617c61297b302c34337d"
+    },
+    {
+      "bounds": [],
+      "complexity": null,
+      "found": 2,
+      "name": "one-coefficient-too-many",
+      "note": "One more time round and it does not. The requirement saturating is not a requirement met, and a coefficient that stopped at the cap is one every claim would be found to satisfy.",
+      "pattern": "283f3a617c61297b302c34347d"
+    },
+    {
+      "bounds": [],
+      "complexity": null,
+      "found": 2,
+      "name": "a-pass-count-past-the-counter",
+      "note": "Far enough out that it is the pass count itself that runs out of room rather than anything derived from it, which is a different place in the arithmetic and gets there its own way.",
+      "pattern": "283f3a617c61297b302c35327d"
+    },
+    {
+      "bounds": [],
+      "complexity": null,
+      "found": 2,
+      "name": "nested-counted-repetitions",
+      "note": "Ten of ten of ten is a hundred iterations of a body that already costs, and the product runs past what a counter holds well before anything about it is ambiguous.",
+      "pattern": "283f3a283f3a61297b31307d297b31307d"
+    }
+  ],
   "cases": [
     {
       "bounds": [
@@ -46,7 +810,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -146,8 +910,9 @@
       "check": 26,
       "config": 0,
       "name": "literal",
-      "note": "Three characters and an accept. The whole cost is one visit per instruction at each of the n + 1 starting positions, plus the register file and the ovector, sized and zeroed once, cleared again per attempt, and copied back out when the match is found.",
-      "pattern": "616263"
+      "note": "Three characters and an accept. The whole cost is one visit per instruction at each of the n + 1 starting positions, plus the register file and the ovector, sized and zeroed once, cleared again per attempt, and copied back out when the match is found. That shape is linear, so the certificate says so and the checker holds it to it.",
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -195,7 +960,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -330,7 +1095,8 @@
       "config": 0,
       "name": "capture",
       "note": "The same four instructions, two of them saves. A save records an undo entry, so this pattern needs a trail where the literal needed none \u2014 which is the whole point of pricing the opcodes rather than counting them.",
-      "pattern": "286129"
+      "pattern": "286129",
+      "shape": 26
     },
     {
       "bounds": [
@@ -378,7 +1144,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -581,7 +1347,8 @@
       "config": 0,
       "name": "alternation",
       "note": "A split, two branches, and the jump the first one leaves by. The region is entered once and both branches are tried, so the ambiguity is two and the accept downstream is charged twice.",
-      "pattern": "617c62"
+      "pattern": "617c62",
+      "shape": 26
     },
     {
       "bounds": [
@@ -629,7 +1396,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -866,7 +1633,8 @@
       "config": 0,
       "name": "an-empty-alternation-branch",
       "note": "`(a|)` compiles the second branch to nothing at all, so its region covers no instruction. That is legal for a branch and for nothing else: the alternation reads its shape off the branch list, so the branch has to be there whether or not it holds anything.",
-      "pattern": "28617c29"
+      "pattern": "28617c29",
+      "shape": 26
     },
     {
       "bounds": [
@@ -914,7 +1682,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -1049,7 +1817,8 @@
       "config": 0,
       "name": "optional",
       "note": "One split whose arms are the body and what follows it.",
-      "pattern": "613f"
+      "pattern": "613f",
+      "shape": 26
     },
     {
       "bounds": [
@@ -1097,7 +1866,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -1232,7 +2001,8 @@
       "config": 0,
       "name": "lazy-optional",
       "note": "The same shape with the split's arms the other way round, which costs exactly the same and is why the rule takes either order.",
-      "pattern": "613f3f"
+      "pattern": "613f3f",
+      "shape": 26
     },
     {
       "bounds": [
@@ -1415,7 +2185,8 @@
       "config": 0,
       "name": "star",
       "note": "An unbounded repetition. Past the minimum count an iteration that consumed nothing is the last one, so the head is reached at most n + 2 times and the cost comes out quadratic once the starting positions are counted in.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -1463,7 +2234,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -1598,7 +2369,8 @@
       "config": 0,
       "name": "counted",
       "note": "A bounded one, where the declared maximum is what stops it and the bound has no term in n at all.",
-      "pattern": "617b322c357d"
+      "pattern": "617b322c357d",
+      "shape": 26
     },
     {
       "bounds": [
@@ -1815,7 +2587,8 @@
       "config": 0,
       "name": "grouped-repeat",
       "note": "A capturing group inside a star, followed by a literal. The group is entered once per iteration and its saves are charged there, so the trail grows with the loop rather than with the program.",
-      "pattern": "286162292a63"
+      "pattern": "286162292a63",
+      "shape": 26
     },
     {
       "bounds": [
@@ -2134,7 +2907,8 @@
       "config": 0,
       "name": "alternation-inside-a-loop",
       "note": "The same shape with two branches in the group, and the bound comes out exponential. Structurally it is: the loop hands the next iteration one flow per way the body finished, and nothing in these rules knows that `a` and `b` cannot both match the same byte. The bound may overestimate and never underestimate (DESIGN.md section 5), and a first-byte disjointness rule is what would sharpen this one.",
-      "pattern": "28617c62292a63"
+      "pattern": "28617c62292a63",
+      "shape": 26
     },
     {
       "bounds": [
@@ -2182,7 +2956,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -2453,7 +3227,8 @@
       "config": 0,
       "name": "ambiguous-body-bounded",
       "note": "A body with two ways to match the same character, repeated at most three times. Each iteration doubles the ways into the next, so the flow through the head is a power of two and the bound stays a number.",
-      "pattern": "283f3a617c61297b302c337d"
+      "pattern": "283f3a617c61297b302c337d",
+      "shape": 26
     },
     {
       "bounds": [
@@ -2772,7 +3547,8 @@
       "config": 0,
       "name": "exponential",
       "note": "The same body with no upper bound, which is where the growing base comes from: the head is reached n + 2 times, so the flow is a multiple of 2^n and the bound saturates within a few dozen bytes of subject. That is the honest answer rather than a number nobody could budget for.",
-      "pattern": "283f3a617c61292a"
+      "pattern": "283f3a617c61292a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -2820,7 +3596,7 @@
         }
       ],
       "cert": {
-        "complexity": 1,
+        "complexity": 0,
         "config": 0,
         "cost": {
           "base": 1,
@@ -2919,9 +3695,10 @@
       },
       "check": 26,
       "config": 0,
-      "name": "linear-claim-that-holds",
-      "note": "The class claim of DESIGN.md section 6, held to the shape it names: a literal really does cost at most c * (n + 1).",
-      "pattern": "616263"
+      "name": "a-linear-bound-that-does-not-claim-to-be",
+      "note": "The class claim of DESIGN.md section 6 may be weaker than the bound, and only weaker. A literal really does cost at most c * (n + 1) and the first case above says so; declining to say so is refusing to make a claim rather than making a wrong one.",
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -3104,7 +3881,8 @@
       "config": 0,
       "name": "linear-claim-with-a-square",
       "note": "A star does not, and saying so does not make it so.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -3423,7 +4201,8 @@
       "config": 0,
       "name": "linear-claim-with-a-growing-base",
       "note": "Nor does an exponential bound, however small its coefficient.",
-      "pattern": "283f3a617c61292a"
+      "pattern": "283f3a617c61292a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -3471,7 +4250,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -3572,7 +4351,8 @@
       "config": 0,
       "name": "over-claimed-to-every-ceiling",
       "note": "A certificate may be generous, as long as it is generous in every coefficient at once. These reach exactly the three ceilings at n = 0: the counter's saturation point for cost, the deepest stack a limit could name, and the section 3 byte ceiling for memory. What a caller reads back is what the certificate names, not what the checker computed.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -3620,7 +4400,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -3721,7 +4501,8 @@
       "config": 0,
       "name": "over-claimed-past-every-ceiling",
       "note": "One unit more of each, which no limit could accept, so none of the three is a number any more. The three ceilings differ, which is the whole difference between the projections.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -3769,7 +4550,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -3870,7 +4651,8 @@
       "config": 0,
       "name": "past-the-memory-ceiling-and-still-a-cost",
       "note": "One IR byte more than the largest reservation there is, claimed as both. It is refused as memory and is a perfectly ordinary amount of work, which is the whole reason the three projections carry their own ceilings rather than sharing the counter's.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -3918,7 +4700,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -4053,7 +4835,8 @@
       "config": 0,
       "name": "an-uncaptured-certificate-on-a-capture",
       "note": "Four instructions and the same three regions over the same three ranges either way, and the only difference is that two of the instructions are saves. A save records an undo entry, so the certificate for the group that captures nothing is two entries short of the one that does. A checker given only a length could not tell these two programs apart at all.",
-      "pattern": "286129"
+      "pattern": "286129",
+      "shape": 26
     },
     {
       "bounds": [
@@ -4176,7 +4959,8 @@
           "lo": 0,
           "parent": 4294967295
         }
-      ]
+      ],
+      "shape": 13
     },
     {
       "bounds": [
@@ -4419,7 +5203,8 @@
           "lo": 3,
           "parent": 1
         }
-      ]
+      ],
+      "shape": 14
     },
     {
       "bounds": [
@@ -4582,7 +5367,8 @@
           "lo": 0,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 14
     },
     {
       "bounds": [
@@ -4630,7 +5416,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 1,
         "cost": {
           "base": 1,
@@ -4731,7 +5517,8 @@
       "config": 0,
       "name": "configuration-mismatch",
       "note": "A certificate for the Pike VM says nothing about the backtracking one, whatever its numbers are.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -4779,7 +5566,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 1,
         "cost": {
           "base": 1,
@@ -4880,7 +5667,8 @@
       "config": 1,
       "name": "no-rules-for-pike-yet",
       "note": "The Pike VM charges differently enough that borrowing these rules for it would be a guess. It gets its own, later in M5.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -4928,7 +5716,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 2,
         "cost": {
           "base": 1,
@@ -5029,7 +5817,8 @@
       "config": 2,
       "name": "no-rules-for-the-memoized-path",
       "note": "And the memoized path waits for M9, memo table and all.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -5178,7 +5967,8 @@
       "config": 0,
       "name": "fewer-prices-than-regions",
       "note": "A region nobody priced is a region the composition rules would read a zero out of.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -5395,7 +6185,8 @@
       "config": 0,
       "name": "more-prices-than-regions",
       "note": "And a price nobody emitted a region for is a claim about nothing.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -5578,7 +6369,8 @@
       "config": 0,
       "name": "cost-one-unit-short",
       "note": "The setup charge, one unit lower than the register file and the ovector really cost to zero.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -5761,7 +6553,8 @@
       "config": 0,
       "name": "cost-one-unit-short-per-position",
       "note": "The term in n, which is the one that decides whether a long subject fits the budget.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -5944,7 +6737,8 @@
       "config": 0,
       "name": "cost-one-unit-short-in-the-square",
       "note": "And the square, which is a linear loop run from every starting position and is what dominates any subject worth the name.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -6127,7 +6921,8 @@
       "config": 0,
       "name": "stack-one-entry-short",
       "note": "One backtrack entry fewer than the deepest the search goes.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -6310,7 +7105,8 @@
       "config": 0,
       "name": "memory-one-byte-short",
       "note": "One IR byte fewer than the peak, which counts the buffer being copied from as well as the one being copied to.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -6493,7 +7289,8 @@
       "config": 0,
       "name": "memory-one-byte-short-per-position",
       "note": "And one byte fewer of the capacity the two growing arrays reach.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -6676,7 +7473,8 @@
       "config": 0,
       "name": "region-work-one-visit-short",
       "note": "The root's own price, a visit short. A region is checked against what its children claim, so this fails at the region rather than at the total it feeds.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -6859,7 +7657,8 @@
       "config": 0,
       "name": "region-stack-one-entry-short",
       "note": "The repetition pushes one entry per pass through its head, and this claims it pushes fewer.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -7042,7 +7841,8 @@
       "config": 0,
       "name": "region-trail-one-entry-short",
       "note": "Its undo entries, which the counter's zeroing, its increment and the position it remembers all fill.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -7225,7 +8025,8 @@
       "config": 0,
       "name": "region-outs-one-way-short",
       "note": "And its ambiguity, one way out short. Understating that would let everything after the loop be priced for fewer passes than it gets.",
-      "pattern": "612a"
+      "pattern": "612a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -7442,7 +8243,8 @@
       "config": 0,
       "name": "inner-region-work-one-visit-short",
       "note": "A group three levels down, a visit short, to show that the induction reaches the leaves rather than stopping at what the root claims.",
-      "pattern": "286162292a63"
+      "pattern": "286162292a63",
+      "shape": 26
     },
     {
       "bounds": [
@@ -7659,7 +8461,8 @@
       "config": 0,
       "name": "inner-region-trail-one-entry-short",
       "note": "And the two saves that group is there for.",
-      "pattern": "286162292a63"
+      "pattern": "286162292a63",
+      "shape": 26
     },
     {
       "bounds": [
@@ -7910,7 +8713,8 @@
       "config": 0,
       "name": "ambiguity-that-grows-with-the-subject",
       "note": "A star inside a star. The inner one hands the outer one more ways to match at every extra byte of subject, so the pass count is a power of a polynomial and no bound of this shape has that form. A refusal is the honest answer.",
-      "pattern": "283f3a612a292a"
+      "pattern": "283f3a612a292a",
+      "shape": 26
     },
     {
       "bounds": [
@@ -8229,7 +9033,8 @@
       "config": 0,
       "name": "a-pass-count-past-the-counter",
       "note": "Two ways round a loop that may go round sixty times is 2^61, which no counter holds. The requirement saturating is not a requirement met.",
-      "pattern": "283f3a617c61297b302c36307d"
+      "pattern": "283f3a617c61297b302c36307d",
+      "shape": 26
     },
     {
       "bounds": [
@@ -8310,7 +9115,8 @@
       "name": "no-regions",
       "note": "A certificate with no root has nothing to be the pattern's bound.",
       "pattern": "616263",
-      "regions": []
+      "regions": [],
+      "shape": 0
     },
     {
       "bounds": [
@@ -8433,7 +9239,8 @@
           "lo": 0,
           "parent": 4294967295
         }
-      ]
+      ],
+      "shape": 1
     },
     {
       "bounds": [
@@ -8556,7 +9363,8 @@
           "lo": 0,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 2
     },
     {
       "bounds": [
@@ -8679,7 +9487,8 @@
           "lo": 1,
           "parent": 4294967295
         }
-      ]
+      ],
+      "shape": 3
     },
     {
       "bounds": [
@@ -8802,7 +9611,8 @@
           "lo": 0,
           "parent": 4294967295
         }
-      ]
+      ],
+      "shape": 3
     },
     {
       "bounds": [
@@ -8965,7 +9775,8 @@
           "lo": 1,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 4
     },
     {
       "bounds": [
@@ -9128,7 +9939,8 @@
           "lo": 1,
           "parent": 1
         }
-      ]
+      ],
+      "shape": 5
     },
     {
       "bounds": [
@@ -9291,7 +10103,8 @@
           "lo": 3,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 6
     },
     {
       "bounds": [
@@ -9454,7 +10267,8 @@
           "lo": 1,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 7
     },
     {
       "bounds": [
@@ -9657,7 +10471,8 @@
           "lo": 1,
           "parent": 1
         }
-      ]
+      ],
+      "shape": 7
     },
     {
       "bounds": [
@@ -9860,7 +10675,8 @@
           "lo": 2,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 8
     },
     {
       "bounds": [
@@ -10063,7 +10879,8 @@
           "lo": 0,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 8
     },
     {
       "bounds": [
@@ -10111,7 +10928,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 0,
@@ -10212,7 +11029,8 @@
       "config": 0,
       "name": "a-bound-with-no-base",
       "note": "0^n is 1 at n = 0 and 0 after that. No bound has that shape, and one that vanishes on longer subjects would look like a bound that holds.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -10260,7 +11078,7 @@
         }
       ],
       "cert": {
-        "complexity": 0,
+        "complexity": 1,
         "config": 0,
         "cost": {
           "base": 1,
@@ -10361,7 +11179,8 @@
       "config": 0,
       "name": "a-price-with-no-base",
       "note": "The same rule inside the tree, where the composition rules would go on to multiply the thing.",
-      "pattern": "616263"
+      "pattern": "616263",
+      "shape": 26
     },
     {
       "bounds": [
@@ -10524,7 +11343,8 @@
           "lo": 4,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 15
     },
     {
       "bounds": [
@@ -10767,7 +11587,8 @@
           "lo": 3,
           "parent": 1
         }
-      ]
+      ],
+      "shape": 15
     },
     {
       "bounds": [
@@ -10930,7 +11751,8 @@
           "lo": 0,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 15
     },
     {
       "bounds": [
@@ -11133,7 +11955,8 @@
           "lo": 1,
           "parent": 1
         }
-      ]
+      ],
+      "shape": 14
     },
     {
       "bounds": [
@@ -11376,7 +12199,8 @@
           "lo": 3,
           "parent": 1
         }
-      ]
+      ],
+      "shape": 14
     },
     {
       "bounds": [
@@ -11539,7 +12363,8 @@
           "lo": 0,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 14
     },
     {
       "bounds": [
@@ -11702,7 +12527,8 @@
           "lo": 0,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 13
     },
     {
       "bounds": [
@@ -11865,9 +12691,10 @@
           "lo": 0,
           "parent": 0
         }
-      ]
+      ],
+      "shape": 14
     }
   ],
-  "note": "Generated by pcretruste.engine.certificate_corpus. Each case compiles a pattern, hands the engine's bound-certificate checker one certificate for the program that came out, and asks for the three bounds it prices at every subject length below. Every implementation of the engine has to give exactly these answers: the same verdict, and the same number or the same refusal. A bound of null is the ExceedsBudget of DESIGN.md section 2.4, which is a refusal rather than a number and never a saturated counter.",
+  "note": "Generated by pcretruste.engine.certificate_corpus. Each case compiles a pattern, hands the engine's bound-certificate checker one certificate for the program that came out, and asks for the three bounds it prices at every subject length below. Each analysis compiles a pattern and reads the certificate the compiler's own analyzer produced, or records that it produced none. Every implementation of the engine has to give exactly these answers: the same verdict, the same class, and the same number or the same refusal. A bound of null is the ExceedsBudget of DESIGN.md section 2.4, which is a refusal rather than a number and never a saturated counter; a complexity of null is a pattern the analyzer found no bound for at all.",
   "schema": 1
 }

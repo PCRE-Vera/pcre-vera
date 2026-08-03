@@ -24,26 +24,40 @@ const Schema = 1
 
 // Read decodes the cases of one corpus, checking the envelope first.
 func Read[T any](path string) ([]T, error) {
+	return Section[T](path, "cases")
+}
+
+// Section decodes one named array of a corpus. A document may carry more than
+// one — the certificate corpus holds the checker's cases and the analyzer's
+// patterns separately, because the two are reached differently.
+func Section[T any](path string, name string) ([]T, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	var document struct {
-		Schema int             `json:"schema"`
-		Cases  json.RawMessage `json:"cases"`
+	var envelope struct {
+		Schema int `json:"schema"`
 	}
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		return nil, err
+	}
+	if envelope.Schema != Schema {
+		return nil, fmt.Errorf("%s has schema %d, want %d", path, envelope.Schema, Schema)
+	}
+	var document map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &document); err != nil {
 		return nil, err
 	}
-	if document.Schema != Schema {
-		return nil, fmt.Errorf("%s has schema %d, want %d", path, document.Schema, Schema)
+	body, held := document[name]
+	if !held {
+		return nil, fmt.Errorf("%s has no %s", path, name)
 	}
-	var cases []T
-	if err := json.Unmarshal(document.Cases, &cases); err != nil {
+	var out []T
+	if err := json.Unmarshal(body, &out); err != nil {
 		return nil, err
 	}
-	if len(cases) == 0 {
-		return nil, fmt.Errorf("%s holds no cases", path)
+	if len(out) == 0 {
+		return nil, fmt.Errorf("%s holds no %s", path, name)
 	}
-	return cases, nil
+	return out, nil
 }

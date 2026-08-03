@@ -2,18 +2,30 @@
 
 DESIGN.md section 5 says the resource analysis is split in two: an untrusted
 analyzer searches for a bound certificate, and a small checker decides whether
-to believe it. This document is the rule set the checker applies. It is written
-before the analyzer exists on purpose — the analyzer may only claim things the
-checker can verify, so the rules have to be settled first, or the analyzer ends
-up introducing facts nothing can check.
+to believe it. This document is the rule set they apply. It was written before
+the analyzer existed on purpose — the analyzer may only claim things the
+checker can verify, so the rules had to be settled first, or the analyzer would
+have ended up introducing facts nothing can check.
 
 Everything here is about `CfgBacktrack`, the backtracking VM of
 `engine/vm.py`. The Pike VM and the memoized path charge differently and get
 their own sections when they land; until then the checker refuses them by name
 rather than borrowing these rules.
 
-The implementation is `engine/certificate.py`, and the corpus that holds it to
-this document is `conformance/certificates.json`.
+There are two implementations, and that is the point. `engine/analyzer.py`
+walks the compiler's region tree in reverse emission order and computes a price
+for each region out of the prices of its children; `engine/certificate.py`
+takes a claimed price and reads it back against the bytecode. Neither calls the
+other. What they do share is `engine/bounds.py` — the arithmetic of section 2
+and the opcode table of section 3 — because DESIGN.md section 5 asks for one
+cost model behind the analyzer, both matchers and the Lean accounting, and a
+second copy of that is the easiest way to lose it. Sharing the composition
+would be a different thing entirely: the checker's verdict would become a
+restatement of the analyzer's own opinion.
+
+Compiling a pattern runs the analyzer and then the checker, and stores the
+certificate only if the checker accepts it. The corpus that holds both to this
+document is `conformance/certificates.json`.
 
 ## 1. What is being bounded
 
@@ -150,6 +162,15 @@ so is a region nobody priced.
 None of which makes the tree trusted. Every rule below reads it back against
 the bytecode, and a compiler that emitted a tree not describing its own output
 would be refused the same way a hand-written one is.
+
+Those rules are `cert_shape`, and they take no certificate. Whether a tree
+describes a program is a question about the program, with the same answer
+whether or not the composition rules can price the thing — so it is asked on
+its own, by the checker before it looks at a claim and by compilation before it
+asks the analyzer for anything. What is left in the pricing walk below is the
+arithmetic. The split matters in one direction in particular: a compiler bug
+that only showed up on patterns with no representable bound would otherwise
+have been reported for none of them.
 
 A price is what one *entry* into the region costs:
 
@@ -369,7 +390,7 @@ In the order it decides them, near enough:
 +----------------+--------------------------------------------------------+
 | CrNoRules      | this configuration has no rules yet: Pike, memo        |
 | CrConfig       | the certificate is for another configuration           |
-| CrPrices       | one price per region, and this is not that            |
+| CrPrices       | one price per region, and this is not that             |
 | CrNoRegions .. | the tree is not a tree, or its ranges do not nest      |
 | CrOverlap      |                                                        |
 | CrBase         | a claimed bound names a growth base of zero            |
@@ -387,3 +408,31 @@ In the order it decides them, near enough:
 every start offset and every combination of match options, the matcher charges
 no more cost, pushes no more backtrack entries and reserves no more scratch
 than this certificate names.
+
+## 8. What the analyzer answers
+
+Three refusals and a certificate, and the difference between the refusals is
+the difference between an inability and a bug:
+
++----------------+--------------------------------------------------------+
+| ArAmbiguous    | a repeat body whose ambiguity grows with the subject   |
+| ArOverflow     | a coefficient, a power or a pass count with no room    |
+| ArShape        | something in the tree the analyzer had no rule for     |
+| ArOk           | a certificate, which the checker still has to accept   |
++----------------+--------------------------------------------------------+
+
+The first two are the honest "no bound of the shape section 2 writes down".
+The pattern compiles, carries no certificate, and the accessors report
+ExceedsBudget for it. `(?:a*)*` is the first, `a*b*c*d*` and `(?:a|a){0,44}`
+are the second at the two different places arithmetic runs out.
+
+`ArOk` says a price came out, not that the tree was worth pricing. The analyzer
+stops only where it would otherwise have to guess or read past the end of the
+program; every rule in section 4 that holds a tree to the bytecode belongs to
+the checker, and stating them twice would be the duplication this split exists
+to avoid. So a tree that does not describe its own program may well price here
+and be refused there.
+
+That refusal, and `ArShape`, are the same thing: the two halves of this
+document disagreeing about one program, which no pattern can cause and only a
+bug of ours can. Compilation reports it rather than quietly dropping a bound.

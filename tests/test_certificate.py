@@ -1,34 +1,46 @@
-"""The bound certificate: what the checker accepts, and what it refuses.
+"""The bound certificate: what the analyzer produces and the checker believes.
 
-The analyzer does not exist yet, which is the point — DESIGN.md section 5 keeps
-it untrusted by having a small checker stand between it and anything that
-believes a bound. So the cases hand the checker certificates directly, exact
-and otherwise, and they are the specification the analyzer will have to be
-written against.
+DESIGN.md section 5 keeps the analyzer untrusted by having a small checker
+stand between it and anything that believes a bound, so there are two things to
+hold to. The checker's cases hand it certificates directly, exact and
+otherwise; the analyzer's are patterns, because compiling one runs it.
 
-They live in `engine/certificate_corpus.py` rather than here, because the same
-list becomes `conformance/certificates.json` and is answered by the generated Go
-and JavaScript too — and this file reads the committed JSON rather than the
+Both live in `engine/certificate_corpus.py` rather than here, because the same
+lists become `conformance/certificates.json` and are answered by the generated
+Go and JavaScript too — and this file reads the committed JSON rather than the
 objects it was written from, so an encoding that lost something fails here
 instead of quietly agreeing with itself.
 
-What only Python asks is the rest: that an accepted certificate really does
-bound a run of the matcher, that the arithmetic says the right thing at subject
-lengths worth naming one at a time, and that a value which is not a TIR value
-at all gets refused before the checker ever sees it.
+What only Python asks is the rest: that what the analyzer produced is exactly
+what an independent statement of the same rules produces, that an accepted
+certificate really does bound a run of the matcher, that the arithmetic says
+the right thing at subject lengths worth naming one at a time, and that a value
+which is not a TIR value at all gets refused before the checker ever sees it.
 """
 
 from __future__ import annotations
 
 import itertools
+from dataclasses import replace
 
 import pytest
 
-from pcretruste.engine import Certificate, Engine, EngineError, Poly, Price, Region, spec
+import test_engine_differential as differential
+from pcretruste.engine import (
+    Certificate,
+    Engine,
+    EngineError,
+    Poly,
+    Price,
+    InternalError,
+    Region,
+    spec,
+)
 from pcretruste.engine import certificate_corpus
 from pcretruste.engine.certificate_corpus import (
     CASES,
     KINDS,
+    LENGTHS,
     LITERAL,
     STAR,
     UNCAPTURED,
@@ -39,15 +51,21 @@ from pcretruste.engine.certificate_corpus import (
     root,
     unpriced,
 )
+from pcretruste.engine import driver
 from pcretruste.engine.driver import CompiledPattern, Limits, ResourceExceeded
 from pcretruste.oracle import corpus as wave1
 from pcretruste.engine.program import program
-from pcretruste.tir.types import CAP, CEILING
+from pcretruste.tir.interp import Cell
+from pcretruste.tir.types import CAP, CEILING, StructType
 
 COMMITTED = certificate_corpus.load()
 """The corpus as the file spells it, which is what the other two runners read."""
 
+ANALYSED = certificate_corpus.load_analyses()
+
 IDS = [case.name for case in COMMITTED]
+
+ANALYSIS_IDS = [one.name for one in ANALYSED]
 
 
 @pytest.fixture(scope="module")
@@ -68,8 +86,14 @@ def test_the_corpus_says_the_same_thing_as_the_cases_it_came_from() -> None:
 
     Every field the runners read, the enum ordinals back as the variants they
     stand for, and the note a failure in any of the three quotes back.
+
+    Recorded bounds are out of that comparison, since they are read off the
+    engine rather than written by the case, so their row count is asked for
+    here: the tests that check them are loops, and a loader that dropped every
+    row would leave those loops empty and this equality green.
     """
     assert COMMITTED == CASES
+    assert [len(case.bounds) for case in COMMITTED] == [len(LENGTHS)] * len(CASES)
 
 
 @pytest.mark.parametrize("case", COMMITTED, ids=IDS)
@@ -79,10 +103,157 @@ def test_the_checker_draws_the_verdict_the_case_names(engine, case) -> None:
 
 
 @pytest.mark.parametrize("case", COMMITTED, ids=IDS)
-def test_the_bounds_are_the_ones_the_corpus_records(engine, case) -> None:
-    for row in case.bounds:
+def test_the_tree_half_of_the_checker_draws_the_verdict_recorded(engine, case) -> None:
+    """`cert_shape` is the checker without the certificate, and this is its half.
+
+    Not "CrOk or the verdict", which would be satisfied by a `cert_shape` that
+    never said anything: the corpus records which of the two halves answered
+    each case, and the relation that produced it — a verdict about the tree
+    comes from this half, a verdict about the numbers leaves it silent — is
+    checked when the file is written. All three runners ask, because an
+    extraction that drifted in one backend is what three of them are for.
+    """
+    assert engine.check_shape(case.subject()) == case.shape, case.note
+
+
+def _records(rows, evaluate, note: str) -> None:
+    """Every recorded bound, at every length the corpus names one for."""
+    for row in rows:
         for key, which in KINDS:
-            assert engine.bound(case.cert, which, row["n"]) == row[key], f"{key} at n={row['n']}"
+            where = f"{note}: {key} at n={row['n']}"
+            assert evaluate(which, row["n"]) == row[key], where
+
+
+@pytest.mark.parametrize("case", COMMITTED, ids=IDS)
+def test_the_bounds_are_the_ones_the_corpus_records(engine, case) -> None:
+    _records(case.bounds, lambda which, n: engine.bound(case.cert, which, n), case.name)
+
+
+def test_the_analysis_corpus_says_the_same_thing_as_the_entries_it_came_from() -> None:
+    # And the same row count, for the same reason, except that an entry the
+    # analyzer found no bound for has nothing to evaluate and records nothing.
+    assert ANALYSED == certificate_corpus.ANALYSES
+    assert [len(one.bounds) for one in ANALYSED] == [
+        0 if one.complexity is None else len(LENGTHS) for one in ANALYSED
+    ]
+
+
+@pytest.mark.parametrize("entry", ANALYSED, ids=ANALYSIS_IDS)
+def test_compiling_produces_the_certificate_the_corpus_records(engine, entry) -> None:
+    """The production path, from a pattern to the three numbers a caller reads.
+
+    The verdict comes from running the analyzer again, so that a pattern with
+    no bound is refused for the reason the corpus names rather than for
+    whichever one came first. Everything else is read off the compiled pattern,
+    which is the only place the rest of the engine will ever look.
+    """
+    built = compiled(entry.pattern)
+    found, _ = engine.analyze(built)
+    assert found == entry.found, entry.note
+    cert = built.certificate
+    assert (None if cert is None else cert.complexity) == entry.complexity, entry.note
+    # Off the certificate the pattern carries, which is what the Go and
+    # JavaScript runners evaluate; `bound` would take one that had been out of
+    # the engine and back in, and a round trip is not what they are testing.
+    _records(entry.bounds, lambda which, n: engine.bound_of(built, which, n), entry.name)
+
+
+def test_every_answer_the_analyzer_can_give_is_exercised(engine) -> None:
+    # `ArShape` is the one no pattern reaches, because it means this engine
+    # read its own compiler's tree and did not recognise it. The only way to
+    # ask for it is to hand the analyzer a tree no compiler wrote, which is the
+    # same thing the checker's structural cases do.
+    doctored = compiled(b"abc").with_regions(
+        (root(4), region("RkRepeat", 0, 0, 3))
+    )
+    seen = {engine.analyze(doctored)[0]} | {one.found for one in ANALYSED}
+    assert seen == set(program().enum_map["Ar"].variants)
+
+
+def test_a_reused_result_does_not_carry_the_last_patterns_certificate() -> None:
+    """`compile` writes every field of its result, the certificate included.
+
+    Python builds a fresh one per call, so this goes under the driver to ask
+    what a caller of the generated Go or JavaScript would see if they did not.
+    A slot left alone by a pattern the analyzer found no bound for would pair
+    one pattern's bytecode with another pattern's bound, which is the one
+    reading the availability flag exists to prevent.
+    """
+    interp = Engine()._interp()
+    out = Cell(interp.zero(StructType("Out")))
+    for pattern, wanted in ((b"abc", True), (b"a*b*c*d*", False)):
+        interp.call("compile", [driver._blob(pattern), 0, 0, 0, out])
+        assert out.value.fields["err"] == 0, pattern
+        assert out.value.fields["re"].fields["hascert"] is wanted, pattern
+
+
+@pytest.mark.parametrize("pattern", [b"(a+)+", b"a*b*c*d*"], ids=["ambiguous", "overflow"])
+def test_the_tree_is_checked_even_when_there_is_no_bound_to_check(engine, pattern) -> None:
+    """Where the two halves of the checker have to be asked separately.
+
+    A pattern the composition rules cannot price still has a region tree, and a
+    compiler that emitted a bad one is a bug of ours whether or not there was
+    ever going to be a certificate. Gating the tree check on a certificate
+    arriving would have left that bug hiding behind exactly the patterns the
+    analyzer gives up on, so compilation asks `cert_shape` before it asks the
+    analyzer for anything.
+    """
+    built = compiled(pattern)
+    assert built.certificate is None
+    tree = list(read(built).regions)
+    doctored = built.with_regions((replace(tree[0], parent=0), *tree[1:]))
+    assert engine.analyze(doctored)[0] in ("ArAmbiguous", "ArOverflow")
+    assert engine.check_shape(doctored) == "CrRootParent"
+
+
+def test_nothing_structural_is_left_in_the_pricing_walk(engine) -> None:
+    """The split, asked of trees the corpus does not contain.
+
+    Every verdict `cert_shape` is allowed to draw is one it has to draw:
+    anything the whole checker refuses for a structural reason, the half that
+    takes no certificate has to refuse for the same reason and by itself. A
+    rule left behind in the pricing walk would still reach `cert_check` — the
+    corpus would not notice — and would still be invisible to compilation on
+    any pattern the analyzer gives up on, which is the whole of the finding.
+
+    One field of one region at a time, which is enough: what the split can lose
+    is a rule, and a rule that is gone is gone for the simplest tree that trips
+    it.
+    """
+    seen = set()
+    for pattern in (b"abc", b"(a)", b"a|b", b"a?", b"a*", b"a{2,5}", b"(ab)*c", b"(a|)"):
+        built = compiled(pattern)
+        tree = read(built).regions
+        for at, one in enumerate(tree):
+            for field, values in (
+                ("kind", program().enum_map["Rk"].variants),
+                ("parent", (0, 1, spec.NONE)),
+                ("lo", (0, 1, one.hi + 1)),
+                ("hi", (0, 1, one.lo, one.hi + 1)),
+            ):
+                now = getattr(one, field)
+                for value in (v for v in values if v != now):
+                    bent = (*tree[:at], replace(one, **{field: value}), *tree[at + 1 :])
+                    try:
+                        doctored = built.with_regions(bent)
+                    except EngineError:
+                        continue
+                    verdict = engine.check_certificate(doctored, unpriced(len(bent)))
+                    if verdict not in STRUCTURE:
+                        continue
+                    seen.add(verdict)
+                    assert engine.check_shape(doctored) == verdict, (pattern, at, field, value)
+    # A sweep that tripped two rules would pass this test while saying nothing
+    # about the rest, so what it reached is named.
+    assert len(seen) >= 8
+
+
+def test_a_pattern_with_no_bound_still_compiles_and_still_matches(engine) -> None:
+    # The contract of DESIGN.md section 5: the analysis may fail to find a
+    # bound, and that is a fact about the bound rather than about the pattern.
+    built = compiled(b"(?:a*)*")
+    assert built.certificate is None
+    assert engine.match_compiled(built, b"aaa").ovector[:2] == (0, 3)
 
 
 def test_every_verdict_the_checker_can_give_has_a_case() -> None:
@@ -91,10 +262,12 @@ def test_every_verdict_the_checker_can_give_has_a_case() -> None:
     assert {case.check for case in COMMITTED} == set(program().enum_map["Cr"].variants)
 
 
-def test_no_two_cases_share_a_name() -> None:
+@pytest.mark.parametrize("names", [IDS, ANALYSIS_IDS], ids=["cases", "analyses"])
+def test_no_two_entries_share_a_name(names) -> None:
     # The three runners report a failure by name, so a duplicate would send a
-    # reader to the wrong case.
-    assert len(IDS) == len(set(IDS))
+    # reader to the wrong one. The two halves are named apart, since they are
+    # about a pattern from opposite ends and share several of them.
+    assert len(names) == len(set(names))
 
 
 def test_a_region_names_a_construct_the_compiler_emits() -> None:
@@ -138,16 +311,18 @@ def test_an_accepted_certificate_bounds_every_run_of_the_matcher(engine, pattern
 
     Every subject below, from every start offset, under every option and every
     pair of options, with what the matcher reports having used held against
-    what the certificate said it could. This is the small version of the fuzz
-    assertion M5 finishes with; what it buys today is that the composition
-    rules of BOUNDS.md were transcribed the way they were meant.
+    what the certificate said it could. The certificate is the one compilation
+    produced, so this is the production path end to end. It is the small
+    version of the fuzz assertion M5 finishes with; what it buys today is that
+    the composition rules of BOUNDS.md were transcribed the way they were meant.
     """
-    case = next(one for one in COMMITTED if one.pattern == pattern and one.check == "CrOk")
     built = compiled(pattern)
-    assert engine.check_certificate(built, case.cert) == "CrOk"
+    cert = built.certificate
+    assert cert is not None
+    assert engine.check_certificate(built, cert) == "CrOk"
     combinations = [()] + [(one,) for one in OPTIONS] + list(itertools.combinations(OPTIONS, 2))
     for subject in SUBJECTS:
-        bounds = {key: engine.bound(case.cert, which, len(subject)) for key, which in KINDS}
+        bounds = {key: engine.bound(cert, which, len(subject)) for key, which in KINDS}
         for start in range(len(subject) + 1):
             for options in combinations:
                 out = engine.match_compiled(
@@ -264,12 +439,33 @@ STRUCTURE = frozenset(
         "CrOpcode", "CrShape", "CrChildren",
     }
 )
-"""The verdicts that are about the tree rather than about the numbers in it."""
+"""The verdicts that are about the tree rather than about the numbers in it.
+
+Two tests read it, and they read it in opposite directions: a tree the compiler
+emitted may never draw one of these, and a tree that draws one has to draw it
+from the half of the checker that takes no certificate.
+
+`CrShape` is in the list because a program the checker cannot read is one of
+the things it means. The other is a certificate field naming no variant of its
+enum, which is why a case records which half answered rather than deriving it
+from the verdict.
+"""
 
 
 def _emitted(patterns):
+    """Every one of these that compiles, and a failed test for one that cannot.
+
+    A pattern outside wave 1 is skipped, because there is nothing to say about
+    the tree or the bound of a program nobody generated. Our own internal error
+    is not that: it is what compilation reports when the analyzer and the
+    checker disagree about a program, and a sweep that skipped it would be
+    blind to the one failure it is here to find.
+    """
     for pattern in patterns:
-        built = certificate_corpus.ENGINE.compile_pattern(pattern)
+        built = certificate_corpus.attempted(pattern)
+        assert not isinstance(built, InternalError), (
+            f"{pattern!r}: the analyzer and the checker disagree"
+        )
         if isinstance(built, CompiledPattern):
             yield pattern, built
 
@@ -320,6 +516,65 @@ def test_almost_every_shape_prices_as_well(engine) -> None:
             continue
         assert engine.check_certificate(built, priced) == "CrOk", pattern
     assert refused == [rb"(?:a*)+", rb"(a+)+", rb"((a|b)*c)*", rb"\b(?:\w+|\d)*\b"]
+
+
+# --- what the analyzer comes up with ---
+
+
+def test_the_analyzer_agrees_with_the_reference_pricer_exactly() -> None:
+    """Two statements of BOUNDS.md, compared coefficient by coefficient.
+
+    `price` is the corpus's own reading of the same document, written in Python
+    and never run in production; the analyzer is the one compilation runs. They
+    share the rules and nothing else, so the interesting thing is not that both
+    produce a certificate the checker accepts — the checker would say so about
+    either — but that they produce the same one, down to the class claim and
+    the last coefficient of every region.
+
+    And where the rules have no answer they have to have no answer together.
+    An analyzer that quietly found a bound the reference refuses would be
+    claiming something the reference could not check.
+    """
+    for pattern, built in _emitted(PRICED + SHAPES):
+        try:
+            want = certificate_corpus.price(read(built))
+        except ValueError:
+            want = None
+        assert built.certificate == want, pattern
+
+
+def test_every_pattern_of_the_wave_one_corpus_is_priced_or_refused(engine) -> None:
+    """The definition of done for the backtracking analyzer, over everything.
+
+    Two outcomes and no third. `_emitted` fails on the third — an internal
+    error, which is what compilation reports when the analyzer and the checker
+    disagree about a program — so what running the checker again adds is the
+    round trip: the certificate as it comes back out of a compiled pattern,
+    which the compiler itself never makes.
+    """
+    priced = 0
+    for pattern, built in _emitted(one.pattern for one in wave1.load().cases):
+        if built.certificate is None:
+            continue
+        assert engine.check_certificate(built, built.certificate) == "CrOk", pattern
+        priced += 1
+    # Not an assertion about the number, only that the loop had something to
+    # do: a bug that returned no certificate for anything would otherwise pass
+    # this test by never entering it.
+    assert priced > 50
+
+
+def test_generated_patterns_are_priced_or_refused_too() -> None:
+    """The same, on patterns nobody wrote down.
+
+    The failure this is really about is the one no hand-written corpus can be
+    relied on to find, and it is `_emitted` that catches it. The round trip is
+    not repeated here — it is the same round trip, and this list is five times
+    longer — so what is left is the count, which says the shapes below reached
+    the analyzer at all rather than being skipped as outside wave 1.
+    """
+    generated = [text.encode("latin-1") for text in differential._patterns(seed=5, extra=200)]
+    assert sum(built.certificate is not None for _, built in _emitted(generated)) > 150
 
 
 def test_a_generous_certificate_is_accepted_and_a_short_one_is_not(engine) -> None:

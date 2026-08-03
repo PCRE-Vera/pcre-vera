@@ -14,8 +14,9 @@ expectation is one tagged object. Nothing is recorded from a run, so a backend
 that agrees with the file agrees with pcre2 for the same reason the Python
 engine does.
 
-Bounds are the other half of what section 8 asks for, and they arrive with the
-M5 analyzer; there is nothing to write down until then.
+Bounds are the other half of what section 8 asks for, and they live in
+`conformance/certificates.json` rather than here: what they are about is the
+program a pattern compiles to, not the answer it gives.
 
 The document envelope — the schema number, the note, the exact bytes a
 committed corpus is written as — lives here rather than in either corpus,
@@ -105,9 +106,29 @@ def read(path) -> dict[str, Any]:
     built = json.loads(path.read_text())
     if built.get("schema") != SCHEMA:
         raise ValueError(f"{path.name} has schema {built.get('schema')!r}, not {SCHEMA}")
-    if not built.get("cases"):
-        raise ValueError(f"{path.name} holds no cases")
+    section(built, "cases", path)
     return built
+
+
+def section(built: dict[str, Any], name: str, path) -> list[Any]:
+    """One named array of a corpus, which may carry more than one.
+
+    The certificate corpus holds the checker's cases and the analyzer's
+    patterns separately, because the two halves of DESIGN.md section 5 are
+    reached differently. Asking for a section by name is what keeps the "is
+    this a corpus at all" rule here rather than at every place that reads a
+    second one.
+
+    A section is a list with something in it. Truthiness is not the same
+    question — an object and a string are both true — and the other two
+    runners do not ask it: JavaScript wants an array and Go decodes into a
+    slice or fails. A corpus is one thing in three languages, so a malformed
+    one has to be refused in three.
+    """
+    held = built.get(name)
+    if not isinstance(held, list) or not held:
+        raise ValueError(f"{path.name} holds no {name}")
+    return held
 
 
 def corpus() -> dict[str, Any]:

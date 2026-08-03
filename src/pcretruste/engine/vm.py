@@ -12,8 +12,9 @@ entries are recorded only while there is something to backtrack to, which is
 what keeps the trail from growing over a long run of a pattern that has no
 choice points at all.
 
-The bounds these limits are compared against are the caller's, not yet the
-analyzer's: computing them from the pattern is M5.
+The limits are the caller's. What the pattern itself can cost is the analyzer's
+answer, and every charge here is one BOUNDS.md prices, so a limit set from a
+certificate is one this matcher stays inside.
 """
 
 from __future__ import annotations

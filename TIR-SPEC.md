@@ -1094,11 +1094,10 @@ what the accounting reports rather than the final capacity. Both backends
 allocate a new buffer and copy; neither may use an in-place reallocation that
 would make the peak smaller and the number wrong.
 
-That accounting is the M5 analyzer's, and it does not exist yet. What TIR
-fixes here, and what M5 will read, is the schedule: given the sequence of
-operations a program performs, the capacity after each one is determined, so
-the peak is a function of the program rather than of an implementation's
-appetite.
+That accounting is the M5 analyzer's. What TIR fixes here, and what the
+analyzer reads, is the schedule: given the sequence of operations a program
+performs, the capacity after each one is determined, so the peak is a function
+of the program rather than of an implementation's appetite.
 
 ## 12. Traps
 
