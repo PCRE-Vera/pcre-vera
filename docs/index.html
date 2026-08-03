@@ -6,7 +6,7 @@
   <title>PCRE-Vera: Formally verified PCRE, with resource contracts</title>
   <meta name="description" content="PCRE-Vera is a formally verified implementation and specification of the PCRE regular-expression language. Mechanically verified in Lean, it computes resource contracts and generates idiomatic, interoperable Go and JavaScript engines." />
   <meta property="og:title" content="PCRE-Vera" />
-  <meta property="og:description" content="Formally verified PCRE with resource contracts. One specification, proved in Lean, printed as idiomatic Go and JavaScript." />
+  <meta property="og:description" content="Formally verified PCRE with resource contracts. One specification, proved in Lean, built into idiomatic Go and JavaScript." />
   <meta property="og:type" content="website" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -237,11 +237,11 @@
       <div class="container">
         <div class="section__head reveal">
           <span class="kicker">How it works</span>
-          <h2>Authored once. Proved once. Printed everywhere.</h2>
+          <h2>Authored once. Proved once. Built for every language.</h2>
           <p class="section__sub">
             PCRE&#8209;Vera is a pipeline, not a hand&#8209;written library per language. The engine is written
             once in a small verified&#8209;friendly intermediate representation; the same artifact is both
-            proved in Lean and printed to each target.
+            proved in Lean and built for each target.
           </p>
         </div>
 
@@ -388,7 +388,7 @@
         <div class="faq reveal">
           <details>
             <summary>Is this just another regex library?</summary>
-            <p>No. PCRE&#8209;Vera is a verified <em>specification</em> plus generators. You don't get a hand&#8209;ported library per language; you get engines printed from a single artifact that was proved correct in Lean and checked against a pinned <code>libpcre2</code>.</p>
+            <p>No. PCRE&#8209;Vera is a verified <em>specification</em> plus generators. You don't get a hand&#8209;ported library per language; you get engines generated from a single artifact that was proved correct in Lean and checked against a pinned <code>libpcre2</code>.</p>
           </details>
           <details>
             <summary>Does it use the C library under the hood?</summary>
