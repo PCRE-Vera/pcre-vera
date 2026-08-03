@@ -755,3 +755,17 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   closure. The differential test found it on the fourth hand-written case,
   which is why the cross-matcher obligation exists; a design argued only on
   the whiteboard would have shipped it.
+- Checked the Pike certificate's stack claim by domination, like the other
+  two bounds, when section 9's rule for it is equality with zero: no
+  backtrack stack exists on that path, so a certificate claiming entries the
+  matcher can never push dominated the requirement trivially and was
+  accepted, letting an accessor report a requirement nothing has. When a
+  rule says "exactly", transcribing it with the comparison every neighboring
+  rule uses is how "at least" sneaks in; the corpus case that would have
+  caught it — a mutation upward, not downward — did not exist because every
+  existing mutation case was about claiming too little.
+- Pinned the independent Pike restatement to one exact case, a literal with
+  no captures and no Saves, so two of the closed form's four counts were
+  multiplied by zero in the only place the restatement was compared. An
+  independent restatement earns its keep exactly on the inputs where every
+  term bites.

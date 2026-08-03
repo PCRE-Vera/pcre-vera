@@ -27,7 +27,8 @@ schedule read back through `cap`, a struct written through after being copied �
 and this file says what every call has to answer.
 
 `certificates.json` is the bound certificates of DESIGN.md section 5 and
-BOUNDS.md, and it has two arrays because that section has two halves.
+BOUNDS.md, and it has three arrays: one per half of that section, and one for
+the public surface the halves exist to serve.
 
 Its `cases` are the checker's: each carries the pattern it prices, the verdict
 the checker has to draw, which of its two halves drew it, and the three bounds
@@ -82,14 +83,29 @@ The runners, one row per file and one column per language:
 |                   | gen/js/test/certificate   | the generated JavaScript  |
 |                   |   .test.mjs               |                           |
 +-------------------+---------------------------+---------------------------+
+| certificates.json | tests/test_certificate.py | the Python interpreter    |
+|   `accessors`     | gen/go/conformance_test   | the generated Go          |
+|                   |   .go                     |                           |
+|                   | gen/js/test/accessors     | the generated JavaScript  |
+|                   |   .test.mjs               |                           |
++-------------------+---------------------------+---------------------------+
 ```
 
 The Go certificate runner sits inside the generated package rather than beside
 the wrapper, because TIR field names are printed verbatim and Go cannot reach a
 lower-case field from another package, so a certificate has to be built there.
-The JavaScript one needs no such thing.
+The JavaScript one needs no such thing, and the accessor runners need the
+opposite: they live beside the wrappers — `gen/go/conformance_test.go` and
+`gen/js/test/accessors.test.mjs` — because their whole point is to reach the
+numbers the way an application would.
 
-The bounds DESIGN.md section 8 asks for are in the `analysis` entries above,
-now that compilation produces the certificates the `cases` still build from the
-side. What they do not yet cover is the public accessors, which report the same
-numbers and do not exist.
+Its `accessors` entries pin that public surface: the complexity class, and for
+every configuration and subject length queried, the status and value each
+worst-case accessor answers. A status is the engine's outcome ordinal — 0 for
+a number, 3 for BadInput, 4 for the ExceedsBudget that is deliberately not
+the runtime ResourceExceeded — so a wrapper that folded two refusals together
+disagrees here. A query marked `exercise` must also survive a match on a
+subject of that length with the three pinned bounds passed unchanged as the
+limits: anything but ResourceExceeded. The gate is the pinned cost bound
+itself, which also bounds the work such a run can really do, so no runner is
+ever told to walk an exponential search to prove a point.

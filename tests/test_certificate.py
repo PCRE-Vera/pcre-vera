@@ -158,6 +158,113 @@ def test_compiling_produces_the_certificate_the_corpus_records(engine, entry) ->
     _records(entry.bounds, lambda which, n: engine.bound_of(built, which, n), entry.name)
 
 
+def test_compilation_prices_the_pike_path_exactly_as_the_restatement(engine) -> None:
+    """Not merely accepted, equal: the certificate compilation stores for the
+    Pike path is the one `lockstep` computes from BOUNDS.md section 9.
+
+    Domination alone would let the engine's pricing drift conservatively away
+    from the document; equality on patterns where every count bites — groups
+    for the block width, Saves for the copy-on-write term — pins it.
+    """
+    for pattern in (b"abc", b"", b"(a)(b*)", b"(?:a|a)*", b"a*b*c*d*"):
+        built = compiled(pattern)
+        assert engine.pike_eligible(built), pattern
+        assert built.pike_certificate == certificate_corpus.lockstep(pattern), pattern
+
+
+# --- the public accessors, as the corpus pins them ---
+
+
+ACCESSED = certificate_corpus.load_accessors()
+
+ACCESS_IDS = [one["name"] for one in ACCESSED]
+
+
+def test_the_accessor_corpus_says_the_same_thing_as_the_entries_it_came_from() -> None:
+    assert ACCESSED == certificate_corpus.accesses()
+
+
+@pytest.mark.parametrize("entry", ACCESSED, ids=ACCESS_IDS)
+def test_the_public_accessors_answer_what_the_corpus_pins(engine, entry) -> None:
+    """The whole accessor surface, one query at a time.
+
+    This is the same file the Go and JavaScript runners read against their
+    wrappers, so the three languages are held to identical statuses and
+    identical numbers, refusals included.
+    """
+    built = compiled(bytes.fromhex(entry["pattern"]))
+    want = (entry["class"]["status"], entry["class"]["value"])
+    assert engine.complexity_class(built) == want, entry["note"]
+    for row in entry["queries"]:
+        for key, _ in KINDS:
+            got = engine.worst_case(built, key, row["n"], row["config"])
+            where = f"{entry['name']}: {key} at n={row['n']} config={row['config']}"
+            assert got == (row[key]["status"], row[key]["value"]), where
+
+
+@pytest.mark.parametrize("entry", ACCESSED, ids=ACCESS_IDS)
+def test_a_pinned_bound_is_a_sufficient_limit(engine, entry) -> None:
+    """Every exercise row, run: the three bounds unchanged as the limits.
+
+    The sufficiency half of the contract through the public surface — a match
+    at exactly the reported bounds may find or not find, but it may not run
+    out — plus the usage reading back under every one of them.
+    """
+    built = compiled(bytes.fromhex(entry["pattern"]))
+    for row in entry["queries"]:
+        if not row["exercise"]:
+            continue
+        limits = Limits(
+            cost=row["cost"]["value"],
+            stack=row["stack"]["value"],
+            memory=row["mem"]["value"],
+        )
+        outcome = engine.match_compiled(built, b"a" * row["n"], limits=limits)
+        where = f"{entry['name']} at n={row['n']}"
+        assert not isinstance(outcome, (ResourceExceeded, driver.BadInput)), where
+        use = engine.last_usage
+        assert use is not None
+        assert use.cost <= row["cost"]["value"], where
+        assert use.stack <= row["stack"]["value"], where
+        assert use.memory <= row["mem"]["value"], where
+
+
+def test_some_row_really_is_exercised() -> None:
+    """The test above is a loop over a flag the generator computes, so an
+    engine that stopped marking any row would leave it green and empty."""
+    assert any(row["exercise"] for one in ACCESSED for row in one["queries"])
+
+
+def test_a_length_nothing_represents_is_bad_input(engine) -> None:
+    """What no counter holds is refused at the door, exactly like the limits.
+
+    The corpus can only carry lengths every language can spell, so the ones
+    Python alone can — a negative, a float, a bool, a value past the
+    saturation point — are pinned here, per DESIGN.md section 2.4's
+    exact-integer rule.
+    """
+    built = compiled(b"abc")
+    for length in (-1, CAP + 1, True, False, 1.5, 10.0):
+        assert engine.worst_case(built, "cost", length) == (spec.BAD_INPUT, 0), length
+    for config in (-1, 2**32, True, 0.5):
+        assert engine.worst_case(built, "cost", 10, config) == (spec.BAD_INPUT, 0), config
+
+
+def test_the_match_configuration_is_part_of_the_match_surface(engine) -> None:
+    """`match` takes the same configuration the accessors price.
+
+    The default is the path compilation selected; the memoized value exists
+    and is BadInput until M9; an ordinal nobody defined is BadInput forever;
+    and what no u32 holds is refused before the engine sees it.
+    """
+    built = compiled(b"abc")
+    good = engine.match_compiled(built, b"xabc", match_config=spec.MC_DEFAULT)
+    assert not isinstance(good, driver.BadInput)
+    for config in (spec.MC_MEMO, 2, 7, 0xFFFFFFFF, -1, 2**32, 0.5, True):
+        got = engine.match_compiled(built, b"xabc", match_config=config)
+        assert isinstance(got, driver.BadInput), config
+
+
 def test_every_answer_the_analyzer_can_give_is_exercised(engine) -> None:
     # `ArShape` is the one no pattern reaches, because it means this engine
     # read its own compiler's tree and did not recognise it. The only way to
@@ -325,7 +432,7 @@ def test_an_accepted_certificate_bounds_every_run_of_the_matcher(engine, pattern
         bounds = {key: engine.bound(cert, which, len(subject)) for key, which in KINDS}
         for start in range(len(subject) + 1):
             for options in combinations:
-                out = engine.match_compiled(
+                out = engine.bt_match_compiled(
                     built, subject, start=start, match_options=list(options), limits=ROOMY
                 )
                 assert not isinstance(out, ResourceExceeded), (subject, start, options)

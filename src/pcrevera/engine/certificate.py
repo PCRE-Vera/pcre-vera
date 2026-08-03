@@ -841,9 +841,13 @@ def _check(L: Layout) -> None:
     cert = f["cert"]
     over = f.let("over", boolean, boolean(False))
 
-    # The Pike VM and the memoized path charge differently enough that
-    # borrowing these rules for them would be a guess, so they wait for their
-    # own (DESIGN.md section 5, M5 and M9).
+    # The Pike VM has rules of its own — BOUNDS.md section 9, a whole-call
+    # closed form rather than a composition — and its checker lives with its
+    # matcher. The memoized path waits for M9 and is refused by name.
+    with f.if_(f["config"] == L.Cfg.CfgPike):
+        answered = f.let("answered", L.Cr, L.Cr.CrNoRules)
+        f.call("pike_check", [re, cert], dest=answered)
+        f.ret(answered)
     with f.if_(f["config"] != L.Cfg.CfgBacktrack):
         f.ret(L.Cr.CrNoRules)
     with f.if_(cert.field("config") != f["config"]):

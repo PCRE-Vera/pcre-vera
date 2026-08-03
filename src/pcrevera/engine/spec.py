@@ -118,6 +118,34 @@ A region is a source construct the compiler flattened — a group, an alternatio
 branch, a quantifier body — so the AST arena already bounds how many there can
 be."""
 
+# --- the Pike VM's scratch (DESIGN.md section 4.3) ---
+#
+# The lockstep matcher keeps threads, not a backtrack stack, and every array it
+# touches is bounded by the program size: a thread list holds at most one
+# suspended thread per instruction, the closure walk visits each instruction at
+# most once per position, and each visit pushes at most two continuations.
+
+MAX_THREADS = MAX_CODE
+"""Suspended threads in one list: the closure's visited set admits each
+instruction once, so a list can never hold more entries than the program."""
+
+MAX_CLOSURE = 2 * MAX_CODE
+"""Depth of the closure walk's explicit stack. Every instruction is expanded
+at most once per position and pushes at most two continuations, so the stack
+can never hold more than twice the program."""
+
+MAX_BLOCKS = 4 * MAX_CODE + 4
+"""Capture blocks in the copy-on-write pool. Every live handle sits in one of
+the two thread lists, on the closure stack, or is the recorded match or the
+seed in flight, and each of those is bounded above; sharing only ever needs
+fewer blocks, never more."""
+
+MAX_POOL = MAX_BLOCKS * MAX_OVEC
+"""Capture slots across every block, as one flat array."""
+
+TH_SIZE = 8
+"""IR bytes of one thread entry: two u32."""
+
 MAX_DEGREE = 4
 """The highest power of (n + 1) a bound polynomial carries.
 
@@ -207,6 +235,32 @@ BSR_ANYCRLF = 1
 
 BSR_CONVENTIONS = {"UNICODE": BSR_UNICODE, "ANYCRLF": BSR_ANYCRLF}
 
+MAX_LENGTH = CEILING
+"""The longest subject in bytes, from DESIGN.md section 2.4: ovector entries
+are i32 byte offsets, so a longer subject could not report where it matched.
+The analysis accessors hold their subject-length argument to the same cap,
+because a bound at a length no subject can have describes nothing."""
+
+# --- match configurations ---
+#
+# The public matchConfig of DESIGN.md section 2.4, one value used consistently
+# across matching, the analysis accessors and, later, context creation. It only
+# chooses memoized backtracking or not; the Pike/backtracking split is fixed at
+# compilation and is deliberately not a public switch. Memoization arrives with
+# M9, so until then asking for it is BadInput, exactly like an ordinal nobody
+# defined.
+
+MC_DEFAULT = 0
+MC_MEMO = 1
+
+# --- complexity classes ---
+#
+# What complexityClass() answers, mirroring the order of the internal Cc enum
+# so that the two can never disagree about which number means what.
+
+CLASS_NOT_PROVEN_LINEAR = 0
+CLASS_LINEAR = 1
+
 # --- outcomes ---
 
 OK = 0
@@ -214,6 +268,12 @@ MATCHED = 0
 NO_MATCH = 1
 RESOURCE_EXCEEDED = 2
 BAD_INPUT = 3
+EXCEEDS_BUDGET = 4
+"""The analysis accessors' own refusal, from DESIGN.md section 2.4: no
+certified bound exists, the arithmetic saturated, or the number is past the
+ceiling its runtime limit could accept. Distinct from RESOURCE_EXCEEDED, which
+is a run going over a caller's budget; this is the absence of a budget anyone
+could plan with."""
 
 # --- compile errors ---
 #

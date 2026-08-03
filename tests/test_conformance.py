@@ -96,8 +96,8 @@ def test_a_section_is_a_list_with_something_in_it(tmp_path, held) -> None:
         conformance.section(conformance.read(path), "analyses", path)
 
 
-def test_the_two_sections_of_a_corpus_are_read_the_same_way() -> None:
+def test_the_three_sections_of_a_corpus_are_read_the_same_way() -> None:
     """The certificate corpus is the one that carries more than one array."""
     built = conformance.read(certificate_corpus.PATH)
-    for name in ("cases", "analyses"):
+    for name in ("cases", "analyses", "accessors"):
         assert conformance.section(built, name, certificate_corpus.PATH)

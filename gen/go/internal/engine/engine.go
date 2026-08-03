@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   96eea5f450b4b9d8cf1005ceccc4410cef0b66071639d896dedeee234fbcbf11
+//   be8703cca8a04ba23c92d1397a10724d7f30c035cd4e02bdec738782d5d2dee3
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -18,7 +18,7 @@ package engine
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact this package was printed
 // from.
-const ArtifactSHA256 = "96eea5f450b4b9d8cf1005ceccc4410cef0b66071639d896dedeee234fbcbf11"
+const ArtifactSHA256 = "be8703cca8a04ba23c92d1397a10724d7f30c035cd4e02bdec738782d5d2dee3"
 
 // Tir_Trap is what a checked operation panics with, per TIR-SPEC.md section 12.
 type Tir_Trap struct {
@@ -243,22 +243,23 @@ const CrNotNested Cr = 7
 const CrOverlap Cr = 8
 const CrNoRules Cr = 9
 const CrConfig Cr = 10
-const CrPrices Cr = 11
-const CrBase Cr = 12
-const CrOpcode Cr = 13
-const CrShape Cr = 14
-const CrChildren Cr = 15
-const CrAmbiguous Cr = 16
-const CrOverflow Cr = 17
-const CrRegionWork Cr = 18
-const CrRegionOuts Cr = 19
-const CrRegionStack Cr = 20
-const CrRegionTrail Cr = 21
-const CrTotalCost Cr = 22
-const CrTotalStack Cr = 23
-const CrTotalMem Cr = 24
-const CrNotLinear Cr = 25
-const CrOk Cr = 26
+const CrIneligible Cr = 11
+const CrPrices Cr = 12
+const CrBase Cr = 13
+const CrOpcode Cr = 14
+const CrShape Cr = 15
+const CrChildren Cr = 16
+const CrAmbiguous Cr = 17
+const CrOverflow Cr = 18
+const CrRegionWork Cr = 19
+const CrRegionOuts Cr = 20
+const CrRegionStack Cr = 21
+const CrRegionTrail Cr = 22
+const CrTotalCost Cr = 23
+const CrTotalStack Cr = 24
+const CrTotalMem Cr = 25
+const CrNotLinear Cr = 26
+const CrOk Cr = 27
 
 type Ek int32
 
@@ -338,6 +339,11 @@ type Acc struct {
 	stack Poly
 	trail Poly
 	flow Poly
+}
+
+type Answer struct {
+	status uint32
+	value uint64
 }
 
 type Bound struct {
@@ -451,8 +457,11 @@ type Re struct {
 	bsr uint32
 	hascrlf uint32
 	crfirst uint32
+	pike bool
 	hascert bool
 	cert Cert
+	haspikecert bool
+	pikecert Cert
 }
 
 type Ref struct {
@@ -475,6 +484,11 @@ type Rep struct {
 	head uint32
 	body uint32
 	after uint32
+}
+
+type Th struct {
+	pc uint32
+	h uint32
 }
 
 type Undo struct {
@@ -923,6 +937,430 @@ func bsr_at(subj []byte, pos uint32, bsr uint32) uint32 {
 	return uint32(0)
 }
 
+func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
+	var tmp1 uint32 = uint32(len(subj))
+	var tmp2 uint64 = uint64(0)
+	var tmp3 uint64 = uint64(0)
+	_ = tmp3
+	var tmp4 uint64 = uint64(0)
+	var tmp5 uint32 = uint32(0)
+	(*use).cost = tmp2
+	(*use).stack = tmp5
+	(*use).mem = tmp4
+	if (start > tmp1) {
+		return uint32(3)
+	}
+	var code []Inst = re.code
+	var classes []byte = re.classes
+	var reps []Rep = re.reps
+	var tmp6 uint32 = re.nltype
+	var tmp7 uint32 = re.bsr
+	var tmp8 uint32 = re.ncap
+	var tmp9 uint32 = re.nregs
+	var tmp10 uint32 = ((tmp8 + uint32(1)) * uint32(2))
+	var tmp11 uint32 = tmp10
+	var tmp12 bool = (((re.opts & uint32(32)) != uint32(0)) || ((mopts & uint32(16)) != uint32(0)))
+	var tmp13 bool = ((mopts & uint32(4)) != uint32(0))
+	var tmp14 bool = ((mopts & uint32(8)) != uint32(0))
+	var tmp15 bool = (re.hascrlf == uint32(0))
+	var tmp16 bool = ((tmp6 == uint32(2)) || ((tmp6 == uint32(3)) || (tmp6 == uint32(4))))
+	var tmp17 bool = ((mopts & uint32(1)) != uint32(0))
+	var tmp18 bool = ((mopts & uint32(2)) != uint32(0))
+	var regs []uint32
+	var bt []Bt
+	var trail []Undo
+	var tmp19 uint64 = tir_cmul(uint64((tmp9 + tmp10)), uint64(4))
+	if ((tmp19 > memlimit) || (tmp19 > costlimit)) {
+		return uint32(2)
+	}
+	tmp3 = tmp19
+	tmp4 = tmp19
+	tmp2 = tmp19
+	tir_reserve(&regs, tmp9, 8704)
+	tir_reserve(&(*ov), tmp10, 512)
+	var tmp20 uint32 = uint32(0)
+	for (tmp20 < tmp9) {
+		tir_push(&regs, 8704, uint32(4294967295))
+		tmp20 = (tmp20 + uint32(1))
+	}
+	tir_truncate(&(*ov), uint32(0))
+	tmp20 = uint32(0)
+	for (tmp20 < tmp10) {
+		tir_push(&(*ov), 512, uint32(4294967295))
+		tmp20 = (tmp20 + uint32(1))
+	}
+	var tmp21 uint32 = start
+	var tmp22 uint32 = uint32(1)
+	var tmp23 bool = true
+	var tmp24 bool = false
+	tir_loop1:
+	for tmp23 {
+		var tmp25 uint64 = tir_cmul(uint64(tmp9), uint64(4))
+		if (tmp25 > tir_csub(costlimit, tmp2)) {
+			tmp22 = uint32(2)
+			tmp23 = false
+			continue tir_loop1
+		}
+		tmp2 = tir_cadd(tmp2, tmp25)
+		var tmp26 uint32 = uint32(0)
+		for (tmp26 < tmp9) {
+			tir_t1 := tmp26
+			if tir_t1 >= uint32(len(regs)) {
+				tir_oob(tir_t1, uint32(len(regs)))
+			}
+			regs[tir_t1] = uint32(4294967295)
+			tmp26 = (tmp26 + uint32(1))
+		}
+		tir_truncate(&bt, uint32(0))
+		tir_truncate(&trail, uint32(0))
+		var tmp27 uint32 = uint32(0)
+		var tmp28 uint32 = tmp21
+		var tmp29 bool = true
+		var tmp30 bool = false
+		var tmp31 bool = false
+		tir_loop2:
+		for tmp29 {
+			if (tmp2 >= costlimit) {
+				tmp22 = uint32(2)
+				tmp23 = false
+				tmp29 = false
+				continue tir_loop2
+			}
+			tmp2 = tir_cadd(tmp2, uint64(1))
+			var tmp32 Inst = code[tmp27]
+			switch tmp32.op {
+			case OpChar:
+				if ((tmp28 < tmp1) && (subj[tmp28] == uint8(tmp32.arg))) {
+					tmp28 = (tmp28 + uint32(1))
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpCharCI:
+				if ((tmp28 < tmp1) && (LOWER[uint32(subj[tmp28])] == uint8(tmp32.arg))) {
+					tmp28 = (tmp28 + uint32(1))
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpClass:
+				var tmp33 bool = false
+				if (tmp28 < tmp1) {
+					tir_t2 := class_has(classes, tmp32.arg, subj[tmp28])
+					tmp33 = tir_t2
+				}
+				if ((tmp28 < tmp1) && tmp33) {
+					tmp28 = (tmp28 + uint32(1))
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpAny:
+				if ((tmp28 < tmp1) && true) {
+					tmp28 = (tmp28 + uint32(1))
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpAnyNoNL:
+				var tmp34 uint32 = uint32(0)
+				if (tmp28 < tmp1) {
+					tir_t3 := newline_at(subj, tmp28, tmp6)
+					tmp34 = tir_t3
+				}
+				if ((tmp28 < tmp1) && (tmp34 == uint32(0))) {
+					tmp28 = (tmp28 + uint32(1))
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpBsr:
+				var tmp35 uint32 = uint32(0)
+				tir_t4 := bsr_at(subj, tmp28, tmp7)
+				tmp35 = tir_t4
+				if (tmp35 != uint32(0)) {
+					tmp28 = (tmp28 + tmp35)
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpSplit:
+				var tmp36 uint32 = uint32(len(trail))
+				tir_t5 := push_bt(&bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp32.alt, tmp28, tmp36)
+				tmp24 = tir_t5
+				if (!tmp24) {
+					tmp22 = uint32(2)
+					tmp23 = false
+					tmp29 = false
+				} else {
+					if (tmp5 < uint32(len(bt))) {
+						tmp5 = uint32(len(bt))
+					}
+				}
+				tmp27 = tmp32.arg
+			case OpJump:
+				tmp27 = tmp32.arg
+			case OpSave:
+				tir_t6 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), tmp32.arg, tmp28)
+				tmp24 = tir_t6
+				if (!tmp24) {
+					tmp22 = uint32(2)
+					tmp23 = false
+					tmp29 = false
+				}
+				tmp27 = (tmp27 + uint32(1))
+			case OpCirc:
+				if ((tmp28 == uint32(0)) && (!tmp17)) {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpCircM:
+				var tmp37 bool = (!tmp17)
+				if (tmp28 != uint32(0)) {
+					var tmp38 uint32 = uint32(0)
+					tir_t7 := newline_before(subj, tmp28, tmp6)
+					tmp38 = tir_t7
+					tmp37 = ((tmp28 != tmp1) && (tmp38 != uint32(0)))
+				}
+				if tmp37 {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpDoll:
+				var tmp39 bool = false
+				tir_t8 := at_line_end(subj, tmp28, tmp6)
+				tmp39 = tir_t8
+				if ((!tmp18) && tmp39) {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpDollE:
+				if ((!tmp18) && (tmp28 == tmp1)) {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpDollM:
+				var tmp40 bool = (!tmp18)
+				if (tmp28 < tmp1) {
+					var tmp41 uint32 = uint32(0)
+					tir_t9 := newline_at(subj, tmp28, tmp6)
+					tmp41 = tir_t9
+					tmp40 = (tmp41 != uint32(0))
+				}
+				if tmp40 {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpSod:
+				if (tmp28 == uint32(0)) {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpEod:
+				if (tmp28 == tmp1) {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpEodn:
+				var tmp42 bool = false
+				tir_t10 := at_line_end(subj, tmp28, tmp6)
+				tmp42 = tir_t10
+				if tmp42 {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpWordB:
+				tir_t11 := word_edge(subj, tmp28)
+				tmp24 = tir_t11
+				if tmp24 {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpNotWordB:
+				tir_t12 := word_edge(subj, tmp28)
+				tmp24 = tir_t12
+				if (!tmp24) {
+					tmp27 = (tmp27 + uint32(1))
+				} else {
+					tmp30 = true
+				}
+			case OpRepZero:
+				tir_t13 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), (tmp11 + (tmp32.arg * uint32(2))), uint32(0))
+				tmp24 = tir_t13
+				if (!tmp24) {
+					tmp22 = uint32(2)
+					tmp23 = false
+					tmp29 = false
+				}
+				tmp27 = (tmp27 + uint32(1))
+			case OpRepEnter:
+				tir_t14 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), ((tmp11 + (tmp32.arg * uint32(2))) + uint32(1)), tmp28)
+				tmp24 = tir_t14
+				if (!tmp24) {
+					tmp22 = uint32(2)
+					tmp23 = false
+					tmp29 = false
+				}
+				tmp27 = (tmp27 + uint32(1))
+			case OpRepLoop:
+				var tmp43 Rep = reps[tmp32.arg]
+				var tmp44 uint32 = regs[(tmp11 + (tmp32.arg * uint32(2)))]
+				if (tmp44 < tmp43.lo) {
+					tmp27 = tmp43.body
+				} else {
+					if (tmp44 >= tmp43.hi) {
+						tmp27 = tmp43.after
+					} else {
+						if tmp43.greedy {
+							var tmp45 uint32 = uint32(len(trail))
+							tir_t15 := push_bt(&bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp43.after, tmp28, tmp45)
+							tmp24 = tir_t15
+							if (!tmp24) {
+								tmp22 = uint32(2)
+								tmp23 = false
+								tmp29 = false
+							} else {
+								if (tmp5 < uint32(len(bt))) {
+									tmp5 = uint32(len(bt))
+								}
+							}
+							tmp27 = tmp43.body
+						} else {
+							var tmp46 uint32 = uint32(len(trail))
+							tir_t16 := push_bt(&bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp43.body, tmp28, tmp46)
+							tmp24 = tir_t16
+							if (!tmp24) {
+								tmp22 = uint32(2)
+								tmp23 = false
+								tmp29 = false
+							} else {
+								if (tmp5 < uint32(len(bt))) {
+									tmp5 = uint32(len(bt))
+								}
+							}
+							tmp27 = tmp43.after
+						}
+					}
+				}
+			case OpRepNext:
+				var tmp47 Rep = reps[tmp32.arg]
+				var tmp48 uint32 = (tmp11 + (tmp32.arg * uint32(2)))
+				var tmp49 uint32 = (regs[tmp48] + uint32(1))
+				var tmp50 uint32 = regs[(tmp48 + uint32(1))]
+				tir_t17 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), tmp48, tmp49)
+				tmp24 = tir_t17
+				if (!tmp24) {
+					tmp22 = uint32(2)
+					tmp23 = false
+					tmp29 = false
+				}
+				if ((tmp47.hi == uint32(4294967295)) && ((tmp28 == tmp50) && (tmp49 >= tmp47.lo))) {
+					tmp27 = tmp47.after
+				} else {
+					tmp27 = tmp47.head
+				}
+			case OpAccept:
+				var tmp51 bool = (tmp28 == tmp21)
+				var tmp52 bool = (tmp51 && (tmp13 || (tmp14 && (tmp21 == start))))
+				if tmp52 {
+					tmp30 = true
+				} else {
+					tir_t18 := uint32(0)
+					if tir_t18 >= uint32(len(regs)) {
+						tir_oob(tir_t18, uint32(len(regs)))
+					}
+					regs[tir_t18] = tmp21
+					tir_t19 := uint32(1)
+					if tir_t19 >= uint32(len(regs)) {
+						tir_oob(tir_t19, uint32(len(regs)))
+					}
+					regs[tir_t19] = tmp28
+					tmp31 = true
+					tmp29 = false
+				}
+			}
+			if tmp30 {
+				if (uint32(len(bt)) == uint32(0)) {
+					tmp29 = false
+					tir_truncate(&trail, uint32(0))
+				} else {
+					var tmp53 Bt
+					tmp53 = tir_pop(&bt)
+					tmp27 = tmp53.pc
+					tmp28 = tmp53.pos
+					var tmp54 uint64 = tir_cmul(tir_csub(uint64(uint32(len(trail))), uint64(tmp53.mark)), uint64(4))
+					if (tmp54 > tir_csub(costlimit, tmp2)) {
+						tmp22 = uint32(2)
+						tmp23 = false
+						tmp29 = false
+					} else {
+						tmp2 = tir_cadd(tmp2, tmp54)
+						for (tmp53.mark < uint32(len(trail))) {
+							var tmp55 Undo
+							tmp55 = tir_pop(&trail)
+							tir_t20 := tmp55.slot
+							if tir_t20 >= uint32(len(regs)) {
+								tir_oob(tir_t20, uint32(len(regs)))
+							}
+							regs[tir_t20] = tmp55.old
+						}
+						if (uint32(len(bt)) == uint32(0)) {
+							tir_truncate(&trail, uint32(0))
+						}
+						tmp30 = false
+					}
+				}
+			}
+		}
+		if tmp31 {
+			tmp22 = uint32(0)
+			tmp23 = false
+			continue tir_loop1
+		}
+		if (!tmp23) {
+			continue tir_loop1
+		}
+		if (tmp12 || (tmp21 >= tmp1)) {
+			tmp23 = false
+			continue tir_loop1
+		}
+		tmp21 = (tmp21 + uint32(1))
+		if ((tmp16 && (tmp15 && (re.crfirst != uint32(0)))) && ((subj[(tmp21 - uint32(1))] == uint8(13)) && ((tmp21 < tmp1) && (subj[tmp21] == uint8(10))))) {
+			tmp21 = (tmp21 + uint32(1))
+		}
+	}
+	if (tmp22 == uint32(0)) {
+		var tmp56 uint64 = tir_cmul(uint64(tmp10), uint64(4))
+		if (tmp56 > tir_csub(costlimit, tmp2)) {
+			tmp22 = uint32(2)
+		} else {
+			tmp2 = tir_cadd(tmp2, tmp56)
+			var tmp57 uint32 = uint32(0)
+			for (tmp57 < tmp10) {
+				tir_t21 := tmp57
+				if tir_t21 >= uint32(len((*ov))) {
+					tir_oob(tir_t21, uint32(len((*ov))))
+				}
+				(*ov)[tir_t21] = regs[tmp57]
+				tmp57 = (tmp57 + uint32(1))
+			}
+		}
+	}
+	(*use).cost = tmp2
+	(*use).stack = tmp5
+	(*use).mem = tmp4
+	return tmp22
+}
+
 func cert_bound(cert Cert, kind Bk, n uint64) Bound {
 	var which Poly
 	var ceiling uint64 = uint64(9007199254740991)
@@ -1042,6 +1480,12 @@ func cert_build(re Re, cert *Cert) Ar {
 
 func cert_check(re Re, config Cfg, cert Cert) Cr {
 	var over bool = false
+	if (config == CfgPike) {
+		var answered Cr = CrNoRules
+		tir_t1 := pike_check(re, cert)
+		answered = tir_t1
+		return answered
+	}
 	if (config != CfgBacktrack) {
 		return CrNoRules
 	}
@@ -1049,8 +1493,8 @@ func cert_check(re Re, config Cfg, cert Cert) Cr {
 		return CrConfig
 	}
 	var shape Cr = CrOk
-	tir_t1 := cert_shape(re)
-	shape = tir_t1
+	tir_t2 := cert_shape(re)
+	shape = tir_t2
 	if (shape != CrOk) {
 		return shape
 	}
@@ -1111,28 +1555,28 @@ func cert_check(re Re, config Cfg, cert Cert) Cr {
 			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tir_t2 := scan_span(code, regions, prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
-			tmp5 = tir_t2
-		case RkGroup:
-			tmp3.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 			tir_t3 := scan_span(code, regions, prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
 			tmp5 = tir_t3
-		case RkBranch:
+		case RkGroup:
 			tmp3.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 			tir_t4 := scan_span(code, regions, prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
 			tmp5 = tir_t4
-		case RkAlt:
-			tir_t5 := scan_alt(prices, &sibs, tmp4, &tmp3, &over)
+		case RkBranch:
+			tmp3.work = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tmp3.flow = (Poly{base: uint64(1), c0: uint64(1), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+			tir_t5 := scan_span(code, regions, prices, &sibs, tmp2.lo, tmp2.hi, tmp4, &tmp3, &over)
 			tmp5 = tir_t5
-		case RkRepeat:
-			tir_t6 := scan_repeat(code, re.reps, regions, prices, &sibs, i, tmp4, &tmp3, &over)
+		case RkAlt:
+			tir_t6 := scan_alt(prices, &sibs, tmp4, &tmp3, &over)
 			tmp5 = tir_t6
+		case RkRepeat:
+			tir_t7 := scan_repeat(code, re.reps, regions, prices, &sibs, i, tmp4, &tmp3, &over)
+			tmp5 = tir_t7
 		}
 		if (tmp5 != CrOk) {
 			return tmp5
@@ -1142,23 +1586,23 @@ func cert_check(re Re, config Cfg, cert Cert) Cr {
 		}
 		var tmp6 bool = false
 		var tmp7 Price = prices[i]
-		tir_t7 := poly_ge(tmp7.work, tmp3.work)
-		tmp6 = tir_t7
+		tir_t8 := poly_ge(tmp7.work, tmp3.work)
+		tmp6 = tir_t8
 		if (!tmp6) {
 			return CrRegionWork
 		}
-		tir_t8 := poly_ge(tmp7.outs, tmp3.flow)
-		tmp6 = tir_t8
+		tir_t9 := poly_ge(tmp7.outs, tmp3.flow)
+		tmp6 = tir_t9
 		if (!tmp6) {
 			return CrRegionOuts
 		}
-		tir_t9 := poly_ge(tmp7.stack, tmp3.stack)
-		tmp6 = tir_t9
+		tir_t10 := poly_ge(tmp7.stack, tmp3.stack)
+		tmp6 = tir_t10
 		if (!tmp6) {
 			return CrRegionStack
 		}
-		tir_t10 := poly_ge(tmp7.trail, tmp3.trail)
-		tmp6 = tir_t10
+		tir_t11 := poly_ge(tmp7.trail, tmp3.trail)
+		tmp6 = tir_t11
 		if (!tmp6) {
 			return CrRegionTrail
 		}
@@ -1166,25 +1610,40 @@ func cert_check(re Re, config Cfg, cert Cert) Cr {
 	}
 	var whole Price = prices[uint32(0)]
 	var charged Cr = CrOk
-	tir_t11 := charge_call(re, cert, whole, &over)
-	charged = tir_t11
+	tir_t12 := charge_call(re, cert, whole, &over)
+	charged = tir_t12
 	if (charged != CrOk) {
 		return charged
 	}
 	return CrOk
 }
 
-func cert_install(re Re, cert *Cert, has *bool) Cr {
+func cert_install(re Re, cert *Cert, has *bool, pcert *Cert, haspike *bool) Cr {
 	(*has) = false
+	(*haspike) = false
 	var shape Cr = CrOk
 	tir_t1 := cert_shape(re)
 	shape = tir_t1
 	if (shape != CrOk) {
 		return shape
 	}
+	if re.pike {
+		var tmp1 bool = false
+		tir_t2 := pike_price(re, pcert)
+		tmp1 = tir_t2
+		if tmp1 {
+			var tmp2 Cr = CrOk
+			tir_t3 := cert_check(re, CfgPike, (*pcert))
+			tmp2 = tir_t3
+			if (tmp2 != CrOk) {
+				return tmp2
+			}
+			(*haspike) = true
+		}
+	}
 	var found Ar = ArShape
-	tir_t2 := cert_build(re, cert)
-	found = tir_t2
+	tir_t4 := cert_build(re, cert)
+	found = tir_t4
 	if (found == ArShape) {
 		return CrShape
 	}
@@ -1192,8 +1651,8 @@ func cert_install(re Re, cert *Cert, has *bool) Cr {
 		return CrOk
 	}
 	var verdict Cr = CrOk
-	tir_t3 := cert_check(re, CfgBacktrack, (*cert))
-	verdict = tir_t3
+	tir_t5 := cert_check(re, CfgBacktrack, (*cert))
+	verdict = tir_t5
 	if (verdict != CrOk) {
 		return verdict
 	}
@@ -1772,17 +2231,25 @@ func compile(pat []byte, popts uint32, nltype uint32, bsr uint32, out *Out) {
 	w.names = nil
 	(*out).re.nameents = w.nameents
 	w.nameents = nil
-	var cand Cert
 	var tmp4 bool = false
-	var tmp5 Cr = CrOk
-	tir_t1 := cert_install((*out).re, &cand, &tmp4)
-	tmp5 = tir_t1
-	if (tmp5 != CrOk) {
+	tir_t1 := pike_ok((*out).re)
+	tmp4 = tir_t1
+	(*out).re.pike = tmp4
+	var cand Cert
+	var tmp5 bool = false
+	var pcand Cert
+	var tmp6 bool = false
+	var tmp7 Cr = CrOk
+	tir_t2 := cert_install((*out).re, &cand, &tmp5, &pcand, &tmp6)
+	tmp7 = tir_t2
+	if (tmp7 != CrOk) {
 		(*out).err = uint32(1003)
 		return
 	}
 	(*out).re.cert = cand
-	(*out).re.hascert = tmp4
+	(*out).re.hascert = tmp5
+	(*out).re.pikecert = pcand
+	(*out).re.haspikecert = tmp6
 }
 
 func ct(c uint8, bit uint8) bool {
@@ -2011,428 +2478,22 @@ func mark_seen(w *Work, pc uint32) {
 	tir_push(&(*w).pending, 32848, tmp1)
 }
 
-func match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
-	var tmp1 uint32 = uint32(len(subj))
-	var tmp2 uint64 = uint64(0)
-	var tmp3 uint64 = uint64(0)
-	_ = tmp3
-	var tmp4 uint64 = uint64(0)
-	var tmp5 uint32 = uint32(0)
-	(*use).cost = tmp2
-	(*use).stack = tmp5
-	(*use).mem = tmp4
-	if (start > tmp1) {
+func match(re Re, subj []byte, start uint32, mopts uint32, mcfg uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
+	(*use).cost = uint64(0)
+	(*use).stack = uint32(0)
+	(*use).mem = uint64(0)
+	if (mcfg != uint32(0)) {
 		return uint32(3)
 	}
-	var code []Inst = re.code
-	var classes []byte = re.classes
-	var reps []Rep = re.reps
-	var tmp6 uint32 = re.nltype
-	var tmp7 uint32 = re.bsr
-	var tmp8 uint32 = re.ncap
-	var tmp9 uint32 = re.nregs
-	var tmp10 uint32 = ((tmp8 + uint32(1)) * uint32(2))
-	var tmp11 uint32 = tmp10
-	var tmp12 bool = (((re.opts & uint32(32)) != uint32(0)) || ((mopts & uint32(16)) != uint32(0)))
-	var tmp13 bool = ((mopts & uint32(4)) != uint32(0))
-	var tmp14 bool = ((mopts & uint32(8)) != uint32(0))
-	var tmp15 bool = (re.hascrlf == uint32(0))
-	var tmp16 bool = ((tmp6 == uint32(2)) || ((tmp6 == uint32(3)) || (tmp6 == uint32(4))))
-	var tmp17 bool = ((mopts & uint32(1)) != uint32(0))
-	var tmp18 bool = ((mopts & uint32(2)) != uint32(0))
-	var regs []uint32
-	var bt []Bt
-	var trail []Undo
-	var tmp19 uint64 = tir_cmul(uint64((tmp9 + tmp10)), uint64(4))
-	if ((tmp19 > memlimit) || (tmp19 > costlimit)) {
-		return uint32(2)
+	var tmp1 uint32 = uint32(1)
+	if re.pike {
+		tir_t1 := pike_match(re, subj, start, mopts, costlimit, stacklimit, memlimit, ov, use)
+		tmp1 = tir_t1
+		return tmp1
 	}
-	tmp3 = tmp19
-	tmp4 = tmp19
-	tmp2 = tmp19
-	tir_reserve(&regs, tmp9, 8704)
-	tir_reserve(&(*ov), tmp10, 512)
-	var tmp20 uint32 = uint32(0)
-	for (tmp20 < tmp9) {
-		tir_push(&regs, 8704, uint32(4294967295))
-		tmp20 = (tmp20 + uint32(1))
-	}
-	tir_truncate(&(*ov), uint32(0))
-	tmp20 = uint32(0)
-	for (tmp20 < tmp10) {
-		tir_push(&(*ov), 512, uint32(4294967295))
-		tmp20 = (tmp20 + uint32(1))
-	}
-	var tmp21 uint32 = start
-	var tmp22 uint32 = uint32(1)
-	var tmp23 bool = true
-	var tmp24 bool = false
-	tir_loop1:
-	for tmp23 {
-		var tmp25 uint64 = tir_cmul(uint64(tmp9), uint64(4))
-		if (tmp25 > tir_csub(costlimit, tmp2)) {
-			tmp22 = uint32(2)
-			tmp23 = false
-			continue tir_loop1
-		}
-		tmp2 = tir_cadd(tmp2, tmp25)
-		var tmp26 uint32 = uint32(0)
-		for (tmp26 < tmp9) {
-			tir_t1 := tmp26
-			if tir_t1 >= uint32(len(regs)) {
-				tir_oob(tir_t1, uint32(len(regs)))
-			}
-			regs[tir_t1] = uint32(4294967295)
-			tmp26 = (tmp26 + uint32(1))
-		}
-		tir_truncate(&bt, uint32(0))
-		tir_truncate(&trail, uint32(0))
-		var tmp27 uint32 = uint32(0)
-		var tmp28 uint32 = tmp21
-		var tmp29 bool = true
-		var tmp30 bool = false
-		var tmp31 bool = false
-		tir_loop2:
-		for tmp29 {
-			if (tmp2 >= costlimit) {
-				tmp22 = uint32(2)
-				tmp23 = false
-				tmp29 = false
-				continue tir_loop2
-			}
-			tmp2 = tir_cadd(tmp2, uint64(1))
-			var tmp32 Inst = code[tmp27]
-			switch tmp32.op {
-			case OpChar:
-				if ((tmp28 < tmp1) && (subj[tmp28] == uint8(tmp32.arg))) {
-					tmp28 = (tmp28 + uint32(1))
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpCharCI:
-				if ((tmp28 < tmp1) && (LOWER[uint32(subj[tmp28])] == uint8(tmp32.arg))) {
-					tmp28 = (tmp28 + uint32(1))
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpClass:
-				var tmp33 bool = false
-				if (tmp28 < tmp1) {
-					tir_t2 := class_has(classes, tmp32.arg, subj[tmp28])
-					tmp33 = tir_t2
-				}
-				if ((tmp28 < tmp1) && tmp33) {
-					tmp28 = (tmp28 + uint32(1))
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpAny:
-				if ((tmp28 < tmp1) && true) {
-					tmp28 = (tmp28 + uint32(1))
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpAnyNoNL:
-				var tmp34 uint32 = uint32(0)
-				if (tmp28 < tmp1) {
-					tir_t3 := newline_at(subj, tmp28, tmp6)
-					tmp34 = tir_t3
-				}
-				if ((tmp28 < tmp1) && (tmp34 == uint32(0))) {
-					tmp28 = (tmp28 + uint32(1))
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpBsr:
-				var tmp35 uint32 = uint32(0)
-				tir_t4 := bsr_at(subj, tmp28, tmp7)
-				tmp35 = tir_t4
-				if (tmp35 != uint32(0)) {
-					tmp28 = (tmp28 + tmp35)
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpSplit:
-				var tmp36 uint32 = uint32(len(trail))
-				tir_t5 := push_bt(&bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp32.alt, tmp28, tmp36)
-				tmp24 = tir_t5
-				if (!tmp24) {
-					tmp22 = uint32(2)
-					tmp23 = false
-					tmp29 = false
-				} else {
-					if (tmp5 < uint32(len(bt))) {
-						tmp5 = uint32(len(bt))
-					}
-				}
-				tmp27 = tmp32.arg
-			case OpJump:
-				tmp27 = tmp32.arg
-			case OpSave:
-				tir_t6 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), tmp32.arg, tmp28)
-				tmp24 = tir_t6
-				if (!tmp24) {
-					tmp22 = uint32(2)
-					tmp23 = false
-					tmp29 = false
-				}
-				tmp27 = (tmp27 + uint32(1))
-			case OpCirc:
-				if ((tmp28 == uint32(0)) && (!tmp17)) {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpCircM:
-				var tmp37 bool = (!tmp17)
-				if (tmp28 != uint32(0)) {
-					var tmp38 uint32 = uint32(0)
-					tir_t7 := newline_before(subj, tmp28, tmp6)
-					tmp38 = tir_t7
-					tmp37 = ((tmp28 != tmp1) && (tmp38 != uint32(0)))
-				}
-				if tmp37 {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpDoll:
-				var tmp39 bool = false
-				tir_t8 := at_line_end(subj, tmp28, tmp6)
-				tmp39 = tir_t8
-				if ((!tmp18) && tmp39) {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpDollE:
-				if ((!tmp18) && (tmp28 == tmp1)) {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpDollM:
-				var tmp40 bool = (!tmp18)
-				if (tmp28 < tmp1) {
-					var tmp41 uint32 = uint32(0)
-					tir_t9 := newline_at(subj, tmp28, tmp6)
-					tmp41 = tir_t9
-					tmp40 = (tmp41 != uint32(0))
-				}
-				if tmp40 {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpSod:
-				if (tmp28 == uint32(0)) {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpEod:
-				if (tmp28 == tmp1) {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpEodn:
-				var tmp42 bool = false
-				tir_t10 := at_line_end(subj, tmp28, tmp6)
-				tmp42 = tir_t10
-				if tmp42 {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpWordB:
-				tir_t11 := word_edge(subj, tmp28)
-				tmp24 = tir_t11
-				if tmp24 {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpNotWordB:
-				tir_t12 := word_edge(subj, tmp28)
-				tmp24 = tir_t12
-				if (!tmp24) {
-					tmp27 = (tmp27 + uint32(1))
-				} else {
-					tmp30 = true
-				}
-			case OpRepZero:
-				tir_t13 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), (tmp11 + (tmp32.arg * uint32(2))), uint32(0))
-				tmp24 = tir_t13
-				if (!tmp24) {
-					tmp22 = uint32(2)
-					tmp23 = false
-					tmp29 = false
-				}
-				tmp27 = (tmp27 + uint32(1))
-			case OpRepEnter:
-				tir_t14 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), ((tmp11 + (tmp32.arg * uint32(2))) + uint32(1)), tmp28)
-				tmp24 = tir_t14
-				if (!tmp24) {
-					tmp22 = uint32(2)
-					tmp23 = false
-					tmp29 = false
-				}
-				tmp27 = (tmp27 + uint32(1))
-			case OpRepLoop:
-				var tmp43 Rep = reps[tmp32.arg]
-				var tmp44 uint32 = regs[(tmp11 + (tmp32.arg * uint32(2)))]
-				if (tmp44 < tmp43.lo) {
-					tmp27 = tmp43.body
-				} else {
-					if (tmp44 >= tmp43.hi) {
-						tmp27 = tmp43.after
-					} else {
-						if tmp43.greedy {
-							var tmp45 uint32 = uint32(len(trail))
-							tir_t15 := push_bt(&bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp43.after, tmp28, tmp45)
-							tmp24 = tir_t15
-							if (!tmp24) {
-								tmp22 = uint32(2)
-								tmp23 = false
-								tmp29 = false
-							} else {
-								if (tmp5 < uint32(len(bt))) {
-									tmp5 = uint32(len(bt))
-								}
-							}
-							tmp27 = tmp43.body
-						} else {
-							var tmp46 uint32 = uint32(len(trail))
-							tir_t16 := push_bt(&bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp43.body, tmp28, tmp46)
-							tmp24 = tir_t16
-							if (!tmp24) {
-								tmp22 = uint32(2)
-								tmp23 = false
-								tmp29 = false
-							} else {
-								if (tmp5 < uint32(len(bt))) {
-									tmp5 = uint32(len(bt))
-								}
-							}
-							tmp27 = tmp43.after
-						}
-					}
-				}
-			case OpRepNext:
-				var tmp47 Rep = reps[tmp32.arg]
-				var tmp48 uint32 = (tmp11 + (tmp32.arg * uint32(2)))
-				var tmp49 uint32 = (regs[tmp48] + uint32(1))
-				var tmp50 uint32 = regs[(tmp48 + uint32(1))]
-				tir_t17 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), tmp48, tmp49)
-				tmp24 = tir_t17
-				if (!tmp24) {
-					tmp22 = uint32(2)
-					tmp23 = false
-					tmp29 = false
-				}
-				if ((tmp47.hi == uint32(4294967295)) && ((tmp28 == tmp50) && (tmp49 >= tmp47.lo))) {
-					tmp27 = tmp47.after
-				} else {
-					tmp27 = tmp47.head
-				}
-			case OpAccept:
-				var tmp51 bool = (tmp28 == tmp21)
-				var tmp52 bool = (tmp51 && (tmp13 || (tmp14 && (tmp21 == start))))
-				if tmp52 {
-					tmp30 = true
-				} else {
-					tir_t18 := uint32(0)
-					if tir_t18 >= uint32(len(regs)) {
-						tir_oob(tir_t18, uint32(len(regs)))
-					}
-					regs[tir_t18] = tmp21
-					tir_t19 := uint32(1)
-					if tir_t19 >= uint32(len(regs)) {
-						tir_oob(tir_t19, uint32(len(regs)))
-					}
-					regs[tir_t19] = tmp28
-					tmp31 = true
-					tmp29 = false
-				}
-			}
-			if tmp30 {
-				if (uint32(len(bt)) == uint32(0)) {
-					tmp29 = false
-					tir_truncate(&trail, uint32(0))
-				} else {
-					var tmp53 Bt
-					tmp53 = tir_pop(&bt)
-					tmp27 = tmp53.pc
-					tmp28 = tmp53.pos
-					var tmp54 uint64 = tir_cmul(tir_csub(uint64(uint32(len(trail))), uint64(tmp53.mark)), uint64(4))
-					if (tmp54 > tir_csub(costlimit, tmp2)) {
-						tmp22 = uint32(2)
-						tmp23 = false
-						tmp29 = false
-					} else {
-						tmp2 = tir_cadd(tmp2, tmp54)
-						for (tmp53.mark < uint32(len(trail))) {
-							var tmp55 Undo
-							tmp55 = tir_pop(&trail)
-							tir_t20 := tmp55.slot
-							if tir_t20 >= uint32(len(regs)) {
-								tir_oob(tir_t20, uint32(len(regs)))
-							}
-							regs[tir_t20] = tmp55.old
-						}
-						if (uint32(len(bt)) == uint32(0)) {
-							tir_truncate(&trail, uint32(0))
-						}
-						tmp30 = false
-					}
-				}
-			}
-		}
-		if tmp31 {
-			tmp22 = uint32(0)
-			tmp23 = false
-			continue tir_loop1
-		}
-		if (!tmp23) {
-			continue tir_loop1
-		}
-		if (tmp12 || (tmp21 >= tmp1)) {
-			tmp23 = false
-			continue tir_loop1
-		}
-		tmp21 = (tmp21 + uint32(1))
-		if ((tmp16 && (tmp15 && (re.crfirst != uint32(0)))) && ((subj[(tmp21 - uint32(1))] == uint8(13)) && ((tmp21 < tmp1) && (subj[tmp21] == uint8(10))))) {
-			tmp21 = (tmp21 + uint32(1))
-		}
-	}
-	if (tmp22 == uint32(0)) {
-		var tmp56 uint64 = tir_cmul(uint64(tmp10), uint64(4))
-		if (tmp56 > tir_csub(costlimit, tmp2)) {
-			tmp22 = uint32(2)
-		} else {
-			tmp2 = tir_cadd(tmp2, tmp56)
-			var tmp57 uint32 = uint32(0)
-			for (tmp57 < tmp10) {
-				tir_t21 := tmp57
-				if tir_t21 >= uint32(len((*ov))) {
-					tir_oob(tir_t21, uint32(len((*ov))))
-				}
-				(*ov)[tir_t21] = regs[tmp57]
-				tmp57 = (tmp57 + uint32(1))
-			}
-		}
-	}
-	(*use).cost = tmp2
-	(*use).stack = tmp5
-	(*use).mem = tmp4
-	return tmp22
+	tir_t2 := bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit, ov, use)
+	tmp1 = tir_t2
+	return tmp1
 }
 
 func name_taken(pat []byte, off uint32, nlen uint32, w *Work) bool {
@@ -3229,6 +3290,1102 @@ func parse_class(pat []byte, at *uint32, w *Work) uint32 {
 	}
 	(*at) = tmp2
 	return tmp5
+}
+
+func pike_add(list *[]Th, stk *[]Th, seen *[]byte, pool *[]uint32, rc *[]uint32, free *[]uint32, code []Inst, reps []Rep, subj []byte, pos uint32, novec uint32, nltype uint32, notbol bool, noteol bool, pc0 uint32, h0 uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	var tmp1 uint32 = uint32(len(subj))
+	var tmp2 bool = false
+	tir_t1 := pike_defer(stk, pc0, h0, mem, peak, cost, memlimit, costlimit)
+	tmp2 = tir_t1
+	if (!tmp2) {
+		return false
+	}
+	var tmp3 uint64 = tir_cmul(uint64(uint32(len(code))), uint64(2))
+	tir_loop1:
+	for (uint32(len((*stk))) > uint32(0)) {
+		var tmp4 Th
+		tmp4 = tir_pop(&(*stk))
+		var tmp5 uint32 = tmp4.pc
+		var tmp6 uint32 = tmp4.h
+		var tmp7 uint32 = (tmp5 >> 3)
+		var tmp8 uint8 = BITS[(tmp5 & uint32(7))]
+		if (((*seen)[tmp7] & tmp8) != uint8(0)) {
+			tir_t2 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t2
+			if (!tmp2) {
+				return false
+			}
+			continue tir_loop1
+		}
+		tir_t3 := tmp7
+		if tir_t3 >= uint32(len((*seen))) {
+			tir_oob(tir_t3, uint32(len((*seen))))
+		}
+		(*seen)[tir_t3] = ((*seen)[tmp7] | tmp8)
+		tmp3 = tir_csub(tmp3, uint64(2))
+		if (uint64(1) > tir_csub(costlimit, (*cost))) {
+			return false
+		}
+		(*cost) = tir_cadd((*cost), uint64(1))
+		var tmp9 Inst = code[tmp5]
+		switch tmp9.op {
+		case OpChar:
+			tir_t4 := pike_park(list, tmp5, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t4
+			if (!tmp2) {
+				return false
+			}
+		case OpCharCI:
+			tir_t5 := pike_park(list, tmp5, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t5
+			if (!tmp2) {
+				return false
+			}
+		case OpClass:
+			tir_t6 := pike_park(list, tmp5, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t6
+			if (!tmp2) {
+				return false
+			}
+		case OpAny:
+			tir_t7 := pike_park(list, tmp5, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t7
+			if (!tmp2) {
+				return false
+			}
+		case OpAnyNoNL:
+			tir_t8 := pike_park(list, tmp5, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t8
+			if (!tmp2) {
+				return false
+			}
+		case OpAccept:
+			tir_t9 := pike_park(list, tmp5, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t9
+			if (!tmp2) {
+				return false
+			}
+		case OpBsr:
+			tir_t10 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t10
+			if (!tmp2) {
+				return false
+			}
+		case OpSplit:
+			tir_t11 := tmp6
+			if tir_t11 >= uint32(len((*rc))) {
+				tir_oob(tir_t11, uint32(len((*rc))))
+			}
+			(*rc)[tir_t11] = ((*rc)[tmp6] + uint32(1))
+			tir_t12 := pike_defer(stk, tmp9.alt, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t12
+			if (!tmp2) {
+				return false
+			}
+			tir_t13 := pike_defer(stk, tmp9.arg, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t13
+			if (!tmp2) {
+				return false
+			}
+		case OpJump:
+			tir_t14 := pike_defer(stk, tmp9.arg, tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t14
+			if (!tmp2) {
+				return false
+			}
+		case OpSave:
+			tir_t15 := pike_write(pool, rc, free, novec, &tmp6, tmp9.arg, pos, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t15
+			if (!tmp2) {
+				return false
+			}
+			tir_t16 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t16
+			if (!tmp2) {
+				return false
+			}
+		case OpCirc:
+			if ((pos == uint32(0)) && (!notbol)) {
+				tir_t17 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t17
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t18 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t18
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpCircM:
+			var tmp10 bool = (!notbol)
+			if (pos != uint32(0)) {
+				var tmp11 uint32 = uint32(0)
+				tir_t19 := newline_before(subj, pos, nltype)
+				tmp11 = tir_t19
+				tmp10 = ((pos != tmp1) && (tmp11 != uint32(0)))
+			}
+			if tmp10 {
+				tir_t20 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t20
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t21 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t21
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpDoll:
+			var tmp12 bool = false
+			tir_t22 := at_line_end(subj, pos, nltype)
+			tmp12 = tir_t22
+			if ((!noteol) && tmp12) {
+				tir_t23 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t23
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t24 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t24
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpDollE:
+			if ((!noteol) && (pos == tmp1)) {
+				tir_t25 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t25
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t26 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t26
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpDollM:
+			var tmp13 bool = (!noteol)
+			if (pos < tmp1) {
+				var tmp14 uint32 = uint32(0)
+				tir_t27 := newline_at(subj, pos, nltype)
+				tmp14 = tir_t27
+				tmp13 = (tmp14 != uint32(0))
+			}
+			if tmp13 {
+				tir_t28 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t28
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t29 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t29
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpSod:
+			if (pos == uint32(0)) {
+				tir_t30 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t30
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t31 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t31
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpEod:
+			if (pos == tmp1) {
+				tir_t32 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t32
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t33 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t33
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpEodn:
+			var tmp15 bool = false
+			tir_t34 := at_line_end(subj, pos, nltype)
+			tmp15 = tir_t34
+			if tmp15 {
+				tir_t35 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t35
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t36 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t36
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpWordB:
+			tir_t37 := word_edge(subj, pos)
+			tmp2 = tir_t37
+			if tmp2 {
+				tir_t38 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t38
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t39 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t39
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpNotWordB:
+			tir_t40 := word_edge(subj, pos)
+			tmp2 = tir_t40
+			if (!tmp2) {
+				tir_t41 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t41
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t42 := pike_drop(rc, free, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t42
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpRepZero:
+			tir_t43 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t43
+			if (!tmp2) {
+				return false
+			}
+		case OpRepEnter:
+			tir_t44 := pike_defer(stk, (tmp5 + uint32(1)), tmp6, mem, peak, cost, memlimit, costlimit)
+			tmp2 = tir_t44
+			if (!tmp2) {
+				return false
+			}
+		case OpRepLoop:
+			var tmp16 Rep = reps[tmp9.arg]
+			if tmp16.greedy {
+				tir_t45 := tmp6
+				if tir_t45 >= uint32(len((*rc))) {
+					tir_oob(tir_t45, uint32(len((*rc))))
+				}
+				(*rc)[tir_t45] = ((*rc)[tmp6] + uint32(1))
+				tir_t46 := pike_defer(stk, tmp16.after, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t46
+				if (!tmp2) {
+					return false
+				}
+				tir_t47 := pike_defer(stk, tmp16.body, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t47
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t48 := tmp6
+				if tir_t48 >= uint32(len((*rc))) {
+					tir_oob(tir_t48, uint32(len((*rc))))
+				}
+				(*rc)[tir_t48] = ((*rc)[tmp6] + uint32(1))
+				tir_t49 := pike_defer(stk, tmp16.body, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t49
+				if (!tmp2) {
+					return false
+				}
+				tir_t50 := pike_defer(stk, tmp16.after, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t50
+				if (!tmp2) {
+					return false
+				}
+			}
+		case OpRepNext:
+			var tmp17 Rep = reps[tmp9.arg]
+			if tmp17.greedy {
+				tir_t51 := tmp6
+				if tir_t51 >= uint32(len((*rc))) {
+					tir_oob(tir_t51, uint32(len((*rc))))
+				}
+				(*rc)[tir_t51] = ((*rc)[tmp6] + uint32(1))
+				tir_t52 := pike_defer(stk, tmp17.after, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t52
+				if (!tmp2) {
+					return false
+				}
+				tir_t53 := pike_defer(stk, tmp17.body, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t53
+				if (!tmp2) {
+					return false
+				}
+			} else {
+				tir_t54 := tmp6
+				if tir_t54 >= uint32(len((*rc))) {
+					tir_oob(tir_t54, uint32(len((*rc))))
+				}
+				(*rc)[tir_t54] = ((*rc)[tmp6] + uint32(1))
+				tir_t55 := pike_defer(stk, tmp17.body, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t55
+				if (!tmp2) {
+					return false
+				}
+				tir_t56 := pike_defer(stk, tmp17.after, tmp6, mem, peak, cost, memlimit, costlimit)
+				tmp2 = tir_t56
+				if (!tmp2) {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+func pike_check(re Re, cert Cert) Cr {
+	var tmp1 bool = false
+	tir_t1 := pike_ok(re)
+	tmp1 = tir_t1
+	if (!tmp1) {
+		return CrIneligible
+	}
+	if (cert.config != CfgPike) {
+		return CrConfig
+	}
+	if (uint32(len(cert.prices)) != uint32(0)) {
+		return CrPrices
+	}
+	var tmp2 bool = false
+	switch cert.complexity {
+	case CcLinear:
+		tmp2 = true
+	case CcNotProvenLinear:
+		return CrNotLinear
+	}
+	if (!tmp2) {
+		return CrShape
+	}
+	if (!((((cert.cost.base == uint64(1)) && (cert.cost.c2 == uint64(0))) && (cert.cost.c3 == uint64(0))) && (cert.cost.c4 == uint64(0)))) {
+		return CrNotLinear
+	}
+	if (!(((((cert.stack.c0 == uint64(0)) && (cert.stack.c1 == uint64(0))) && (cert.stack.c2 == uint64(0))) && (cert.stack.c3 == uint64(0))) && (cert.stack.c4 == uint64(0)))) {
+		return CrShape
+	}
+	var needed Cert
+	var tmp3 bool = false
+	tir_t2 := pike_price(re, &needed)
+	tmp3 = tir_t2
+	if (!tmp3) {
+		return CrOverflow
+	}
+	var tmp4 bool = false
+	tir_t3 := poly_ge(cert.cost, needed.cost)
+	tmp4 = tir_t3
+	if (!tmp4) {
+		return CrTotalCost
+	}
+	tir_t4 := poly_ge(cert.stack, needed.stack)
+	tmp4 = tir_t4
+	if (!tmp4) {
+		return CrTotalStack
+	}
+	tir_t5 := poly_ge(cert.mem, needed.mem)
+	tmp4 = tir_t5
+	if (!tmp4) {
+		return CrTotalMem
+	}
+	return CrOk
+}
+
+func pike_defer(held *[]Th, pcv uint32, hv uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	var tmp1 bool = false
+	tir_t1 := charge_grow(uint32(cap((*held))), uint32(len((*held))), uint32(8), uint32(65696), mem, peak, cost, memlimit, costlimit)
+	tmp1 = tir_t1
+	if (!tmp1) {
+		return false
+	}
+	tir_push(&(*held), 65696, (Th{pc: pcv, h: hv}))
+	return true
+}
+
+func pike_drop(rc *[]uint32, free *[]uint32, h uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	if (h == uint32(4294967295)) {
+		return true
+	}
+	var tmp1 uint32 = ((*rc)[h] - uint32(1))
+	tir_t1 := h
+	if tir_t1 >= uint32(len((*rc))) {
+		tir_oob(tir_t1, uint32(len((*rc))))
+	}
+	(*rc)[tir_t1] = tmp1
+	if (tmp1 == uint32(0)) {
+		var tmp2 bool = false
+		tir_t2 := charge_grow(uint32(cap((*free))), uint32(len((*free))), uint32(4), uint32(131396), mem, peak, cost, memlimit, costlimit)
+		tmp2 = tir_t2
+		if (!tmp2) {
+			return false
+		}
+		tir_push(&(*free), 131396, h)
+	}
+	return true
+}
+
+func pike_hollow(re Re, which uint32) bool {
+	var tmp1 Rep = re.reps[which]
+	var tmp2 uint32 = (tmp1.after - uint32(1))
+	var tmp3 uint32 = uint32(len(re.code))
+	var seen []byte
+	var tmp4 uint32 = ((tmp3 >> 3) + uint32(1))
+	var tmp5 uint32 = uint32(0)
+	tir_reserve(&seen, tmp4, 2147483647)
+	for (tmp5 < tmp4) {
+		tir_push(&seen, 2147483647, uint8(0))
+		tmp5 = (tmp5 + uint32(1))
+	}
+	var pending []uint32
+	tir_push(&pending, 65696, tmp1.body)
+	var tmp6 uint64 = tir_cmul(uint64(tmp3), uint64(2))
+	tir_loop1:
+	for (uint32(len(pending)) > uint32(0)) {
+		var tmp7 uint32 = uint32(0)
+		tmp7 = tir_pop(&pending)
+		if (tmp7 >= tmp3) {
+			return true
+		}
+		if (tmp7 == tmp2) {
+			return true
+		}
+		var tmp8 uint32 = (tmp7 >> 3)
+		var tmp9 uint8 = BITS[(tmp7 & uint32(7))]
+		if ((seen[tmp8] & tmp9) != uint8(0)) {
+			continue tir_loop1
+		}
+		tir_t1 := tmp8
+		if tir_t1 >= uint32(len(seen)) {
+			tir_oob(tir_t1, uint32(len(seen)))
+		}
+		seen[tir_t1] = (seen[tmp8] | tmp9)
+		tmp6 = tir_csub(tmp6, uint64(2))
+		var tmp10 Inst = re.code[tmp7]
+		switch tmp10.op {
+		case OpChar:
+		case OpCharCI:
+		case OpClass:
+		case OpAny:
+		case OpAnyNoNL:
+		case OpBsr:
+		case OpAccept:
+		case OpSplit:
+			tir_push(&pending, 65696, tmp10.arg)
+			tir_push(&pending, 65696, tmp10.alt)
+		case OpJump:
+			tir_push(&pending, 65696, tmp10.arg)
+		case OpRepLoop:
+			var tmp11 Rep = re.reps[tmp10.arg]
+			tir_push(&pending, 65696, tmp11.body)
+			tir_push(&pending, 65696, tmp11.after)
+		case OpRepNext:
+			var tmp12 Rep = re.reps[tmp10.arg]
+			tir_push(&pending, 65696, tmp12.head)
+			tir_push(&pending, 65696, tmp12.after)
+		default:
+			tir_push(&pending, 65696, (tmp7 + uint32(1)))
+		}
+	}
+	return false
+}
+
+func pike_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
+	var tmp1 uint32 = uint32(len(subj))
+	var tmp2 uint64 = uint64(0)
+	var tmp3 uint64 = uint64(0)
+	_ = tmp3
+	var tmp4 uint64 = uint64(0)
+	(*use).cost = tmp2
+	(*use).stack = uint32(0)
+	(*use).mem = tmp4
+	if (!re.pike) {
+		return uint32(3)
+	}
+	if (start > tmp1) {
+		return uint32(3)
+	}
+	var code []Inst = re.code
+	var reps []Rep = re.reps
+	var classes []byte = re.classes
+	var tmp5 uint32 = re.nltype
+	var tmp6 uint32 = re.ncap
+	var tmp7 uint32 = ((tmp6 + uint32(1)) * uint32(2))
+	var tmp8 bool = (((re.opts & uint32(32)) != uint32(0)) || ((mopts & uint32(16)) != uint32(0)))
+	var tmp9 bool = ((mopts & uint32(4)) != uint32(0))
+	var tmp10 bool = ((mopts & uint32(8)) != uint32(0))
+	var tmp11 bool = (re.hascrlf == uint32(0))
+	var tmp12 bool = ((tmp5 == uint32(2)) || ((tmp5 == uint32(3)) || (tmp5 == uint32(4))))
+	var tmp13 bool = ((mopts & uint32(1)) != uint32(0))
+	var tmp14 bool = ((mopts & uint32(2)) != uint32(0))
+	var clist []Th
+	var nlist []Th
+	_ = nlist
+	var stk []Th
+	_ = stk
+	var seen []byte
+	_ = seen
+	var pool []uint32
+	var rc []uint32
+	_ = rc
+	var free []uint32
+	_ = free
+	var tmp15 uint32 = ((uint32(len(code)) >> 3) + uint32(1))
+	var tmp16 uint64 = tir_cadd(tir_cmul(uint64(tmp7), uint64(4)), uint64(tmp15))
+	if ((tmp16 > memlimit) || (tmp16 > costlimit)) {
+		return uint32(2)
+	}
+	tmp3 = tmp16
+	tmp4 = tmp16
+	tmp2 = tmp16
+	tir_reserve(&(*ov), tmp7, 512)
+	tir_truncate(&(*ov), uint32(0))
+	var tmp17 uint32 = uint32(0)
+	for (tmp17 < tmp7) {
+		tir_push(&(*ov), 512, uint32(4294967295))
+		tmp17 = (tmp17 + uint32(1))
+	}
+	tir_reserve(&seen, tmp15, 2147483647)
+	tmp17 = uint32(0)
+	for (tmp17 < tmp15) {
+		tir_push(&seen, 2147483647, uint8(0))
+		tmp17 = (tmp17 + uint32(1))
+	}
+	var tmp18 uint32 = uint32(4294967295)
+	var tmp19 bool = true
+	var tmp20 uint32 = uint32(1)
+	var tmp21 bool = true
+	var tmp22 uint32 = start
+	var tmp23 bool = false
+	var tmp24 uint64 = tir_cmul(uint64(tmp7), uint64(4))
+	var tmp25 uint64 = uint64(tmp15)
+	var tmp26 bool = (re.crfirst != uint32(0))
+	for tmp21 {
+		if (tmp19 && ((!tmp8) || (tmp22 == start))) {
+			var tmp27 bool = false
+			if ((tmp22 > start) && (tmp12 && tmp11)) {
+				if (tmp26 && ((subj[(tmp22 - uint32(1))] == uint8(13)) && ((tmp22 < tmp1) && (subj[tmp22] == uint8(10))))) {
+					tmp27 = true
+				}
+			}
+			if (!tmp27) {
+				var tmp28 uint32 = uint32(4294967295)
+				tir_t1 := pike_take(&pool, &rc, &free, tmp7, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+				tmp28 = tir_t1
+				if (tmp28 == uint32(4294967295)) {
+					tmp20 = uint32(2)
+					tmp21 = false
+				} else {
+					if (tmp24 > tir_csub(costlimit, tmp2)) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					} else {
+						tmp2 = tir_cadd(tmp2, tmp24)
+						var tmp29 uint32 = (tmp28 * tmp7)
+						tmp17 = uint32(0)
+						for (tmp17 < tmp7) {
+							tir_t2 := (tmp29 + tmp17)
+							if tir_t2 >= uint32(len(pool)) {
+								tir_oob(tir_t2, uint32(len(pool)))
+							}
+							pool[tir_t2] = uint32(4294967295)
+							tmp17 = (tmp17 + uint32(1))
+						}
+						tir_t3 := tmp29
+						if tir_t3 >= uint32(len(pool)) {
+							tir_oob(tir_t3, uint32(len(pool)))
+						}
+						pool[tir_t3] = tmp22
+						tir_t4 := pike_add(&clist, &stk, &seen, &pool, &rc, &free, code, reps, subj, tmp22, tmp7, tmp5, tmp13, tmp14, uint32(0), tmp28, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+						tmp23 = tir_t4
+						if (!tmp23) {
+							tmp20 = uint32(2)
+							tmp21 = false
+						}
+					}
+				}
+			}
+		}
+		if tmp21 {
+			if (tmp25 > tir_csub(costlimit, tmp2)) {
+				tmp20 = uint32(2)
+				tmp21 = false
+			} else {
+				tmp2 = tir_cadd(tmp2, tmp25)
+				tmp17 = uint32(0)
+				for (tmp17 < tmp15) {
+					tir_t5 := tmp17
+					if tir_t5 >= uint32(len(seen)) {
+						tir_oob(tir_t5, uint32(len(seen)))
+					}
+					seen[tir_t5] = uint8(0)
+					tmp17 = (tmp17 + uint32(1))
+				}
+			}
+		}
+		var tmp30 uint32 = uint32(0)
+		tir_loop1:
+		for (tmp21 && (tmp30 < uint32(len(clist)))) {
+			var tmp31 Th = clist[tmp30]
+			var tmp32 uint32 = tmp31.pc
+			var tmp33 uint32 = tmp31.h
+			if (uint64(1) > tir_csub(costlimit, tmp2)) {
+				tmp20 = uint32(2)
+				tmp21 = false
+				continue tir_loop1
+			}
+			tmp2 = tir_cadd(tmp2, uint64(1))
+			var tmp34 Inst = code[tmp32]
+			switch tmp34.op {
+			case OpChar:
+				if ((tmp22 < tmp1) && (subj[tmp22] == uint8(tmp34.arg))) {
+					tir_t6 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t6
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t7 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t7
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpCharCI:
+				if ((tmp22 < tmp1) && (LOWER[uint32(subj[tmp22])] == uint8(tmp34.arg))) {
+					tir_t8 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t8
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t9 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t9
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpClass:
+				var tmp35 bool = false
+				if (tmp22 < tmp1) {
+					tir_t10 := class_has(classes, tmp34.arg, subj[tmp22])
+					tmp35 = tir_t10
+				}
+				if ((tmp22 < tmp1) && tmp35) {
+					tir_t11 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t11
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t12 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t12
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpAny:
+				if ((tmp22 < tmp1) && true) {
+					tir_t13 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t13
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t14 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t14
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpAnyNoNL:
+				var tmp36 uint32 = uint32(0)
+				if (tmp22 < tmp1) {
+					tir_t15 := newline_at(subj, tmp22, tmp5)
+					tmp36 = tir_t15
+				}
+				if ((tmp22 < tmp1) && (tmp36 == uint32(0))) {
+					tir_t16 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t16
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t17 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t17
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpAccept:
+				var tmp37 uint32 = pool[(tmp33 * tmp7)]
+				var tmp38 bool = (tmp37 == tmp22)
+				var tmp39 bool = (tmp38 && (tmp9 || (tmp10 && (tmp37 == start))))
+				if tmp39 {
+					tir_t18 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t18
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					var tmp40 uint32 = tmp33
+					tir_t19 := pike_write(&pool, &rc, &free, tmp7, &tmp40, uint32(1), tmp22, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t19
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					} else {
+						tir_t20 := pike_drop(&rc, &free, tmp18, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+						tmp23 = tir_t20
+						if (!tmp23) {
+							tmp20 = uint32(2)
+							tmp21 = false
+						}
+						if tmp21 {
+							tmp18 = tmp40
+							tmp19 = false
+							tmp20 = uint32(0)
+							var tmp41 uint32 = (tmp30 + uint32(1))
+							for (tmp21 && (tmp41 < uint32(len(clist)))) {
+								tir_t21 := pike_drop(&rc, &free, clist[tmp41].h, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+								tmp23 = tir_t21
+								if (!tmp23) {
+									tmp20 = uint32(2)
+									tmp21 = false
+								}
+								tmp41 = (tmp41 + uint32(1))
+							}
+							tmp30 = uint32(len(clist))
+							continue tir_loop1
+						}
+					}
+				}
+			default:
+				tir_t22 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+				tmp23 = tir_t22
+				if (!tmp23) {
+					tmp20 = uint32(2)
+					tmp21 = false
+				}
+			}
+			tmp30 = (tmp30 + uint32(1))
+		}
+		if tmp21 {
+			tir_truncate(&clist, uint32(0))
+			tir_t23 := clist
+			clist = nlist
+			nlist = tir_t23
+			if (tmp22 >= tmp1) {
+				tmp21 = false
+			} else {
+				if ((uint32(len(clist)) == uint32(0)) && ((!tmp19) || tmp8)) {
+					tmp21 = false
+				}
+			}
+		}
+		tmp22 = (tmp22 + uint32(1))
+	}
+	if (tmp20 == uint32(0)) {
+		if (tmp24 > tir_csub(costlimit, tmp2)) {
+			tmp20 = uint32(2)
+		} else {
+			tmp2 = tir_cadd(tmp2, tmp24)
+			tmp17 = uint32(0)
+			for (tmp17 < tmp7) {
+				tir_t24 := tmp17
+				if tir_t24 >= uint32(len((*ov))) {
+					tir_oob(tir_t24, uint32(len((*ov))))
+				}
+				(*ov)[tir_t24] = pool[((tmp18 * tmp7) + tmp17)]
+				tmp17 = (tmp17 + uint32(1))
+			}
+		}
+	}
+	(*use).cost = tmp2
+	(*use).stack = uint32(0)
+	(*use).mem = tmp4
+	return tmp20
+}
+
+func pike_ok(re Re) bool {
+	var tmp1 uint32 = uint32(0)
+	for (tmp1 < uint32(len(re.reps))) {
+		var tmp2 Rep = re.reps[tmp1]
+		if ((tmp2.lo != uint32(0)) || (tmp2.hi != uint32(4294967295))) {
+			return false
+		}
+		var tmp3 bool = true
+		tir_t1 := pike_hollow(re, tmp1)
+		tmp3 = tir_t1
+		if tmp3 {
+			return false
+		}
+		tmp1 = (tmp1 + uint32(1))
+	}
+	var tmp4 uint32 = uint32(0)
+	for (tmp4 < uint32(len(re.code))) {
+		if (re.code[tmp4].op == OpBsr) {
+			return false
+		}
+		tmp4 = (tmp4 + uint32(1))
+	}
+	return true
+}
+
+func pike_park(held *[]Th, pcv uint32, hv uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	var tmp1 bool = false
+	tir_t1 := charge_grow(uint32(cap((*held))), uint32(len((*held))), uint32(8), uint32(32848), mem, peak, cost, memlimit, costlimit)
+	tmp1 = tir_t1
+	if (!tmp1) {
+		return false
+	}
+	tir_push(&(*held), 32848, (Th{pc: pcv, h: hv}))
+	return true
+}
+
+func pike_price(re Re, cert *Cert) bool {
+	var over bool = false
+	var tmp1 uint64 = uint64(uint32(len(re.code)))
+	var tmp2 uint64 = tir_cmul(uint64((re.ncap + uint32(1))), uint64(2))
+	var tmp3 uint64 = tir_cmul(tmp2, uint64(4))
+	var tmp4 uint64 = uint64(((uint32(len(re.code)) >> 3) + uint32(1)))
+	var tmp5 uint64 = uint64(0)
+	var tmp6 uint32 = uint32(0)
+	for (tmp6 < uint32(len(re.code))) {
+		if (re.code[tmp6].op == OpSave) {
+			tmp5 = tir_cadd(tmp5, uint64(1))
+		}
+		tmp6 = (tmp6 + uint32(1))
+	}
+	var tmp7 uint64 = uint64(0)
+	if (tmp1 > uint64(0)) {
+		var tmp8 uint64
+		tir_t1 := sat_mul(tmp1, uint64(2), &over)
+		tmp8 = tir_t1
+		var tmp9 uint64
+		tir_t2 := sat_add(tmp8, uint64(4), &over)
+		tmp9 = tir_t2
+		tmp7 = tmp9
+	}
+	var tmp10 uint64
+	tir_t3 := sat_mul(tmp7, uint64(16), &over)
+	tmp10 = tir_t3
+	var tmp11 uint64
+	tir_t4 := sat_mul(tmp1, uint64(2), &over)
+	tmp11 = tir_t4
+	var tmp12 uint64 = uint64(0)
+	if (tmp11 > uint64(0)) {
+		var tmp13 uint64
+		tir_t5 := sat_mul(tmp11, uint64(2), &over)
+		tmp13 = tir_t5
+		var tmp14 uint64
+		tir_t6 := sat_add(tmp13, uint64(4), &over)
+		tmp14 = tir_t6
+		tmp12 = tmp14
+	}
+	var tmp15 uint64
+	tir_t7 := sat_mul(tmp12, uint64(8), &over)
+	tmp15 = tir_t7
+	var tmp16 uint64
+	tir_t8 := sat_mul(tmp1, uint64(4), &over)
+	tmp16 = tir_t8
+	var tmp17 uint64
+	tir_t9 := sat_add(tmp16, uint64(2), &over)
+	tmp17 = tir_t9
+	var tmp18 uint64 = tmp17
+	var tmp19 uint64 = uint64(0)
+	if (tmp18 > uint64(0)) {
+		var tmp20 uint64
+		tir_t10 := sat_mul(tmp18, uint64(2), &over)
+		tmp20 = tir_t10
+		var tmp21 uint64
+		tir_t11 := sat_add(tmp20, uint64(4), &over)
+		tmp21 = tir_t11
+		tmp19 = tmp21
+	}
+	var tmp22 uint64
+	tir_t12 := sat_mul(tmp19, uint64(8), &over)
+	tmp22 = tir_t12
+	var tmp23 uint64
+	tir_t13 := sat_mul(tmp18, tmp2, &over)
+	tmp23 = tir_t13
+	var tmp24 uint64 = uint64(0)
+	if (tmp23 > uint64(0)) {
+		var tmp25 uint64
+		tir_t14 := sat_mul(tmp23, uint64(2), &over)
+		tmp25 = tir_t14
+		var tmp26 uint64
+		tir_t15 := sat_add(tmp25, uint64(4), &over)
+		tmp26 = tir_t15
+		tmp24 = tmp26
+	}
+	var tmp27 uint64
+	tir_t16 := sat_mul(tmp24, uint64(4), &over)
+	tmp27 = tir_t16
+	var tmp28 uint64 = tmp10
+	var tmp29 uint64
+	tir_t17 := sat_add(tmp28, tmp15, &over)
+	tmp29 = tir_t17
+	tmp28 = tmp29
+	var tmp30 uint64
+	tir_t18 := sat_add(tmp28, tmp22, &over)
+	tmp30 = tir_t18
+	tmp28 = tmp30
+	var tmp31 uint64
+	tir_t19 := sat_add(tmp28, tmp27, &over)
+	tmp31 = tir_t19
+	tmp28 = tmp31
+	var tmp32 uint64
+	tir_t20 := sat_add(tmp3, tmp4, &over)
+	tmp32 = tir_t20
+	var tmp33 uint64
+	tir_t21 := sat_mul(tmp1, uint64(2), &over)
+	tmp33 = tir_t21
+	var tmp34 uint64
+	tir_t22 := sat_add(tmp5, uint64(2), &over)
+	tmp34 = tir_t22
+	var tmp35 uint64
+	tir_t23 := sat_mul(tmp34, tmp3, &over)
+	tmp35 = tir_t23
+	var tmp36 uint64
+	tir_t24 := sat_add(tmp33, tmp35, &over)
+	tmp36 = tir_t24
+	tmp33 = tmp36
+	var tmp37 uint64
+	tir_t25 := sat_add(tmp33, tmp4, &over)
+	tmp37 = tir_t25
+	tmp33 = tmp37
+	var tmp38 uint64
+	tir_t26 := sat_add(tmp32, tmp3, &over)
+	tmp38 = tir_t26
+	var tmp39 uint64
+	tir_t27 := sat_mul(tmp28, uint64(3), &over)
+	tmp39 = tir_t27
+	var tmp40 uint64
+	tir_t28 := sat_add(tmp38, tmp39, &over)
+	tmp40 = tir_t28
+	var tmp41 uint64
+	tir_t29 := sat_mul(tmp28, uint64(2), &over)
+	tmp41 = tir_t29
+	var tmp42 uint64
+	tir_t30 := sat_add(tmp32, tmp41, &over)
+	tmp42 = tir_t30
+	if over {
+		return false
+	}
+	(*cert).config = CfgPike
+	(*cert).complexity = CcLinear
+	(*cert).cost = (Poly{base: uint64(1), c0: tmp40, c1: tmp33, c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*cert).stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*cert).mem = (Poly{base: uint64(1), c0: tmp42, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	var empty []Price
+	_ = empty
+	(*cert).prices = empty
+	empty = nil
+	return true
+}
+
+func pike_take(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) uint32 {
+	if (uint32(len((*free))) > uint32(0)) {
+		var tmp1 uint32 = uint32(0)
+		tmp1 = tir_pop(&(*free))
+		tir_t1 := tmp1
+		if tir_t1 >= uint32(len((*rc))) {
+			tir_oob(tir_t1, uint32(len((*rc))))
+		}
+		(*rc)[tir_t1] = uint32(1)
+		return tmp1
+	}
+	var tmp2 uint32 = uint32(len((*rc)))
+	if (tmp2 >= uint32(131396)) {
+		return uint32(4294967295)
+	}
+	var tmp3 bool = false
+	tir_t2 := charge_grow(uint32(cap((*rc))), uint32(len((*rc))), uint32(4), uint32(131396), mem, peak, cost, memlimit, costlimit)
+	tmp3 = tir_t2
+	if (!tmp3) {
+		return uint32(4294967295)
+	}
+	tir_push(&(*rc), 131396, uint32(1))
+	var tmp4 uint32 = uint32(0)
+	for (tmp4 < novec) {
+		tir_t3 := charge_grow(uint32(cap((*pool))), uint32(len((*pool))), uint32(4), uint32(67274752), mem, peak, cost, memlimit, costlimit)
+		tmp3 = tir_t3
+		if (!tmp3) {
+			return uint32(4294967295)
+		}
+		tir_push(&(*pool), 67274752, uint32(4294967295))
+		tmp4 = (tmp4 + uint32(1))
+	}
+	return tmp2
+}
+
+func pike_write(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, h *uint32, slot uint32, value uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	if ((*rc)[(*h)] > uint32(1)) {
+		var tmp1 uint64 = tir_cmul(uint64(novec), uint64(4))
+		if (tmp1 > tir_csub(costlimit, (*cost))) {
+			return false
+		}
+		(*cost) = tir_cadd((*cost), tmp1)
+		var tmp2 uint32 = uint32(4294967295)
+		tir_t1 := pike_take(pool, rc, free, novec, mem, peak, cost, memlimit, costlimit)
+		tmp2 = tir_t1
+		if (tmp2 == uint32(4294967295)) {
+			return false
+		}
+		var tmp3 uint32 = (tmp2 * novec)
+		var tmp4 uint32 = ((*h) * novec)
+		var tmp5 uint32 = uint32(0)
+		for (tmp5 < novec) {
+			tir_t2 := (tmp3 + tmp5)
+			if tir_t2 >= uint32(len((*pool))) {
+				tir_oob(tir_t2, uint32(len((*pool))))
+			}
+			(*pool)[tir_t2] = (*pool)[(tmp4 + tmp5)]
+			tmp5 = (tmp5 + uint32(1))
+		}
+		tir_t3 := (*h)
+		if tir_t3 >= uint32(len((*rc))) {
+			tir_oob(tir_t3, uint32(len((*rc))))
+		}
+		(*rc)[tir_t3] = ((*rc)[(*h)] - uint32(1))
+		(*h) = tmp2
+	}
+	tir_t4 := (((*h) * novec) + slot)
+	if tir_t4 >= uint32(len((*pool))) {
+		tir_oob(tir_t4, uint32(len((*pool))))
+	}
+	(*pool)[tir_t4] = value
+	return true
 }
 
 func poly_add(a Poly, b Poly, over *bool) Poly {
@@ -4078,6 +5235,88 @@ func quantifier(pat []byte, at *uint32, w *Work) {
 		return
 	}
 	(*at) = tmp2
+}
+
+func re_bound(re Re, kind Bk, mcfg uint32, n uint64) Answer {
+	if (mcfg != uint32(0)) {
+		return (Answer{status: uint32(3), value: uint64(0)})
+	}
+	if (n > uint64(2147483647)) {
+		return (Answer{status: uint32(3), value: uint64(0)})
+	}
+	var picked Cert
+	var ok bool = false
+	tir_t1 := re_pick(re, &picked)
+	ok = tir_t1
+	if (!ok) {
+		return (Answer{status: uint32(4), value: uint64(0)})
+	}
+	var out Bound
+	tir_t2 := cert_bound(picked, kind, n)
+	out = tir_t2
+	if (!out.ok) {
+		return (Answer{status: uint32(4), value: uint64(0)})
+	}
+	return (Answer{status: uint32(0), value: out.value})
+}
+
+func re_class(re Re) Answer {
+	var picked Cert
+	var ok bool = false
+	tir_t1 := re_pick(re, &picked)
+	ok = tir_t1
+	if (!ok) {
+		return (Answer{status: uint32(4), value: uint64(0)})
+	}
+	var value uint64 = uint64(0)
+	var known bool = false
+	switch picked.complexity {
+	case CcNotProvenLinear:
+		known = true
+	case CcLinear:
+		value = uint64(1)
+		known = true
+	}
+	if (!known) {
+		return (Answer{status: uint32(4), value: uint64(0)})
+	}
+	return (Answer{status: uint32(0), value: value})
+}
+
+func re_cost(re Re, mcfg uint32, n uint64) Answer {
+	var out Answer
+	tir_t1 := re_bound(re, BkCost, mcfg, n)
+	out = tir_t1
+	return out
+}
+
+func re_mem(re Re, mcfg uint32, n uint64) Answer {
+	var out Answer
+	tir_t1 := re_bound(re, BkMem, mcfg, n)
+	out = tir_t1
+	return out
+}
+
+func re_pick(re Re, picked *Cert) bool {
+	if re.pike {
+		if (!re.haspikecert) {
+			return false
+		}
+		(*picked) = re.pikecert
+		return true
+	}
+	if (!re.hascert) {
+		return false
+	}
+	(*picked) = re.cert
+	return true
+}
+
+func re_stack(re Re, mcfg uint32, n uint64) Answer {
+	var out Answer
+	tir_t1 := re_bound(re, BkStack, mcfg, n)
+	out = tir_t1
+	return out
 }
 
 func read_braces(pat []byte, at uint32, w *Work) Quant {
@@ -5839,6 +7078,10 @@ func Tir_bsr_at(subj []byte, pos uint32, bsr uint32) uint32 {
 	return bsr_at(subj, pos, bsr)
 }
 
+func Tir_bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
+	return bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit, ov, use)
+}
+
 func Tir_cert_bound(cert Cert, kind Bk, n uint64) Bound {
 	return cert_bound(cert, kind, n)
 }
@@ -5851,8 +7094,8 @@ func Tir_cert_check(re Re, config Cfg, cert Cert) Cr {
 	return cert_check(re, config, cert)
 }
 
-func Tir_cert_install(re Re, cert *Cert, has *bool) Cr {
-	return cert_install(re, cert, has)
+func Tir_cert_install(re Re, cert *Cert, has *bool, pcert *Cert, haspike *bool) Cr {
+	return cert_install(re, cert, has, pcert, haspike)
 }
 
 func Tir_cert_shape(re Re) Cr {
@@ -5931,8 +7174,8 @@ func Tir_mark_seen(w *Work, pc uint32) {
 	mark_seen(w, pc)
 }
 
-func Tir_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
-	return match(re, subj, start, mopts, costlimit, stacklimit, memlimit, ov, use)
+func Tir_match(re Re, subj []byte, start uint32, mopts uint32, mcfg uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
+	return match(re, subj, start, mopts, mcfg, costlimit, stacklimit, memlimit, ov, use)
 }
 
 func Tir_name_taken(pat []byte, off uint32, nlen uint32, w *Work) bool {
@@ -5985,6 +7228,50 @@ func Tir_parse(pat []byte, popts uint32, nltype uint32, w *Work) {
 
 func Tir_parse_class(pat []byte, at *uint32, w *Work) uint32 {
 	return parse_class(pat, at, w)
+}
+
+func Tir_pike_add(list *[]Th, stk *[]Th, seen *[]byte, pool *[]uint32, rc *[]uint32, free *[]uint32, code []Inst, reps []Rep, subj []byte, pos uint32, novec uint32, nltype uint32, notbol bool, noteol bool, pc0 uint32, h0 uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	return pike_add(list, stk, seen, pool, rc, free, code, reps, subj, pos, novec, nltype, notbol, noteol, pc0, h0, mem, peak, cost, memlimit, costlimit)
+}
+
+func Tir_pike_check(re Re, cert Cert) Cr {
+	return pike_check(re, cert)
+}
+
+func Tir_pike_defer(held *[]Th, pcv uint32, hv uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	return pike_defer(held, pcv, hv, mem, peak, cost, memlimit, costlimit)
+}
+
+func Tir_pike_drop(rc *[]uint32, free *[]uint32, h uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	return pike_drop(rc, free, h, mem, peak, cost, memlimit, costlimit)
+}
+
+func Tir_pike_hollow(re Re, which uint32) bool {
+	return pike_hollow(re, which)
+}
+
+func Tir_pike_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
+	return pike_match(re, subj, start, mopts, costlimit, stacklimit, memlimit, ov, use)
+}
+
+func Tir_pike_ok(re Re) bool {
+	return pike_ok(re)
+}
+
+func Tir_pike_park(held *[]Th, pcv uint32, hv uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	return pike_park(held, pcv, hv, mem, peak, cost, memlimit, costlimit)
+}
+
+func Tir_pike_price(re Re, cert *Cert) bool {
+	return pike_price(re, cert)
+}
+
+func Tir_pike_take(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) uint32 {
+	return pike_take(pool, rc, free, novec, mem, peak, cost, memlimit, costlimit)
+}
+
+func Tir_pike_write(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, h *uint32, slot uint32, value uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
+	return pike_write(pool, rc, free, novec, h, slot, value, mem, peak, cost, memlimit, costlimit)
 }
 
 func Tir_poly_add(a Poly, b Poly, over *bool) Poly {
@@ -6053,6 +7340,30 @@ func Tir_push_patch(w *Work, pc uint32) {
 
 func Tir_quantifier(pat []byte, at *uint32, w *Work) {
 	quantifier(pat, at, w)
+}
+
+func Tir_re_bound(re Re, kind Bk, mcfg uint32, n uint64) Answer {
+	return re_bound(re, kind, mcfg, n)
+}
+
+func Tir_re_class(re Re) Answer {
+	return re_class(re)
+}
+
+func Tir_re_cost(re Re, mcfg uint32, n uint64) Answer {
+	return re_cost(re, mcfg, n)
+}
+
+func Tir_re_mem(re Re, mcfg uint32, n uint64) Answer {
+	return re_mem(re, mcfg, n)
+}
+
+func Tir_re_pick(re Re, picked *Cert) bool {
+	return re_pick(re, picked)
+}
+
+func Tir_re_stack(re Re, mcfg uint32, n uint64) Answer {
+	return re_stack(re, mcfg, n)
 }
 
 func Tir_read_braces(pat []byte, at uint32, w *Work) Quant {
@@ -6172,6 +7483,9 @@ func (v *Acc) Tir_stack() Poly { return v.stack }
 func (v *Acc) Tir_trail() Poly { return v.trail }
 func (v *Acc) Tir_flow() Poly { return v.flow }
 
+func (v *Answer) Tir_status() uint32 { return v.status }
+func (v *Answer) Tir_value() uint64 { return v.value }
+
 func (v *Bound) Tir_ok() bool { return v.ok }
 func (v *Bound) Tir_value() uint64 { return v.value }
 
@@ -6256,8 +7570,11 @@ func (v *Re) Tir_nltype() uint32 { return v.nltype }
 func (v *Re) Tir_bsr() uint32 { return v.bsr }
 func (v *Re) Tir_hascrlf() uint32 { return v.hascrlf }
 func (v *Re) Tir_crfirst() uint32 { return v.crfirst }
+func (v *Re) Tir_pike() bool { return v.pike }
 func (v *Re) Tir_hascert() bool { return v.hascert }
 func (v *Re) Tir_cert() Cert { return v.cert }
+func (v *Re) Tir_haspikecert() bool { return v.haspikecert }
+func (v *Re) Tir_pikecert() Cert { return v.pikecert }
 
 func (v *Ref) Tir_num() uint32 { return v.num }
 func (v *Ref) Tir_off() uint32 { return v.off }
@@ -6274,6 +7591,9 @@ func (v *Rep) Tir_greedy() bool { return v.greedy }
 func (v *Rep) Tir_head() uint32 { return v.head }
 func (v *Rep) Tir_body() uint32 { return v.body }
 func (v *Rep) Tir_after() uint32 { return v.after }
+
+func (v *Th) Tir_pc() uint32 { return v.pc }
+func (v *Th) Tir_h() uint32 { return v.h }
 
 func (v *Undo) Tir_slot() uint32 { return v.slot }
 func (v *Undo) Tir_old() uint32 { return v.old }

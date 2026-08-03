@@ -150,6 +150,7 @@ class Layout:
                 # The certificate is about this program, in this configuration.
                 "CrNoRules",
                 "CrConfig",
+                "CrIneligible",
                 "CrPrices",
                 "CrBase",
                 # The tree accounts for the bytecode it claims to cover, and
@@ -262,6 +263,13 @@ class Layout:
 
         self.Undo = m.struct("Undo", [("slot", u32), ("old", u32)])
 
+        # One Pike thread: where it is suspended and which capture block it
+        # holds, as a handle into the copy-on-write pool rather than as slots
+        # of its own — sharing a block is a handle copy and a refcount bump,
+        # which is what keeps forking cheap and the pool inside the section 5
+        # memory accounting.
+        self.Th = m.struct("Th", [("pc", u32), ("h", u32)])
+
         self.Esc = m.struct("Esc", [("kind", self.Ek), ("val", u32)])
 
         # --- the bound certificate ---
@@ -294,6 +302,16 @@ class Layout:
         )
 
         self.Bound = m.struct("Bound", [("ok", boolean), ("value", counter)])
+
+        # What a public analysis accessor answers. `Bound` cannot carry it:
+        # DESIGN.md section 2.4 gives the accessors three outcomes — a finite
+        # number, ExceedsBudget, and BadInput for a configuration or length the
+        # pattern cannot be asked about — and a single flag folds the last two
+        # together. The status is the outcome ordinal of spec.py, the same
+        # numbering `match` reports, so ExceedsBudget is distinct from the
+        # runtime ResourceExceeded by construction. When the status is not OK
+        # the value says nothing.
+        self.Answer = m.struct("Answer", [("status", u32), ("value", counter)])
 
         # A region is one source construct the compiler flattened, and it is
         # the compiler that emits it: it has the AST in hand while it lays out
@@ -354,6 +372,11 @@ class Layout:
         self.Regions = vec(self.Region, spec.MAX_REGIONS)
         self.Prices = vec(self.Price, spec.MAX_REGIONS)
         self.Marks = vec(u32, spec.MAX_REGIONS)
+        self.Threads = vec(self.Th, spec.MAX_THREADS)
+        self.Closure = vec(self.Th, spec.MAX_CLOSURE)
+        self.Slots = vec(u32, spec.MAX_POOL)
+        self.Blocks = vec(u32, spec.MAX_BLOCKS)
+        self.Steps = vec(u32, spec.MAX_CLOSURE)
 
         self.FrozenCode = frozen(self.Code)
         self.FrozenReps = frozen(self.Reps)
@@ -404,6 +427,12 @@ class Layout:
                 ("bsr", u32),
                 ("hascrlf", u32),
                 ("crfirst", u32),
+                # Whether the Pike VM may run this program: every repetition
+                # is a pure star and nothing consumes a variable number of
+                # bytes, so the bytecode is state-free and a visited set keyed
+                # by pc alone is sound (DESIGN.md section 4.3). Fixed at
+                # compilation, like everything else about the execution path.
+                ("pike", boolean),
                 # The bound certificate for the backtracking configuration, and
                 # whether there is one. Compilation runs the analyzer and then
                 # the checker, and only a `CrOk` puts anything here, so the
@@ -417,6 +446,13 @@ class Layout:
                 # get from a pattern nobody priced.
                 ("hascert", boolean),
                 ("cert", self.Cert),
+                # And the same pair for the Pike configuration, present
+                # exactly on eligible patterns whose closed form fits counter
+                # arithmetic. Two slots rather than a table because wave 1
+                # has two configurations, and the accessors read whichever
+                # one prices the path compilation selected.
+                ("haspikecert", boolean),
+                ("pikecert", self.Cert),
             ],
         )
 

@@ -67,6 +67,8 @@ from .driver import (
     Region,
     canonical,
     coef,
+    items,
+    variant_of,
 )
 from .program import program
 
@@ -83,7 +85,12 @@ NOTE = (
     "the same refusal. A bound of null is the ExceedsBudget of DESIGN.md "
     "section 2.4, which is a refusal rather than a number and never a "
     "saturated counter; a complexity of null is a pattern the analyzer found "
-    "no bound for at all."
+    "no bound for at all. Each accessor entry asks the public analysis "
+    "accessors the same questions through each language's wrapper: a status is "
+    "the outcome ordinal of the engine (0 ok, 3 BadInput, 4 ExceedsBudget), "
+    "and a query marked exercise must additionally survive a match on a "
+    "subject of that length with the three pinned bounds passed unchanged as "
+    "the limits, anything but ResourceExceeded."
 )
 
 LENGTHS = (0, 1, 2, 10, 53, 65535, CAP)
@@ -488,6 +495,46 @@ def minimal(pattern: bytes) -> Certificate:
     return price(read(compiled(pattern)))
 
 
+def lockstep(pattern: bytes) -> Certificate:
+    """The Pike closed form of BOUNDS.md section 9, stated a second time.
+
+    The same relationship `price` has to sections 1 through 8: an independent
+    Python restatement the engine's own numbers are compared against, so that
+    the exact-minimum cases really are exact and the one-unit-lower mutations
+    really are one unit short.
+    """
+    built = compiled(pattern)
+    code = items(built.re.fields["code"])
+    instructions = len(code)
+    slots = 2 * (built.re.fields["ncap"] + 1)
+    block = spec.REG_SIZE * slots
+    words = instructions // 8 + 1
+    saves = sum(
+        1 for inst in code if variant_of(inst.fields["op"]) == "OpSave"
+    )
+
+    def capacity(entries: int) -> int:
+        return 0 if entries == 0 else spec.GROW_MIN + spec.GROW_FACTOR * entries
+
+    blocks = 4 * instructions + 2
+    reserved = (
+        2 * spec.TH_SIZE * capacity(instructions)
+        + spec.TH_SIZE * capacity(2 * instructions)
+        + 2 * spec.REG_SIZE * capacity(blocks)
+        + spec.REG_SIZE * capacity(blocks * slots)
+    )
+    setup = block + words
+    position = 2 * instructions + (saves + 2) * block + words
+    return Certificate(
+        prices=(),
+        cost=canonical(1, (setup + block + 3 * reserved, position)),
+        stack=ZERO,
+        mem=canonical(1, (setup + 2 * reserved,)),
+        config="CfgPike",
+        complexity="CcLinear",
+    )
+
+
 def unpriced(count: int) -> Certificate:
     """A certificate that claims nothing, for the cases about the tree itself."""
     return Certificate(prices=(Price(),) * count)
@@ -523,6 +570,8 @@ def claiming(cert: Certificate, **over) -> Certificate:
 
 
 LITERAL = minimal(b"abc")
+LOCKSTEP = lockstep(b"abc")
+LOCKSTEP_CAPTURED = lockstep(b"(a)(b*)")
 CAPTURE = minimal(b"(a)")
 ALTERNATION = minimal(b"a|b")
 OPTIONAL = minimal(b"a?")
@@ -778,21 +827,97 @@ CASES: list[Case] = [
         claiming(LITERAL, config="CfgPike"),
     ),
     Case(
-        "no-rules-for-pike-yet",
-        "The Pike VM charges differently enough that borrowing these rules for "
-        "it would be a guess. It gets its own, later in M5.",
-        "CrNoRules",
-        b"abc",
-        claiming(LITERAL, config="CfgPike"),
-        config="CfgPike",
-    ),
-    Case(
         "no-rules-for-the-memoized-path",
-        "And the memoized path waits for M9, memo table and all.",
+        "The memoized path waits for M9, memo table and all.",
         "CrNoRules",
         b"abc",
         claiming(LITERAL, config="CfgMemo"),
         config="CfgMemo",
+    ),
+    # --- the Pike configuration, whose rules are BOUNDS.md section 9 ---
+    Case(
+        "pike-linear-certificate",
+        "The closed form itself: no region prices, a linear claim, and the "
+        "three whole-call numbers of section 9, accepted exactly.",
+        "CrOk",
+        b"abc",
+        LOCKSTEP,
+        config="CfgPike",
+    ),
+    Case(
+        "pike-linear-certificate-with-captures",
+        "The same closed form where the counts all bite: two groups widen "
+        "the block, four Saves multiply the copy-on-write term, and the "
+        "star stops the program being trivial. Exact, so a restatement that "
+        "drifted on any of those counts is caught here.",
+        "CrOk",
+        b"(a)(b*)",
+        LOCKSTEP_CAPTURED,
+        config="CfgPike",
+    ),
+    Case(
+        "pike-claiming-a-stack",
+        "No backtrack stack exists on the lockstep path, so the stack rule "
+        "is equality with zero rather than domination: entries the matcher "
+        "can never push are not a shape section 9 admits.",
+        "CrShape",
+        b"abc",
+        claiming(LOCKSTEP, stack=Poly((1,))),
+        config="CfgPike",
+    ),
+    Case(
+        "pike-on-an-ineligible-pattern",
+        "A lower bound keeps `a+` off the lockstep path, so no Pike "
+        "certificate can be about it, whatever its numbers say. Refused "
+        "before anything is priced.",
+        "CrIneligible",
+        b"a+",
+        claiming(LOCKSTEP),
+        config="CfgPike",
+    ),
+    Case(
+        "pike-for-the-other-configuration",
+        "A certificate naming the backtracking configuration says nothing "
+        "here, mirroring the mismatch case above.",
+        "CrConfig",
+        b"abc",
+        claiming(LOCKSTEP, config="CfgBacktrack"),
+        config="CfgPike",
+    ),
+    Case(
+        "pike-with-region-prices",
+        "The Pike form carries no region prices — the visited set makes the "
+        "whole call a closed form — so a certificate carrying some is a "
+        "shape the section 9 rules refuse.",
+        "CrPrices",
+        b"abc",
+        claiming(LOCKSTEP, prices=LITERAL.prices),
+        config="CfgPike",
+    ),
+    Case(
+        "pike-claiming-less-than-linear",
+        "Linearity is the shape of the section 9 rule, so a certificate "
+        "declining to claim it is refused rather than accepted modestly.",
+        "CrNotLinear",
+        b"abc",
+        claiming(LOCKSTEP, complexity="CcNotProvenLinear"),
+        config="CfgPike",
+    ),
+    Case(
+        "pike-a-unit-short-on-cost",
+        "One cost unit under the closed form, refused by name.",
+        "CrTotalCost",
+        b"abc",
+        less(LOCKSTEP, "cost", 1),
+        config="CfgPike",
+    ),
+    Case(
+        "pike-a-unit-short-on-memory",
+        "And one IR byte under the reservation.",
+        "CrTotalMem",
+        b"abc",
+        less(LOCKSTEP, "mem", 0),
+        config="CfgPike",
     ),
     # --- one price per region ---
     Case(
@@ -1376,6 +1501,220 @@ ANALYSES: list[Analysis] = [
 ]
 
 
+@dataclass(frozen=True)
+class Access:
+    """One pattern, and what the public analysis accessors answer for it.
+
+    The third half of the corpus, and the one about the surface applications
+    actually see: `analyses` pins what the analyzer produced, this pins what a
+    caller is told. The two differ exactly where DESIGN.md section 2.4 says the
+    public contract adds something — a configuration that is not the default
+    and a length past MAX_LENGTH are BadInput before the certificate is looked
+    at, and a missing certificate is the same ExceedsBudget as a saturated one,
+    because neither is a number anyone can budget with.
+
+    What is hand-written is the class answer; the query rows are computed, and
+    generation holds every one of them to the contract's own shape — a refusal
+    where the contract requires one, the internal evaluator's number everywhere
+    else — so a wrapper that invented an answer could not write this file.
+    """
+
+    name: str
+    note: str
+    pattern: bytes
+    status: int
+    """The class query's outcome: spec.OK, or spec.EXCEEDS_BUDGET for a
+    pattern carrying no certificate."""
+    complexity: int = 0
+    """The class itself, as spec.CLASS_*; nothing when the status refuses."""
+
+
+ACCESSES: list[Access] = [
+    Access(
+        "literal",
+        "The plain case, on the lockstep path: a Pike certificate, a linear "
+        "class, and three finite numbers at every legal length, the stack "
+        "one always zero because no backtrack stack exists on that path.",
+        b"abc",
+        spec.OK,
+        spec.CLASS_LINEAR,
+    ),
+    Access(
+        "nothing-at-all",
+        "The empty pattern still prices, so the accessors have answers for a "
+        "caller who compiled one.",
+        b"",
+        spec.OK,
+        spec.CLASS_LINEAR,
+    ),
+    Access(
+        "a-large-linear-constant",
+        "A counted repetition keeps the backtracking path, and this one is "
+        "linear with a coefficient near the top of the counter, so the cost "
+        "answer crosses from finite to ExceedsBudget down the length list "
+        "while the class stays linear throughout.",
+        b"(?:a|a){0,43}",
+        spec.OK,
+        spec.CLASS_LINEAR,
+    ),
+    Access(
+        "a-star-gone-lockstep",
+        "On the backtracking path a star is quadratic; compilation routes it "
+        "to the Pike VM, and the class and the bounds describe the path that "
+        "will actually run, which is linear.",
+        b"a*",
+        spec.OK,
+        spec.CLASS_LINEAR,
+    ),
+    Access(
+        "an-ambiguity-lockstep-defuses",
+        "Two identical arms under a star are exponential to a backtracker "
+        "and nothing at all to a thread list, so what used to be the "
+        "textbook refusal answers small linear numbers.",
+        b"(?:a|a)*",
+        spec.OK,
+        spec.CLASS_LINEAR,
+    ),
+    Access(
+        "polynomial-looking",
+        "A counted repetition pins this to the backtracking path, and the "
+        "star after it makes that path quadratic, so the class is the honest "
+        "notProvenLinear and the numbers grow with the square.",
+        b"a{0,2}b*",
+        spec.OK,
+        spec.CLASS_NOT_PROVEN_LINEAR,
+    ),
+    Access(
+        "exponential-looking",
+        "A lower bound keeps this off the lockstep path, and the ambiguous "
+        "body under an unbounded repetition gives the backtracking bound a "
+        "growing base, so finite numbers at short lengths turn to "
+        "ExceedsBudget within a few dozen bytes.",
+        b"(?:a|a){2,}",
+        spec.OK,
+        spec.CLASS_NOT_PROVEN_LINEAR,
+    ),
+    Access(
+        "ambiguous-no-certificate",
+        "A star inside a star can complete an iteration emptily, which keeps "
+        "it off the lockstep path, and its backtracking bound is a power of "
+        "a polynomial no certificate can write down. Every accessor refuses: "
+        "the class too, since a class with no certified bound behind it "
+        "would be a claim about nothing.",
+        b"(?:a*)*",
+        spec.EXCEEDS_BUDGET,
+    ),
+    Access(
+        "overflowing-no-certificate",
+        "One more iteration than the coefficient that fits, on the "
+        "backtracking path a counted repetition pins it to. The same refusal "
+        "as above by a different route, and the accessors must not care "
+        "which.",
+        b"(?:a|a){0,44}",
+        spec.EXCEEDS_BUDGET,
+    ),
+    Access(
+        "four-stars-gone-lockstep",
+        "The pattern whose backtracking bound needs a power that does not "
+        "exist, priced finitely anyway, because the path that runs is the "
+        "thread list and its bound is a closed form in the program size.",
+        b"a*b*c*d*",
+        spec.OK,
+        spec.CLASS_LINEAR,
+    ),
+]
+
+QUERY_LENGTHS = (0, 1, 2, 10, 53, 65535, spec.MAX_LENGTH, spec.MAX_LENGTH + 1, CAP)
+"""Where each pattern is asked, on the default configuration.
+
+The LENGTHS of the internal evaluator plus the public cap and the first length
+past it: MAX_LENGTH is the longest subject there is, so it must still answer,
+and one byte more must be BadInput. CAP lands the same way — representable in
+every language, past the cap in all of them.
+"""
+
+QUERY_CONFIGS = (spec.MC_MEMO, 2, 0xFFFFFFFF)
+"""The configurations that are not the default, asked once each: the memoized
+value that exists and is BadInput until M9 activates it, and two ordinals
+nobody defined, which are BadInput forever. Each is asked at a length that
+would otherwise answer, so a runner can tell the refusal is about the
+configuration."""
+
+QUERY_CONFIG_LENGTH = 10
+
+EXERCISE_COST = 20_000
+"""The largest pinned cost bound a runner acts on.
+
+Every query row whose three answers are finite carries `exercise`: true means
+the runner must build a subject of that length, pass the three bounds
+unchanged as the match limits, and get anything but ResourceExceeded back —
+the sufficiency half of the contract, checked through the public API. The gate
+is the cost bound because it also bounds the work the run may really do, so an
+exercised row can never be an exponential pattern told to go ahead."""
+
+
+def _query(built: CompiledPattern, config: int, n: int) -> dict:
+    row: dict = {"config": config, "n": n}
+    for key, _ in KINDS:
+        status, value = ENGINE.worst_case(built, key, n, config)
+        row[key] = {"status": status, "value": value}
+    row["exercise"] = (
+        config == spec.MC_DEFAULT
+        and all(row[key]["status"] == spec.OK for key, _ in KINDS)
+        and row["cost"]["value"] <= EXERCISE_COST
+    )
+    return row
+
+
+def _hold_query(name: str, built: CompiledPattern, row: dict) -> None:
+    """The contract's own shape, asserted where the file is written.
+
+    The independent value comes from evaluating the selected path's stored
+    certificate directly, which is the certificate the public answer is
+    defined to be a reading of.
+    """
+    for key, which in KINDS:
+        got = (row[key]["status"], row[key]["value"])
+        if row["config"] != spec.MC_DEFAULT or row["n"] > spec.MAX_LENGTH:
+            want = (spec.BAD_INPUT, 0)
+        else:
+            bound = ENGINE.selected_bound(built, which, row["n"])
+            want = (spec.OK, bound) if bound is not None else (spec.EXCEEDS_BUDGET, 0)
+        if got != want:
+            raise AssertionError(
+                f"{name}: {key} at config {row['config']} and length {row['n']} "
+                f"answers {got}, the contract says {want}"
+            )
+
+
+def accesses() -> list[dict]:
+    """Every accessor entry, held to the hand-written class and the contract."""
+    out = []
+    for one in ACCESSES:
+        built = compiled(one.pattern)
+        status, value = ENGINE.complexity_class(built)
+        want = (one.status, one.complexity)
+        if (status, value) != want:
+            raise AssertionError(
+                f"{one.name}: complexityClass answers {(status, value)}, "
+                f"the entry says {want}"
+            )
+        queries = [_query(built, spec.MC_DEFAULT, n) for n in QUERY_LENGTHS]
+        queries += [_query(built, c, QUERY_CONFIG_LENGTH) for c in QUERY_CONFIGS]
+        for row in queries:
+            _hold_query(one.name, built, row)
+        out.append(
+            {
+                "name": one.name,
+                "note": one.note,
+                "pattern": one.pattern.hex(),
+                "class": {"status": status, "value": value},
+                "queries": queries,
+            }
+        )
+    return out
+
+
 def _ordinal(enum: str, variant: str) -> int:
     return program().enum_map[enum].ordinal(variant)
 
@@ -1504,7 +1843,9 @@ def analyses() -> list[dict]:
 
 
 def corpus() -> dict:
-    return conformance.document(NOTE, cases(), analyses=analyses())
+    return conformance.document(
+        NOTE, cases(), analyses=analyses(), accessors=accesses()
+    )
 
 
 def corpus_text() -> str:
@@ -1553,6 +1894,17 @@ def load(path=PATH) -> list[Case]:
     return out
 
 
+def load_accessors(path=PATH) -> list[dict]:
+    """The accessor entries of the committed corpus, as the runners read them.
+
+    Raw dictionaries rather than dataclasses, deliberately: the Go and
+    JavaScript runners read this section as plain decoded JSON against their
+    public wrappers, and the Python runner should be the same kind of reader
+    rather than one with a private schema the other two lack.
+    """
+    return conformance.section(conformance.read(path), "accessors", path)
+
+
 def load_analyses(path=PATH) -> list[Analysis]:
     """The other half of the committed corpus, decoded the same way."""
     return [
@@ -1573,14 +1925,18 @@ def load_analyses(path=PATH) -> list[Analysis]:
 
 
 __all__ = [
+    "ACCESSES",
     "ANALYSES",
     "CASES",
+    "EXERCISE_COST",
     "KINDS",
     "LENGTHS",
     "PATH",
+    "Access",
     "Analysis",
     "Case",
     "Program",
+    "accesses",
     "analyses",
     "attempted",
     "cases",
@@ -1592,6 +1948,7 @@ __all__ = [
     "corpus_text",
     "less",
     "load",
+    "load_accessors",
     "load_analyses",
     "minimal",
     "price",

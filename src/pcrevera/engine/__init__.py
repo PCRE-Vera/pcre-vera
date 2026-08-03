@@ -22,8 +22,17 @@ both count in, since the cost model is meant to be one thing.
 
 Compiling now runs both, and a pattern carries a certificate only after the
 checker has accepted it. A pattern the rules cannot price still compiles and
-simply has none, which is the ExceedsBudget the accessors will report. What is
-still missing is those accessors, and the Pike VM with rules of its own.
+simply has none, which is the ExceedsBudget the accessors report. `accessors`
+is those accessors — the public reading of the certificate slot, one generated
+implementation shared by every backend — and `match` now takes the public
+match configuration, of which only the default exists until M9.
+
+`pike` is the lockstep matcher, and selection is live: compilation computes
+eligibility, stores it on the compiled pattern, prices the Pike path with the
+closed form of BOUNDS.md section 9, and the public `match` routes an eligible
+pattern there while `bt_match` stays reachable as the internal testing entry
+point. The accessors answer for the selected path. What is still missing from
+M5 is the preallocated match context and the fuzz-scale bound sweeps.
 """
 
 from .driver import (

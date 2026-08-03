@@ -87,14 +87,33 @@ def _install(L: Layout) -> None:
             ("re", L.Re),
             ("cert", L.Cert, "inout"),
             ("has", boolean, "inout"),
+            ("pcert", L.Cert, "inout"),
+            ("haspike", boolean, "inout"),
         ],
         ret=L.Cr,
     )
     f.set(f["has"], boolean(False))
+    f.set(f["haspike"], boolean(False))
     shape = f.let("shape", L.Cr, L.Cr.CrOk)
     f.call("cert_shape", [f["re"]], dest=shape)
     with f.if_(shape != L.Cr.CrOk):
         f.ret(shape)
+
+    # The Pike configuration first, on the patterns routed to it: its closed
+    # form either fits counter arithmetic or there is honestly no certificate,
+    # and a checker refusing what the pricer just built is the same
+    # two-halves-disagreeing bug as on the backtracking side.
+    with f.if_(f["re"].field("pike")):
+        priced = tmp(f, boolean, boolean(False))
+        f.call("pike_price", [f["re"], inout(f["pcert"])], dest=priced)
+        with f.if_(priced):
+            pv = tmp(f, L.Cr, L.Cr.CrOk)
+            f.call(
+                "cert_check", [f["re"], L.Cfg.CfgPike, f["pcert"]], dest=pv
+            )
+            with f.if_(pv != L.Cr.CrOk):
+                f.ret(pv)
+            f.set(f["haspike"], boolean(True))
 
     found = f.let("found", L.Ar, L.Ar.ArShape)
     f.call("cert_build", [f["re"], inout(f["cert"])], dest=found)

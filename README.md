@@ -145,12 +145,14 @@ below. All three files run against the Python interpreter, the generated Go,
 and the generated JavaScript, and all three languages have to give the same
 answers.
 
-The wrappers are still provisional in one respect and say so: every pattern
-runs on the backtracking matcher, because matcher selection needs the Pike VM.
-What works is compile, match under the hard limits, and the analysis accessors
-of DESIGN.md section 2.4 — `complexityClass`, and the worst-case cost, stack
-and memory at a subject length, each answering a number a caller can pass
-straight back as the matching limit, an explicit ExceedsBudget, or BadInput.
+Compilation now fixes each pattern's execution path: the lockstep Pike VM
+when the pattern is eligible — every repetition a pure star whose body has to
+consume, nothing variable-width — and the backtracking matcher otherwise.
+What works is compile, match on the selected path under the hard limits, and
+the analysis accessors of DESIGN.md section 2.4 — `complexityClass`, and the worst-case cost, stack
+and memory at a subject length, each answering for the path that will
+actually run: a number a caller can pass straight back as the matching limit,
+an explicit ExceedsBudget, or BadInput.
 The match configuration argument is in its final shape too, though only the
 default value exists until M9 activates memoization; the preallocated match
 context arrives with the rest of M5.

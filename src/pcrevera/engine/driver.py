@@ -395,6 +395,13 @@ class CompiledPattern:
             return None
         return _read_cert(self.re.fields["cert"])
 
+    @property
+    def pike_certificate(self) -> Certificate | None:
+        """The Pike configuration's certificate, read the same way."""
+        if not self.re.fields["haspikecert"]:
+            return None
+        return _read_cert(self.re.fields["pikecert"])
+
     def with_regions(self, regions: Sequence[Region]) -> "CompiledPattern":
         """The same pattern carrying a region table nobody compiled.
 
@@ -510,6 +517,7 @@ class Engine:
         newline: str | None = "LF",
         bsr: str | None = "UNICODE",
         limits: Limits | None = None,
+        match_config: int = spec.MC_DEFAULT,
     ):
         built = self.compile_pattern(
             pattern, options=options, newline=newline, bsr=bsr
@@ -522,6 +530,7 @@ class Engine:
             start=start,
             match_options=match_options,
             limits=limits,
+            match_config=match_config,
         )
 
     def match_compiled(
@@ -532,7 +541,59 @@ class Engine:
         start: int = 0,
         match_options: Sequence[str] = (),
         limits: Limits | None = None,
+        match_config: int = spec.MC_DEFAULT,
     ):
+        return self._matched(
+            "match",
+            built,
+            subject,
+            start=start,
+            match_options=match_options,
+            limits=limits,
+            match_config=match_config,
+        )
+
+    # --- the matchers' internal entry points ---
+    #
+    # Not the public routing: `match_compiled` runs the path compilation
+    # selected. These are how the cross-matcher tests of DESIGN.md section 8
+    # reach each matcher directly — plain backtracking on a Pike-eligible
+    # pattern is a test configuration the public surface never routes, and
+    # the Pike VM refuses an ineligible program with its own BadInput.
+
+    def pike_eligible(self, built: CompiledPattern) -> bool:
+        """What compilation decided about the Pike VM, off the stored flag."""
+        return bool(built.re.fields["pike"])
+
+    def pike_match_compiled(self, built, subject: bytes, **kwargs):
+        """`match_compiled`, pinned to the Pike VM.
+
+        A pattern compilation did not route here comes back as the
+        deterministic BadInput, decided by the generated matcher itself: it
+        reads the Rep opcodes as pure-star forks, which is what `pike_ok`
+        guarantees they are, and answering an ineligible program would be
+        answering it wrongly.
+        """
+        return self._matched("pike_match", built, subject, **kwargs)
+
+    def bt_match_compiled(self, built, subject: bytes, **kwargs):
+        """`match_compiled`, pinned to the backtracking matcher."""
+        return self._matched("bt_match", built, subject, **kwargs)
+
+    def _matched(
+        self,
+        entry: str,
+        built: CompiledPattern,
+        subject: bytes,
+        *,
+        start: int = 0,
+        match_options: Sequence[str] = (),
+        limits: Limits | None = None,
+        match_config: int | None = None,
+    ):
+        """One matcher entry point, run: the public `match` takes the match
+        configuration, the two internal ones do not, and everything else about
+        the pipeline is identical by construction rather than by copy."""
         bits = _options(match_options, spec.MATCH_OPTIONS, "a match option")
         if bits is None:
             return Unsupported(
@@ -542,10 +603,12 @@ class Engine:
         # BadInput, decided in TIR; only a value no u32 could hold is refused
         # here, because there is no way to pass one in. The same exact-integer
         # reading as the limits, so a bool or a float never reaches the u32
-        # parameter looking like a number.
+        # parameter looking like a number. The match configuration is read the
+        # same way; which values mean anything is the engine's decision.
         if not _in_range(start, 0xFFFFFFFF):
             return BadInput()
-
+        if match_config is not None and not _in_range(match_config, 0xFFFFFFFF):
+            return BadInput()
         budget = limits or self.limits
         if not _in_range(budget.cost, MAX_COST_LIMIT):
             return BadInput()
@@ -554,15 +617,16 @@ class Engine:
         if not _in_range(budget.memory, MAX_MEMORY_LIMIT):
             return BadInput()
         interp = self._interp(budget.cost)
-        ov = Cell(interp.zero(interp.p.func_map["match"].param("ov").type))
+        ov = Cell(interp.zero(interp.p.func_map[entry].param("ov").type))
         usage = Cell(interp.zero(StructType("Usage")))
         status = interp.call(
-            "match",
+            entry,
             [
                 built.re,
                 _blob(subject),
                 start,
                 bits,
+                *([] if match_config is None else [match_config]),
                 budget.cost,
                 budget.stack,
                 budget.memory,
@@ -584,7 +648,7 @@ class Engine:
         if status == spec.BAD_INPUT:
             return BadInput()
         if status != spec.MATCHED:
-            raise EngineError(f"the matcher returned {status!r}")
+            raise EngineError(f"{entry} returned {status!r}")
         slots = ov.value
         assert isinstance(slots, Seq)
         return Match(ovector=tuple(_offset(v) for v in slots.items))
@@ -641,20 +705,37 @@ class Engine:
         return self._evaluate(_certificate(cert), kind, subject_len)
 
     def bound_of(
-        self, built: CompiledPattern, kind: str, subject_len: int
+        self,
+        built: CompiledPattern,
+        kind: str,
+        subject_len: int,
+        config: str = "CfgBacktrack",
     ) -> int | None:
-        """The same, off the certificate a compiled pattern carries.
+        """The same, off a certificate the compiled pattern carries.
 
         Which is what the Go and JavaScript runners ask, so this is how Python
         asks the same question: `bound` takes a certificate that has been out
         of the engine and back in, and a round trip is not what the other two
-        are testing. None here is a pattern with no certificate at all, which
-        is the ExceedsBudget the accessors of DESIGN.md section 2.4 will report
-        for one.
+        are testing. None here is a pattern with no certificate for that
+        configuration, which is the ExceedsBudget the accessors of DESIGN.md
+        section 2.4 report for one.
         """
-        if not built.re.fields["hascert"]:
+        # A lookup that raises on a configuration nobody stored, so a typo or
+        # a future CfgMemo never silently reads the backtracking slot.
+        flag, slot = {
+            "CfgBacktrack": ("hascert", "cert"),
+            "CfgPike": ("haspikecert", "pikecert"),
+        }[config]
+        if not built.re.fields[flag]:
             return None
-        return self._evaluate(built.re.fields["cert"], kind, subject_len)
+        return self._evaluate(built.re.fields[slot], kind, subject_len)
+
+    def selected_bound(
+        self, built: CompiledPattern, kind: str, subject_len: int
+    ) -> int | None:
+        """The bound of the path compilation selected, which is the public one."""
+        config = "CfgPike" if self.pike_eligible(built) else "CfgBacktrack"
+        return self.bound_of(built, kind, subject_len, config)
 
     def _evaluate(self, cert: object, kind: str, subject_len: int) -> int | None:
         answer = self._interp().call(
@@ -662,6 +743,55 @@ class Engine:
         )
         assert isinstance(answer, StructValue)
         return answer.fields["value"] if answer.fields["ok"] else None
+
+    # --- the public analysis accessors ---
+    #
+    # The four questions of DESIGN.md section 2.4, answered by the generated
+    # `re_class`, `re_cost`, `re_stack` and `re_mem` — the same functions the
+    # Go and JavaScript wrappers call, so the three languages share one
+    # implementation of the contract rather than three readings of it. Each
+    # returns the raw (status, value) pair: the corpus pins those numbers, and
+    # a language-shaped surface on top of them is the wrappers' business.
+
+    def complexity_class(self, built: CompiledPattern) -> tuple[int, int]:
+        """(status, class ordinal), the class being spec.CLASS_*.
+
+        No configuration argument, because the class is fixed at compilation;
+        the status is spec.EXCEEDS_BUDGET when no accepted certificate exists.
+        """
+        return _answer(self._interp().call("re_class", [built.re]))
+
+    def worst_case(
+        self,
+        built: CompiledPattern,
+        kind: str,
+        subject_len: object,
+        match_config: object = spec.MC_DEFAULT,
+    ) -> tuple[int, int]:
+        """(status, bound) for kind "cost", "stack" or "mem".
+
+        Only what no counter or u32 could hold is refused here — a negative, a
+        fraction, a bool, a length past the saturation point. Everything
+        representable goes to the generated function, whose refusals are the
+        contract: a length past MAX_LENGTH and a configuration that is not the
+        default are its BadInput, absence and saturation its ExceedsBudget.
+        """
+        if not _in_range(subject_len, CAP):
+            return (spec.BAD_INPUT, 0)
+        if not _in_range(match_config, 0xFFFFFFFF):
+            return (spec.BAD_INPUT, 0)
+        entry = {"cost": "re_cost", "stack": "re_stack", "mem": "re_mem"}[kind]
+        return _answer(
+            self._interp().call(entry, [built.re, match_config, subject_len])
+        )
+
+
+def _answer(value: object) -> tuple[int, int]:
+    assert isinstance(value, StructValue)
+    status = value.fields["status"]
+    held = value.fields["value"]
+    assert isinstance(status, int) and isinstance(held, int)
+    return (status, held)
 
 
 def _in_range(value: object, ceiling: int) -> bool:

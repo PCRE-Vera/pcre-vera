@@ -1,9 +1,11 @@
 // Types for the pcre-vera wrapper. The engine module next door is generated
 // and not part of the public surface, so nothing here describes it.
 //
-// This release is provisional: compile and match only, every pattern on the
-// backtracking matcher. The analysis accessors, the match configuration, and
-// the preallocated match context arrive with M5.
+// Compilation fixes each pattern's execution path — the lockstep Pike VM
+// when eligible, the backtracking matcher otherwise — and match, the limits,
+// and the analysis accessors all describe that path. The match configuration
+// argument is in its final shape with only the default value active until
+// M9; the preallocated match context arrives with the rest of M5.
 
 /** SHA-256 of the TIR artifact the engine was generated from. */
 export declare const artifactSha256: string;
@@ -44,6 +46,26 @@ export declare const MatchFlags: {
   readonly ANCHORED: number;
 };
 
+/**
+ * The one configuration value used consistently across the whole API: match
+ * runs under it, the worst-case accessors price it, and the match context of
+ * M5 will bake it in. MEMOIZED arrives with M9; until then asking for it is
+ * BAD_INPUT.
+ */
+export declare const MatchConfig: {
+  readonly DEFAULT: number;
+  readonly MEMOIZED: number;
+};
+
+/**
+ * What complexityClass answers. LINEAR is a proved claim; NOT_PROVEN_LINEAR
+ * is a conservative bound that may overestimate but never underestimate.
+ */
+export declare const Complexity: {
+  readonly NOT_PROVEN_LINEAR: number;
+  readonly LINEAR: number;
+};
+
 /** Which outcome a PcreError carries. */
 export declare const Kind: {
   readonly SYNTAX: "syntax";
@@ -53,6 +75,7 @@ export declare const Kind: {
   readonly RESOURCE_EXCEEDED: "resourceExceeded";
   readonly BAD_INPUT: "badInput";
   readonly INTERNAL: "internal";
+  readonly EXCEEDS_BUDGET: "exceedsBudget";
 };
 
 export type ErrorKind = (typeof Kind)[keyof typeof Kind];
@@ -101,6 +124,7 @@ export interface MatchOptions {
   start?: number;
   flags?: number;
   limits?: Limits;
+  config?: number;
 }
 
 /** A compiled pattern. It is immutable, so one may be kept and reused freely. */
@@ -120,6 +144,35 @@ export declare class Regexp {
    * null when the subject does not match. Everything else throws a PcreError.
    */
   match(subject: Uint8Array, options?: MatchOptions): Int32Array | null;
+
+  /**
+   * The pattern's complexity class, fixed at compilation, as a Complexity
+   * value. Takes no configuration because none changes it. Throws a PcreError
+   * of kind EXCEEDS_BUDGET when no accepted bound certificate exists.
+   */
+  complexityClass(): number;
+
+  /**
+   * The most a match call on a subject of that length can be charged, in the
+   * units limits.cost is stated in, so the number can be passed there
+   * unchanged. The bound holds for every subject of that length, every start
+   * offset, and every combination of match flags. Throws EXCEEDS_BUDGET for a
+   * bound nothing could budget for, BAD_INPUT for a length or configuration
+   * outside the documented ranges.
+   */
+  worstCaseCost(subjectLen: number, config?: number): number;
+
+  /**
+   * The deepest the backtrack stack can get on such a call, in the entries
+   * limits.stack is stated in.
+   */
+  worstCaseStackEntries(subjectLen: number, config?: number): number;
+
+  /**
+   * The peak scratch reservation of such a call, in the IR bytes
+   * limits.memory is stated in.
+   */
+  worstCaseMemory(subjectLen: number, config?: number): number;
 }
 
 /**

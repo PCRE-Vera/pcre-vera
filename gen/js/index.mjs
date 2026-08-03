@@ -2,13 +2,16 @@
 // around the module generated from the TIR artifact, giving it the API of
 // DESIGN.md section 2.4 with JavaScript conventions.
 //
-// This release is provisional and says so rather than implying otherwise.
-// Every pattern runs on the backtracking matcher, because matcher selection
-// arrives with the Pike VM in M5. The analysis accessors — complexity class,
-// worst-case cost, stack and memory — are the next slice of it: compiling
-// already prices a pattern, and nothing reads the answer out yet. The
-// preallocated match context and the match configuration argument follow. What
-// works today is compile and match, under the caller's hard limits.
+// Compilation fixes each pattern's execution path: the lockstep Pike VM when
+// the pattern is eligible — pure stars with consuming bodies, in wave 1 —
+// and the backtracking matcher otherwise. match runs that path under the
+// caller's hard limits, and the analysis accessors answer for it: complexity
+// class and worst-case cost, stack and memory, read off the bound
+// certificate compilation stored for the selected path. The match
+// configuration argument is in its final shape, though only the default
+// value exists — the memoized backtracker is M9, and asking for it early is
+// BAD_INPUT, on match and accessors alike. The preallocated match context
+// follows.
 //
 // Patterns and subjects are byte sequences. A pattern may also be a string,
 // as a convenience, when every code unit is at most 0xff and can therefore be
@@ -20,6 +23,10 @@ import {
   artifactSha256 as engineArtifactSha256,
   compile as engineCompile,
   match as engineMatch,
+  re_class,
+  re_cost,
+  re_mem,
+  re_stack,
   tir_bytes,
   tir_cell,
   tir_zero_vec_u32_512,
@@ -66,6 +73,26 @@ export const MatchFlags = Object.freeze({
 const KNOWN_MATCH_FLAGS = Object.values(MatchFlags).reduce((all, bit) => all | bit, 0);
 
 /**
+ * The one configuration value used consistently across the whole API: match
+ * runs under it, the worst-case accessors price it, and the match context of
+ * M5 will bake it in. It only ever chooses memoized backtracking or not — the
+ * Pike/backtracking split is fixed at compilation and is deliberately not a
+ * switch a caller can reach. MEMOIZED arrives with M9; until then, and on any
+ * pattern not eligible for it after that, asking is BAD_INPUT rather than a
+ * silent fallback.
+ */
+export const MatchConfig = Object.freeze({ DEFAULT: 0, MEMOIZED: 1 });
+
+/**
+ * What complexityClass answers. LINEAR is a proved claim — the cost of any
+ * match is at most a constant times the subject length plus one — while
+ * NOT_PROVEN_LINEAR is the honest remainder: a conservative bound exists,
+ * possibly polynomial or exponential in form, and it may overestimate but
+ * never underestimate.
+ */
+export const Complexity = Object.freeze({ NOT_PROVEN_LINEAR: 0, LINEAR: 1 });
+
+/**
  * Which outcome a PcreError carries. SYNTAX is the only one whose code is
  * pcre2's; the others are ours, and DESIGN.md section 2.4 forbids ever
  * repurposing a pcre2 code for them.
@@ -78,6 +105,11 @@ export const Kind = Object.freeze({
   RESOURCE_EXCEEDED: "resourceExceeded",
   BAD_INPUT: "badInput",
   INTERNAL: "internal",
+  // The analysis accessors' own refusal, distinct from the runtime
+  // RESOURCE_EXCEEDED: no certified bound exists, or the bound is past what
+  // any runtime limit could accept, so there is no number here a caller can
+  // budget with. It never comes out of match.
+  EXCEEDS_BUDGET: "exceedsBudget",
 });
 
 /** The largest value each limit may name. A larger one is refused, never clamped. */
@@ -105,11 +137,18 @@ const CODE_PATTERN_TOO_LARGE = 1002;
 const CODE_INTERNAL = 1003;
 
 const STATUS_MATCHED = 0;
+const STATUS_OK = 0;
 const STATUS_NO_MATCH = 1;
 const STATUS_RESOURCE_EXCEEDED = 2;
 const STATUS_BAD_INPUT = 3;
+const STATUS_EXCEEDS_BUDGET = 4;
 
 const UNSET = 0xffffffff;
+
+// The saturation point of the engine's counter type. A subject length above
+// it cannot travel as a counter at all, so it is refused at the door; the
+// public maxLength cap below it is the generated code's own BAD_INPUT.
+const COUNTER_CAP = 2 ** 53 - 1;
 
 const MESSAGES = {
   [Kind.SYNTAX]: "syntax error",
@@ -119,6 +158,7 @@ const MESSAGES = {
   [Kind.RESOURCE_EXCEEDED]: "the match went over its cost, stack or memory limit",
   [Kind.BAD_INPUT]: "an argument is outside its documented range",
   [Kind.INTERNAL]: "internal error",
+  [Kind.EXCEEDS_BUDGET]: "no certified bound fits any runtime limit",
 };
 
 /**
@@ -243,7 +283,8 @@ export class Regexp {
   }
 
   /**
-   * Run the pattern against a subject from a byte offset, under hard limits.
+   * Run the pattern against a subject from a byte offset, under hard limits
+   * and one match configuration.
    *
    * Returns the ovector — byte offsets of the whole match at entries 0 and 1,
    * then a pair for every capturing group, with -1 for both ends of a group
@@ -251,17 +292,23 @@ export class Regexp {
    * Everything else throws a PcreError.
    */
   match(subject, options = {}) {
-    const { start = 0, flags = 0, limits = defaultLimits() } = record(options);
+    const {
+      start = 0,
+      flags = 0,
+      limits = defaultLimits(),
+      config = MatchConfig.DEFAULT,
+    } = record(options);
     if (!(subject instanceof Uint8Array) || subject.length > maxLength) {
       throw badInput();
     }
     if (!whole(flags, KNOWN_MATCH_FLAGS)) {
       throw new PcreError(Kind.UNSUPPORTED_OPTION, CODE_UNSUPPORTED_OPTION);
     }
-    // A start offset the engine's u32 parameter could not hold is refused
-    // here; every other value, the ones past the end of the subject included,
-    // is the engine's own BadInput.
-    if (!whole(start, 0xffffffff)) {
+    // A start offset or a configuration the engine's u32 parameters could not
+    // hold is refused here; every other value, offsets past the end of the
+    // subject and configurations nobody defined included, is the engine's own
+    // BadInput.
+    if (!whole(start, 0xffffffff) || !whole(config, 0xffffffff)) {
       throw badInput();
     }
     record(limits);
@@ -279,6 +326,7 @@ export class Regexp {
       tir_bytes(subject),
       start,
       flags,
+      config,
       limits.cost,
       limits.stack,
       limits.memory,
@@ -303,6 +351,72 @@ export class Regexp {
       default:
         throw new PcreError(Kind.INTERNAL, status);
     }
+  }
+
+  /**
+   * The pattern's complexity class, fixed at compilation, as a Complexity
+   * value. It takes no configuration because no configuration changes it:
+   * memoization alters the constants of an eligible pattern, never the class.
+   * A pattern with no accepted bound certificate throws EXCEEDS_BUDGET, since
+   * a class claim with no certified bound behind it would be a claim about
+   * nothing.
+   */
+  complexityClass() {
+    return answered(re_class(this.#program));
+  }
+
+  /**
+   * The most a match call on a subject of that length can be charged, in the
+   * cost units limits.cost is stated in, so the number can be passed there
+   * unchanged. The bound holds for every subject of that length, every start
+   * offset, and every combination of match flags. A bound nothing could
+   * budget for — no certificate, saturated arithmetic, a number past the
+   * limit's own ceiling — throws EXCEEDS_BUDGET.
+   */
+  worstCaseCost(subjectLen, config = MatchConfig.DEFAULT) {
+    return answered(re_cost(this.#program, ...asked(subjectLen, config)));
+  }
+
+  /**
+   * The deepest the backtrack stack can get on such a call, in the entries
+   * limits.stack is stated in.
+   */
+  worstCaseStackEntries(subjectLen, config = MatchConfig.DEFAULT) {
+    return answered(re_stack(this.#program, ...asked(subjectLen, config)));
+  }
+
+  /**
+   * The peak scratch reservation of such a call, in the IR bytes
+   * limits.memory is stated in.
+   */
+  worstCaseMemory(subjectLen, config = MatchConfig.DEFAULT) {
+    return answered(re_mem(this.#program, ...asked(subjectLen, config)));
+  }
+}
+
+// What the engine's parameters could not hold is refused at the door — a
+// fraction, a negative, a boolean, a length past the counter's saturation
+// point. Everything representable is the generated code's own decision, so
+// the three languages refuse identically.
+function asked(subjectLen, config) {
+  if (!whole(config, 0xffffffff) || !whole(subjectLen, COUNTER_CAP)) {
+    throw badInput();
+  }
+  return [config, subjectLen];
+}
+
+// A generated accessor answer, as JavaScript's shape: the number, or the
+// PcreError its status names.
+function answered(answer) {
+  switch (answer.status) {
+    case STATUS_OK:
+      return answer.value;
+    case STATUS_BAD_INPUT:
+      throw badInput();
+    case STATUS_EXCEEDS_BUDGET:
+      throw new PcreError(Kind.EXCEEDS_BUDGET);
+    default:
+      throw new PcreError(Kind.INTERNAL, answer.status);
   }
 }
 

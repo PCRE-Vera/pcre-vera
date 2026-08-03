@@ -8,8 +8,10 @@
 // the engine is handed the program this backend would really run.
 //
 // A certificate has no way in through the public API — the analysis accessors
-// do not exist yet, and when they do they will take a subject length rather
-// than a certificate — so this reaches into the generated module directly.
+// take a subject length and answer a number, never a certificate — so this
+// reaches into the generated module directly. The accessors themselves are
+// held to the corpus's third section, in accessors.test.mjs, through the
+// public wrapper.
 
 import { strict as assert } from "node:assert";
 import test from "node:test";

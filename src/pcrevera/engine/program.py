@@ -18,7 +18,7 @@ import functools
 
 from ..dsl import boolean, inout, u32
 from ..tir import ir
-from . import analyzer, bounds, certificate, compiler, parser, spec, vm
+from . import accessors, analyzer, bounds, certificate, compiler, parser, pike, spec, vm
 from .layout import Layout
 
 
@@ -84,6 +84,14 @@ def _entry(L: Layout) -> None:
     f.freeze(out.field("re").field("names"), w.field("names"))
     f.freeze(out.field("re").field("nameents"), w.field("nameents"))
 
+    # Whether the Pike VM may run this program, fixed here like everything
+    # else about the execution path (DESIGN.md section 4.3). Decided off the
+    # frozen bytecode, so the answer is about the program the matchers will
+    # actually see.
+    eligible = parser.tmp(f, boolean, boolean(False))
+    f.call("pike_ok", [out.field("re")], dest=eligible)
+    f.set(out.field("re").field("pike"), eligible)
+
     # And the resource analysis, which is the last phase because it prices the
     # program that came out of everything above it. It writes the last two
     # fields of `re` unconditionally, so a caller who compiled one pattern into
@@ -95,13 +103,21 @@ def _entry(L: Layout) -> None:
     # cause and only a bug of ours can.
     cand = f.let("cand", L.Cert)
     has = parser.tmp(f, boolean, boolean(False))
+    pcand = f.let("pcand", L.Cert)
+    haspike = parser.tmp(f, boolean, boolean(False))
     verdict = parser.tmp(f, L.Cr, L.Cr.CrOk)
-    f.call("cert_install", [out.field("re"), inout(cand), inout(has)], dest=verdict)
+    f.call(
+        "cert_install",
+        [out.field("re"), inout(cand), inout(has), inout(pcand), inout(haspike)],
+        dest=verdict,
+    )
     with f.if_(verdict != L.Cr.CrOk):
         f.set(out.field("err"), u32(spec.E_INTERNAL))
         f.ret()
     f.set(out.field("re").field("cert"), cand)
     f.set(out.field("re").field("hascert"), has)
+    f.set(out.field("re").field("pikecert"), pcand)
+    f.set(out.field("re").field("haspikecert"), haspike)
 
 
 def build() -> ir.Program:
@@ -110,9 +126,11 @@ def build() -> ir.Program:
     parser.build(L)
     compiler.build(L)
     vm.build(L)
+    pike.build(L)
     bounds.build(L)
     certificate.build(L)
     analyzer.build(L)
+    accessors.build(L)
     _entry(L)
     return L.build()
 

@@ -16,7 +16,7 @@ func Example() {
 	}
 
 	subject := []byte("write to alice@example.org, please")
-	ovector, err := re.Match(subject, 0, 0, pcrevera.DefaultLimits())
+	ovector, err := re.Match(subject, 0, 0, pcrevera.DefaultLimits(), pcrevera.DefaultConfig)
 	if err != nil {
 		log.Fatal(err)
 	}

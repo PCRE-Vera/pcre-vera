@@ -2,13 +2,16 @@
 // hand-written wrapper around the code generated from the TIR artifact, giving
 // it the API of DESIGN.md section 2.4 with Go conventions.
 //
-// This release is provisional and says so rather than implying otherwise.
-// Every pattern runs on the backtracking matcher, because matcher selection
-// arrives with the Pike VM in M5. The analysis accessors — complexity class,
-// worst-case cost, stack and memory — are the next slice of it: compiling
-// already prices a pattern, and nothing reads the answer out yet. The
-// preallocated match context and the match configuration argument follow. What
-// works today is compile and match, under the caller's hard limits.
+// Compilation fixes each pattern's execution path: the lockstep Pike VM when
+// the pattern is eligible — pure stars with consuming bodies, in wave 1 —
+// and the backtracking matcher otherwise. Match runs that path under the
+// caller's hard limits, and the analysis accessors answer for it: complexity
+// class and worst-case cost, stack and memory, read off the bound
+// certificate compilation stored for the selected path. The match
+// configuration argument is in its final shape, though only the default
+// value exists — the memoized backtracker is M9, and asking for it early is
+// BadInput, on Match and accessors alike. The preallocated match context
+// follows.
 //
 // A compiled pattern is immutable, so one may be shared across goroutines; a
 // match call keeps all of its state on its own stack and in scratch it
@@ -90,6 +93,28 @@ const (
 
 const knownMatchFlags = NotBOL | NotEOL | NotEmpty | NotEmptyAtStart | MatchAnchored
 
+// MatchConfig is the one configuration value used consistently across the
+// whole API: Match runs under it, the worst-case accessors price it, and the
+// match context of M5 will bake it in. It only ever chooses memoized
+// backtracking or not — the Pike/backtracking split is fixed at compilation
+// and is deliberately not a switch a caller can reach.
+//
+// The underlying type is wider than the engine's u32 parameter on purpose,
+// like the start offset's: a value past the u32 range stays representable and
+// is refused as BadInput, rather than a caller's conversion silently wrapping
+// it into a valid one.
+type MatchConfig uint64
+
+const (
+	// DefaultConfig is the execution path compilation selected for the
+	// pattern, which is the right choice unless a caller knows better.
+	DefaultConfig MatchConfig = 0
+	// Memoized asks for the memoized backtracker. It arrives with M9; until
+	// then, and on any pattern not eligible for it after that, asking is
+	// BadInput rather than a silent fallback.
+	Memoized MatchConfig = 1
+)
+
 // Limits are the hard budgets one match call runs under: cost in engine cost
 // units, stack in backtrack entries, memory in IR bytes of scratch. Those are
 // the units the analyzer states its bounds in, so a bound it reports can be
@@ -137,6 +162,11 @@ const (
 	ResourceExceeded
 	BadInput
 	Internal
+	// ExceedsBudget is the analysis accessors' own refusal, distinct from the
+	// runtime ResourceExceeded: no certified bound exists, or the bound is
+	// past what any runtime limit could accept, so there is no number here a
+	// caller can budget with. It never comes out of Match.
+	ExceedsBudget
 )
 
 // Error is every way a call can fail. Code and Offset are the contract that is
@@ -163,6 +193,8 @@ func (e *Error) Error() string {
 		return "pcre-vera: the match went over its cost, stack or memory limit"
 	case BadInput:
 		return "pcre-vera: an argument is outside its documented range"
+	case ExceedsBudget:
+		return "pcre-vera: no certified bound fits any runtime limit"
 	}
 	return "pcre-vera: internal error " + strconv.Itoa(e.Code)
 }
@@ -177,12 +209,19 @@ const (
 	codeInternal           = 1003
 
 	statusMatched          = 0
+	statusOK               = 0
 	statusNoMatch          = 1
 	statusResourceExceeded = 2
 	statusBadInput         = 3
+	statusExceedsBudget    = 4
 
 	unset = 0xFFFFFFFF
 )
+
+// The saturation point of the engine's counter type. A subject length above
+// it cannot travel as a counter at all, so it is refused at the door; the
+// public MaxLength cap below it is the generated code's own BadInput.
+const counterCap uint64 = 1<<53 - 1
 
 // Regexp is a compiled pattern. It is immutable, so one may be shared freely.
 type Regexp struct {
@@ -279,29 +318,35 @@ func (re *Regexp) SubexpNames() map[string]int {
 }
 
 // Match runs the pattern against a subject from a byte offset, under hard
-// limits, and returns the ovector: byte offsets of the whole match at entries
-// 0 and 1, then a pair for every capturing group. A group that did not
-// participate reports -1 for both ends.
+// limits and one match configuration, and returns the ovector: byte offsets
+// of the whole match at entries 0 and 1, then a pair for every capturing
+// group. A group that did not participate reports -1 for both ends.
 //
 // A subject that does not match is a nil ovector and a nil error. Everything
 // else — a budget exhausted, a start offset outside the subject, a limit past
-// what any target could honor — is an *Error.
+// what any target could honor, a configuration the pattern cannot run under —
+// is an *Error.
 func (re *Regexp) Match(
 	subject []byte,
 	start int,
 	flags MatchFlags,
 	limits Limits,
+	config MatchConfig,
 ) ([]int32, error) {
 	if flags&^knownMatchFlags != 0 {
 		return nil, &Error{Kind: UnsupportedOption, Code: codeUnsupportedOption}
 	}
 	// A subject no i32 offset could describe, and a start offset the engine's
 	// u32 parameter could not hold, are refused here; every other offset, the
-	// ones past the end of the subject included, is the engine's own BadInput.
+	// ones past the end of the subject included, is the engine's own BadInput,
+	// and so is every configuration value that is not the default.
 	if len(subject) > MaxLength {
 		return nil, &Error{Kind: BadInput}
 	}
 	if start < 0 || uint64(start) > uint64(^uint32(0)) {
+		return nil, &Error{Kind: BadInput}
+	}
+	if wideConfig(config) {
 		return nil, &Error{Kind: BadInput}
 	}
 	if limits.Cost > MaxCostLimit || limits.Stack > MaxStackLimit ||
@@ -315,6 +360,7 @@ func (re *Regexp) Match(
 		subject,
 		uint32(start),
 		uint32(flags),
+		uint32(config),
 		limits.Cost,
 		limits.Stack,
 		limits.Memory,
@@ -340,4 +386,95 @@ func (re *Regexp) Match(
 		return nil, &Error{Kind: BadInput}
 	}
 	return nil, &Error{Kind: Internal, Code: int(status)}
+}
+
+// Class is what ComplexityClass answers. Linear is a proved claim — the cost
+// of any match is at most a constant times the subject length plus one —
+// while NotProvenLinear is the honest remainder: a conservative bound exists,
+// possibly polynomial or exponential in form, and it may overestimate but
+// never underestimate.
+type Class int
+
+const (
+	NotProvenLinear Class = iota
+	Linear
+)
+
+// ComplexityClass is the pattern's complexity class, fixed at compilation.
+// It takes no configuration because no configuration changes it: memoization
+// alters the constants of an eligible pattern, never the class. A pattern
+// with no accepted bound certificate is ExceedsBudget, since a class claim
+// with no certified bound behind it would be a claim about nothing.
+func (re *Regexp) ComplexityClass() (Class, error) {
+	value, err := answered(engine.Tir_re_class(re.program))
+	return Class(value), err
+}
+
+// WorstCaseCost is the most a Match call on a subject of that length can be
+// charged, in the cost units Limits.Cost is stated in, so the number can be
+// passed there unchanged. The bound holds for every subject of that length,
+// every start offset, and every combination of match flags.
+func (re *Regexp) WorstCaseCost(subjectLen int, config MatchConfig) (uint64, error) {
+	n, mcfg, err := asked(subjectLen, config)
+	if err != nil {
+		return 0, err
+	}
+	return answered(engine.Tir_re_cost(re.program, mcfg, n))
+}
+
+// WorstCaseStackEntries is the deepest the backtrack stack can get on such a
+// call, in the entries Limits.Stack is stated in.
+func (re *Regexp) WorstCaseStackEntries(subjectLen int, config MatchConfig) (uint32, error) {
+	n, mcfg, err := asked(subjectLen, config)
+	if err != nil {
+		return 0, err
+	}
+	// The generated evaluator has already refused anything past the stack
+	// ceiling, and that ceiling fits a uint32, so the narrowing is exact.
+	value, err := answered(engine.Tir_re_stack(re.program, mcfg, n))
+	return uint32(value), err
+}
+
+// WorstCaseMemory is the peak scratch reservation of such a call, in the IR
+// bytes Limits.Memory is stated in.
+func (re *Regexp) WorstCaseMemory(subjectLen int, config MatchConfig) (uint64, error) {
+	n, mcfg, err := asked(subjectLen, config)
+	if err != nil {
+		return 0, err
+	}
+	return answered(engine.Tir_re_mem(re.program, mcfg, n))
+}
+
+// asked refuses what the engine's parameters could not carry — a negative or
+// over-saturation length, a configuration past the u32 range; everything
+// representable is the generated code's own decision, so the three languages
+// refuse identically.
+func asked(subjectLen int, config MatchConfig) (uint64, uint32, error) {
+	if subjectLen < 0 || uint64(subjectLen) > counterCap {
+		return 0, 0, &Error{Kind: BadInput}
+	}
+	if wideConfig(config) {
+		return 0, 0, &Error{Kind: BadInput}
+	}
+	return uint64(subjectLen), uint32(config), nil
+}
+
+// wideConfig is the u32 door in one place: a configuration value past the
+// engine's parameter range stays representable and is refused, never wrapped.
+func wideConfig(config MatchConfig) bool {
+	return uint64(config) > uint64(^uint32(0))
+}
+
+// answered turns a generated accessor answer into Go's shape: the number, or
+// the *Error its status names.
+func answered(answer engine.Answer) (uint64, error) {
+	switch answer.Tir_status() {
+	case statusOK:
+		return answer.Tir_value(), nil
+	case statusBadInput:
+		return 0, &Error{Kind: BadInput}
+	case statusExceedsBudget:
+		return 0, &Error{Kind: ExceedsBudget}
+	}
+	return 0, &Error{Kind: Internal, Code: int(answer.Tir_status())}
 }

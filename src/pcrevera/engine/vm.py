@@ -29,6 +29,59 @@ def build(L: Layout) -> None:
     _conventions(L)
     _scratch(L)
     _match(L)
+    _select(L)
+
+
+def _select(L: Layout) -> None:
+    """The public match: one configuration argument, one fixed routing.
+
+    Compilation picked the execution path — the Pike VM when eligible, the
+    backtracking VM otherwise — and this is where that decision runs, per
+    DESIGN.md section 4.3. The configuration is validated first, before any
+    engine work: only the default exists until M9 activates memoization, and
+    a value nobody defined is BadInput forever. `bt_match` stays reachable on
+    its own as the internal testing entry point, which is how the
+    cross-matcher tests run plain backtracking on a Pike-eligible pattern
+    that the public surface never routes there.
+    """
+    f = L.func(
+        "match",
+        params=[
+            ("re", L.Re),
+            ("subj", L.frozen_bytes),
+            ("start", u32),
+            ("mopts", u32),
+            ("mcfg", u32),
+            ("costlimit", counter),
+            ("stacklimit", u32),
+            ("memlimit", counter),
+            ("ov", L.Ovec, "inout"),
+            ("use", L.Usage, "inout"),
+        ],
+        ret=u32,
+    )
+    f.set(f["use"].field("cost"), counter(0))
+    f.set(f["use"].field("stack"), u32(0))
+    f.set(f["use"].field("mem"), counter(0))
+    with f.if_(f["mcfg"] != u32(spec.MC_DEFAULT)):
+        f.ret(u32(spec.BAD_INPUT))
+    out = tmp(f, u32, u32(spec.NO_MATCH))
+    handed = [
+        f["re"],
+        f["subj"],
+        f["start"],
+        f["mopts"],
+        f["costlimit"],
+        f["stacklimit"],
+        f["memlimit"],
+        inout(f["ov"]),
+        inout(f["use"]),
+    ]
+    with f.if_(f["re"].field("pike")):
+        f.call("pike_match", handed, dest=out)
+        f.ret(out)
+    f.call("bt_match", handed, dest=out)
+    f.ret(out)
 
 
 def _conventions(L: Layout) -> None:
@@ -294,7 +347,7 @@ def _scratch(L: Layout) -> None:
 
 def _match(L: Layout) -> None:
     f = L.func(
-        "match",
+        "bt_match",
         params=[
             ("re", L.Re),
             ("subj", L.frozen_bytes),

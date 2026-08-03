@@ -108,6 +108,7 @@ func runConformanceCase(t *testing.T, one conformanceCase) {
 		one.Start,
 		MatchFlags(one.MatchFlags),
 		DefaultLimits(),
+		DefaultConfig,
 	)
 	if err != nil {
 		t.Fatalf("match: %v", err)

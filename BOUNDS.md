@@ -10,10 +10,9 @@ have ended up introducing facts nothing can check.
 Sections 1 through 8 are about `CfgBacktrack`, the backtracking VM of
 `engine/vm.py`. Section 9 is `CfgPike`, the lockstep VM of `engine/pike.py`,
 whose accounting is a whole-call closed form rather than a composition over
-regions; the checker still answers CrNoRules for it until that section is
-transcribed, which is the same order this document imposed on the backtracking
-rules — settled here first, implemented against it second. The memoized path
-waits for M9 and is refused by name until then.
+regions; `pike_check` is its transcription, and `cert_check` dispatches the
+Pike configuration there. The memoized path waits for M9 and is refused by
+name until then.
 
 There are two implementations, and that is the point. `engine/analyzer.py`
 walks the compiler's region tree in reverse emission order and computes a price
