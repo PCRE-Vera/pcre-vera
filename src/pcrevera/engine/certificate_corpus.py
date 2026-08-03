@@ -565,6 +565,20 @@ def _drop(p: Poly, degree: int) -> Poly:
     return _norm(p.base, coefs)
 
 
+def more(cert: Certificate, bound: str, degree: int) -> Certificate:
+    """The same certificate with one whole-pattern coefficient a unit higher.
+
+    The upward mutation only means anything for the bounds held to equality:
+    cost and memory may legitimately overestimate, but a stack claim above
+    the derived number would size a context array the memory number never
+    paid for, and these cases are what keep that refused.
+    """
+    p = getattr(cert, bound)
+    coefs = [coef(p, d) for d in DEGREES]
+    coefs[degree] += 1
+    return replace(cert, **{bound: _norm(p.base, coefs)})
+
+
 def claiming(cert: Certificate, **over) -> Certificate:
     return replace(cert, **over)
 
@@ -726,34 +740,50 @@ CASES: list[Case] = [
     ),
     Case(
         "over-claimed-to-every-ceiling",
-        "A certificate may be generous, as long as it is generous in every "
-        "coefficient at once. These reach exactly the three ceilings at n = 0: "
-        "the counter's saturation point for cost, the deepest stack a limit "
-        "could name, and the section 3 byte ceiling for memory. What a caller "
-        "reads back is what the certificate names, not what the checker "
-        "computed.",
+        "A certificate may be generous wherever generosity is legal, and "
+        "these reach exactly the two ceilings at n = 0: the counter's "
+        "saturation point for cost and the section 3 byte ceiling for "
+        "memory. The stack stays exact, because it is held to its equation. "
+        "What a caller reads back is what the certificate names, not what "
+        "the checker computed.",
         "CrOk",
         b"abc",
         claiming(
             LITERAL,
             cost=Poly((CAP - 12, 12)),
-            stack=const(spec.MAX_STACK),
             mem=const(CEILING),
         ),
     ),
     Case(
         "over-claimed-past-every-ceiling",
-        "One unit more of each, which no limit could accept, so none of the "
-        "three is a number any more. The three ceilings differ, which is the "
-        "whole difference between the projections.",
+        "One unit more of each, which no limit could accept, so neither is a "
+        "number any more. The ceilings differ, which is the whole difference "
+        "between the projections.",
         "CrOk",
         b"abc",
         claiming(
             LITERAL,
             cost=Poly((CAP - 11, 12)),
-            stack=const(spec.MAX_STACK + 1),
             mem=const(CEILING + 1),
         ),
+    ),
+    Case(
+        "a-stack-at-its-ceiling",
+        "The deepest stack a limit could name, claimed on a program whose "
+        "derived stack is zero. The evaluation rows still read the claim "
+        "back as a number at the edge; the checker refuses it, since the "
+        "stack is the one bound held to equality.",
+        "CrTotalStack",
+        b"abc",
+        claiming(LITERAL, stack=const(spec.MAX_STACK)),
+    ),
+    Case(
+        "a-stack-past-its-ceiling",
+        "One entry more, which no limit could accept, so the evaluation rows "
+        "refuse it too.",
+        "CrTotalStack",
+        b"abc",
+        claiming(LITERAL, stack=const(spec.MAX_STACK + 1)),
     ),
     Case(
         "past-the-memory-ceiling-and-still-a-cost",
@@ -934,6 +964,26 @@ CASES: list[Case] = [
         "CrPrices",
         b"a*",
         claiming(STAR, prices=STAR.prices + (Price(),)),
+    ),
+    # --- a unit extra on the one bound held to equality ---
+    Case(
+        "a-unit-extra-on-stack",
+        "Cost and memory are bounds and may overestimate; the stack claim is "
+        "what a preallocated context sizes its backtrack array from, while "
+        "the memory requirement was priced from the derived number, so any "
+        "daylight between the two is refused. One entry above exact, at the "
+        "constant.",
+        "CrTotalStack",
+        b"a{1,2}",
+        more(minimal(b"a{1,2}"), "stack", 0),
+    ),
+    Case(
+        "a-unit-extra-on-a-growing-stack",
+        "The same refusal where the stack grows with the subject, one entry "
+        "above exact at the linear coefficient.",
+        "CrTotalStack",
+        b"a*",
+        more(STAR, "stack", 1),
     ),
     # --- a unit short, one bound at a time ---
     #

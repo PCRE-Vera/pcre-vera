@@ -15686,7 +15686,7 @@
             "dest": {
               "var": "holds"
             },
-            "fn": "poly_ge"
+            "fn": "poly_eq"
           }
         },
         {
@@ -50052,6 +50052,245 @@
       "ret": {
         "struct": "Poly"
       }
+    },
+    {
+      "body": [
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "a"
+                    },
+                    "name": "base"
+                  }
+                },
+                "op": "ne",
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "b"
+                    },
+                    "name": "base"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "a"
+                    },
+                    "name": "c0"
+                  }
+                },
+                "op": "ne",
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "b"
+                    },
+                    "name": "c0"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "a"
+                    },
+                    "name": "c1"
+                  }
+                },
+                "op": "ne",
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "b"
+                    },
+                    "name": "c1"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "a"
+                    },
+                    "name": "c2"
+                  }
+                },
+                "op": "ne",
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "b"
+                    },
+                    "name": "c2"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "a"
+                    },
+                    "name": "c3"
+                  }
+                },
+                "op": "ne",
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "b"
+                    },
+                    "name": "c3"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "a"
+                    },
+                    "name": "c4"
+                  }
+                },
+                "op": "ne",
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "b"
+                    },
+                    "name": "c4"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "bool": true
+            }
+          }
+        }
+      ],
+      "name": "poly_eq",
+      "params": [
+        {
+          "mode": "in",
+          "name": "a",
+          "type": {
+            "struct": "Poly"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "b",
+          "type": {
+            "struct": "Poly"
+          }
+        }
+      ],
+      "ret": "bool"
     },
     {
       "body": [

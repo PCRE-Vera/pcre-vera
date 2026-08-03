@@ -466,12 +466,23 @@ def _charge(L: Layout) -> None:
     with f.if_(over):
         f.ret(L.Cr.CrOverflow)
     holds = f.let("holds", boolean, boolean(False))
-    for claim, needed, refusal in (
-        ("cost", cost, L.Cr.CrTotalCost),
-        ("stack", whole.field("stack"), L.Cr.CrTotalStack),
-        ("mem", memory, L.Cr.CrTotalMem),
+    # Cost and memory are bounds, so a claim above the derived number is a
+    # legitimate overestimate. The stack is not: a preallocated context sizes
+    # its backtrack array from this claim while the memory requirement above
+    # was priced from the derived one, so any daylight between the two would
+    # let an accepted certificate demand an array the memory number never
+    # paid for. Equality is the coherence rule, and it is what the section 5
+    # equation says.
+    for claim, needed, refusal, exact in (
+        ("cost", cost, L.Cr.CrTotalCost, False),
+        ("stack", whole.field("stack"), L.Cr.CrTotalStack, True),
+        ("mem", memory, L.Cr.CrTotalMem, False),
     ):
-        f.call("poly_ge", [f["cert"].field(claim), needed], dest=holds)
+        f.call(
+            "poly_eq" if exact else "poly_ge",
+            [f["cert"].field(claim), needed],
+            dest=holds,
+        )
         with f.if_(lnot(holds)):
             f.ret(refusal)
     f.ret(L.Cr.CrOk)

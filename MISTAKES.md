@@ -769,3 +769,11 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   multiplied by zero in the only place the restatement was compared. An
   independent restatement earns its keep exactly on the inputs where every
   term bites.
+- Transcribed the whole-call stack equation as a domination, like cost and
+  memory beside it, so the checker accepted a certificate whose stack claim
+  floated free of the memory requirement priced from the derived number —
+  harmless while the claim was only ever compared against limits, and a
+  sizing hazard the moment a context would allocate an array from it. A
+  bound that something will be *sized* from is not a bound, it is a
+  dimension, and dimensions are equalities. Caught in design review of the
+  context plan, before any context existed to inherit it.

@@ -384,6 +384,14 @@ the accessors report. They are deliberately not the root region's numbers: a
 reader who found the whole-pattern cost sitting on the root would have no way
 to tell that setup and the attempt loop had been counted.
 
+One of the three is held to its equation exactly. `cost` and `mem` are bounds,
+and a certificate that claims more than the rules produce is overestimating,
+which is its right. The `stack` line is an equality: the memory requirement
+above was priced from the derived stack, and a preallocated context sizes its
+backtrack array from the claimed one, so a claim above the derived number
+would demand an array the memory number never paid for. The checker refuses
+the daylight rather than reasoning about it.
+
 ## 6. Classification
 
 A certificate that calls itself linear is claiming its cost is at most
@@ -409,7 +417,8 @@ In the order it decides them, near enough:
 | CrAmbiguous    | a repeat body whose ambiguity grows with the subject   |
 | CrOverflow     | the requirement itself is past counter arithmetic      |
 | CrRegion*      | a region claims less than its own rule produced        |
-| CrTotal*       | the pattern claims less than section 5 produced        |
+| CrTotal*       | the pattern claims less than section 5 produced — or,  |
+|                | for the stack, anything other than exactly it          |
 | CrNotLinear    | the class claim does not match the shape of the bound  |
 +----------------+--------------------------------------------------------+
 ```

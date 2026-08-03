@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   be8703cca8a04ba23c92d1397a10724d7f30c035cd4e02bdec738782d5d2dee3
+//   142a861a54530e991035d8b6d26377d67aeecbbf5e077b1bca578b8081e0ae55
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -15,7 +15,7 @@
 // loudly instead of reading undefined off the end of a typed array.
 
 /** SHA-256 of the TIR artifact this module was printed from. */
-export const artifactSha256 = "be8703cca8a04ba23c92d1397a10724d7f30c035cd4e02bdec738782d5d2dee3";
+export const artifactSha256 = "142a861a54530e991035d8b6d26377d67aeecbbf5e077b1bca578b8081e0ae55";
 
 /** What a checked operation throws, per TIR-SPEC.md section 12. */
 export class tir_Trap extends Error {
@@ -2333,7 +2333,7 @@ export function charge_call(re, cert, whole, over) {
   if ((!holds)) {
     return CrTotalCost;
   }
-  const tir_t19 = poly_ge(cert.stack.tir_clone(), whole.stack.tir_clone());
+  const tir_t19 = poly_eq(cert.stack.tir_clone(), whole.stack.tir_clone());
   holds = tir_t19;
   if ((!holds)) {
     return CrTotalStack;
@@ -5180,6 +5180,28 @@ export function poly_add(a, b, over) {
   const tir_t6 = poly_norm(out.tir_clone());
   done = tir_t6;
   return done.tir_clone();
+}
+
+export function poly_eq(a, b) {
+  if ((a.base !== b.base)) {
+    return false;
+  }
+  if ((a.c0 !== b.c0)) {
+    return false;
+  }
+  if ((a.c1 !== b.c1)) {
+    return false;
+  }
+  if ((a.c2 !== b.c2)) {
+    return false;
+  }
+  if ((a.c3 !== b.c3)) {
+    return false;
+  }
+  if ((a.c4 !== b.c4)) {
+    return false;
+  }
+  return true;
 }
 
 export function poly_ge(a, b) {

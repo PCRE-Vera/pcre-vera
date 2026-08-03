@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   be8703cca8a04ba23c92d1397a10724d7f30c035cd4e02bdec738782d5d2dee3
+//   142a861a54530e991035d8b6d26377d67aeecbbf5e077b1bca578b8081e0ae55
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -18,7 +18,7 @@ package engine
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact this package was printed
 // from.
-const ArtifactSHA256 = "be8703cca8a04ba23c92d1397a10724d7f30c035cd4e02bdec738782d5d2dee3"
+const ArtifactSHA256 = "142a861a54530e991035d8b6d26377d67aeecbbf5e077b1bca578b8081e0ae55"
 
 // Tir_Trap is what a checked operation panics with, per TIR-SPEC.md section 12.
 type Tir_Trap struct {
@@ -1826,7 +1826,7 @@ func charge_call(re Re, cert Cert, whole Price, over *bool) Cr {
 	if (!holds) {
 		return CrTotalCost
 	}
-	tir_t19 := poly_ge(cert.stack, whole.stack)
+	tir_t19 := poly_eq(cert.stack, whole.stack)
 	holds = tir_t19
 	if (!holds) {
 		return CrTotalStack
@@ -4418,6 +4418,28 @@ func poly_add(a Poly, b Poly, over *bool) Poly {
 	tir_t6 := poly_norm(out)
 	done = tir_t6
 	return done
+}
+
+func poly_eq(a Poly, b Poly) bool {
+	if (a.base != b.base) {
+		return false
+	}
+	if (a.c0 != b.c0) {
+		return false
+	}
+	if (a.c1 != b.c1) {
+		return false
+	}
+	if (a.c2 != b.c2) {
+		return false
+	}
+	if (a.c3 != b.c3) {
+		return false
+	}
+	if (a.c4 != b.c4) {
+		return false
+	}
+	return true
 }
 
 func poly_ge(a Poly, b Poly) bool {
@@ -7276,6 +7298,10 @@ func Tir_pike_write(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, 
 
 func Tir_poly_add(a Poly, b Poly, over *bool) Poly {
 	return poly_add(a, b, over)
+}
+
+func Tir_poly_eq(a Poly, b Poly) bool {
+	return poly_eq(a, b)
 }
 
 func Tir_poly_ge(a Poly, b Poly) bool {

@@ -362,6 +362,18 @@ def _polynomials(L: Layout) -> None:
             f.ret(boolean(False))
     f.ret(boolean(True))
 
+    f = L.func("poly_eq", params=[("a", L.Poly), ("b", L.Poly)], ret=boolean)
+    # Coefficient for coefficient, base included. Both sides only ever arrive
+    # normalized — the arithmetic runs `poly_norm` and the decoders canonize —
+    # so structural equality is value equality.
+    with f.if_(f["a"].field("base") != f["b"].field("base")):
+        f.ret(boolean(False))
+    for degree in DEGREES:
+        name = f"c{degree}"
+        with f.if_(f["a"].field(name) != f["b"].field(name)):
+            f.ret(boolean(False))
+    f.ret(boolean(True))
+
     f = L.func("poly_value", params=[("p", L.Poly), ("n", counter)], ret=L.Bound)
     p = f["p"]
     with f.if_(nothing(p)):

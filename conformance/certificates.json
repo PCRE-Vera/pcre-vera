@@ -6362,43 +6362,43 @@
           "cost": 9007199254740991,
           "mem": 2147483647,
           "n": 0,
-          "stack": 178956970
+          "stack": 0
         },
         {
           "cost": null,
           "mem": 2147483647,
           "n": 1,
-          "stack": 178956970
+          "stack": 0
         },
         {
           "cost": null,
           "mem": 2147483647,
           "n": 2,
-          "stack": 178956970
+          "stack": 0
         },
         {
           "cost": null,
           "mem": 2147483647,
           "n": 10,
-          "stack": 178956970
+          "stack": 0
         },
         {
           "cost": null,
           "mem": 2147483647,
           "n": 53,
-          "stack": 178956970
+          "stack": 0
         },
         {
           "cost": null,
           "mem": 2147483647,
           "n": 65535,
-          "stack": 178956970
+          "stack": 0
         },
         {
           "cost": null,
           "mem": 2147483647,
           "n": 9007199254740991,
-          "stack": 178956970
+          "stack": 0
         }
       ],
       "cert": {
@@ -6492,7 +6492,7 @@
         ],
         "stack": {
           "base": 1,
-          "c0": 178956970,
+          "c0": 0,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -6502,7 +6502,7 @@
       "check": 27,
       "config": 0,
       "name": "over-claimed-to-every-ceiling",
-      "note": "A certificate may be generous, as long as it is generous in every coefficient at once. These reach exactly the three ceilings at n = 0: the counter's saturation point for cost, the deepest stack a limit could name, and the section 3 byte ceiling for memory. What a caller reads back is what the certificate names, not what the checker computed.",
+      "note": "A certificate may be generous wherever generosity is legal, and these reach exactly the two ceilings at n = 0: the counter's saturation point for cost and the section 3 byte ceiling for memory. The stack stays exact, because it is held to its equation. What a caller reads back is what the certificate names, not what the checker computed.",
       "pattern": "616263",
       "shape": 27
     },
@@ -6512,43 +6512,43 @@
           "cost": null,
           "mem": null,
           "n": 0,
-          "stack": null
+          "stack": 0
         },
         {
           "cost": null,
           "mem": null,
           "n": 1,
-          "stack": null
+          "stack": 0
         },
         {
           "cost": null,
           "mem": null,
           "n": 2,
-          "stack": null
+          "stack": 0
         },
         {
           "cost": null,
           "mem": null,
           "n": 10,
-          "stack": null
+          "stack": 0
         },
         {
           "cost": null,
           "mem": null,
           "n": 53,
-          "stack": null
+          "stack": 0
         },
         {
           "cost": null,
           "mem": null,
           "n": 65535,
-          "stack": null
+          "stack": 0
         },
         {
           "cost": null,
           "mem": null,
           "n": 9007199254740991,
-          "stack": null
+          "stack": 0
         }
       ],
       "cert": {
@@ -6642,7 +6642,7 @@
         ],
         "stack": {
           "base": 1,
-          "c0": 178956971,
+          "c0": 0,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -6652,7 +6652,307 @@
       "check": 27,
       "config": 0,
       "name": "over-claimed-past-every-ceiling",
-      "note": "One unit more of each, which no limit could accept, so none of the three is a number any more. The three ceilings differ, which is the whole difference between the projections.",
+      "note": "One unit more of each, which no limit could accept, so neither is a number any more. The ceilings differ, which is the whole difference between the projections.",
+      "pattern": "616263",
+      "shape": 27
+    },
+    {
+      "bounds": [
+        {
+          "cost": 36,
+          "mem": 16,
+          "n": 0,
+          "stack": 178956970
+        },
+        {
+          "cost": 48,
+          "mem": 16,
+          "n": 1,
+          "stack": 178956970
+        },
+        {
+          "cost": 60,
+          "mem": 16,
+          "n": 2,
+          "stack": 178956970
+        },
+        {
+          "cost": 156,
+          "mem": 16,
+          "n": 10,
+          "stack": 178956970
+        },
+        {
+          "cost": 672,
+          "mem": 16,
+          "n": 53,
+          "stack": 178956970
+        },
+        {
+          "cost": 786456,
+          "mem": 16,
+          "n": 65535,
+          "stack": 178956970
+        },
+        {
+          "cost": null,
+          "mem": 16,
+          "n": 9007199254740991,
+          "stack": 178956970
+        }
+      ],
+      "cert": {
+        "complexity": 1,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 24,
+          "c1": 12,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 16,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 178956970,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 24,
+      "config": 0,
+      "name": "a-stack-at-its-ceiling",
+      "note": "The deepest stack a limit could name, claimed on a program whose derived stack is zero. The evaluation rows still read the claim back as a number at the edge; the checker refuses it, since the stack is the one bound held to equality.",
+      "pattern": "616263",
+      "shape": 27
+    },
+    {
+      "bounds": [
+        {
+          "cost": 36,
+          "mem": 16,
+          "n": 0,
+          "stack": null
+        },
+        {
+          "cost": 48,
+          "mem": 16,
+          "n": 1,
+          "stack": null
+        },
+        {
+          "cost": 60,
+          "mem": 16,
+          "n": 2,
+          "stack": null
+        },
+        {
+          "cost": 156,
+          "mem": 16,
+          "n": 10,
+          "stack": null
+        },
+        {
+          "cost": 672,
+          "mem": 16,
+          "n": 53,
+          "stack": null
+        },
+        {
+          "cost": 786456,
+          "mem": 16,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": 16,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 1,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 24,
+          "c1": 12,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 16,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 178956971,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 24,
+      "config": 0,
+      "name": "a-stack-past-its-ceiling",
+      "note": "One entry more, which no limit could accept, so the evaluation rows refuse it too.",
       "pattern": "616263",
       "shape": 27
     },
@@ -8985,6 +9285,374 @@
       "config": 0,
       "name": "more-prices-than-regions",
       "note": "And a price nobody emitted a region for is a claim about nothing.",
+      "pattern": "612a",
+      "shape": 27
+    },
+    {
+      "bounds": [
+        {
+          "cost": 887,
+          "mem": 552,
+          "n": 0,
+          "stack": 4
+        },
+        {
+          "cost": 950,
+          "mem": 552,
+          "n": 1,
+          "stack": 4
+        },
+        {
+          "cost": 1013,
+          "mem": 552,
+          "n": 2,
+          "stack": 4
+        },
+        {
+          "cost": 1517,
+          "mem": 552,
+          "n": 10,
+          "stack": 4
+        },
+        {
+          "cost": 4226,
+          "mem": 552,
+          "n": 53,
+          "stack": 4
+        },
+        {
+          "cost": 4129592,
+          "mem": 552,
+          "n": 65535,
+          "stack": 4
+        },
+        {
+          "cost": null,
+          "mem": 552,
+          "n": 9007199254740991,
+          "stack": 4
+        }
+      ],
+      "cert": {
+        "complexity": 1,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 824,
+          "c1": 63,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 552,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 7,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 19,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 6,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 7,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 13,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 6,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 7,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 13,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 4,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 24,
+      "config": 0,
+      "name": "a-unit-extra-on-stack",
+      "note": "Cost and memory are bounds and may overestimate; the stack claim is what a preallocated context sizes its backtrack array from, while the memory requirement was priced from the derived number, so any daylight between the two is refused. One entry above exact, at the constant.",
+      "pattern": "617b312c327d",
+      "shape": 27
+    },
+    {
+      "bounds": [
+        {
+          "cost": 705,
+          "mem": 440,
+          "n": 0,
+          "stack": 3
+        },
+        {
+          "cost": 950,
+          "mem": 552,
+          "n": 1,
+          "stack": 5
+        },
+        {
+          "cost": 1223,
+          "mem": 664,
+          "n": 2,
+          "stack": 7
+        },
+        {
+          "cost": 4415,
+          "mem": 1560,
+          "n": 10,
+          "stack": 23
+        },
+        {
+          "cost": 52274,
+          "mem": 6376,
+          "n": 53,
+          "stack": 109
+        },
+        {
+          "cost": 60142846440,
+          "mem": 7340360,
+          "n": 65535,
+          "stack": 131073
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 488,
+          "c1": 203,
+          "c2": 14,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 328,
+          "c1": 112,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 7,
+              "c1": 6,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 1,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 24,
+      "config": 0,
+      "name": "a-unit-extra-on-a-growing-stack",
+      "note": "The same refusal where the stack grows with the subject, one entry above exact at the linear coefficient.",
       "pattern": "612a",
       "shape": 27
     },

@@ -493,15 +493,16 @@ def test_arithmetic_that_would_saturate_is_reported_rather_than_clamped(engine) 
     assert engine.bound(cert("over-claimed-past-every-ceiling"), "BkCost", 0) is None
 
 
-@pytest.mark.parametrize(
-    "kind, ceiling", [("BkStack", spec.MAX_STACK), ("BkMem", CEILING)]
-)
-def test_a_bound_no_limit_could_accept_is_exceeds_budget(engine, kind, ceiling) -> None:
+def test_a_bound_no_limit_could_accept_is_exceeds_budget(engine) -> None:
     # Section 2.4 asks for more than "it fits in a counter": any number these
     # accessors give back has to be one the caller can turn round and pass as a
     # limit, so the two projections with a ceiling of their own refuse at it.
-    assert engine.bound(cert("over-claimed-to-every-ceiling"), kind, 4) == ceiling
-    assert engine.bound(cert("over-claimed-past-every-ceiling"), kind, 4) is None
+    # The stack rows live on their own cases now that the checker holds that
+    # bound to equality and the generous certificates keep it exact.
+    assert engine.bound(cert("over-claimed-to-every-ceiling"), "BkMem", 4) == CEILING
+    assert engine.bound(cert("over-claimed-past-every-ceiling"), "BkMem", 4) is None
+    assert engine.bound(cert("a-stack-at-its-ceiling"), "BkStack", 4) == spec.MAX_STACK
+    assert engine.bound(cert("a-stack-past-its-ceiling"), "BkStack", 4) is None
 
 
 def test_cost_has_no_ceiling_below_the_saturation_point(engine) -> None:
