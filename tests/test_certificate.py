@@ -485,12 +485,12 @@ def test_an_exponential_bound_is_finite_until_it_is_not(engine) -> None:
 
 
 def test_a_bound_of_exactly_the_saturation_point_is_still_a_number(engine) -> None:
-    assert engine.bound(cert("over-claimed-to-every-ceiling"), "BkCost", 0) == CAP
+    assert engine.bound(cert("over-claimed-to-both-ceilings"), "BkCost", 0) == CAP
 
 
 def test_arithmetic_that_would_saturate_is_reported_rather_than_clamped(engine) -> None:
-    assert engine.bound(cert("over-claimed-to-every-ceiling"), "BkCost", 1) is None
-    assert engine.bound(cert("over-claimed-past-every-ceiling"), "BkCost", 0) is None
+    assert engine.bound(cert("over-claimed-to-both-ceilings"), "BkCost", 1) is None
+    assert engine.bound(cert("over-claimed-past-both-ceilings"), "BkCost", 0) is None
 
 
 def test_a_bound_no_limit_could_accept_is_exceeds_budget(engine) -> None:
@@ -499,8 +499,8 @@ def test_a_bound_no_limit_could_accept_is_exceeds_budget(engine) -> None:
     # limit, so the two projections with a ceiling of their own refuse at it.
     # The stack rows live on their own cases now that the checker holds that
     # bound to equality and the generous certificates keep it exact.
-    assert engine.bound(cert("over-claimed-to-every-ceiling"), "BkMem", 4) == CEILING
-    assert engine.bound(cert("over-claimed-past-every-ceiling"), "BkMem", 4) is None
+    assert engine.bound(cert("over-claimed-to-both-ceilings"), "BkMem", 4) == CEILING
+    assert engine.bound(cert("over-claimed-past-both-ceilings"), "BkMem", 4) is None
     assert engine.bound(cert("a-stack-at-its-ceiling"), "BkStack", 4) == spec.MAX_STACK
     assert engine.bound(cert("a-stack-past-its-ceiling"), "BkStack", 4) is None
 

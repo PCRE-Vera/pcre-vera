@@ -53,7 +53,7 @@ from __future__ import annotations
 
 from ..dsl import boolean, bytes_, counter, inout, land, lnot, lor, u32, u8
 from . import spec
-from .bounds import const, linear, nothing, poly, zero
+from .bounds import const, linear, poly, zero
 from .layout import Layout
 from .parser import down, tmp
 
@@ -1083,28 +1083,23 @@ def _certificate(L: Layout) -> None:
         f.ret(L.Cr.CrShape)
     with f.if_(lnot(linear(cert.field("cost")))):
         f.ret(L.Cr.CrNotLinear)
-    # No backtrack stack exists on this path, so the stack rule is equality
-    # with zero, not domination: a certificate claiming entries the matcher
-    # can never push is not a shape section 9 admits, and accepting it would
-    # let an accessor report a requirement nothing has.
-    with f.if_(lnot(nothing(cert.field("stack")))):
-        f.ret(L.Cr.CrShape)
     needed = f.let("needed", L.Cert)
     priced = tmp(f, boolean, boolean(False))
     f.call("pike_price", [f["re"], inout(needed)], dest=priced)
     with f.if_(lnot(priced)):
         f.ret(L.Cr.CrOverflow)
     holds = tmp(f, boolean, boolean(False))
-    for claim, refusal in (
-        ("cost", L.Cr.CrTotalCost),
-        ("stack", L.Cr.CrTotalStack),
-        ("mem", L.Cr.CrTotalMem),
+    # The same discipline as the backtracking total check: cost and memory
+    # may overestimate, the stack must equal the requirement — which here is
+    # exactly zero, since no backtrack stack exists on this path, so a
+    # certificate claiming entries the matcher can never push is refused
+    # under the same name section 5's rule uses.
+    for claim, rule, refusal in (
+        ("cost", "poly_ge", L.Cr.CrTotalCost),
+        ("stack", "poly_eq", L.Cr.CrTotalStack),
+        ("mem", "poly_ge", L.Cr.CrTotalMem),
     ):
-        f.call(
-            "poly_ge",
-            [cert.field(claim), needed.field(claim)],
-            dest=holds,
-        )
+        f.call(rule, [cert.field(claim), needed.field(claim)], dest=holds)
         with f.if_(lnot(holds)):
             f.ret(refusal)
     f.ret(L.Cr.CrOk)

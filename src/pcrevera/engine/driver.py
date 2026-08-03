@@ -183,6 +183,15 @@ class Certificate:
     complexity: str = "CcNotProvenLinear"
 
 
+CERT_SLOTS = {
+    "CfgBacktrack": ("hascert", "cert"),
+    "CfgPike": ("haspikecert", "pikecert"),
+}
+"""Which Re fields hold each configuration's certificate. A lookup that
+raises on a configuration nobody stored, so a typo or a future CfgMemo never
+silently reads the backtracking slot."""
+
+
 class EngineError(RuntimeError):
     """The engine did something only a bug of ours explains."""
 
@@ -720,12 +729,7 @@ class Engine:
         configuration, which is the ExceedsBudget the accessors of DESIGN.md
         section 2.4 report for one.
         """
-        # A lookup that raises on a configuration nobody stored, so a typo or
-        # a future CfgMemo never silently reads the backtracking slot.
-        flag, slot = {
-            "CfgBacktrack": ("hascert", "cert"),
-            "CfgPike": ("haspikecert", "pikecert"),
-        }[config]
+        flag, slot = CERT_SLOTS[config]
         if not built.re.fields[flag]:
             return None
         return self._evaluate(built.re.fields[slot], kind, subject_len)

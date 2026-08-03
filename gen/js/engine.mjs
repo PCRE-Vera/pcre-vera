@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   142a861a54530e991035d8b6d26377d67aeecbbf5e077b1bca578b8081e0ae55
+//   f73ea38099c4a2abf425df43e02c515000505ac2a702c807772cac4cd79490a2
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -15,7 +15,7 @@
 // loudly instead of reading undefined off the end of a typed array.
 
 /** SHA-256 of the TIR artifact this module was printed from. */
-export const artifactSha256 = "142a861a54530e991035d8b6d26377d67aeecbbf5e077b1bca578b8081e0ae55";
+export const artifactSha256 = "f73ea38099c4a2abf425df43e02c515000505ac2a702c807772cac4cd79490a2";
 
 /** What a checked operation throws, per TIR-SPEC.md section 12. */
 export class tir_Trap extends Error {
@@ -4179,9 +4179,6 @@ export function pike_check(re, cert) {
   if ((!((((cert.cost.base === 1) && (cert.cost.c2 === 0)) && (cert.cost.c3 === 0)) && (cert.cost.c4 === 0)))) {
     return CrNotLinear;
   }
-  if ((!(((((cert.stack.c0 === 0) && (cert.stack.c1 === 0)) && (cert.stack.c2 === 0)) && (cert.stack.c3 === 0)) && (cert.stack.c4 === 0)))) {
-    return CrShape;
-  }
   let needed = new Cert();
   let tmp3 = false;
   const tir_t3 = tir_cell(needed);
@@ -4197,7 +4194,7 @@ export function pike_check(re, cert) {
   if ((!tmp4)) {
     return CrTotalCost;
   }
-  const tir_t6 = poly_ge(cert.stack.tir_clone(), needed.stack.tir_clone());
+  const tir_t6 = poly_eq(cert.stack.tir_clone(), needed.stack.tir_clone());
   tmp4 = tir_t6;
   if ((!tmp4)) {
     return CrTotalStack;

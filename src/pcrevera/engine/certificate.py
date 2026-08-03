@@ -19,9 +19,9 @@ The subject is the compiled pattern itself rather than any restatement of it,
 so there is nothing that could come to disagree with the bytecode the matcher
 will actually run: the code, the repetition table, the capture and register
 counts, and the length derived from the code. On top of that comes the
-configuration the certificate is being checked for. Only `CfgBacktrack` has
-rules today; the Pike VM and the memoized path have their own accounting and
-say so rather than borrowing this one.
+configuration the certificate is being checked for: the backtracking rules
+live here, the Pike configuration dispatches to its own checker beside its
+matcher, and the memoized path is refused by name until M9.
 
 A bound is `base^n` times a polynomial in `n + 1`, held in a `Poly`. Evaluation
 is counter arithmetic with every step pre-checked, so saturation comes back as
@@ -35,9 +35,11 @@ So what an accepted certificate says is the whole of it: for this program, in
 this configuration, at every subject length, every start offset and every
 combination of match options, the matcher charges no more cost, pushes no more
 backtrack entries and reserves no more scratch than the certificate names. The
-one thing it does not say is that the numbers are tight — they are an upper
-bound and the analyzer is free to be generous — which is why every rule below
-is written to refuse rather than to round.
+cost and memory numbers need not be tight — they are upper bounds and the
+analyzer is free to be generous — but the stack is held to its section 5
+equation exactly, because a context is sized from it while the memory that
+pays for the array is priced from the walk. Every rule below is written to
+refuse rather than to round.
 """
 
 from __future__ import annotations
@@ -466,23 +468,19 @@ def _charge(L: Layout) -> None:
     with f.if_(over):
         f.ret(L.Cr.CrOverflow)
     holds = f.let("holds", boolean, boolean(False))
-    # Cost and memory are bounds, so a claim above the derived number is a
+    # Cost and memory are bounds, so a claim above the walk's number is a
     # legitimate overestimate. The stack is not: a preallocated context sizes
     # its backtrack array from this claim while the memory requirement above
-    # was priced from the derived one, so any daylight between the two would
-    # let an accepted certificate demand an array the memory number never
-    # paid for. Equality is the coherence rule, and it is what the section 5
-    # equation says.
-    for claim, needed, refusal, exact in (
-        ("cost", cost, L.Cr.CrTotalCost, False),
-        ("stack", whole.field("stack"), L.Cr.CrTotalStack, True),
-        ("mem", memory, L.Cr.CrTotalMem, False),
+    # was priced from the same walk's stack, so any daylight between the two
+    # would let an accepted certificate demand an array the memory number
+    # never paid for. Equality is the coherence rule, and it is what the
+    # section 5 equation says.
+    for claim, needed, rule, refusal in (
+        ("cost", cost, "poly_ge", L.Cr.CrTotalCost),
+        ("stack", whole.field("stack"), "poly_eq", L.Cr.CrTotalStack),
+        ("mem", memory, "poly_ge", L.Cr.CrTotalMem),
     ):
-        f.call(
-            "poly_eq" if exact else "poly_ge",
-            [f["cert"].field(claim), needed],
-            dest=holds,
-        )
+        f.call(rule, [f["cert"].field(claim), needed], dest=holds)
         with f.if_(lnot(holds)):
             f.ret(refusal)
     f.ret(L.Cr.CrOk)

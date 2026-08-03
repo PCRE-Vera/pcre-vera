@@ -37,10 +37,6 @@ type accessorCase struct {
 	Queries []accessorQuery `json:"queries"`
 }
 
-// The accessors section of the certificate corpus, asked through the public
-// wrapper: the same statuses and the same numbers as the other two languages,
-// and for every query marked exercise, a match at exactly the pinned bounds
-// that must not run out of them.
 func TestAccessorCorpus(t *testing.T) {
 	cases, err := corpustest.Section[accessorCase](
 		"../../conformance/certificates.json", "accessors")

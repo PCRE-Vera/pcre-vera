@@ -387,10 +387,10 @@ to tell that setup and the attempt loop had been counted.
 One of the three is held to its equation exactly. `cost` and `mem` are bounds,
 and a certificate that claims more than the rules produce is overestimating,
 which is its right. The `stack` line is an equality: the memory requirement
-above was priced from the derived stack, and a preallocated context sizes its
-backtrack array from the claimed one, so a claim above the derived number
-would demand an array the memory number never paid for. The checker refuses
-the daylight rather than reasoning about it.
+above is priced from the root region's claimed stack, and a preallocated
+context sizes its backtrack array from the whole-pattern claim, so any
+daylight between the two would demand an array the memory number never paid
+for. The checker refuses the daylight rather than reasoning about it.
 
 ## 6. Classification
 
@@ -468,8 +468,9 @@ instruction at most once per list build, whatever the pattern's structure, so
 the whole call has a closed form in a handful of counts read straight off the
 program. A `CfgPike` certificate therefore carries no region prices — its
 `prices` table is empty, and a checker met with a nonempty one refuses — and
-its three bounds are checked by recomputing the same closed form and asking
-for domination, coefficient by coefficient.
+its three bounds are checked by recomputing the same closed form, cost and
+memory by domination and the stack by the section 5 equality — which here is
+equality with zero, coefficient by coefficient.
 
 The counts, for a program of `C` instructions:
 

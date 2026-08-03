@@ -557,26 +557,25 @@ def less(cert: Certificate, *path) -> Certificate:
     return replace(cert, prices=tuple(prices))
 
 
-def _drop(p: Poly, degree: int) -> Poly:
-    if coef(p, degree) < 1:
+def _shift(p: Poly, degree: int, delta: int) -> Poly:
+    if coef(p, degree) + delta < 0:
         raise ValueError(f"there is no unit at degree {degree} to take away")
     coefs = [coef(p, d) for d in DEGREES]
-    coefs[degree] -= 1
+    coefs[degree] += delta
     return _norm(p.base, coefs)
+
+
+def _drop(p: Poly, degree: int) -> Poly:
+    return _shift(p, degree, -1)
 
 
 def more(cert: Certificate, bound: str, degree: int) -> Certificate:
     """The same certificate with one whole-pattern coefficient a unit higher.
 
-    The upward mutation only means anything for the bounds held to equality:
-    cost and memory may legitimately overestimate, but a stack claim above
-    the derived number would size a context array the memory number never
-    paid for, and these cases are what keep that refused.
+    Only meaningful for the bound held to equality, which is what BOUNDS.md
+    section 5 says about the stack; the others may overestimate freely.
     """
-    p = getattr(cert, bound)
-    coefs = [coef(p, d) for d in DEGREES]
-    coefs[degree] += 1
-    return replace(cert, **{bound: _norm(p.base, coefs)})
+    return replace(cert, **{bound: _shift(getattr(cert, bound), degree, 1)})
 
 
 def claiming(cert: Certificate, **over) -> Certificate:
@@ -739,7 +738,7 @@ CASES: list[Case] = [
         claiming(EXPONENTIAL, complexity="CcLinear"),
     ),
     Case(
-        "over-claimed-to-every-ceiling",
+        "over-claimed-to-both-ceilings",
         "A certificate may be generous wherever generosity is legal, and "
         "these reach exactly the two ceilings at n = 0: the counter's "
         "saturation point for cost and the section 3 byte ceiling for "
@@ -755,7 +754,7 @@ CASES: list[Case] = [
         ),
     ),
     Case(
-        "over-claimed-past-every-ceiling",
+        "over-claimed-past-both-ceilings",
         "One unit more of each, which no limit could accept, so neither is a "
         "number any more. The ceilings differ, which is the whole difference "
         "between the projections.",
@@ -887,10 +886,10 @@ CASES: list[Case] = [
     ),
     Case(
         "pike-claiming-a-stack",
-        "No backtrack stack exists on the lockstep path, so the stack rule "
-        "is equality with zero rather than domination: entries the matcher "
-        "can never push are not a shape section 9 admits.",
-        "CrShape",
+        "No backtrack stack exists on the lockstep path, so the stack "
+        "requirement is exactly zero and the equality rule refuses entries "
+        "the matcher can never push, under the same name as everywhere.",
+        "CrTotalStack",
         b"abc",
         claiming(LOCKSTEP, stack=Poly((1,))),
         config="CfgPike",

@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   142a861a54530e991035d8b6d26377d67aeecbbf5e077b1bca578b8081e0ae55
+//   f73ea38099c4a2abf425df43e02c515000505ac2a702c807772cac4cd79490a2
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -18,7 +18,7 @@ package engine
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact this package was printed
 // from.
-const ArtifactSHA256 = "142a861a54530e991035d8b6d26377d67aeecbbf5e077b1bca578b8081e0ae55"
+const ArtifactSHA256 = "f73ea38099c4a2abf425df43e02c515000505ac2a702c807772cac4cd79490a2"
 
 // Tir_Trap is what a checked operation panics with, per TIR-SPEC.md section 12.
 type Tir_Trap struct {
@@ -3681,9 +3681,6 @@ func pike_check(re Re, cert Cert) Cr {
 	if (!((((cert.cost.base == uint64(1)) && (cert.cost.c2 == uint64(0))) && (cert.cost.c3 == uint64(0))) && (cert.cost.c4 == uint64(0)))) {
 		return CrNotLinear
 	}
-	if (!(((((cert.stack.c0 == uint64(0)) && (cert.stack.c1 == uint64(0))) && (cert.stack.c2 == uint64(0))) && (cert.stack.c3 == uint64(0))) && (cert.stack.c4 == uint64(0)))) {
-		return CrShape
-	}
 	var needed Cert
 	var tmp3 bool = false
 	tir_t2 := pike_price(re, &needed)
@@ -3697,7 +3694,7 @@ func pike_check(re Re, cert Cert) Cr {
 	if (!tmp4) {
 		return CrTotalCost
 	}
-	tir_t4 := poly_ge(cert.stack, needed.stack)
+	tir_t4 := poly_eq(cert.stack, needed.stack)
 	tmp4 = tir_t4
 	if (!tmp4) {
 		return CrTotalStack

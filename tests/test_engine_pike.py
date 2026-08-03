@@ -38,10 +38,9 @@ def same(built, subject: bytes, **kwargs) -> None:
     """Both matchers through their internal entry points, one comparison."""
     want = ENGINE.bt_match_compiled(built, subject, **kwargs)
     got = ENGINE.pike_match_compiled(built, subject, **kwargs)
-    where = f"on {subject!r} with {kwargs}"
-    assert type(want) is type(got), f"{where}: {want} vs {got}"
+    assert type(want) is type(got), f"on {subject!r} with {kwargs}: {want} vs {got}"
     if isinstance(want, Match):
-        assert want.ovector == got.ovector, where
+        assert want.ovector == got.ovector, f"on {subject!r} with {kwargs}"
 
 
 def agree(pattern: bytes, subject: bytes) -> None:

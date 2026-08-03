@@ -6501,7 +6501,7 @@
       },
       "check": 27,
       "config": 0,
-      "name": "over-claimed-to-every-ceiling",
+      "name": "over-claimed-to-both-ceilings",
       "note": "A certificate may be generous wherever generosity is legal, and these reach exactly the two ceilings at n = 0: the counter's saturation point for cost and the section 3 byte ceiling for memory. The stack stays exact, because it is held to its equation. What a caller reads back is what the certificate names, not what the checker computed.",
       "pattern": "616263",
       "shape": 27
@@ -6651,7 +6651,7 @@
       },
       "check": 27,
       "config": 0,
-      "name": "over-claimed-past-every-ceiling",
+      "name": "over-claimed-past-both-ceilings",
       "note": "One unit more of each, which no limit could accept, so neither is a number any more. The ceilings differ, which is the whole difference between the projections.",
       "pattern": "616263",
       "shape": 27
@@ -8358,10 +8358,10 @@
           "c4": 0
         }
       },
-      "check": 15,
+      "check": 24,
       "config": 1,
       "name": "pike-claiming-a-stack",
-      "note": "No backtrack stack exists on the lockstep path, so the stack rule is equality with zero rather than domination: entries the matcher can never push are not a shape section 9 admits.",
+      "note": "No backtrack stack exists on the lockstep path, so the stack requirement is exactly zero and the equality rule refuses entries the matcher can never push, under the same name as everywhere.",
       "pattern": "616263",
       "shape": 27
     },
