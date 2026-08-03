@@ -463,9 +463,19 @@ def _whole(L: Layout) -> None:
         ),
     )
     f.set(cert.field("stack"), whole.field("stack"))
+    f.set(cert.field("trail"), whole.field("trail"))
+    # The delivered answer is resident too: a caller holds the copied-out
+    # ovector alongside the scratch, and a context materializes that store
+    # at creation, so the memory bound pays for it.
     f.set(
         cert.field("mem"),
-        plus(f, L, const(L, setup), times(f, L, scratch, const(L, counter(2)), over), over),
+        plus(
+            f,
+            L,
+            const(L, setup + deliver),
+            times(f, L, scratch, const(L, counter(2)), over),
+            over,
+        ),
     )
 
 

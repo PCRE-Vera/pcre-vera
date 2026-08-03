@@ -59,12 +59,17 @@ from ..tir.types import CAP, CEILING
 from . import spec
 from .driver import (
     ZERO,
+    BadInput,
     Certificate,
     CompiledPattern,
     Engine,
+    Limits,
+    Match,
+    NoMatch,
     Poly,
     Price,
     Region,
+    ResourceExceeded,
     canonical,
     coef,
     items,
@@ -90,7 +95,13 @@ NOTE = (
     "the outcome ordinal of the engine (0 ok, 3 BadInput, 4 ExceedsBudget), "
     "and a query marked exercise must additionally survive a match on a "
     "subject of that length with the three pinned bounds passed unchanged as "
-    "the limits, anything but ResourceExceeded."
+    "the limits, anything but ResourceExceeded. Each context entry runs its "
+    "creation ladder through the public context constructor — a memcap, where "
+    "present, is the reservation the context must materialize, equal to the "
+    "worstCaseMemory accessor at the declared length — and then replays its "
+    "calls in order on one context, statuses as match outcome ordinals (0 "
+    "matched, 1 no match, 2 ResourceExceeded, 3 BadInput); a cost or stack of "
+    "null is the baked ceiling."
 )
 
 LENGTHS = (0, 1, 2, 10, 53, 65535, CAP)
@@ -397,7 +408,10 @@ def price(prog: Program) -> Certificate:
         ),
         cost=cost,
         stack=root.stack,
-        mem=padd(const(setup), pmul(scratch, const(2))),
+        trail=root.trail,
+        # The delivered answer is resident alongside the scratch, which is
+        # why `deliver` appears in the memory bound as well as the cost.
+        mem=padd(const(setup + deliver), pmul(scratch, const(2))),
         complexity=classify(cost),
     )
 
@@ -529,7 +543,8 @@ def lockstep(pattern: bytes) -> Certificate:
         prices=(),
         cost=canonical(1, (setup + block + 3 * reserved, position)),
         stack=ZERO,
-        mem=canonical(1, (setup + 2 * reserved,)),
+        trail=ZERO,
+        mem=canonical(1, (setup + block + 2 * reserved,)),
         config="CfgPike",
         complexity="CcLinear",
     )
@@ -572,8 +587,9 @@ def _drop(p: Poly, degree: int) -> Poly:
 def more(cert: Certificate, bound: str, degree: int) -> Certificate:
     """The same certificate with one whole-pattern coefficient a unit higher.
 
-    Only meaningful for the bound held to equality, which is what BOUNDS.md
-    section 5 says about the stack; the others may overestimate freely.
+    Only meaningful for the bounds held to equality, which is what BOUNDS.md
+    section 5 says about the stack and the trail; the others may overestimate
+    freely.
     """
     return replace(cert, **{bound: _shift(getattr(cert, bound), degree, 1)})
 
@@ -771,7 +787,7 @@ CASES: list[Case] = [
         "The deepest stack a limit could name, claimed on a program whose "
         "derived stack is zero. The evaluation rows still read the claim "
         "back as a number at the edge; the checker refuses it, since the "
-        "stack is the one bound held to equality.",
+        "stack is held to equality.",
         "CrTotalStack",
         b"abc",
         claiming(LITERAL, stack=const(spec.MAX_STACK)),
@@ -895,6 +911,15 @@ CASES: list[Case] = [
         config="CfgPike",
     ),
     Case(
+        "pike-claiming-a-trail",
+        "Nor does the undo trail exist there, so the trail claim is held to "
+        "zero by the same equality, under its own name.",
+        "CrTotalTrail",
+        b"abc",
+        claiming(LOCKSTEP, trail=Poly((1,))),
+        config="CfgPike",
+    ),
+    Case(
         "pike-on-an-ineligible-pattern",
         "A lower bound keeps `a+` off the lockstep path, so no Pike "
         "certificate can be about it, whatever its numbers say. Refused "
@@ -964,14 +989,14 @@ CASES: list[Case] = [
         b"a*",
         claiming(STAR, prices=STAR.prices + (Price(),)),
     ),
-    # --- a unit extra on the one bound held to equality ---
+    # --- a unit extra on the bounds held to equality ---
     Case(
         "a-unit-extra-on-stack",
         "Cost and memory are bounds and may overestimate; the stack claim is "
         "what a preallocated context sizes its backtrack array from, while "
-        "the memory requirement was priced from the derived number, so any "
-        "daylight between the two is refused. One entry above exact, at the "
-        "constant.",
+        "the memory requirement was priced from the root region's number, so "
+        "any daylight between the two is refused. One entry above exact, at "
+        "the constant.",
         "CrTotalStack",
         b"a{1,2}",
         more(minimal(b"a{1,2}"), "stack", 0),
@@ -983,6 +1008,23 @@ CASES: list[Case] = [
         "CrTotalStack",
         b"a*",
         more(STAR, "stack", 1),
+    ),
+    Case(
+        "a-unit-extra-on-trail",
+        "The trail is the other array a context sizes, held to its own "
+        "equation the same way. One undo entry above exact, at the constant, "
+        "on the pattern whose two saves are the whole trail.",
+        "CrTotalTrail",
+        b"(a)",
+        more(CAPTURE, "trail", 0),
+    ),
+    Case(
+        "a-unit-extra-on-a-growing-trail",
+        "And where the trail grows with the subject, because the saves sit "
+        "inside the loop, one entry above exact at the linear coefficient.",
+        "CrTotalTrail",
+        b"(ab)*c",
+        more(GROUPED, "trail", 1),
     ),
     # --- a unit short, one bound at a time ---
     #
@@ -1020,6 +1062,14 @@ CASES: list[Case] = [
         "CrTotalStack",
         b"a*",
         less(STAR, "stack", 1),
+    ),
+    Case(
+        "trail-one-entry-short",
+        "One undo entry fewer than the loop records, which the equality "
+        "refuses from below exactly as it does from above.",
+        "CrTotalTrail",
+        b"a*",
+        less(STAR, "trail", 1),
     ),
     Case(
         "memory-one-byte-short",
@@ -1764,6 +1814,262 @@ def accesses() -> list[dict]:
     return out
 
 
+# --- preallocated contexts ---
+
+
+CTX_COST = 50_000_000
+CTX_STACK = 100_000
+CTX_MEMORY = 64 * 1024 * 1024
+"""The limits every context case bakes unless a row overrides one: generous
+enough that no working creation trips them, small enough that every number
+stays exact in a 53-bit float."""
+
+
+@dataclass(frozen=True)
+class Call:
+    """One call on a shared context, and the outcome it has to draw.
+
+    `cost` and `stack` of None are the baked ceilings, which is what a caller
+    who lowers nothing passes. The subjects are bytes and the expected
+    ovector is computed at generation, so what is hand-written is the outcome
+    — the part that is a contract rather than a transcription.
+    """
+
+    subject: bytes
+    status: int
+    start: int = 0
+    cost: int | None = None
+    stack: int | None = None
+
+
+@dataclass(frozen=True)
+class ContextCase:
+    """One pattern, one declared maximum length, and the life of one context.
+
+    Every case gets the same creation ladder: its own creation first, then
+    the frozen refusals in contract order — a configuration that is not the
+    default and a length past MAX_LENGTH are BadInput, and for a pattern
+    whose creation works, a memory limit one IR byte under the reservation
+    and a cost limit one unit under its zeroing are each ResourceExceeded.
+    The calls then run in order on one context, because reuse across every
+    outcome is the other half of what the contract says.
+    """
+
+    name: str
+    note: str
+    pattern: bytes
+    maxlen: int
+    status: int
+    calls: tuple[Call, ...] = ()
+
+
+CONTEXTS: list[ContextCase] = [
+    ContextCase(
+        "a-literal-on-the-lockstep-path",
+        "The plain case. The reservation is the section 9 closed form made "
+        "physical — no term in the length at all — and one context answers "
+        "a match, a no-match, every per-call refusal, and a match again, "
+        "off the same arrays.",
+        b"abc",
+        64,
+        spec.OK,
+        (
+            Call(b"xxabc", spec.MATCHED),
+            Call(b"zzz", spec.NO_MATCH),
+            Call(b"a" * 65, spec.BAD_INPUT),
+            Call(b"abc", spec.BAD_INPUT, cost=CTX_COST + 1),
+            Call(b"abc", spec.BAD_INPUT, stack=CTX_STACK + 1),
+            Call(b"abc", spec.RESOURCE_EXCEEDED, cost=1),
+            Call(b"abc", spec.MATCHED),
+        ),
+    ),
+    ContextCase(
+        "captures-under-a-star",
+        "Two matches in a row on the same context, because the ovector is "
+        "context-owned and the second answer overwrites the first — the "
+        "documented lifetime, pinned.",
+        b"(a)(b*)",
+        64,
+        spec.OK,
+        (
+            Call(b"xab", spec.MATCHED),
+            Call(b"a", spec.MATCHED),
+            Call(b"x", spec.NO_MATCH),
+        ),
+    ),
+    ContextCase(
+        "a-backtracker-sized-from-its-claims",
+        "A counted repetition keeps this on the backtracking path, so the "
+        "arrays are sized from the certificate's stack and trail claims at "
+        "the declared length — the reason those claims are held to equality. "
+        "A stack limit lowered to nothing starves the first fork, and the "
+        "context is none the worse for it.",
+        b"a{0,2}b*",
+        32,
+        spec.OK,
+        (
+            Call(b"aab", spec.MATCHED),
+            Call(b"aab", spec.RESOURCE_EXCEEDED, stack=0),
+            Call(b"a" * 33, spec.BAD_INPUT),
+            Call(b"b", spec.MATCHED),
+        ),
+    ),
+    ContextCase(
+        "the-shortest-context-there-is",
+        "A declared maximum of zero is a context for empty subjects, and it "
+        "still matches them; one byte of subject is past what it was sized "
+        "for.",
+        b"a*",
+        0,
+        spec.OK,
+        (
+            Call(b"", spec.MATCHED),
+            Call(b"a", spec.BAD_INPUT),
+            Call(b"", spec.MATCHED),
+        ),
+    ),
+    ContextCase(
+        "no-certificate-no-context",
+        "A pattern with no finite bound has no reservation to make, so "
+        "creation is the same ExceedsBudget the accessors report — after "
+        "the argument checks, which come first on every pattern.",
+        b"(?:a*)*",
+        16,
+        spec.EXCEEDS_BUDGET,
+    ),
+]
+
+
+def _context_limits(cost=CTX_COST, stack=CTX_STACK, memory=CTX_MEMORY) -> Limits:
+    return Limits(cost=cost, stack=stack, memory=memory)
+
+
+def _creation(built, name: str, want: int, **args):
+    """One creation row, run and held to the outcome the case wrote down.
+
+    The context comes back with the row so the case's own creation — the
+    first rung of the ladder — can also be the one the calls replay on,
+    rather than being made twice through the interpreter.
+    """
+    asked = {
+        "config": spec.MC_DEFAULT,
+        "maxlen": 0,
+        "cost": CTX_COST,
+        "stack": CTX_STACK,
+        "memory": CTX_MEMORY,
+        **args,
+    }
+    status, held = ENGINE.create_context(
+        built,
+        max_subject_len=asked["maxlen"],
+        limits=_context_limits(asked["cost"], asked["stack"], asked["memory"]),
+        match_config=asked["config"],
+    )
+    if status != want:
+        raise AssertionError(f"{name}: creation answers {status}, the case says {want}")
+    row = {**asked, "status": status}
+    if held is not None:
+        row["memcap"] = held.memory
+    return row, held
+
+
+def _statused(outcome) -> int:
+    """The outcome ordinal a driver result stands for."""
+    if isinstance(outcome, Match):
+        return spec.MATCHED
+    if isinstance(outcome, NoMatch):
+        return spec.NO_MATCH
+    if isinstance(outcome, ResourceExceeded):
+        return spec.RESOURCE_EXCEEDED
+    if isinstance(outcome, BadInput):
+        return spec.BAD_INPUT
+    raise AssertionError(f"a context call answered {outcome!r}")
+
+
+def contexts() -> list[dict]:
+    """Every context case: the creation ladder, then one context's life."""
+    out = []
+    for case in CONTEXTS:
+        built = compiled(case.pattern)
+        first, held = _creation(built, case.name, case.status, maxlen=case.maxlen)
+        rows = [first]
+        for refusal in (
+            {"config": spec.MC_MEMO},
+            {"maxlen": spec.MAX_LENGTH + 1},
+        ):
+            row, _ = _creation(
+                built,
+                case.name,
+                spec.BAD_INPUT,
+                **{"maxlen": case.maxlen, **refusal},
+            )
+            rows.append(row)
+        if case.status == spec.OK:
+            need = first["memcap"]
+            # The reservation is the memory accessor's answer made physical,
+            # which is the equality the whole design leans on; a backend
+            # whose two numbers drift apart must fail here.
+            answered = ENGINE.worst_case(built, "mem", case.maxlen)
+            if answered != (spec.OK, need):
+                raise AssertionError(
+                    f"{case.name}: the context reserves {need}, the accessor "
+                    f"answers {answered}"
+                )
+            for starved in ("memory", "cost"):
+                row, _ = _creation(
+                    built,
+                    case.name,
+                    spec.RESOURCE_EXCEEDED,
+                    maxlen=case.maxlen,
+                    **{starved: need - 1},
+                )
+                rows.append(row)
+
+        calls = []
+        if case.calls:
+            assert held is not None
+            for one in case.calls:
+                got = ENGINE.context_match(
+                    held,
+                    one.subject,
+                    start=one.start,
+                    cost_limit=one.cost,
+                    stack_limit=one.stack,
+                )
+                if _statused(got) != one.status:
+                    raise AssertionError(
+                        f"{case.name}: {one.subject!r} answers {got!r}, "
+                        f"the case says {one.status}"
+                    )
+                row = {
+                    "subject": one.subject.hex(),
+                    "start": one.start,
+                    "cost": one.cost,
+                    "stack": one.stack,
+                    "status": one.status,
+                }
+                if isinstance(got, Match):
+                    row["ovector"] = list(got.ovector)
+                calls.append(row)
+
+        out.append(
+            {
+                "name": case.name,
+                "note": case.note,
+                "pattern": case.pattern.hex(),
+                "maxlen": case.maxlen,
+                "creations": rows,
+                "calls": calls,
+            }
+        )
+    return out
+
+
+def load_contexts(path=PATH) -> list[dict]:
+    """The context entries of the committed corpus, as the runners read them."""
+    return conformance.section(conformance.read(path), "contexts", path)
+
+
 def _ordinal(enum: str, variant: str) -> int:
     return program().enum_map[enum].ordinal(variant)
 
@@ -1804,6 +2110,7 @@ def _cert(cert: Certificate) -> dict:
         "complexity": _ordinal("Cc", cert.complexity),
         "cost": _poly(cert.cost),
         "stack": _poly(cert.stack),
+        "trail": _poly(cert.trail),
         "mem": _poly(cert.mem),
         "prices": [
             {
@@ -1893,7 +2200,11 @@ def analyses() -> list[dict]:
 
 def corpus() -> dict:
     return conformance.document(
-        NOTE, cases(), analyses=analyses(), accessors=accesses()
+        NOTE,
+        cases(),
+        analyses=analyses(),
+        accessors=accesses(),
+        contexts=contexts(),
     )
 
 
@@ -1933,6 +2244,7 @@ def load(path=PATH) -> list[Case]:
                     ),
                     cost=_read_poly(body["cost"]),
                     stack=_read_poly(body["stack"]),
+                    trail=_read_poly(body["trail"]),
                     mem=_read_poly(body["mem"]),
                     config=_variant("Cfg", body["config"]),
                     complexity=_variant("Cc", body["complexity"]),
@@ -1977,6 +2289,7 @@ __all__ = [
     "ACCESSES",
     "ANALYSES",
     "CASES",
+    "CONTEXTS",
     "EXERCISE_COST",
     "KINDS",
     "LENGTHS",
@@ -1984,6 +2297,7 @@ __all__ = [
     "Access",
     "Analysis",
     "Case",
+    "ContextCase",
     "Program",
     "accesses",
     "analyses",
@@ -1993,12 +2307,14 @@ __all__ = [
     "classify",
     "compiled",
     "const",
+    "contexts",
     "corpus",
     "corpus_text",
     "less",
     "load",
     "load_accessors",
     "load_analyses",
+    "load_contexts",
     "minimal",
     "price",
     "read",

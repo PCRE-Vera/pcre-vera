@@ -374,23 +374,31 @@ makes the memory peak twice the reservation rather than once.
           + (n+1) * (reset + root.work + 4 * root.trail)
           + 3 * scratch
     stack = root.stack
-    mem   = setup + 2 * scratch
+    trail = root.trail
+    mem   = setup + deliver + 2 * scratch
 
 12 and 8 are `BT_SIZE` and `UNDO_SIZE`, the IR bytes of one backtrack entry and
-one undo entry.
+one undo entry. `deliver` appears in the memory line as well as the cost one
+because the delivered answer is resident: a caller holds the copied-out
+ovector alongside the scratch, and a preallocated context materializes that
+store at creation, in the result view its match calls answer through.
 
-These three are the certificate's own `cost`, `stack` and `mem`, which is what
-the accessors report. They are deliberately not the root region's numbers: a
-reader who found the whole-pattern cost sitting on the root would have no way
-to tell that setup and the attempt loop had been counted.
+`cost`, `stack` and `mem` are the certificate's bounds the accessors report.
+They are deliberately not the root region's numbers: a reader who found the
+whole-pattern cost sitting on the root would have no way to tell that setup
+and the attempt loop had been counted. The certificate's `trail` is the
+fourth, never an accessor's answer: it is there because a preallocated
+context sizes its undo array from the whole-pattern claim, exactly as it
+sizes its backtrack array from `stack`.
 
-One of the three is held to its equation exactly. `cost` and `mem` are bounds,
-and a certificate that claims more than the rules produce is overestimating,
-which is its right. The `stack` line is an equality: the memory requirement
-above is priced from the root region's claimed stack, and a preallocated
-context sizes its backtrack array from the whole-pattern claim, so any
-daylight between the two would demand an array the memory number never paid
-for. The checker refuses the daylight rather than reasoning about it.
+Two of the four are held to their equations exactly. `cost` and `mem` are
+bounds, and a certificate that claims more than the rules produce is
+overestimating, which is its right. The `stack` and `trail` lines are
+equalities: the memory requirement above is priced from the root region's
+claimed numbers, and a preallocated context sizes its two arrays from the
+whole-pattern claims, so any daylight between a claim and the walk would
+demand an array the memory number never paid for. The checker refuses the
+daylight rather than reasoning about it.
 
 ## 6. Classification
 
@@ -405,7 +413,7 @@ In the order it decides them, near enough:
 
 ```text
 +----------------+--------------------------------------------------------+
-| CrNoRules      | this configuration has no rules yet: Pike, memo        |
+| CrNoRules      | this configuration has no rules yet: memo, until M9    |
 | CrConfig       | the certificate is for another configuration           |
 | CrPrices       | one price per region, and this is not that             |
 | CrNoRegions .. | the tree is not a tree, or its ranges do not nest      |
@@ -418,7 +426,7 @@ In the order it decides them, near enough:
 | CrOverflow     | the requirement itself is past counter arithmetic      |
 | CrRegion*      | a region claims less than its own rule produced        |
 | CrTotal*       | the pattern claims less than section 5 produced — or,  |
-|                | for the stack, anything other than exactly it          |
+|                | for the stack and the trail, anything but exactly it   |
 | CrNotLinear    | the class claim does not match the shape of the bound  |
 +----------------+--------------------------------------------------------+
 ```
@@ -468,9 +476,10 @@ instruction at most once per list build, whatever the pattern's structure, so
 the whole call has a closed form in a handful of counts read straight off the
 program. A `CfgPike` certificate therefore carries no region prices — its
 `prices` table is empty, and a checker met with a nonempty one refuses — and
-its three bounds are checked by recomputing the same closed form, cost and
-memory by domination and the stack by the section 5 equality — which here is
-equality with zero, coefficient by coefficient.
+its bounds are checked by recomputing the same closed form, cost and memory
+by domination and the stack and the trail by the section 5 equalities — which
+here are equalities with zero, coefficient by coefficient, since neither
+array exists on this path.
 
 The counts, for a program of `C` instructions:
 
@@ -513,11 +522,14 @@ same argument section 5 makes:
 
     cost  = setup + B + (n + 1) * position + 3*R
     stack = 0
-    mem   = setup + 2*R
+    trail = 0
+    mem   = setup + B + 2*R
 
-`stack` is zero because no backtrack stack exists on this path: the
-stack-entry limit has nothing to refuse, and a certificate claiming otherwise
-is refused instead. `mem` does not depend on `n` at all, which is the number
+`stack` and `trail` are zero because neither array exists on this path: the
+stack-entry limit has nothing to refuse, and a certificate claiming entries
+on either is refused instead. The extra `B` in both lines is the delivered
+answer — copied out once as cost, resident alongside the scratch as memory,
+for the same reason `deliver` sits in both section 5 lines. `mem` does not depend on `n` at all, which is the number
 a context sizes once; `cost` is `c1 * (n + 1) + c0` with base 1 and nothing
 above the first power, so every accepted `CfgPike` certificate claims
 `CcLinear` and the checker requires exactly that — here linearity is the

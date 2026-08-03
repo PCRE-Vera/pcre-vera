@@ -36,10 +36,10 @@ this configuration, at every subject length, every start offset and every
 combination of match options, the matcher charges no more cost, pushes no more
 backtrack entries and reserves no more scratch than the certificate names. The
 cost and memory numbers need not be tight — they are upper bounds and the
-analyzer is free to be generous — but the stack is held to its section 5
-equation exactly, because a context is sized from it while the memory that
-pays for the array is priced from the walk. Every rule below is written to
-refuse rather than to round.
+analyzer is free to be generous — but the stack and the trail are held to
+their section 5 equations exactly, because a context sizes its two arrays
+from them while the memory that pays for those arrays is priced from the
+walk. Every rule below is written to refuse rather than to round.
 """
 
 from __future__ import annotations
@@ -462,22 +462,26 @@ def _charge(L: Layout) -> None:
     cost = plus(
         f, L, const(L, setup + deliver), plus(f, L, positions, growth, over), over
     )
+    # The delivered answer is resident too: a caller holds the copied-out
+    # ovector alongside the scratch, and a context materializes that store
+    # at creation, so the memory bound pays for it.
     held = times(f, L, scratch, const(L, counter(2)), over)
-    memory = plus(f, L, const(L, setup), held, over)
+    memory = plus(f, L, const(L, setup + deliver), held, over)
 
     with f.if_(over):
         f.ret(L.Cr.CrOverflow)
     holds = f.let("holds", boolean, boolean(False))
     # Cost and memory are bounds, so a claim above the walk's number is a
-    # legitimate overestimate. The stack is not: a preallocated context sizes
-    # its backtrack array from this claim while the memory requirement above
-    # was priced from the same walk's stack, so any daylight between the two
-    # would let an accepted certificate demand an array the memory number
-    # never paid for. Equality is the coherence rule, and it is what the
-    # section 5 equation says.
+    # legitimate overestimate. The stack and the trail are not: a preallocated
+    # context sizes its two arrays from these claims while the memory
+    # requirement above was priced from the same walk's numbers, so any
+    # daylight between a claim and the walk would let an accepted certificate
+    # demand an array the memory number never paid for. Equality is the
+    # coherence rule, and it is what the section 5 equations say.
     for claim, needed, rule, refusal in (
         ("cost", cost, "poly_ge", L.Cr.CrTotalCost),
         ("stack", whole.field("stack"), "poly_eq", L.Cr.CrTotalStack),
+        ("trail", whole.field("trail"), "poly_eq", L.Cr.CrTotalTrail),
         ("mem", memory, "poly_ge", L.Cr.CrTotalMem),
     ):
         f.call(rule, [f["cert"].field(claim), needed], dest=holds)
@@ -884,7 +888,7 @@ def _check(L: Layout) -> None:
     # A base of zero is 0^n, which is 1 at n = 0 and 0 everywhere else. No
     # bound has that shape, and letting one through would make a claim that
     # vanishes on longer subjects look like a claim that holds.
-    for quantity in ("cost", "stack", "mem"):
+    for quantity in ("cost", "stack", "trail", "mem"):
         with f.if_(cert.field(quantity).field("base") == counter(0)):
             f.ret(L.Cr.CrBase)
     # The one claim in a certificate that is not a number, held to the shape it

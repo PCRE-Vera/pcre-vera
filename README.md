@@ -148,14 +148,16 @@ answers.
 Compilation now fixes each pattern's execution path: the lockstep Pike VM
 when the pattern is eligible — every repetition a pure star whose body has to
 consume, nothing variable-width — and the backtracking matcher otherwise.
-What works is compile, match on the selected path under the hard limits, and
-the analysis accessors of DESIGN.md section 2.4 — `complexityClass`, and the worst-case cost, stack
+What works is compile, match on the selected path under the hard limits, the
+analysis accessors of DESIGN.md section 2.4 — `complexityClass`, and the worst-case cost, stack
 and memory at a subject length, each answering for the path that will
 actually run: a number a caller can pass straight back as the matching limit,
-an explicit ExceedsBudget, or BadInput.
+an explicit ExceedsBudget, or BadInput — and the preallocated match context,
+which turns the memory bound into a reservation made once: a match call on
+it performs zero heap allocations in Go and constructs zero backing stores
+in JavaScript, each proven by that runtime's own instrumentation.
 The match configuration argument is in its final shape too, though only the
-default value exists until M9 activates memoization; the preallocated match
-context arrives with the rest of M5.
+default value exists until M9 activates memoization.
 
 M5 has started with the resource analysis. DESIGN.md section 5 does not have
 one analyzer computing numbers everything then trusts; it has an analyzer that

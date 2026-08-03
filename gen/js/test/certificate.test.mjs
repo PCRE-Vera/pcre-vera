@@ -82,6 +82,7 @@ const buildCert = (body) =>
     complexity: variant("Cc", body.complexity, CcLinear),
     cost: buildPoly(body.cost),
     stack: buildPoly(body.stack),
+    trail: buildPoly(body.trail),
     mem: buildPoly(body.mem),
     prices: seq(body.prices.map(buildPrice)),
   });
@@ -177,6 +178,7 @@ test("a region kind outside the enum is refused", () => {
     complexity: 0,
     cost: one(),
     stack: one(),
+    trail: one(),
     mem: one(),
     prices: seq(prices),
   });

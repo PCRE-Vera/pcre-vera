@@ -26,6 +26,12 @@ export function unhex(text) {
   return bytes;
 }
 
+// And the bytes a test spells as plain text, for the subjects and patterns a
+// runner writes beside the corpus rather than in it.
+export function ascii(text) {
+  return Uint8Array.from(text, (c) => c.charCodeAt(0));
+}
+
 export function load(name) {
   const path = fileURLToPath(new URL(`../../conformance/${name}`, import.meta.url));
   const document = JSON.parse(readFileSync(path, "utf8"));

@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   f73ea38099c4a2abf425df43e02c515000505ac2a702c807772cac4cd79490a2
+//   2afc34d0b581ee7c8404bfc539eb148ce08256d527f110de8a9d12ecc4777ee6
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -18,7 +18,7 @@ package engine
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact this package was printed
 // from.
-const ArtifactSHA256 = "f73ea38099c4a2abf425df43e02c515000505ac2a702c807772cac4cd79490a2"
+const ArtifactSHA256 = "2afc34d0b581ee7c8404bfc539eb148ce08256d527f110de8a9d12ecc4777ee6"
 
 // Tir_Trap is what a checked operation panics with, per TIR-SPEC.md section 12.
 type Tir_Trap struct {
@@ -257,9 +257,10 @@ const CrRegionStack Cr = 21
 const CrRegionTrail Cr = 22
 const CrTotalCost Cr = 23
 const CrTotalStack Cr = 24
-const CrTotalMem Cr = 25
-const CrNotLinear Cr = 26
-const CrOk Cr = 27
+const CrTotalTrail Cr = 25
+const CrTotalMem Cr = 26
+const CrNotLinear Cr = 27
+const CrOk Cr = 28
 
 type Ek int32
 
@@ -362,8 +363,29 @@ type Cert struct {
 	complexity Cc
 	cost Poly
 	stack Poly
+	trail Poly
 	mem Poly
 	prices []Price
+}
+
+type Ctx struct {
+	re Re
+	ready bool
+	maxlen uint32
+	costcap uint64
+	stackcap uint32
+	memcap uint64
+	regs []uint32
+	bt []Bt
+	trail []Undo
+	clist []Th
+	nlist []Th
+	stk []Th
+	seen []byte
+	pool []uint32
+	rc []uint32
+	free []uint32
+	slack []byte
 }
 
 type Esc struct {
@@ -484,6 +506,15 @@ type Rep struct {
 	head uint32
 	body uint32
 	after uint32
+}
+
+type Room struct {
+	lists uint64
+	stk uint64
+	tables uint64
+	pool uint64
+	words uint32
+	reserved uint64
 }
 
 type Th struct {
@@ -938,6 +969,19 @@ func bsr_at(subj []byte, pos uint32, bsr uint32) uint32 {
 }
 
 func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
+	var regs []uint32
+	_ = regs
+	var bt []Bt
+	_ = bt
+	var trail []Undo
+	_ = trail
+	var tmp1 uint32 = uint32(1)
+	tir_t1 := bt_run(re, subj, start, mopts, costlimit, stacklimit, memlimit, &regs, &bt, &trail, ov, use)
+	tmp1 = tir_t1
+	return tmp1
+}
+
+func bt_run(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, regs *[]uint32, bt *[]Bt, trail *[]Undo, ov *[]uint32, use *Usage) uint32 {
 	var tmp1 uint32 = uint32(len(subj))
 	var tmp2 uint64 = uint64(0)
 	var tmp3 uint64 = uint64(0)
@@ -966,9 +1010,6 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 	var tmp16 bool = ((tmp6 == uint32(2)) || ((tmp6 == uint32(3)) || (tmp6 == uint32(4))))
 	var tmp17 bool = ((mopts & uint32(1)) != uint32(0))
 	var tmp18 bool = ((mopts & uint32(2)) != uint32(0))
-	var regs []uint32
-	var bt []Bt
-	var trail []Undo
 	var tmp19 uint64 = tir_cmul(uint64((tmp9 + tmp10)), uint64(4))
 	if ((tmp19 > memlimit) || (tmp19 > costlimit)) {
 		return uint32(2)
@@ -976,11 +1017,14 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 	tmp3 = tmp19
 	tmp4 = tmp19
 	tmp2 = tmp19
-	tir_reserve(&regs, tmp9, 8704)
+	tir_reserve(&(*regs), tmp9, 8704)
+	tir_truncate(&(*regs), uint32(0))
+	tir_truncate(&(*bt), uint32(0))
+	tir_truncate(&(*trail), uint32(0))
 	tir_reserve(&(*ov), tmp10, 512)
 	var tmp20 uint32 = uint32(0)
 	for (tmp20 < tmp9) {
-		tir_push(&regs, 8704, uint32(4294967295))
+		tir_push(&(*regs), 8704, uint32(4294967295))
 		tmp20 = (tmp20 + uint32(1))
 	}
 	tir_truncate(&(*ov), uint32(0))
@@ -1005,14 +1049,14 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 		var tmp26 uint32 = uint32(0)
 		for (tmp26 < tmp9) {
 			tir_t1 := tmp26
-			if tir_t1 >= uint32(len(regs)) {
-				tir_oob(tir_t1, uint32(len(regs)))
+			if tir_t1 >= uint32(len((*regs))) {
+				tir_oob(tir_t1, uint32(len((*regs))))
 			}
-			regs[tir_t1] = uint32(4294967295)
+			(*regs)[tir_t1] = uint32(4294967295)
 			tmp26 = (tmp26 + uint32(1))
 		}
-		tir_truncate(&bt, uint32(0))
-		tir_truncate(&trail, uint32(0))
+		tir_truncate(&(*bt), uint32(0))
+		tir_truncate(&(*trail), uint32(0))
 		var tmp27 uint32 = uint32(0)
 		var tmp28 uint32 = tmp21
 		var tmp29 bool = true
@@ -1085,23 +1129,23 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 					tmp30 = true
 				}
 			case OpSplit:
-				var tmp36 uint32 = uint32(len(trail))
-				tir_t5 := push_bt(&bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp32.alt, tmp28, tmp36)
+				var tmp36 uint32 = uint32(len((*trail)))
+				tir_t5 := push_bt(bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp32.alt, tmp28, tmp36)
 				tmp24 = tir_t5
 				if (!tmp24) {
 					tmp22 = uint32(2)
 					tmp23 = false
 					tmp29 = false
 				} else {
-					if (tmp5 < uint32(len(bt))) {
-						tmp5 = uint32(len(bt))
+					if (tmp5 < uint32(len((*bt)))) {
+						tmp5 = uint32(len((*bt)))
 					}
 				}
 				tmp27 = tmp32.arg
 			case OpJump:
 				tmp27 = tmp32.arg
 			case OpSave:
-				tir_t6 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), tmp32.arg, tmp28)
+				tir_t6 := write_reg(regs, trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len((*bt))), tmp32.arg, tmp28)
 				tmp24 = tir_t6
 				if (!tmp24) {
 					tmp22 = uint32(2)
@@ -1194,7 +1238,7 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 					tmp30 = true
 				}
 			case OpRepZero:
-				tir_t13 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), (tmp11 + (tmp32.arg * uint32(2))), uint32(0))
+				tir_t13 := write_reg(regs, trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len((*bt))), (tmp11 + (tmp32.arg * uint32(2))), uint32(0))
 				tmp24 = tir_t13
 				if (!tmp24) {
 					tmp22 = uint32(2)
@@ -1203,7 +1247,7 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 				}
 				tmp27 = (tmp27 + uint32(1))
 			case OpRepEnter:
-				tir_t14 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), ((tmp11 + (tmp32.arg * uint32(2))) + uint32(1)), tmp28)
+				tir_t14 := write_reg(regs, trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len((*bt))), ((tmp11 + (tmp32.arg * uint32(2))) + uint32(1)), tmp28)
 				tmp24 = tir_t14
 				if (!tmp24) {
 					tmp22 = uint32(2)
@@ -1213,7 +1257,7 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 				tmp27 = (tmp27 + uint32(1))
 			case OpRepLoop:
 				var tmp43 Rep = reps[tmp32.arg]
-				var tmp44 uint32 = regs[(tmp11 + (tmp32.arg * uint32(2)))]
+				var tmp44 uint32 = (*regs)[(tmp11 + (tmp32.arg * uint32(2)))]
 				if (tmp44 < tmp43.lo) {
 					tmp27 = tmp43.body
 				} else {
@@ -1221,30 +1265,30 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 						tmp27 = tmp43.after
 					} else {
 						if tmp43.greedy {
-							var tmp45 uint32 = uint32(len(trail))
-							tir_t15 := push_bt(&bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp43.after, tmp28, tmp45)
+							var tmp45 uint32 = uint32(len((*trail)))
+							tir_t15 := push_bt(bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp43.after, tmp28, tmp45)
 							tmp24 = tir_t15
 							if (!tmp24) {
 								tmp22 = uint32(2)
 								tmp23 = false
 								tmp29 = false
 							} else {
-								if (tmp5 < uint32(len(bt))) {
-									tmp5 = uint32(len(bt))
+								if (tmp5 < uint32(len((*bt)))) {
+									tmp5 = uint32(len((*bt)))
 								}
 							}
 							tmp27 = tmp43.body
 						} else {
-							var tmp46 uint32 = uint32(len(trail))
-							tir_t16 := push_bt(&bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp43.body, tmp28, tmp46)
+							var tmp46 uint32 = uint32(len((*trail)))
+							tir_t16 := push_bt(bt, &tmp3, &tmp4, &tmp2, memlimit, costlimit, stacklimit, tmp43.body, tmp28, tmp46)
 							tmp24 = tir_t16
 							if (!tmp24) {
 								tmp22 = uint32(2)
 								tmp23 = false
 								tmp29 = false
 							} else {
-								if (tmp5 < uint32(len(bt))) {
-									tmp5 = uint32(len(bt))
+								if (tmp5 < uint32(len((*bt)))) {
+									tmp5 = uint32(len((*bt)))
 								}
 							}
 							tmp27 = tmp43.after
@@ -1254,9 +1298,9 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 			case OpRepNext:
 				var tmp47 Rep = reps[tmp32.arg]
 				var tmp48 uint32 = (tmp11 + (tmp32.arg * uint32(2)))
-				var tmp49 uint32 = (regs[tmp48] + uint32(1))
-				var tmp50 uint32 = regs[(tmp48 + uint32(1))]
-				tir_t17 := write_reg(&regs, &trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len(bt)), tmp48, tmp49)
+				var tmp49 uint32 = ((*regs)[tmp48] + uint32(1))
+				var tmp50 uint32 = (*regs)[(tmp48 + uint32(1))]
+				tir_t17 := write_reg(regs, trail, &tmp3, &tmp4, &tmp2, memlimit, costlimit, uint32(len((*bt))), tmp48, tmp49)
 				tmp24 = tir_t17
 				if (!tmp24) {
 					tmp22 = uint32(2)
@@ -1275,46 +1319,46 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 					tmp30 = true
 				} else {
 					tir_t18 := uint32(0)
-					if tir_t18 >= uint32(len(regs)) {
-						tir_oob(tir_t18, uint32(len(regs)))
+					if tir_t18 >= uint32(len((*regs))) {
+						tir_oob(tir_t18, uint32(len((*regs))))
 					}
-					regs[tir_t18] = tmp21
+					(*regs)[tir_t18] = tmp21
 					tir_t19 := uint32(1)
-					if tir_t19 >= uint32(len(regs)) {
-						tir_oob(tir_t19, uint32(len(regs)))
+					if tir_t19 >= uint32(len((*regs))) {
+						tir_oob(tir_t19, uint32(len((*regs))))
 					}
-					regs[tir_t19] = tmp28
+					(*regs)[tir_t19] = tmp28
 					tmp31 = true
 					tmp29 = false
 				}
 			}
 			if tmp30 {
-				if (uint32(len(bt)) == uint32(0)) {
+				if (uint32(len((*bt))) == uint32(0)) {
 					tmp29 = false
-					tir_truncate(&trail, uint32(0))
+					tir_truncate(&(*trail), uint32(0))
 				} else {
 					var tmp53 Bt
-					tmp53 = tir_pop(&bt)
+					tmp53 = tir_pop(&(*bt))
 					tmp27 = tmp53.pc
 					tmp28 = tmp53.pos
-					var tmp54 uint64 = tir_cmul(tir_csub(uint64(uint32(len(trail))), uint64(tmp53.mark)), uint64(4))
+					var tmp54 uint64 = tir_cmul(tir_csub(uint64(uint32(len((*trail)))), uint64(tmp53.mark)), uint64(4))
 					if (tmp54 > tir_csub(costlimit, tmp2)) {
 						tmp22 = uint32(2)
 						tmp23 = false
 						tmp29 = false
 					} else {
 						tmp2 = tir_cadd(tmp2, tmp54)
-						for (tmp53.mark < uint32(len(trail))) {
+						for (tmp53.mark < uint32(len((*trail)))) {
 							var tmp55 Undo
-							tmp55 = tir_pop(&trail)
+							tmp55 = tir_pop(&(*trail))
 							tir_t20 := tmp55.slot
-							if tir_t20 >= uint32(len(regs)) {
-								tir_oob(tir_t20, uint32(len(regs)))
+							if tir_t20 >= uint32(len((*regs))) {
+								tir_oob(tir_t20, uint32(len((*regs))))
 							}
-							regs[tir_t20] = tmp55.old
+							(*regs)[tir_t20] = tmp55.old
 						}
-						if (uint32(len(bt)) == uint32(0)) {
-							tir_truncate(&trail, uint32(0))
+						if (uint32(len((*bt))) == uint32(0)) {
+							tir_truncate(&(*trail), uint32(0))
 						}
 						tmp30 = false
 					}
@@ -1350,7 +1394,7 @@ func bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, 
 				if tir_t21 >= uint32(len((*ov))) {
 					tir_oob(tir_t21, uint32(len((*ov))))
 				}
-				(*ov)[tir_t21] = regs[tmp57]
+				(*ov)[tir_t21] = (*regs)[tmp57]
 				tmp57 = (tmp57 + uint32(1))
 			}
 		}
@@ -1509,6 +1553,9 @@ func cert_check(re Re, config Cfg, cert Cert) Cr {
 		return CrBase
 	}
 	if (cert.stack.base == uint64(0)) {
+		return CrBase
+	}
+	if (cert.trail.base == uint64(0)) {
 		return CrBase
 	}
 	if (cert.mem.base == uint64(0)) {
@@ -1815,7 +1862,7 @@ func charge_call(re Re, cert Cert, whole Price, over *bool) Cr {
 	tir_t16 := poly_mul(scratch, (Poly{base: uint64(1), c0: uint64(2), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
 	tmp18 = tir_t16
 	var tmp19 Poly
-	tir_t17 := poly_add((Poly{base: uint64(1), c0: setup, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp18, over)
+	tir_t17 := poly_add((Poly{base: uint64(1), c0: tir_cadd(setup, deliver), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp18, over)
 	tmp19 = tir_t17
 	if (*over) {
 		return CrOverflow
@@ -1831,8 +1878,13 @@ func charge_call(re Re, cert Cert, whole Price, over *bool) Cr {
 	if (!holds) {
 		return CrTotalStack
 	}
-	tir_t20 := poly_ge(cert.mem, tmp19)
+	tir_t20 := poly_eq(cert.trail, whole.trail)
 	holds = tir_t20
+	if (!holds) {
+		return CrTotalTrail
+	}
+	tir_t21 := poly_ge(cert.mem, tmp19)
+	holds = tir_t21
 	if (!holds) {
 		return CrTotalMem
 	}
@@ -2254,6 +2306,168 @@ func compile(pat []byte, popts uint32, nltype uint32, bsr uint32, out *Out) {
 
 func ct(c uint8, bit uint8) bool {
 	return ((CTYPE[uint32(c)] & bit) != uint8(0))
+}
+
+func ctx_create(re Re, mcfg uint32, maxlen uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ctx *Ctx) uint32 {
+	(*ctx).ready = false
+	if (mcfg != uint32(0)) {
+		return uint32(3)
+	}
+	if (maxlen > uint32(2147483647)) {
+		return uint32(3)
+	}
+	var picked Cert
+	var has bool = false
+	tir_t1 := re_pick(re, &picked)
+	has = tir_t1
+	if (!has) {
+		return uint32(4)
+	}
+	var over bool = false
+	var novec uint32 = ((re.ncap + uint32(1)) * uint32(2))
+	var answer uint64 = tir_cmul(uint64(novec), uint64(4))
+	var setup uint64 = uint64(0)
+	var ballast uint64 = uint64(0)
+	var nregs uint32 = uint32(0)
+	var cbt uint64 = uint64(0)
+	var ctrail uint64 = uint64(0)
+	var clists uint64 = uint64(0)
+	var cstk uint64 = uint64(0)
+	var ctab uint64 = uint64(0)
+	var cpool uint64 = uint64(0)
+	var words uint32 = uint32(0)
+	if re.pike {
+		var room Room
+		pike_room(re, &room, &over)
+		words = room.words
+		clists = room.lists
+		cstk = room.stk
+		ctab = room.tables
+		cpool = room.pool
+		ballast = room.reserved
+		setup = tir_cadd(tir_cmul(uint64(novec), uint64(4)), uint64(words))
+	} else {
+		var tmp1 Bound
+		tir_t2 := poly_value(picked.stack, uint64(maxlen))
+		tmp1 = tir_t2
+		var tmp2 Bound
+		tir_t3 := poly_value(picked.trail, uint64(maxlen))
+		tmp2 = tir_t3
+		if (!tmp1.ok) {
+			return uint32(4)
+		}
+		if (!tmp2.ok) {
+			return uint32(4)
+		}
+		var tmp3 uint64 = uint64(0)
+		if (tmp1.value > uint64(0)) {
+			var tmp4 uint64
+			tir_t4 := sat_mul(tmp1.value, uint64(2), &over)
+			tmp4 = tir_t4
+			var tmp5 uint64
+			tir_t5 := sat_add(tmp4, uint64(4), &over)
+			tmp5 = tir_t5
+			tmp3 = tmp5
+		}
+		cbt = tmp3
+		var tmp6 uint64 = uint64(0)
+		if (tmp2.value > uint64(0)) {
+			var tmp7 uint64
+			tir_t6 := sat_mul(tmp2.value, uint64(2), &over)
+			tmp7 = tir_t6
+			var tmp8 uint64
+			tir_t7 := sat_add(tmp7, uint64(4), &over)
+			tmp8 = tir_t7
+			tmp6 = tmp8
+		}
+		ctrail = tmp6
+		var tmp9 uint64
+		tir_t8 := sat_mul(cbt, uint64(12), &over)
+		tmp9 = tir_t8
+		var tmp10 uint64
+		tir_t9 := sat_mul(ctrail, uint64(8), &over)
+		tmp10 = tir_t9
+		var tmp11 uint64
+		tir_t10 := sat_add(tmp9, tmp10, &over)
+		tmp11 = tir_t10
+		tmp9 = tmp11
+		ballast = tmp9
+		nregs = re.nregs
+		setup = tir_cmul(uint64((nregs + novec)), uint64(4))
+	}
+	var tmp12 uint64
+	tir_t11 := sat_add(setup, answer, &over)
+	tmp12 = tir_t11
+	var tmp13 uint64
+	tir_t12 := sat_mul(ballast, uint64(2), &over)
+	tmp13 = tir_t12
+	var tmp14 uint64
+	tir_t13 := sat_add(tmp12, tmp13, &over)
+	tmp14 = tir_t13
+	var tmp15 uint64 = tmp14
+	if over {
+		return uint32(4)
+	}
+	if (tmp15 > uint64(2147483647)) {
+		return uint32(4)
+	}
+	if (tmp15 > memlimit) {
+		return uint32(2)
+	}
+	if (tmp15 > costlimit) {
+		return uint32(2)
+	}
+	var blank Ctx
+	_ = blank
+	tir_t14 := (*ctx)
+	(*ctx) = blank
+	blank = tir_t14
+	tir_reserve(&(*ctx).regs, nregs, 8704)
+	tir_reserve(&(*ctx).bt, uint32(cbt), 178956970)
+	tir_reserve(&(*ctx).trail, uint32(ctrail), 268435455)
+	tir_reserve(&(*ctx).clist, uint32(clists), 65700)
+	tir_reserve(&(*ctx).nlist, uint32(clists), 65700)
+	tir_reserve(&(*ctx).stk, uint32(cstk), 131396)
+	tir_reserve(&(*ctx).seen, words, 2147483647)
+	tir_reserve(&(*ctx).rc, uint32(ctab), 262796)
+	tir_reserve(&(*ctx).free, uint32(ctab), 262796)
+	tir_reserve(&(*ctx).pool, uint32(cpool), 134549508)
+	tir_reserve(&(*ctx).slack, uint32(ballast), 2147483647)
+	(*ctx).re = re
+	(*ctx).maxlen = maxlen
+	(*ctx).costcap = costlimit
+	(*ctx).stackcap = stacklimit
+	(*ctx).memcap = tmp15
+	(*ctx).ready = true
+	return uint32(0)
+}
+
+func ctx_match(ctx *Ctx, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, ov *[]uint32, use *Usage) uint32 {
+	(*use).cost = uint64(0)
+	(*use).stack = uint32(0)
+	(*use).mem = uint64(0)
+	if (!(*ctx).ready) {
+		return uint32(3)
+	}
+	if ((*ctx).maxlen < uint32(len(subj))) {
+		return uint32(3)
+	}
+	if (costlimit > (*ctx).costcap) {
+		return uint32(3)
+	}
+	if (stacklimit > (*ctx).stackcap) {
+		return uint32(3)
+	}
+	var tmp1 uint32 = uint32(1)
+	if (*ctx).re.pike {
+		tir_t1 := pike_run((*ctx).re, subj, start, mopts, costlimit, stacklimit, (*ctx).memcap, &(*ctx).clist, &(*ctx).nlist, &(*ctx).stk, &(*ctx).seen, &(*ctx).pool, &(*ctx).rc, &(*ctx).free, ov, use)
+		tmp1 = tir_t1
+	} else {
+		tir_t2 := bt_run((*ctx).re, subj, start, mopts, costlimit, stacklimit, (*ctx).memcap, &(*ctx).regs, &(*ctx).bt, &(*ctx).trail, ov, use)
+		tmp1 = tir_t2
+	}
+	(*use).mem = (*ctx).memcap
+	return tmp1
 }
 
 func drop_empty_region(w *Work, at uint32) {
@@ -3699,8 +3913,13 @@ func pike_check(re Re, cert Cert) Cr {
 	if (!tmp4) {
 		return CrTotalStack
 	}
-	tir_t5 := poly_ge(cert.mem, needed.mem)
+	tir_t5 := poly_eq(cert.trail, needed.trail)
 	tmp4 = tir_t5
+	if (!tmp4) {
+		return CrTotalTrail
+	}
+	tir_t6 := poly_ge(cert.mem, needed.mem)
+	tmp4 = tir_t6
 	if (!tmp4) {
 		return CrTotalMem
 	}
@@ -3709,12 +3928,12 @@ func pike_check(re Re, cert Cert) Cr {
 
 func pike_defer(held *[]Th, pcv uint32, hv uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
 	var tmp1 bool = false
-	tir_t1 := charge_grow(uint32(cap((*held))), uint32(len((*held))), uint32(8), uint32(65696), mem, peak, cost, memlimit, costlimit)
+	tir_t1 := charge_grow(uint32(cap((*held))), uint32(len((*held))), uint32(8), uint32(131396), mem, peak, cost, memlimit, costlimit)
 	tmp1 = tir_t1
 	if (!tmp1) {
 		return false
 	}
-	tir_push(&(*held), 65696, (Th{pc: pcv, h: hv}))
+	tir_push(&(*held), 131396, (Th{pc: pcv, h: hv}))
 	return true
 }
 
@@ -3730,12 +3949,12 @@ func pike_drop(rc *[]uint32, free *[]uint32, h uint32, mem *uint64, peak *uint64
 	(*rc)[tir_t1] = tmp1
 	if (tmp1 == uint32(0)) {
 		var tmp2 bool = false
-		tir_t2 := charge_grow(uint32(cap((*free))), uint32(len((*free))), uint32(4), uint32(131396), mem, peak, cost, memlimit, costlimit)
+		tir_t2 := charge_grow(uint32(cap((*free))), uint32(len((*free))), uint32(4), uint32(262796), mem, peak, cost, memlimit, costlimit)
 		tmp2 = tir_t2
 		if (!tmp2) {
 			return false
 		}
-		tir_push(&(*free), 131396, h)
+		tir_push(&(*free), 262796, h)
 	}
 	return true
 }
@@ -3753,7 +3972,7 @@ func pike_hollow(re Re, which uint32) bool {
 		tmp5 = (tmp5 + uint32(1))
 	}
 	var pending []uint32
-	tir_push(&pending, 65696, tmp1.body)
+	tir_push(&pending, 131396, tmp1.body)
 	var tmp6 uint64 = tir_cmul(uint64(tmp3), uint64(2))
 	tir_loop1:
 	for (uint32(len(pending)) > uint32(0)) {
@@ -3786,54 +4005,28 @@ func pike_hollow(re Re, which uint32) bool {
 		case OpBsr:
 		case OpAccept:
 		case OpSplit:
-			tir_push(&pending, 65696, tmp10.arg)
-			tir_push(&pending, 65696, tmp10.alt)
+			tir_push(&pending, 131396, tmp10.arg)
+			tir_push(&pending, 131396, tmp10.alt)
 		case OpJump:
-			tir_push(&pending, 65696, tmp10.arg)
+			tir_push(&pending, 131396, tmp10.arg)
 		case OpRepLoop:
 			var tmp11 Rep = re.reps[tmp10.arg]
-			tir_push(&pending, 65696, tmp11.body)
-			tir_push(&pending, 65696, tmp11.after)
+			tir_push(&pending, 131396, tmp11.body)
+			tir_push(&pending, 131396, tmp11.after)
 		case OpRepNext:
 			var tmp12 Rep = re.reps[tmp10.arg]
-			tir_push(&pending, 65696, tmp12.head)
-			tir_push(&pending, 65696, tmp12.after)
+			tir_push(&pending, 131396, tmp12.head)
+			tir_push(&pending, 131396, tmp12.after)
 		default:
-			tir_push(&pending, 65696, (tmp7 + uint32(1)))
+			tir_push(&pending, 131396, (tmp7 + uint32(1)))
 		}
 	}
 	return false
 }
 
 func pike_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ov *[]uint32, use *Usage) uint32 {
-	var tmp1 uint32 = uint32(len(subj))
-	var tmp2 uint64 = uint64(0)
-	var tmp3 uint64 = uint64(0)
-	_ = tmp3
-	var tmp4 uint64 = uint64(0)
-	(*use).cost = tmp2
-	(*use).stack = uint32(0)
-	(*use).mem = tmp4
-	if (!re.pike) {
-		return uint32(3)
-	}
-	if (start > tmp1) {
-		return uint32(3)
-	}
-	var code []Inst = re.code
-	var reps []Rep = re.reps
-	var classes []byte = re.classes
-	var tmp5 uint32 = re.nltype
-	var tmp6 uint32 = re.ncap
-	var tmp7 uint32 = ((tmp6 + uint32(1)) * uint32(2))
-	var tmp8 bool = (((re.opts & uint32(32)) != uint32(0)) || ((mopts & uint32(16)) != uint32(0)))
-	var tmp9 bool = ((mopts & uint32(4)) != uint32(0))
-	var tmp10 bool = ((mopts & uint32(8)) != uint32(0))
-	var tmp11 bool = (re.hascrlf == uint32(0))
-	var tmp12 bool = ((tmp5 == uint32(2)) || ((tmp5 == uint32(3)) || (tmp5 == uint32(4))))
-	var tmp13 bool = ((mopts & uint32(1)) != uint32(0))
-	var tmp14 bool = ((mopts & uint32(2)) != uint32(0))
 	var clist []Th
+	_ = clist
 	var nlist []Th
 	_ = nlist
 	var stk []Th
@@ -3841,296 +4034,15 @@ func pike_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64
 	var seen []byte
 	_ = seen
 	var pool []uint32
+	_ = pool
 	var rc []uint32
 	_ = rc
 	var free []uint32
 	_ = free
-	var tmp15 uint32 = ((uint32(len(code)) >> 3) + uint32(1))
-	var tmp16 uint64 = tir_cadd(tir_cmul(uint64(tmp7), uint64(4)), uint64(tmp15))
-	if ((tmp16 > memlimit) || (tmp16 > costlimit)) {
-		return uint32(2)
-	}
-	tmp3 = tmp16
-	tmp4 = tmp16
-	tmp2 = tmp16
-	tir_reserve(&(*ov), tmp7, 512)
-	tir_truncate(&(*ov), uint32(0))
-	var tmp17 uint32 = uint32(0)
-	for (tmp17 < tmp7) {
-		tir_push(&(*ov), 512, uint32(4294967295))
-		tmp17 = (tmp17 + uint32(1))
-	}
-	tir_reserve(&seen, tmp15, 2147483647)
-	tmp17 = uint32(0)
-	for (tmp17 < tmp15) {
-		tir_push(&seen, 2147483647, uint8(0))
-		tmp17 = (tmp17 + uint32(1))
-	}
-	var tmp18 uint32 = uint32(4294967295)
-	var tmp19 bool = true
-	var tmp20 uint32 = uint32(1)
-	var tmp21 bool = true
-	var tmp22 uint32 = start
-	var tmp23 bool = false
-	var tmp24 uint64 = tir_cmul(uint64(tmp7), uint64(4))
-	var tmp25 uint64 = uint64(tmp15)
-	var tmp26 bool = (re.crfirst != uint32(0))
-	for tmp21 {
-		if (tmp19 && ((!tmp8) || (tmp22 == start))) {
-			var tmp27 bool = false
-			if ((tmp22 > start) && (tmp12 && tmp11)) {
-				if (tmp26 && ((subj[(tmp22 - uint32(1))] == uint8(13)) && ((tmp22 < tmp1) && (subj[tmp22] == uint8(10))))) {
-					tmp27 = true
-				}
-			}
-			if (!tmp27) {
-				var tmp28 uint32 = uint32(4294967295)
-				tir_t1 := pike_take(&pool, &rc, &free, tmp7, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-				tmp28 = tir_t1
-				if (tmp28 == uint32(4294967295)) {
-					tmp20 = uint32(2)
-					tmp21 = false
-				} else {
-					if (tmp24 > tir_csub(costlimit, tmp2)) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					} else {
-						tmp2 = tir_cadd(tmp2, tmp24)
-						var tmp29 uint32 = (tmp28 * tmp7)
-						tmp17 = uint32(0)
-						for (tmp17 < tmp7) {
-							tir_t2 := (tmp29 + tmp17)
-							if tir_t2 >= uint32(len(pool)) {
-								tir_oob(tir_t2, uint32(len(pool)))
-							}
-							pool[tir_t2] = uint32(4294967295)
-							tmp17 = (tmp17 + uint32(1))
-						}
-						tir_t3 := tmp29
-						if tir_t3 >= uint32(len(pool)) {
-							tir_oob(tir_t3, uint32(len(pool)))
-						}
-						pool[tir_t3] = tmp22
-						tir_t4 := pike_add(&clist, &stk, &seen, &pool, &rc, &free, code, reps, subj, tmp22, tmp7, tmp5, tmp13, tmp14, uint32(0), tmp28, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-						tmp23 = tir_t4
-						if (!tmp23) {
-							tmp20 = uint32(2)
-							tmp21 = false
-						}
-					}
-				}
-			}
-		}
-		if tmp21 {
-			if (tmp25 > tir_csub(costlimit, tmp2)) {
-				tmp20 = uint32(2)
-				tmp21 = false
-			} else {
-				tmp2 = tir_cadd(tmp2, tmp25)
-				tmp17 = uint32(0)
-				for (tmp17 < tmp15) {
-					tir_t5 := tmp17
-					if tir_t5 >= uint32(len(seen)) {
-						tir_oob(tir_t5, uint32(len(seen)))
-					}
-					seen[tir_t5] = uint8(0)
-					tmp17 = (tmp17 + uint32(1))
-				}
-			}
-		}
-		var tmp30 uint32 = uint32(0)
-		tir_loop1:
-		for (tmp21 && (tmp30 < uint32(len(clist)))) {
-			var tmp31 Th = clist[tmp30]
-			var tmp32 uint32 = tmp31.pc
-			var tmp33 uint32 = tmp31.h
-			if (uint64(1) > tir_csub(costlimit, tmp2)) {
-				tmp20 = uint32(2)
-				tmp21 = false
-				continue tir_loop1
-			}
-			tmp2 = tir_cadd(tmp2, uint64(1))
-			var tmp34 Inst = code[tmp32]
-			switch tmp34.op {
-			case OpChar:
-				if ((tmp22 < tmp1) && (subj[tmp22] == uint8(tmp34.arg))) {
-					tir_t6 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t6
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				} else {
-					tir_t7 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t7
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				}
-			case OpCharCI:
-				if ((tmp22 < tmp1) && (LOWER[uint32(subj[tmp22])] == uint8(tmp34.arg))) {
-					tir_t8 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t8
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				} else {
-					tir_t9 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t9
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				}
-			case OpClass:
-				var tmp35 bool = false
-				if (tmp22 < tmp1) {
-					tir_t10 := class_has(classes, tmp34.arg, subj[tmp22])
-					tmp35 = tir_t10
-				}
-				if ((tmp22 < tmp1) && tmp35) {
-					tir_t11 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t11
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				} else {
-					tir_t12 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t12
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				}
-			case OpAny:
-				if ((tmp22 < tmp1) && true) {
-					tir_t13 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t13
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				} else {
-					tir_t14 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t14
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				}
-			case OpAnyNoNL:
-				var tmp36 uint32 = uint32(0)
-				if (tmp22 < tmp1) {
-					tir_t15 := newline_at(subj, tmp22, tmp5)
-					tmp36 = tir_t15
-				}
-				if ((tmp22 < tmp1) && (tmp36 == uint32(0))) {
-					tir_t16 := pike_add(&nlist, &stk, &seen, &pool, &rc, &free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t16
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				} else {
-					tir_t17 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t17
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				}
-			case OpAccept:
-				var tmp37 uint32 = pool[(tmp33 * tmp7)]
-				var tmp38 bool = (tmp37 == tmp22)
-				var tmp39 bool = (tmp38 && (tmp9 || (tmp10 && (tmp37 == start))))
-				if tmp39 {
-					tir_t18 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t18
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					}
-				} else {
-					var tmp40 uint32 = tmp33
-					tir_t19 := pike_write(&pool, &rc, &free, tmp7, &tmp40, uint32(1), tmp22, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-					tmp23 = tir_t19
-					if (!tmp23) {
-						tmp20 = uint32(2)
-						tmp21 = false
-					} else {
-						tir_t20 := pike_drop(&rc, &free, tmp18, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-						tmp23 = tir_t20
-						if (!tmp23) {
-							tmp20 = uint32(2)
-							tmp21 = false
-						}
-						if tmp21 {
-							tmp18 = tmp40
-							tmp19 = false
-							tmp20 = uint32(0)
-							var tmp41 uint32 = (tmp30 + uint32(1))
-							for (tmp21 && (tmp41 < uint32(len(clist)))) {
-								tir_t21 := pike_drop(&rc, &free, clist[tmp41].h, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-								tmp23 = tir_t21
-								if (!tmp23) {
-									tmp20 = uint32(2)
-									tmp21 = false
-								}
-								tmp41 = (tmp41 + uint32(1))
-							}
-							tmp30 = uint32(len(clist))
-							continue tir_loop1
-						}
-					}
-				}
-			default:
-				tir_t22 := pike_drop(&rc, &free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
-				tmp23 = tir_t22
-				if (!tmp23) {
-					tmp20 = uint32(2)
-					tmp21 = false
-				}
-			}
-			tmp30 = (tmp30 + uint32(1))
-		}
-		if tmp21 {
-			tir_truncate(&clist, uint32(0))
-			tir_t23 := clist
-			clist = nlist
-			nlist = tir_t23
-			if (tmp22 >= tmp1) {
-				tmp21 = false
-			} else {
-				if ((uint32(len(clist)) == uint32(0)) && ((!tmp19) || tmp8)) {
-					tmp21 = false
-				}
-			}
-		}
-		tmp22 = (tmp22 + uint32(1))
-	}
-	if (tmp20 == uint32(0)) {
-		if (tmp24 > tir_csub(costlimit, tmp2)) {
-			tmp20 = uint32(2)
-		} else {
-			tmp2 = tir_cadd(tmp2, tmp24)
-			tmp17 = uint32(0)
-			for (tmp17 < tmp7) {
-				tir_t24 := tmp17
-				if tir_t24 >= uint32(len((*ov))) {
-					tir_oob(tir_t24, uint32(len((*ov))))
-				}
-				(*ov)[tir_t24] = pool[((tmp18 * tmp7) + tmp17)]
-				tmp17 = (tmp17 + uint32(1))
-			}
-		}
-	}
-	(*use).cost = tmp2
-	(*use).stack = uint32(0)
-	(*use).mem = tmp4
-	return tmp20
+	var tmp1 uint32 = uint32(1)
+	tir_t1 := pike_run(re, subj, start, mopts, costlimit, stacklimit, memlimit, &clist, &nlist, &stk, &seen, &pool, &rc, &free, ov, use)
+	tmp1 = tir_t1
+	return tmp1
 }
 
 func pike_ok(re Re) bool {
@@ -4160,12 +4072,12 @@ func pike_ok(re Re) bool {
 
 func pike_park(held *[]Th, pcv uint32, hv uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
 	var tmp1 bool = false
-	tir_t1 := charge_grow(uint32(cap((*held))), uint32(len((*held))), uint32(8), uint32(32848), mem, peak, cost, memlimit, costlimit)
+	tir_t1 := charge_grow(uint32(cap((*held))), uint32(len((*held))), uint32(8), uint32(65700), mem, peak, cost, memlimit, costlimit)
 	tmp1 = tir_t1
 	if (!tmp1) {
 		return false
 	}
-	tir_push(&(*held), 32848, (Th{pc: pcv, h: hv}))
+	tir_push(&(*held), 65700, (Th{pc: pcv, h: hv}))
 	return true
 }
 
@@ -4174,141 +4086,479 @@ func pike_price(re Re, cert *Cert) bool {
 	var tmp1 uint64 = uint64(uint32(len(re.code)))
 	var tmp2 uint64 = tir_cmul(uint64((re.ncap + uint32(1))), uint64(2))
 	var tmp3 uint64 = tir_cmul(tmp2, uint64(4))
-	var tmp4 uint64 = uint64(((uint32(len(re.code)) >> 3) + uint32(1)))
-	var tmp5 uint64 = uint64(0)
-	var tmp6 uint32 = uint32(0)
-	for (tmp6 < uint32(len(re.code))) {
-		if (re.code[tmp6].op == OpSave) {
-			tmp5 = tir_cadd(tmp5, uint64(1))
+	var tmp4 uint64 = uint64(0)
+	var tmp5 uint32 = uint32(0)
+	for (tmp5 < uint32(len(re.code))) {
+		if (re.code[tmp5].op == OpSave) {
+			tmp4 = tir_cadd(tmp4, uint64(1))
 		}
-		tmp6 = (tmp6 + uint32(1))
+		tmp5 = (tmp5 + uint32(1))
 	}
-	var tmp7 uint64 = uint64(0)
-	if (tmp1 > uint64(0)) {
-		var tmp8 uint64
-		tir_t1 := sat_mul(tmp1, uint64(2), &over)
-		tmp8 = tir_t1
-		var tmp9 uint64
-		tir_t2 := sat_add(tmp8, uint64(4), &over)
-		tmp9 = tir_t2
-		tmp7 = tmp9
-	}
+	var room Room
+	pike_room(re, &room, &over)
+	var tmp6 uint64 = room.reserved
+	var tmp7 uint64 = uint64(room.words)
+	var tmp8 uint64
+	tir_t1 := sat_add(tmp3, tmp7, &over)
+	tmp8 = tir_t1
+	var tmp9 uint64
+	tir_t2 := sat_mul(tmp1, uint64(2), &over)
+	tmp9 = tir_t2
 	var tmp10 uint64
-	tir_t3 := sat_mul(tmp7, uint64(16), &over)
+	tir_t3 := sat_add(tmp4, uint64(2), &over)
 	tmp10 = tir_t3
 	var tmp11 uint64
-	tir_t4 := sat_mul(tmp1, uint64(2), &over)
+	tir_t4 := sat_mul(tmp10, tmp3, &over)
 	tmp11 = tir_t4
-	var tmp12 uint64 = uint64(0)
-	if (tmp11 > uint64(0)) {
-		var tmp13 uint64
-		tir_t5 := sat_mul(tmp11, uint64(2), &over)
-		tmp13 = tir_t5
-		var tmp14 uint64
-		tir_t6 := sat_add(tmp13, uint64(4), &over)
-		tmp14 = tir_t6
-		tmp12 = tmp14
-	}
+	var tmp12 uint64
+	tir_t5 := sat_add(tmp9, tmp11, &over)
+	tmp12 = tir_t5
+	tmp9 = tmp12
+	var tmp13 uint64
+	tir_t6 := sat_add(tmp9, tmp7, &over)
+	tmp13 = tir_t6
+	tmp9 = tmp13
+	var tmp14 uint64
+	tir_t7 := sat_add(tmp8, tmp3, &over)
+	tmp14 = tir_t7
 	var tmp15 uint64
-	tir_t7 := sat_mul(tmp12, uint64(8), &over)
-	tmp15 = tir_t7
+	tir_t8 := sat_mul(tmp6, uint64(3), &over)
+	tmp15 = tir_t8
 	var tmp16 uint64
-	tir_t8 := sat_mul(tmp1, uint64(4), &over)
-	tmp16 = tir_t8
+	tir_t9 := sat_add(tmp14, tmp15, &over)
+	tmp16 = tir_t9
 	var tmp17 uint64
-	tir_t9 := sat_add(tmp16, uint64(2), &over)
-	tmp17 = tir_t9
-	var tmp18 uint64 = tmp17
-	var tmp19 uint64 = uint64(0)
-	if (tmp18 > uint64(0)) {
-		var tmp20 uint64
-		tir_t10 := sat_mul(tmp18, uint64(2), &over)
-		tmp20 = tir_t10
-		var tmp21 uint64
-		tir_t11 := sat_add(tmp20, uint64(4), &over)
-		tmp21 = tir_t11
-		tmp19 = tmp21
-	}
-	var tmp22 uint64
-	tir_t12 := sat_mul(tmp19, uint64(8), &over)
-	tmp22 = tir_t12
-	var tmp23 uint64
-	tir_t13 := sat_mul(tmp18, tmp2, &over)
-	tmp23 = tir_t13
-	var tmp24 uint64 = uint64(0)
-	if (tmp23 > uint64(0)) {
-		var tmp25 uint64
-		tir_t14 := sat_mul(tmp23, uint64(2), &over)
-		tmp25 = tir_t14
-		var tmp26 uint64
-		tir_t15 := sat_add(tmp25, uint64(4), &over)
-		tmp26 = tir_t15
-		tmp24 = tmp26
-	}
-	var tmp27 uint64
-	tir_t16 := sat_mul(tmp24, uint64(4), &over)
-	tmp27 = tir_t16
-	var tmp28 uint64 = tmp10
-	var tmp29 uint64
-	tir_t17 := sat_add(tmp28, tmp15, &over)
-	tmp29 = tir_t17
-	tmp28 = tmp29
-	var tmp30 uint64
-	tir_t18 := sat_add(tmp28, tmp22, &over)
-	tmp30 = tir_t18
-	tmp28 = tmp30
-	var tmp31 uint64
-	tir_t19 := sat_add(tmp28, tmp27, &over)
-	tmp31 = tir_t19
-	tmp28 = tmp31
-	var tmp32 uint64
-	tir_t20 := sat_add(tmp3, tmp4, &over)
-	tmp32 = tir_t20
-	var tmp33 uint64
-	tir_t21 := sat_mul(tmp1, uint64(2), &over)
-	tmp33 = tir_t21
-	var tmp34 uint64
-	tir_t22 := sat_add(tmp5, uint64(2), &over)
-	tmp34 = tir_t22
-	var tmp35 uint64
-	tir_t23 := sat_mul(tmp34, tmp3, &over)
-	tmp35 = tir_t23
-	var tmp36 uint64
-	tir_t24 := sat_add(tmp33, tmp35, &over)
-	tmp36 = tir_t24
-	tmp33 = tmp36
-	var tmp37 uint64
-	tir_t25 := sat_add(tmp33, tmp4, &over)
-	tmp37 = tir_t25
-	tmp33 = tmp37
-	var tmp38 uint64
-	tir_t26 := sat_add(tmp32, tmp3, &over)
-	tmp38 = tir_t26
-	var tmp39 uint64
-	tir_t27 := sat_mul(tmp28, uint64(3), &over)
-	tmp39 = tir_t27
-	var tmp40 uint64
-	tir_t28 := sat_add(tmp38, tmp39, &over)
-	tmp40 = tir_t28
-	var tmp41 uint64
-	tir_t29 := sat_mul(tmp28, uint64(2), &over)
-	tmp41 = tir_t29
-	var tmp42 uint64
-	tir_t30 := sat_add(tmp32, tmp41, &over)
-	tmp42 = tir_t30
+	tir_t10 := sat_mul(tmp6, uint64(2), &over)
+	tmp17 = tir_t10
+	var tmp18 uint64
+	tir_t11 := sat_add(tmp14, tmp17, &over)
+	tmp18 = tir_t11
 	if over {
 		return false
 	}
 	(*cert).config = CfgPike
 	(*cert).complexity = CcLinear
-	(*cert).cost = (Poly{base: uint64(1), c0: tmp40, c1: tmp33, c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*cert).cost = (Poly{base: uint64(1), c0: tmp16, c1: tmp9, c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 	(*cert).stack = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
-	(*cert).mem = (Poly{base: uint64(1), c0: tmp42, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*cert).trail = (Poly{base: uint64(1), c0: uint64(0), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
+	(*cert).mem = (Poly{base: uint64(1), c0: tmp18, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)})
 	var empty []Price
 	_ = empty
 	(*cert).prices = empty
 	empty = nil
 	return true
+}
+
+func pike_room(re Re, room *Room, over *bool) {
+	var tmp1 uint64 = uint64(uint32(len(re.code)))
+	var tmp2 uint64 = tir_cmul(uint64((re.ncap + uint32(1))), uint64(2))
+	(*room).words = ((uint32(len(re.code)) >> 3) + uint32(1))
+	var tmp3 uint64 = uint64(0)
+	if (tmp1 > uint64(0)) {
+		var tmp4 uint64
+		tir_t1 := sat_mul(tmp1, uint64(2), over)
+		tmp4 = tir_t1
+		var tmp5 uint64
+		tir_t2 := sat_add(tmp4, uint64(4), over)
+		tmp5 = tir_t2
+		tmp3 = tmp5
+	}
+	(*room).lists = tmp3
+	var tmp6 uint64
+	tir_t3 := sat_mul(tmp1, uint64(2), over)
+	tmp6 = tir_t3
+	var tmp7 uint64 = uint64(0)
+	if (tmp6 > uint64(0)) {
+		var tmp8 uint64
+		tir_t4 := sat_mul(tmp6, uint64(2), over)
+		tmp8 = tir_t4
+		var tmp9 uint64
+		tir_t5 := sat_add(tmp8, uint64(4), over)
+		tmp9 = tir_t5
+		tmp7 = tmp9
+	}
+	(*room).stk = tmp7
+	var tmp10 uint64
+	tir_t6 := sat_mul(tmp1, uint64(4), over)
+	tmp10 = tir_t6
+	var tmp11 uint64
+	tir_t7 := sat_add(tmp10, uint64(2), over)
+	tmp11 = tir_t7
+	var tmp12 uint64 = tmp11
+	var tmp13 uint64 = uint64(0)
+	if (tmp12 > uint64(0)) {
+		var tmp14 uint64
+		tir_t8 := sat_mul(tmp12, uint64(2), over)
+		tmp14 = tir_t8
+		var tmp15 uint64
+		tir_t9 := sat_add(tmp14, uint64(4), over)
+		tmp15 = tir_t9
+		tmp13 = tmp15
+	}
+	(*room).tables = tmp13
+	var tmp16 uint64
+	tir_t10 := sat_mul(tmp12, tmp2, over)
+	tmp16 = tir_t10
+	var tmp17 uint64 = uint64(0)
+	if (tmp16 > uint64(0)) {
+		var tmp18 uint64
+		tir_t11 := sat_mul(tmp16, uint64(2), over)
+		tmp18 = tir_t11
+		var tmp19 uint64
+		tir_t12 := sat_add(tmp18, uint64(4), over)
+		tmp19 = tir_t12
+		tmp17 = tmp19
+	}
+	(*room).pool = tmp17
+	var tmp20 uint64
+	tir_t13 := sat_mul((*room).lists, uint64(16), over)
+	tmp20 = tir_t13
+	var tmp21 uint64 = tmp20
+	var tmp22 uint64
+	tir_t14 := sat_mul((*room).stk, uint64(8), over)
+	tmp22 = tir_t14
+	var tmp23 uint64
+	tir_t15 := sat_add(tmp21, tmp22, over)
+	tmp23 = tir_t15
+	tmp21 = tmp23
+	var tmp24 uint64
+	tir_t16 := sat_mul((*room).tables, uint64(8), over)
+	tmp24 = tir_t16
+	var tmp25 uint64
+	tir_t17 := sat_add(tmp21, tmp24, over)
+	tmp25 = tir_t17
+	tmp21 = tmp25
+	var tmp26 uint64
+	tir_t18 := sat_mul((*room).pool, uint64(4), over)
+	tmp26 = tir_t18
+	var tmp27 uint64
+	tir_t19 := sat_add(tmp21, tmp26, over)
+	tmp27 = tir_t19
+	tmp21 = tmp27
+	(*room).reserved = tmp21
+}
+
+func pike_run(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, clist *[]Th, nlist *[]Th, stk *[]Th, seen *[]byte, pool *[]uint32, rc *[]uint32, free *[]uint32, ov *[]uint32, use *Usage) uint32 {
+	var tmp1 uint32 = uint32(len(subj))
+	var tmp2 uint64 = uint64(0)
+	var tmp3 uint64 = uint64(0)
+	_ = tmp3
+	var tmp4 uint64 = uint64(0)
+	(*use).cost = tmp2
+	(*use).stack = uint32(0)
+	(*use).mem = tmp4
+	if (!re.pike) {
+		return uint32(3)
+	}
+	if (start > tmp1) {
+		return uint32(3)
+	}
+	var code []Inst = re.code
+	var reps []Rep = re.reps
+	var classes []byte = re.classes
+	var tmp5 uint32 = re.nltype
+	var tmp6 uint32 = re.ncap
+	var tmp7 uint32 = ((tmp6 + uint32(1)) * uint32(2))
+	var tmp8 bool = (((re.opts & uint32(32)) != uint32(0)) || ((mopts & uint32(16)) != uint32(0)))
+	var tmp9 bool = ((mopts & uint32(4)) != uint32(0))
+	var tmp10 bool = ((mopts & uint32(8)) != uint32(0))
+	var tmp11 bool = (re.hascrlf == uint32(0))
+	var tmp12 bool = ((tmp5 == uint32(2)) || ((tmp5 == uint32(3)) || (tmp5 == uint32(4))))
+	var tmp13 bool = ((mopts & uint32(1)) != uint32(0))
+	var tmp14 bool = ((mopts & uint32(2)) != uint32(0))
+	tir_truncate(&(*clist), uint32(0))
+	tir_truncate(&(*nlist), uint32(0))
+	tir_truncate(&(*stk), uint32(0))
+	tir_truncate(&(*seen), uint32(0))
+	tir_truncate(&(*pool), uint32(0))
+	tir_truncate(&(*rc), uint32(0))
+	tir_truncate(&(*free), uint32(0))
+	var tmp15 uint32 = ((uint32(len(code)) >> 3) + uint32(1))
+	var tmp16 uint64 = tir_cadd(tir_cmul(uint64(tmp7), uint64(4)), uint64(tmp15))
+	if ((tmp16 > memlimit) || (tmp16 > costlimit)) {
+		return uint32(2)
+	}
+	tmp3 = tmp16
+	tmp4 = tmp16
+	tmp2 = tmp16
+	tir_reserve(&(*ov), tmp7, 512)
+	tir_truncate(&(*ov), uint32(0))
+	var tmp17 uint32 = uint32(0)
+	for (tmp17 < tmp7) {
+		tir_push(&(*ov), 512, uint32(4294967295))
+		tmp17 = (tmp17 + uint32(1))
+	}
+	tir_reserve(&(*seen), tmp15, 2147483647)
+	tmp17 = uint32(0)
+	for (tmp17 < tmp15) {
+		tir_push(&(*seen), 2147483647, uint8(0))
+		tmp17 = (tmp17 + uint32(1))
+	}
+	var tmp18 uint32 = uint32(4294967295)
+	var tmp19 bool = true
+	var tmp20 uint32 = uint32(1)
+	var tmp21 bool = true
+	var tmp22 uint32 = start
+	var tmp23 bool = false
+	var tmp24 uint64 = tir_cmul(uint64(tmp7), uint64(4))
+	var tmp25 uint64 = uint64(tmp15)
+	var tmp26 bool = (re.crfirst != uint32(0))
+	for tmp21 {
+		if (tmp19 && ((!tmp8) || (tmp22 == start))) {
+			var tmp27 bool = false
+			if ((tmp22 > start) && (tmp12 && tmp11)) {
+				if (tmp26 && ((subj[(tmp22 - uint32(1))] == uint8(13)) && ((tmp22 < tmp1) && (subj[tmp22] == uint8(10))))) {
+					tmp27 = true
+				}
+			}
+			if (!tmp27) {
+				var tmp28 uint32 = uint32(4294967295)
+				tir_t1 := pike_take(pool, rc, free, tmp7, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+				tmp28 = tir_t1
+				if (tmp28 == uint32(4294967295)) {
+					tmp20 = uint32(2)
+					tmp21 = false
+				} else {
+					if (tmp24 > tir_csub(costlimit, tmp2)) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					} else {
+						tmp2 = tir_cadd(tmp2, tmp24)
+						var tmp29 uint32 = (tmp28 * tmp7)
+						tmp17 = uint32(0)
+						for (tmp17 < tmp7) {
+							tir_t2 := (tmp29 + tmp17)
+							if tir_t2 >= uint32(len((*pool))) {
+								tir_oob(tir_t2, uint32(len((*pool))))
+							}
+							(*pool)[tir_t2] = uint32(4294967295)
+							tmp17 = (tmp17 + uint32(1))
+						}
+						tir_t3 := tmp29
+						if tir_t3 >= uint32(len((*pool))) {
+							tir_oob(tir_t3, uint32(len((*pool))))
+						}
+						(*pool)[tir_t3] = tmp22
+						tir_t4 := pike_add(clist, stk, seen, pool, rc, free, code, reps, subj, tmp22, tmp7, tmp5, tmp13, tmp14, uint32(0), tmp28, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+						tmp23 = tir_t4
+						if (!tmp23) {
+							tmp20 = uint32(2)
+							tmp21 = false
+						}
+					}
+				}
+			}
+		}
+		if tmp21 {
+			if (tmp25 > tir_csub(costlimit, tmp2)) {
+				tmp20 = uint32(2)
+				tmp21 = false
+			} else {
+				tmp2 = tir_cadd(tmp2, tmp25)
+				tmp17 = uint32(0)
+				for (tmp17 < tmp15) {
+					tir_t5 := tmp17
+					if tir_t5 >= uint32(len((*seen))) {
+						tir_oob(tir_t5, uint32(len((*seen))))
+					}
+					(*seen)[tir_t5] = uint8(0)
+					tmp17 = (tmp17 + uint32(1))
+				}
+			}
+		}
+		var tmp30 uint32 = uint32(0)
+		tir_loop1:
+		for (tmp21 && (tmp30 < uint32(len((*clist))))) {
+			var tmp31 Th = (*clist)[tmp30]
+			var tmp32 uint32 = tmp31.pc
+			var tmp33 uint32 = tmp31.h
+			if (uint64(1) > tir_csub(costlimit, tmp2)) {
+				tmp20 = uint32(2)
+				tmp21 = false
+				continue tir_loop1
+			}
+			tmp2 = tir_cadd(tmp2, uint64(1))
+			var tmp34 Inst = code[tmp32]
+			switch tmp34.op {
+			case OpChar:
+				if ((tmp22 < tmp1) && (subj[tmp22] == uint8(tmp34.arg))) {
+					tir_t6 := pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t6
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t7 := pike_drop(rc, free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t7
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpCharCI:
+				if ((tmp22 < tmp1) && (LOWER[uint32(subj[tmp22])] == uint8(tmp34.arg))) {
+					tir_t8 := pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t8
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t9 := pike_drop(rc, free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t9
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpClass:
+				var tmp35 bool = false
+				if (tmp22 < tmp1) {
+					tir_t10 := class_has(classes, tmp34.arg, subj[tmp22])
+					tmp35 = tir_t10
+				}
+				if ((tmp22 < tmp1) && tmp35) {
+					tir_t11 := pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t11
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t12 := pike_drop(rc, free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t12
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpAny:
+				if ((tmp22 < tmp1) && true) {
+					tir_t13 := pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t13
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t14 := pike_drop(rc, free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t14
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpAnyNoNL:
+				var tmp36 uint32 = uint32(0)
+				if (tmp22 < tmp1) {
+					tir_t15 := newline_at(subj, tmp22, tmp5)
+					tmp36 = tir_t15
+				}
+				if ((tmp22 < tmp1) && (tmp36 == uint32(0))) {
+					tir_t16 := pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, (tmp22 + uint32(1)), tmp7, tmp5, tmp13, tmp14, (tmp32 + uint32(1)), tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t16
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					tir_t17 := pike_drop(rc, free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t17
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				}
+			case OpAccept:
+				var tmp37 uint32 = (*pool)[(tmp33 * tmp7)]
+				var tmp38 bool = (tmp37 == tmp22)
+				var tmp39 bool = (tmp38 && (tmp9 || (tmp10 && (tmp37 == start))))
+				if tmp39 {
+					tir_t18 := pike_drop(rc, free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t18
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					}
+				} else {
+					var tmp40 uint32 = tmp33
+					tir_t19 := pike_write(pool, rc, free, tmp7, &tmp40, uint32(1), tmp22, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+					tmp23 = tir_t19
+					if (!tmp23) {
+						tmp20 = uint32(2)
+						tmp21 = false
+					} else {
+						tir_t20 := pike_drop(rc, free, tmp18, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+						tmp23 = tir_t20
+						if (!tmp23) {
+							tmp20 = uint32(2)
+							tmp21 = false
+						}
+						if tmp21 {
+							tmp18 = tmp40
+							tmp19 = false
+							tmp20 = uint32(0)
+							var tmp41 uint32 = (tmp30 + uint32(1))
+							for (tmp21 && (tmp41 < uint32(len((*clist))))) {
+								tir_t21 := pike_drop(rc, free, (*clist)[tmp41].h, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+								tmp23 = tir_t21
+								if (!tmp23) {
+									tmp20 = uint32(2)
+									tmp21 = false
+								}
+								tmp41 = (tmp41 + uint32(1))
+							}
+							tmp30 = uint32(len((*clist)))
+							continue tir_loop1
+						}
+					}
+				}
+			default:
+				tir_t22 := pike_drop(rc, free, tmp33, &tmp3, &tmp4, &tmp2, memlimit, costlimit)
+				tmp23 = tir_t22
+				if (!tmp23) {
+					tmp20 = uint32(2)
+					tmp21 = false
+				}
+			}
+			tmp30 = (tmp30 + uint32(1))
+		}
+		if tmp21 {
+			tir_truncate(&(*clist), uint32(0))
+			tir_t23 := (*clist)
+			(*clist) = (*nlist)
+			(*nlist) = tir_t23
+			if (tmp22 >= tmp1) {
+				tmp21 = false
+			} else {
+				if ((uint32(len((*clist))) == uint32(0)) && ((!tmp19) || tmp8)) {
+					tmp21 = false
+				}
+			}
+		}
+		tmp22 = (tmp22 + uint32(1))
+	}
+	if (tmp20 == uint32(0)) {
+		if (tmp24 > tir_csub(costlimit, tmp2)) {
+			tmp20 = uint32(2)
+		} else {
+			tmp2 = tir_cadd(tmp2, tmp24)
+			tmp17 = uint32(0)
+			for (tmp17 < tmp7) {
+				tir_t24 := tmp17
+				if tir_t24 >= uint32(len((*ov))) {
+					tir_oob(tir_t24, uint32(len((*ov))))
+				}
+				(*ov)[tir_t24] = (*pool)[((tmp18 * tmp7) + tmp17)]
+				tmp17 = (tmp17 + uint32(1))
+			}
+		}
+	}
+	(*use).cost = tmp2
+	(*use).stack = uint32(0)
+	(*use).mem = tmp4
+	return tmp20
 }
 
 func pike_take(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) uint32 {
@@ -4323,24 +4573,24 @@ func pike_take(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, mem *
 		return tmp1
 	}
 	var tmp2 uint32 = uint32(len((*rc)))
-	if (tmp2 >= uint32(131396)) {
+	if (tmp2 >= uint32(262796)) {
 		return uint32(4294967295)
 	}
 	var tmp3 bool = false
-	tir_t2 := charge_grow(uint32(cap((*rc))), uint32(len((*rc))), uint32(4), uint32(131396), mem, peak, cost, memlimit, costlimit)
+	tir_t2 := charge_grow(uint32(cap((*rc))), uint32(len((*rc))), uint32(4), uint32(262796), mem, peak, cost, memlimit, costlimit)
 	tmp3 = tir_t2
 	if (!tmp3) {
 		return uint32(4294967295)
 	}
-	tir_push(&(*rc), 131396, uint32(1))
+	tir_push(&(*rc), 262796, uint32(1))
 	var tmp4 uint32 = uint32(0)
 	for (tmp4 < novec) {
-		tir_t3 := charge_grow(uint32(cap((*pool))), uint32(len((*pool))), uint32(4), uint32(67274752), mem, peak, cost, memlimit, costlimit)
+		tir_t3 := charge_grow(uint32(cap((*pool))), uint32(len((*pool))), uint32(4), uint32(134549508), mem, peak, cost, memlimit, costlimit)
 		tmp3 = tir_t3
 		if (!tmp3) {
 			return uint32(4294967295)
 		}
-		tir_push(&(*pool), 67274752, uint32(4294967295))
+		tir_push(&(*pool), 134549508, uint32(4294967295))
 		tmp4 = (tmp4 + uint32(1))
 	}
 	return tmp2
@@ -4907,11 +5157,12 @@ func price_call(re Re, whole Price, cert *Cert, over *bool) {
 	tmp17 = tir_t15
 	(*cert).cost = tmp17
 	(*cert).stack = whole.stack
+	(*cert).trail = whole.trail
 	var tmp18 Poly
 	tir_t16 := poly_mul(scratch, (Poly{base: uint64(1), c0: uint64(2), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), over)
 	tmp18 = tir_t16
 	var tmp19 Poly
-	tir_t17 := poly_add((Poly{base: uint64(1), c0: setup, c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp18, over)
+	tir_t17 := poly_add((Poly{base: uint64(1), c0: tir_cadd(setup, deliver), c1: uint64(0), c2: uint64(0), c3: uint64(0), c4: uint64(0)}), tmp18, over)
 	tmp19 = tir_t17
 	(*cert).mem = tmp19
 }
@@ -7101,6 +7352,10 @@ func Tir_bt_match(re Re, subj []byte, start uint32, mopts uint32, costlimit uint
 	return bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit, ov, use)
 }
 
+func Tir_bt_run(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, regs *[]uint32, bt *[]Bt, trail *[]Undo, ov *[]uint32, use *Usage) uint32 {
+	return bt_run(re, subj, start, mopts, costlimit, stacklimit, memlimit, regs, bt, trail, ov, use)
+}
+
 func Tir_cert_bound(cert Cert, kind Bk, n uint64) Bound {
 	return cert_bound(cert, kind, n)
 }
@@ -7167,6 +7422,14 @@ func Tir_compile(pat []byte, popts uint32, nltype uint32, bsr uint32, out *Out) 
 
 func Tir_ct(c uint8, bit uint8) bool {
 	return ct(c, bit)
+}
+
+func Tir_ctx_create(re Re, mcfg uint32, maxlen uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ctx *Ctx) uint32 {
+	return ctx_create(re, mcfg, maxlen, costlimit, stacklimit, memlimit, ctx)
+}
+
+func Tir_ctx_match(ctx *Ctx, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, ov *[]uint32, use *Usage) uint32 {
+	return ctx_match(ctx, subj, start, mopts, costlimit, stacklimit, ov, use)
 }
 
 func Tir_drop_empty_region(w *Work, at uint32) {
@@ -7283,6 +7546,14 @@ func Tir_pike_park(held *[]Th, pcv uint32, hv uint32, mem *uint64, peak *uint64,
 
 func Tir_pike_price(re Re, cert *Cert) bool {
 	return pike_price(re, cert)
+}
+
+func Tir_pike_room(re Re, room *Room, over *bool) {
+	pike_room(re, room, over)
+}
+
+func Tir_pike_run(re Re, subj []byte, start uint32, mopts uint32, costlimit uint64, stacklimit uint32, memlimit uint64, clist *[]Th, nlist *[]Th, stk *[]Th, seen *[]byte, pool *[]uint32, rc *[]uint32, free *[]uint32, ov *[]uint32, use *Usage) uint32 {
+	return pike_run(re, subj, start, mopts, costlimit, stacklimit, memlimit, clist, nlist, stk, seen, pool, rc, free, ov, use)
 }
 
 func Tir_pike_take(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) uint32 {
@@ -7520,8 +7791,16 @@ func (v *Cert) Tir_config() Cfg { return v.config }
 func (v *Cert) Tir_complexity() Cc { return v.complexity }
 func (v *Cert) Tir_cost() Poly { return v.cost }
 func (v *Cert) Tir_stack() Poly { return v.stack }
+func (v *Cert) Tir_trail() Poly { return v.trail }
 func (v *Cert) Tir_mem() Poly { return v.mem }
 func (v *Cert) Tir_prices() []Price { return v.prices }
+
+func (v *Ctx) Tir_re() Re { return v.re }
+func (v *Ctx) Tir_ready() bool { return v.ready }
+func (v *Ctx) Tir_maxlen() uint32 { return v.maxlen }
+func (v *Ctx) Tir_costcap() uint64 { return v.costcap }
+func (v *Ctx) Tir_stackcap() uint32 { return v.stackcap }
+func (v *Ctx) Tir_memcap() uint64 { return v.memcap }
 
 func (v *Esc) Tir_kind() Ek { return v.kind }
 func (v *Esc) Tir_val() uint32 { return v.val }
@@ -7614,6 +7893,13 @@ func (v *Rep) Tir_greedy() bool { return v.greedy }
 func (v *Rep) Tir_head() uint32 { return v.head }
 func (v *Rep) Tir_body() uint32 { return v.body }
 func (v *Rep) Tir_after() uint32 { return v.after }
+
+func (v *Room) Tir_lists() uint64 { return v.lists }
+func (v *Room) Tir_stk() uint64 { return v.stk }
+func (v *Room) Tir_tables() uint64 { return v.tables }
+func (v *Room) Tir_pool() uint64 { return v.pool }
+func (v *Room) Tir_words() uint32 { return v.words }
+func (v *Room) Tir_reserved() uint64 { return v.reserved }
 
 func (v *Th) Tir_pc() uint32 { return v.pc }
 func (v *Th) Tir_h() uint32 { return v.h }

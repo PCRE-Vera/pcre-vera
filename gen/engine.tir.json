@@ -116,6 +116,7 @@
         "CrRegionTrail",
         "CrTotalCost",
         "CrTotalStack",
+        "CrTotalTrail",
         "CrTotalMem",
         "CrNotLinear",
         "CrOk"
@@ -3130,6 +3131,196 @@
       "body": [
         {
           "let": {
+            "init": null,
+            "name": "regs",
+            "type": {
+              "vec": {
+                "elem": "u32",
+                "max": 8704
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "bt",
+            "type": {
+              "vec": {
+                "elem": {
+                  "struct": "Bt"
+                },
+                "max": 178956970
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "trail",
+            "type": {
+              "vec": {
+                "elem": {
+                  "struct": "Undo"
+                },
+                "max": 268435455
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "u32": 1
+            },
+            "name": "tmp1",
+            "type": "u32"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "re"
+                }
+              },
+              {
+                "in": {
+                  "var": "subj"
+                }
+              },
+              {
+                "in": {
+                  "var": "start"
+                }
+              },
+              {
+                "in": {
+                  "var": "mopts"
+                }
+              },
+              {
+                "in": {
+                  "var": "costlimit"
+                }
+              },
+              {
+                "in": {
+                  "var": "stacklimit"
+                }
+              },
+              {
+                "in": {
+                  "var": "memlimit"
+                }
+              },
+              {
+                "inout": {
+                  "var": "regs"
+                }
+              },
+              {
+                "inout": {
+                  "var": "bt"
+                }
+              },
+              {
+                "inout": {
+                  "var": "trail"
+                }
+              },
+              {
+                "inout": {
+                  "var": "ov"
+                }
+              },
+              {
+                "inout": {
+                  "var": "use"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp1"
+            },
+            "fn": "bt_run"
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "var": "tmp1"
+            }
+          }
+        }
+      ],
+      "name": "bt_match",
+      "params": [
+        {
+          "mode": "in",
+          "name": "re",
+          "type": {
+            "struct": "Re"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "subj",
+          "type": {
+            "frozen": "bytes"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "start",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "mopts",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "costlimit",
+          "type": "counter"
+        },
+        {
+          "mode": "in",
+          "name": "stacklimit",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "memlimit",
+          "type": "counter"
+        },
+        {
+          "mode": "inout",
+          "name": "ov",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 512
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "use",
+          "type": {
+            "struct": "Usage"
+          }
+        }
+      ],
+      "ret": "u32"
+    },
+    {
+      "body": [
+        {
+          "let": {
             "init": {
               "len": {
                 "var": "subj"
@@ -3621,46 +3812,6 @@
         },
         {
           "let": {
-            "init": null,
-            "name": "regs",
-            "type": {
-              "vec": {
-                "elem": "u32",
-                "max": 8704
-              }
-            }
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "bt",
-            "type": {
-              "vec": {
-                "elem": {
-                  "struct": "Bt"
-                },
-                "max": 178956970
-              }
-            }
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "trail",
-            "type": {
-              "vec": {
-                "elem": {
-                  "struct": "Undo"
-                },
-                "max": 268435455
-              }
-            }
-          }
-        },
-        {
-          "let": {
             "init": {
               "bin": {
                 "left": {
@@ -3766,6 +3917,36 @@
             },
             "seq": {
               "var": "regs"
+            }
+          }
+        },
+        {
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "regs"
+            }
+          }
+        },
+        {
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "bt"
+            }
+          }
+        },
+        {
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "trail"
             }
           }
         },
@@ -8227,7 +8408,7 @@
           }
         }
       ],
-      "name": "bt_match",
+      "name": "bt_run",
       "params": [
         {
           "mode": "in",
@@ -8267,6 +8448,40 @@
           "mode": "in",
           "name": "memlimit",
           "type": "counter"
+        },
+        {
+          "mode": "inout",
+          "name": "regs",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 8704
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "bt",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Bt"
+              },
+              "max": 178956970
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "trail",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Undo"
+              },
+              "max": 268435455
+            }
+          }
         },
         {
           "mode": "inout",
@@ -10666,6 +10881,44 @@
                           "var": "cert"
                         },
                         "name": "stack"
+                      }
+                    },
+                    "name": "base"
+                  }
+                },
+                "op": "eq",
+                "right": {
+                  "counter": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "enumval": {
+                      "type": "Cr",
+                      "variant": "CrBase"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "field": {
+                        "base": {
+                          "var": "cert"
+                        },
+                        "name": "trail"
                       }
                     },
                     "name": "base"
@@ -15544,7 +15797,15 @@
                         "counter": 1
                       },
                       "c0": {
-                        "var": "setup"
+                        "bin": {
+                          "left": {
+                            "var": "setup"
+                          },
+                          "op": "add",
+                          "right": {
+                            "var": "deliver"
+                          }
+                        }
                       },
                       "c1": {
                         "counter": 0
@@ -15707,6 +15968,61 @@
                     "enumval": {
                       "type": "Cr",
                       "variant": "CrTotalStack"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "cert"
+                    },
+                    "name": "trail"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "whole"
+                    },
+                    "name": "trail"
+                  }
+                }
+              }
+            ],
+            "dest": {
+              "var": "holds"
+            },
+            "fn": "poly_eq"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "un": {
+                "arg": {
+                  "var": "holds"
+                },
+                "op": "not"
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "enumval": {
+                      "type": "Cr",
+                      "variant": "CrTotalTrail"
                     }
                   }
                 }
@@ -21359,6 +21675,2072 @@
         }
       ],
       "ret": "bool"
+    },
+    {
+      "body": [
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "ready"
+              }
+            },
+            "value": {
+              "bool": false
+            }
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "mcfg"
+                },
+                "op": "ne",
+                "right": {
+                  "u32": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 3
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "maxlen"
+                },
+                "op": "gt",
+                "right": {
+                  "u32": 2147483647
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 3
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "picked",
+            "type": {
+              "struct": "Cert"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "bool": false
+            },
+            "name": "has",
+            "type": "bool"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "re"
+                }
+              },
+              {
+                "inout": {
+                  "var": "picked"
+                }
+              }
+            ],
+            "dest": {
+              "var": "has"
+            },
+            "fn": "re_pick"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "un": {
+                "arg": {
+                  "var": "has"
+                },
+                "op": "not"
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 4
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "bool": false
+            },
+            "name": "over",
+            "type": "bool"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "bin": {
+                "left": {
+                  "bin": {
+                    "left": {
+                      "field": {
+                        "base": {
+                          "var": "re"
+                        },
+                        "name": "ncap"
+                      }
+                    },
+                    "op": "add",
+                    "right": {
+                      "u32": 1
+                    }
+                  }
+                },
+                "op": "mul",
+                "right": {
+                  "u32": 2
+                }
+              }
+            },
+            "name": "novec",
+            "type": "u32"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "var": "novec"
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "mul",
+                "right": {
+                  "counter": 4
+                }
+              }
+            },
+            "name": "answer",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "setup",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "ballast",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "u32": 0
+            },
+            "name": "nregs",
+            "type": "u32"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "cbt",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "ctrail",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "clists",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "cstk",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "ctab",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "cpool",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "u32": 0
+            },
+            "name": "words",
+            "type": "u32"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "field": {
+                "base": {
+                  "var": "re"
+                },
+                "name": "pike"
+              }
+            },
+            "else": [
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp1",
+                  "type": {
+                    "struct": "Bound"
+                  }
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "field": {
+                          "base": {
+                            "var": "picked"
+                          },
+                          "name": "stack"
+                        }
+                      }
+                    },
+                    {
+                      "in": {
+                        "cast": {
+                          "arg": {
+                            "var": "maxlen"
+                          },
+                          "type": "counter"
+                        }
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp1"
+                  },
+                  "fn": "poly_value"
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp2",
+                  "type": {
+                    "struct": "Bound"
+                  }
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "field": {
+                          "base": {
+                            "var": "picked"
+                          },
+                          "name": "trail"
+                        }
+                      }
+                    },
+                    {
+                      "in": {
+                        "cast": {
+                          "arg": {
+                            "var": "maxlen"
+                          },
+                          "type": "counter"
+                        }
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp2"
+                  },
+                  "fn": "poly_value"
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "un": {
+                      "arg": {
+                        "field": {
+                          "base": {
+                            "var": "tmp1"
+                          },
+                          "name": "ok"
+                        }
+                      },
+                      "op": "not"
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "u32": 4
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "un": {
+                      "arg": {
+                        "field": {
+                          "base": {
+                            "var": "tmp2"
+                          },
+                          "name": "ok"
+                        }
+                      },
+                      "op": "not"
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "u32": 4
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "let": {
+                  "init": {
+                    "counter": 0
+                  },
+                  "name": "tmp3",
+                  "type": "counter"
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "var": "tmp1"
+                          },
+                          "name": "value"
+                        }
+                      },
+                      "op": "gt",
+                      "right": {
+                        "counter": 0
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "let": {
+                        "init": null,
+                        "name": "tmp4",
+                        "type": "counter"
+                      }
+                    },
+                    {
+                      "call": {
+                        "args": [
+                          {
+                            "in": {
+                              "field": {
+                                "base": {
+                                  "var": "tmp1"
+                                },
+                                "name": "value"
+                              }
+                            }
+                          },
+                          {
+                            "in": {
+                              "counter": 2
+                            }
+                          },
+                          {
+                            "inout": {
+                              "var": "over"
+                            }
+                          }
+                        ],
+                        "dest": {
+                          "var": "tmp4"
+                        },
+                        "fn": "sat_mul"
+                      }
+                    },
+                    {
+                      "let": {
+                        "init": null,
+                        "name": "tmp5",
+                        "type": "counter"
+                      }
+                    },
+                    {
+                      "call": {
+                        "args": [
+                          {
+                            "in": {
+                              "var": "tmp4"
+                            }
+                          },
+                          {
+                            "in": {
+                              "counter": 4
+                            }
+                          },
+                          {
+                            "inout": {
+                              "var": "over"
+                            }
+                          }
+                        ],
+                        "dest": {
+                          "var": "tmp5"
+                        },
+                        "fn": "sat_add"
+                      }
+                    },
+                    {
+                      "assign": {
+                        "place": {
+                          "var": "tmp3"
+                        },
+                        "value": {
+                          "var": "tmp5"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "cbt"
+                  },
+                  "value": {
+                    "var": "tmp3"
+                  }
+                }
+              },
+              {
+                "let": {
+                  "init": {
+                    "counter": 0
+                  },
+                  "name": "tmp6",
+                  "type": "counter"
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "var": "tmp2"
+                          },
+                          "name": "value"
+                        }
+                      },
+                      "op": "gt",
+                      "right": {
+                        "counter": 0
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "let": {
+                        "init": null,
+                        "name": "tmp7",
+                        "type": "counter"
+                      }
+                    },
+                    {
+                      "call": {
+                        "args": [
+                          {
+                            "in": {
+                              "field": {
+                                "base": {
+                                  "var": "tmp2"
+                                },
+                                "name": "value"
+                              }
+                            }
+                          },
+                          {
+                            "in": {
+                              "counter": 2
+                            }
+                          },
+                          {
+                            "inout": {
+                              "var": "over"
+                            }
+                          }
+                        ],
+                        "dest": {
+                          "var": "tmp7"
+                        },
+                        "fn": "sat_mul"
+                      }
+                    },
+                    {
+                      "let": {
+                        "init": null,
+                        "name": "tmp8",
+                        "type": "counter"
+                      }
+                    },
+                    {
+                      "call": {
+                        "args": [
+                          {
+                            "in": {
+                              "var": "tmp7"
+                            }
+                          },
+                          {
+                            "in": {
+                              "counter": 4
+                            }
+                          },
+                          {
+                            "inout": {
+                              "var": "over"
+                            }
+                          }
+                        ],
+                        "dest": {
+                          "var": "tmp8"
+                        },
+                        "fn": "sat_add"
+                      }
+                    },
+                    {
+                      "assign": {
+                        "place": {
+                          "var": "tmp6"
+                        },
+                        "value": {
+                          "var": "tmp8"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "ctrail"
+                  },
+                  "value": {
+                    "var": "tmp6"
+                  }
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp9",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "cbt"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 12
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp9"
+                  },
+                  "fn": "sat_mul"
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp10",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "ctrail"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 8
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp10"
+                  },
+                  "fn": "sat_mul"
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp11",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "tmp9"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "tmp10"
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp11"
+                  },
+                  "fn": "sat_add"
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "tmp9"
+                  },
+                  "value": {
+                    "var": "tmp11"
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "ballast"
+                  },
+                  "value": {
+                    "var": "tmp9"
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "nregs"
+                  },
+                  "value": {
+                    "field": {
+                      "base": {
+                        "var": "re"
+                      },
+                      "name": "nregs"
+                    }
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "setup"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "cast": {
+                          "arg": {
+                            "bin": {
+                              "left": {
+                                "var": "nregs"
+                              },
+                              "op": "add",
+                              "right": {
+                                "var": "novec"
+                              }
+                            }
+                          },
+                          "type": "counter"
+                        }
+                      },
+                      "op": "mul",
+                      "right": {
+                        "counter": 4
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "then": [
+              {
+                "let": {
+                  "init": null,
+                  "name": "room",
+                  "type": {
+                    "struct": "Room"
+                  }
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "re"
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "room"
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": null,
+                  "fn": "pike_room"
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "words"
+                  },
+                  "value": {
+                    "field": {
+                      "base": {
+                        "var": "room"
+                      },
+                      "name": "words"
+                    }
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "clists"
+                  },
+                  "value": {
+                    "field": {
+                      "base": {
+                        "var": "room"
+                      },
+                      "name": "lists"
+                    }
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "cstk"
+                  },
+                  "value": {
+                    "field": {
+                      "base": {
+                        "var": "room"
+                      },
+                      "name": "stk"
+                    }
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "ctab"
+                  },
+                  "value": {
+                    "field": {
+                      "base": {
+                        "var": "room"
+                      },
+                      "name": "tables"
+                    }
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "cpool"
+                  },
+                  "value": {
+                    "field": {
+                      "base": {
+                        "var": "room"
+                      },
+                      "name": "pool"
+                    }
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "ballast"
+                  },
+                  "value": {
+                    "field": {
+                      "base": {
+                        "var": "room"
+                      },
+                      "name": "reserved"
+                    }
+                  }
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "setup"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "bin": {
+                          "left": {
+                            "cast": {
+                              "arg": {
+                                "var": "novec"
+                              },
+                              "type": "counter"
+                            }
+                          },
+                          "op": "mul",
+                          "right": {
+                            "counter": 4
+                          }
+                        }
+                      },
+                      "op": "add",
+                      "right": {
+                        "cast": {
+                          "arg": {
+                            "var": "words"
+                          },
+                          "type": "counter"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp12",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "setup"
+                }
+              },
+              {
+                "in": {
+                  "var": "answer"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp12"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp13",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "ballast"
+                }
+              },
+              {
+                "in": {
+                  "counter": 2
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp13"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp14",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp12"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp13"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp14"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "var": "tmp14"
+            },
+            "name": "tmp15",
+            "type": "counter"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "var": "over"
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 4
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp15"
+                },
+                "op": "gt",
+                "right": {
+                  "counter": 2147483647
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 4
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp15"
+                },
+                "op": "gt",
+                "right": {
+                  "var": "memlimit"
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 2
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp15"
+                },
+                "op": "gt",
+                "right": {
+                  "var": "costlimit"
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 2
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "blank",
+            "type": {
+              "struct": "Ctx"
+            }
+          }
+        },
+        {
+          "swap": {
+            "a": {
+              "var": "ctx"
+            },
+            "b": {
+              "var": "blank"
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "var": "nregs"
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "regs"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "cast": {
+                "arg": {
+                  "var": "cbt"
+                },
+                "type": "u32"
+              }
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "bt"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "cast": {
+                "arg": {
+                  "var": "ctrail"
+                },
+                "type": "u32"
+              }
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "trail"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "cast": {
+                "arg": {
+                  "var": "clists"
+                },
+                "type": "u32"
+              }
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "clist"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "cast": {
+                "arg": {
+                  "var": "clists"
+                },
+                "type": "u32"
+              }
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "nlist"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "cast": {
+                "arg": {
+                  "var": "cstk"
+                },
+                "type": "u32"
+              }
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "stk"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "var": "words"
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "seen"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "cast": {
+                "arg": {
+                  "var": "ctab"
+                },
+                "type": "u32"
+              }
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "rc"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "cast": {
+                "arg": {
+                  "var": "ctab"
+                },
+                "type": "u32"
+              }
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "free"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "cast": {
+                "arg": {
+                  "var": "cpool"
+                },
+                "type": "u32"
+              }
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "pool"
+              }
+            }
+          }
+        },
+        {
+          "reserve": {
+            "cap": {
+              "cast": {
+                "arg": {
+                  "var": "ballast"
+                },
+                "type": "u32"
+              }
+            },
+            "seq": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "slack"
+              }
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "re"
+              }
+            },
+            "value": {
+              "var": "re"
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "maxlen"
+              }
+            },
+            "value": {
+              "var": "maxlen"
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "costcap"
+              }
+            },
+            "value": {
+              "var": "costlimit"
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "stackcap"
+              }
+            },
+            "value": {
+              "var": "stacklimit"
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "memcap"
+              }
+            },
+            "value": {
+              "var": "tmp15"
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "ready"
+              }
+            },
+            "value": {
+              "bool": true
+            }
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "u32": 0
+            }
+          }
+        }
+      ],
+      "name": "ctx_create",
+      "params": [
+        {
+          "mode": "in",
+          "name": "re",
+          "type": {
+            "struct": "Re"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "mcfg",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "maxlen",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "costlimit",
+          "type": "counter"
+        },
+        {
+          "mode": "in",
+          "name": "stacklimit",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "memlimit",
+          "type": "counter"
+        },
+        {
+          "mode": "inout",
+          "name": "ctx",
+          "type": {
+            "struct": "Ctx"
+          }
+        }
+      ],
+      "ret": "u32"
+    },
+    {
+      "body": [
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "use"
+                },
+                "name": "cost"
+              }
+            },
+            "value": {
+              "counter": 0
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "use"
+                },
+                "name": "stack"
+              }
+            },
+            "value": {
+              "u32": 0
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "use"
+                },
+                "name": "mem"
+              }
+            },
+            "value": {
+              "counter": 0
+            }
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "un": {
+                "arg": {
+                  "field": {
+                    "base": {
+                      "var": "ctx"
+                    },
+                    "name": "ready"
+                  }
+                },
+                "op": "not"
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 3
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "ctx"
+                    },
+                    "name": "maxlen"
+                  }
+                },
+                "op": "lt",
+                "right": {
+                  "len": {
+                    "var": "subj"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 3
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "costlimit"
+                },
+                "op": "gt",
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "ctx"
+                    },
+                    "name": "costcap"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 3
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "stacklimit"
+                },
+                "op": "gt",
+                "right": {
+                  "field": {
+                    "base": {
+                      "var": "ctx"
+                    },
+                    "name": "stackcap"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "u32": 3
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "u32": 1
+            },
+            "name": "tmp1",
+            "type": "u32"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "field": {
+                "base": {
+                  "field": {
+                    "base": {
+                      "var": "ctx"
+                    },
+                    "name": "re"
+                  }
+                },
+                "name": "pike"
+              }
+            },
+            "else": [
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "re"
+                        }
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "subj"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "start"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "mopts"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "costlimit"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "stacklimit"
+                      }
+                    },
+                    {
+                      "in": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "memcap"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "regs"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "bt"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "trail"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "ov"
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "use"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp1"
+                  },
+                  "fn": "bt_run"
+                }
+              }
+            ],
+            "then": [
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "re"
+                        }
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "subj"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "start"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "mopts"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "costlimit"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "stacklimit"
+                      }
+                    },
+                    {
+                      "in": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "memcap"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "clist"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "nlist"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "stk"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "seen"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "pool"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "rc"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "field": {
+                          "base": {
+                            "var": "ctx"
+                          },
+                          "name": "free"
+                        }
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "ov"
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "use"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp1"
+                  },
+                  "fn": "pike_run"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "use"
+                },
+                "name": "mem"
+              }
+            },
+            "value": {
+              "field": {
+                "base": {
+                  "var": "ctx"
+                },
+                "name": "memcap"
+              }
+            }
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "var": "tmp1"
+            }
+          }
+        }
+      ],
+      "name": "ctx_match",
+      "params": [
+        {
+          "mode": "inout",
+          "name": "ctx",
+          "type": {
+            "struct": "Ctx"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "subj",
+          "type": {
+            "frozen": "bytes"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "start",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "mopts",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "costlimit",
+          "type": "counter"
+        },
+        {
+          "mode": "in",
+          "name": "stacklimit",
+          "type": "u32"
+        },
+        {
+          "mode": "inout",
+          "name": "ov",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 512
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "use",
+          "type": {
+            "struct": "Usage"
+          }
+        }
+      ],
+      "ret": "u32"
     },
     {
       "body": [
@@ -39745,7 +42127,7 @@
               "elem": {
                 "struct": "Th"
               },
-              "max": 32848
+              "max": 65700
             }
           }
         },
@@ -39757,7 +42139,7 @@
               "elem": {
                 "struct": "Th"
               },
-              "max": 65696
+              "max": 131396
             }
           }
         },
@@ -39772,7 +42154,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 67274752
+              "max": 134549508
             }
           }
         },
@@ -39782,7 +42164,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 131396
+              "max": 262796
             }
           }
         },
@@ -39792,7 +42174,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 131396
+              "max": 262796
             }
           }
         },
@@ -40404,6 +42786,61 @@
                     "base": {
                       "var": "cert"
                     },
+                    "name": "trail"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "needed"
+                    },
+                    "name": "trail"
+                  }
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp4"
+            },
+            "fn": "poly_eq"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "un": {
+                "arg": {
+                  "var": "tmp4"
+                },
+                "op": "not"
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "enumval": {
+                      "type": "Cr",
+                      "variant": "CrTotalTrail"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "cert"
+                    },
                     "name": "mem"
                   }
                 }
@@ -40517,7 +42954,7 @@
               },
               {
                 "in": {
-                  "u32": 65696
+                  "u32": 131396
                 }
               },
               {
@@ -40612,7 +43049,7 @@
               "elem": {
                 "struct": "Th"
               },
-              "max": 65696
+              "max": 131396
             }
           }
         },
@@ -40770,7 +43207,7 @@
                     },
                     {
                       "in": {
-                        "u32": 131396
+                        "u32": 262796
                       }
                     },
                     {
@@ -40856,7 +43293,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 131396
+              "max": 262796
             }
           }
         },
@@ -40866,7 +43303,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 131396
+              "max": 262796
             }
           }
         },
@@ -41088,7 +43525,7 @@
             "type": {
               "vec": {
                 "elem": "u32",
-                "max": 65696
+                "max": 131396
               }
             }
           }
@@ -41656,6 +44093,2717 @@
       "body": [
         {
           "let": {
+            "init": null,
+            "name": "clist",
+            "type": {
+              "vec": {
+                "elem": {
+                  "struct": "Th"
+                },
+                "max": 65700
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "nlist",
+            "type": {
+              "vec": {
+                "elem": {
+                  "struct": "Th"
+                },
+                "max": 65700
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "stk",
+            "type": {
+              "vec": {
+                "elem": {
+                  "struct": "Th"
+                },
+                "max": 131396
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "seen",
+            "type": "bytes"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "pool",
+            "type": {
+              "vec": {
+                "elem": "u32",
+                "max": 134549508
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "rc",
+            "type": {
+              "vec": {
+                "elem": "u32",
+                "max": 262796
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "free",
+            "type": {
+              "vec": {
+                "elem": "u32",
+                "max": 262796
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "u32": 1
+            },
+            "name": "tmp1",
+            "type": "u32"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "re"
+                }
+              },
+              {
+                "in": {
+                  "var": "subj"
+                }
+              },
+              {
+                "in": {
+                  "var": "start"
+                }
+              },
+              {
+                "in": {
+                  "var": "mopts"
+                }
+              },
+              {
+                "in": {
+                  "var": "costlimit"
+                }
+              },
+              {
+                "in": {
+                  "var": "stacklimit"
+                }
+              },
+              {
+                "in": {
+                  "var": "memlimit"
+                }
+              },
+              {
+                "inout": {
+                  "var": "clist"
+                }
+              },
+              {
+                "inout": {
+                  "var": "nlist"
+                }
+              },
+              {
+                "inout": {
+                  "var": "stk"
+                }
+              },
+              {
+                "inout": {
+                  "var": "seen"
+                }
+              },
+              {
+                "inout": {
+                  "var": "pool"
+                }
+              },
+              {
+                "inout": {
+                  "var": "rc"
+                }
+              },
+              {
+                "inout": {
+                  "var": "free"
+                }
+              },
+              {
+                "inout": {
+                  "var": "ov"
+                }
+              },
+              {
+                "inout": {
+                  "var": "use"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp1"
+            },
+            "fn": "pike_run"
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "var": "tmp1"
+            }
+          }
+        }
+      ],
+      "name": "pike_match",
+      "params": [
+        {
+          "mode": "in",
+          "name": "re",
+          "type": {
+            "struct": "Re"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "subj",
+          "type": {
+            "frozen": "bytes"
+          }
+        },
+        {
+          "mode": "in",
+          "name": "start",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "mopts",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "costlimit",
+          "type": "counter"
+        },
+        {
+          "mode": "in",
+          "name": "stacklimit",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "memlimit",
+          "type": "counter"
+        },
+        {
+          "mode": "inout",
+          "name": "ov",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 512
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "use",
+          "type": {
+            "struct": "Usage"
+          }
+        }
+      ],
+      "ret": "u32"
+    },
+    {
+      "body": [
+        {
+          "let": {
+            "init": {
+              "u32": 0
+            },
+            "name": "tmp1",
+            "type": "u32"
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "let": {
+                  "init": {
+                    "index": {
+                      "base": {
+                        "field": {
+                          "base": {
+                            "var": "re"
+                          },
+                          "name": "reps"
+                        }
+                      },
+                      "index": {
+                        "var": "tmp1"
+                      }
+                    }
+                  },
+                  "name": "tmp2",
+                  "type": {
+                    "struct": "Rep"
+                  }
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "or": {
+                      "left": {
+                        "cmp": {
+                          "left": {
+                            "field": {
+                              "base": {
+                                "var": "tmp2"
+                              },
+                              "name": "lo"
+                            }
+                          },
+                          "op": "ne",
+                          "right": {
+                            "u32": 0
+                          }
+                        }
+                      },
+                      "right": {
+                        "cmp": {
+                          "left": {
+                            "field": {
+                              "base": {
+                                "var": "tmp2"
+                              },
+                              "name": "hi"
+                            }
+                          },
+                          "op": "ne",
+                          "right": {
+                            "u32": 4294967295
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "bool": false
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "let": {
+                  "init": {
+                    "bool": true
+                  },
+                  "name": "tmp3",
+                  "type": "bool"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "re"
+                      }
+                    },
+                    {
+                      "in": {
+                        "var": "tmp1"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp3"
+                  },
+                  "fn": "pike_hollow"
+                }
+              },
+              {
+                "if": {
+                  "cond": {
+                    "var": "tmp3"
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "bool": false
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "tmp1"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "tmp1"
+                      },
+                      "op": "add",
+                      "right": {
+                        "u32": 1
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp1"
+                },
+                "op": "lt",
+                "right": {
+                  "len": {
+                    "field": {
+                      "base": {
+                        "var": "re"
+                      },
+                      "name": "reps"
+                    }
+                  }
+                }
+              }
+            },
+            "variant": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "len": {
+                        "field": {
+                          "base": {
+                            "var": "re"
+                          },
+                          "name": "reps"
+                        }
+                      }
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "sub",
+                "right": {
+                  "cast": {
+                    "arg": {
+                      "var": "tmp1"
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "u32": 0
+            },
+            "name": "tmp4",
+            "type": "u32"
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "index": {
+                              "base": {
+                                "field": {
+                                  "base": {
+                                    "var": "re"
+                                  },
+                                  "name": "code"
+                                }
+                              },
+                              "index": {
+                                "var": "tmp4"
+                              }
+                            }
+                          },
+                          "name": "op"
+                        }
+                      },
+                      "op": "eq",
+                      "right": {
+                        "enumval": {
+                          "type": "Op",
+                          "variant": "OpBsr"
+                        }
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "return": {
+                        "value": {
+                          "bool": false
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "tmp4"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "tmp4"
+                      },
+                      "op": "add",
+                      "right": {
+                        "u32": 1
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp4"
+                },
+                "op": "lt",
+                "right": {
+                  "len": {
+                    "field": {
+                      "base": {
+                        "var": "re"
+                      },
+                      "name": "code"
+                    }
+                  }
+                }
+              }
+            },
+            "variant": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "len": {
+                        "field": {
+                          "base": {
+                            "var": "re"
+                          },
+                          "name": "code"
+                        }
+                      }
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "sub",
+                "right": {
+                  "cast": {
+                    "arg": {
+                      "var": "tmp4"
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "bool": true
+            }
+          }
+        }
+      ],
+      "name": "pike_ok",
+      "params": [
+        {
+          "mode": "in",
+          "name": "re",
+          "type": {
+            "struct": "Re"
+          }
+        }
+      ],
+      "ret": "bool"
+    },
+    {
+      "body": [
+        {
+          "let": {
+            "init": {
+              "bool": false
+            },
+            "name": "tmp1",
+            "type": "bool"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "cap": {
+                    "var": "held"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "len": {
+                    "var": "held"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "u32": 8
+                }
+              },
+              {
+                "in": {
+                  "u32": 65700
+                }
+              },
+              {
+                "inout": {
+                  "var": "mem"
+                }
+              },
+              {
+                "inout": {
+                  "var": "peak"
+                }
+              },
+              {
+                "inout": {
+                  "var": "cost"
+                }
+              },
+              {
+                "in": {
+                  "var": "memlimit"
+                }
+              },
+              {
+                "in": {
+                  "var": "costlimit"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp1"
+            },
+            "fn": "charge_grow"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "un": {
+                "arg": {
+                  "var": "tmp1"
+                },
+                "op": "not"
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "push": {
+            "seq": {
+              "var": "held"
+            },
+            "value": {
+              "structval": {
+                "fields": {
+                  "h": {
+                    "var": "hv"
+                  },
+                  "pc": {
+                    "var": "pcv"
+                  }
+                },
+                "type": "Th"
+              }
+            }
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "bool": true
+            }
+          }
+        }
+      ],
+      "name": "pike_park",
+      "params": [
+        {
+          "mode": "inout",
+          "name": "held",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Th"
+              },
+              "max": 65700
+            }
+          }
+        },
+        {
+          "mode": "in",
+          "name": "pcv",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "hv",
+          "type": "u32"
+        },
+        {
+          "mode": "inout",
+          "name": "mem",
+          "type": "counter"
+        },
+        {
+          "mode": "inout",
+          "name": "peak",
+          "type": "counter"
+        },
+        {
+          "mode": "inout",
+          "name": "cost",
+          "type": "counter"
+        },
+        {
+          "mode": "in",
+          "name": "memlimit",
+          "type": "counter"
+        },
+        {
+          "mode": "in",
+          "name": "costlimit",
+          "type": "counter"
+        }
+      ],
+      "ret": "bool"
+    },
+    {
+      "body": [
+        {
+          "let": {
+            "init": {
+              "bool": false
+            },
+            "name": "over",
+            "type": "bool"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "cast": {
+                "arg": {
+                  "len": {
+                    "field": {
+                      "base": {
+                        "var": "re"
+                      },
+                      "name": "code"
+                    }
+                  }
+                },
+                "type": "counter"
+              }
+            },
+            "name": "tmp1",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "bin": {
+                        "left": {
+                          "field": {
+                            "base": {
+                              "var": "re"
+                            },
+                            "name": "ncap"
+                          }
+                        },
+                        "op": "add",
+                        "right": {
+                          "u32": 1
+                        }
+                      }
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "mul",
+                "right": {
+                  "counter": 2
+                }
+              }
+            },
+            "name": "tmp2",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "bin": {
+                "left": {
+                  "var": "tmp2"
+                },
+                "op": "mul",
+                "right": {
+                  "counter": 4
+                }
+              }
+            },
+            "name": "tmp3",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "tmp4",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "u32": 0
+            },
+            "name": "tmp5",
+            "type": "u32"
+          }
+        },
+        {
+          "while": {
+            "body": [
+              {
+                "if": {
+                  "cond": {
+                    "cmp": {
+                      "left": {
+                        "field": {
+                          "base": {
+                            "index": {
+                              "base": {
+                                "field": {
+                                  "base": {
+                                    "var": "re"
+                                  },
+                                  "name": "code"
+                                }
+                              },
+                              "index": {
+                                "var": "tmp5"
+                              }
+                            }
+                          },
+                          "name": "op"
+                        }
+                      },
+                      "op": "eq",
+                      "right": {
+                        "enumval": {
+                          "type": "Op",
+                          "variant": "OpSave"
+                        }
+                      }
+                    }
+                  },
+                  "else": [],
+                  "then": [
+                    {
+                      "assign": {
+                        "place": {
+                          "var": "tmp4"
+                        },
+                        "value": {
+                          "bin": {
+                            "left": {
+                              "var": "tmp4"
+                            },
+                            "op": "add",
+                            "right": {
+                              "counter": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "tmp5"
+                  },
+                  "value": {
+                    "bin": {
+                      "left": {
+                        "var": "tmp5"
+                      },
+                      "op": "add",
+                      "right": {
+                        "u32": 1
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp5"
+                },
+                "op": "lt",
+                "right": {
+                  "len": {
+                    "field": {
+                      "base": {
+                        "var": "re"
+                      },
+                      "name": "code"
+                    }
+                  }
+                }
+              }
+            },
+            "variant": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "len": {
+                        "field": {
+                          "base": {
+                            "var": "re"
+                          },
+                          "name": "code"
+                        }
+                      }
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "sub",
+                "right": {
+                  "cast": {
+                    "arg": {
+                      "var": "tmp5"
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "room",
+            "type": {
+              "struct": "Room"
+            }
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "re"
+                }
+              },
+              {
+                "inout": {
+                  "var": "room"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": null,
+            "fn": "pike_room"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "field": {
+                "base": {
+                  "var": "room"
+                },
+                "name": "reserved"
+              }
+            },
+            "name": "tmp6",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "cast": {
+                "arg": {
+                  "field": {
+                    "base": {
+                      "var": "room"
+                    },
+                    "name": "words"
+                  }
+                },
+                "type": "counter"
+              }
+            },
+            "name": "tmp7",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp8",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp3"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp7"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp8"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp9",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp1"
+                }
+              },
+              {
+                "in": {
+                  "counter": 2
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp9"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp10",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp4"
+                }
+              },
+              {
+                "in": {
+                  "counter": 2
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp10"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp11",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp10"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp3"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp11"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp12",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp9"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp11"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp12"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "var": "tmp9"
+            },
+            "value": {
+              "var": "tmp12"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp13",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp9"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp7"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp13"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "var": "tmp9"
+            },
+            "value": {
+              "var": "tmp13"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp14",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp8"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp3"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp14"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp15",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp6"
+                }
+              },
+              {
+                "in": {
+                  "counter": 3
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp15"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp16",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp14"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp15"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp16"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp17",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp6"
+                }
+              },
+              {
+                "in": {
+                  "counter": 2
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp17"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp18",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp14"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp17"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp18"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "var": "over"
+            },
+            "else": [],
+            "then": [
+              {
+                "return": {
+                  "value": {
+                    "bool": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "config"
+              }
+            },
+            "value": {
+              "enumval": {
+                "type": "Cfg",
+                "variant": "CfgPike"
+              }
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "complexity"
+              }
+            },
+            "value": {
+              "enumval": {
+                "type": "Cc",
+                "variant": "CcLinear"
+              }
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "cost"
+              }
+            },
+            "value": {
+              "structval": {
+                "fields": {
+                  "base": {
+                    "counter": 1
+                  },
+                  "c0": {
+                    "var": "tmp16"
+                  },
+                  "c1": {
+                    "var": "tmp9"
+                  },
+                  "c2": {
+                    "counter": 0
+                  },
+                  "c3": {
+                    "counter": 0
+                  },
+                  "c4": {
+                    "counter": 0
+                  }
+                },
+                "type": "Poly"
+              }
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "stack"
+              }
+            },
+            "value": {
+              "structval": {
+                "fields": {
+                  "base": {
+                    "counter": 1
+                  },
+                  "c0": {
+                    "counter": 0
+                  },
+                  "c1": {
+                    "counter": 0
+                  },
+                  "c2": {
+                    "counter": 0
+                  },
+                  "c3": {
+                    "counter": 0
+                  },
+                  "c4": {
+                    "counter": 0
+                  }
+                },
+                "type": "Poly"
+              }
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "trail"
+              }
+            },
+            "value": {
+              "structval": {
+                "fields": {
+                  "base": {
+                    "counter": 1
+                  },
+                  "c0": {
+                    "counter": 0
+                  },
+                  "c1": {
+                    "counter": 0
+                  },
+                  "c2": {
+                    "counter": 0
+                  },
+                  "c3": {
+                    "counter": 0
+                  },
+                  "c4": {
+                    "counter": 0
+                  }
+                },
+                "type": "Poly"
+              }
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "mem"
+              }
+            },
+            "value": {
+              "structval": {
+                "fields": {
+                  "base": {
+                    "counter": 1
+                  },
+                  "c0": {
+                    "var": "tmp18"
+                  },
+                  "c1": {
+                    "counter": 0
+                  },
+                  "c2": {
+                    "counter": 0
+                  },
+                  "c3": {
+                    "counter": 0
+                  },
+                  "c4": {
+                    "counter": 0
+                  }
+                },
+                "type": "Poly"
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "empty",
+            "type": {
+              "vec": {
+                "elem": {
+                  "struct": "Price"
+                },
+                "max": 8208
+              }
+            }
+          }
+        },
+        {
+          "freeze": {
+            "dest": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "prices"
+              }
+            },
+            "src": {
+              "var": "empty"
+            }
+          }
+        },
+        {
+          "return": {
+            "value": {
+              "bool": true
+            }
+          }
+        }
+      ],
+      "name": "pike_price",
+      "params": [
+        {
+          "mode": "in",
+          "name": "re",
+          "type": {
+            "struct": "Re"
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "cert",
+          "type": {
+            "struct": "Cert"
+          }
+        }
+      ],
+      "ret": "bool"
+    },
+    {
+      "body": [
+        {
+          "let": {
+            "init": {
+              "cast": {
+                "arg": {
+                  "len": {
+                    "field": {
+                      "base": {
+                        "var": "re"
+                      },
+                      "name": "code"
+                    }
+                  }
+                },
+                "type": "counter"
+              }
+            },
+            "name": "tmp1",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "bin": {
+                "left": {
+                  "cast": {
+                    "arg": {
+                      "bin": {
+                        "left": {
+                          "field": {
+                            "base": {
+                              "var": "re"
+                            },
+                            "name": "ncap"
+                          }
+                        },
+                        "op": "add",
+                        "right": {
+                          "u32": 1
+                        }
+                      }
+                    },
+                    "type": "counter"
+                  }
+                },
+                "op": "mul",
+                "right": {
+                  "counter": 2
+                }
+              }
+            },
+            "name": "tmp2",
+            "type": "counter"
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "room"
+                },
+                "name": "words"
+              }
+            },
+            "value": {
+              "bin": {
+                "left": {
+                  "shift": {
+                    "arg": {
+                      "len": {
+                        "field": {
+                          "base": {
+                            "var": "re"
+                          },
+                          "name": "code"
+                        }
+                      }
+                    },
+                    "count": 3,
+                    "op": "shr"
+                  }
+                },
+                "op": "add",
+                "right": {
+                  "u32": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "tmp3",
+            "type": "counter"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp1"
+                },
+                "op": "gt",
+                "right": {
+                  "counter": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp4",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "tmp1"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 2
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp4"
+                  },
+                  "fn": "sat_mul"
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp5",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "tmp4"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 4
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp5"
+                  },
+                  "fn": "sat_add"
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "tmp3"
+                  },
+                  "value": {
+                    "var": "tmp5"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "room"
+                },
+                "name": "lists"
+              }
+            },
+            "value": {
+              "var": "tmp3"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp6",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp1"
+                }
+              },
+              {
+                "in": {
+                  "counter": 2
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp6"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "tmp7",
+            "type": "counter"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp6"
+                },
+                "op": "gt",
+                "right": {
+                  "counter": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp8",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "tmp6"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 2
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp8"
+                  },
+                  "fn": "sat_mul"
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp9",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "tmp8"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 4
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp9"
+                  },
+                  "fn": "sat_add"
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "tmp7"
+                  },
+                  "value": {
+                    "var": "tmp9"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "room"
+                },
+                "name": "stk"
+              }
+            },
+            "value": {
+              "var": "tmp7"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp10",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp1"
+                }
+              },
+              {
+                "in": {
+                  "counter": 4
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp10"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp11",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp10"
+                }
+              },
+              {
+                "in": {
+                  "counter": 2
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp11"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "var": "tmp11"
+            },
+            "name": "tmp12",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "tmp13",
+            "type": "counter"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp12"
+                },
+                "op": "gt",
+                "right": {
+                  "counter": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp14",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "tmp12"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 2
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp14"
+                  },
+                  "fn": "sat_mul"
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp15",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "tmp14"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 4
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp15"
+                  },
+                  "fn": "sat_add"
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "tmp13"
+                  },
+                  "value": {
+                    "var": "tmp15"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "room"
+                },
+                "name": "tables"
+              }
+            },
+            "value": {
+              "var": "tmp13"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp16",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp12"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp2"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp16"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "counter": 0
+            },
+            "name": "tmp17",
+            "type": "counter"
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "var": "tmp16"
+                },
+                "op": "gt",
+                "right": {
+                  "counter": 0
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp18",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "tmp16"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 2
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp18"
+                  },
+                  "fn": "sat_mul"
+                }
+              },
+              {
+                "let": {
+                  "init": null,
+                  "name": "tmp19",
+                  "type": "counter"
+                }
+              },
+              {
+                "call": {
+                  "args": [
+                    {
+                      "in": {
+                        "var": "tmp18"
+                      }
+                    },
+                    {
+                      "in": {
+                        "counter": 4
+                      }
+                    },
+                    {
+                      "inout": {
+                        "var": "over"
+                      }
+                    }
+                  ],
+                  "dest": {
+                    "var": "tmp19"
+                  },
+                  "fn": "sat_add"
+                }
+              },
+              {
+                "assign": {
+                  "place": {
+                    "var": "tmp17"
+                  },
+                  "value": {
+                    "var": "tmp19"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "room"
+                },
+                "name": "pool"
+              }
+            },
+            "value": {
+              "var": "tmp17"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp20",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "room"
+                    },
+                    "name": "lists"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "counter": 16
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp20"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": {
+              "var": "tmp20"
+            },
+            "name": "tmp21",
+            "type": "counter"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp22",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "room"
+                    },
+                    "name": "stk"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "counter": 8
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp22"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp23",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp21"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp22"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp23"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "var": "tmp21"
+            },
+            "value": {
+              "var": "tmp23"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp24",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "room"
+                    },
+                    "name": "tables"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "counter": 8
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp24"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp25",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp21"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp24"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp25"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "var": "tmp21"
+            },
+            "value": {
+              "var": "tmp25"
+            }
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp26",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "room"
+                    },
+                    "name": "pool"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "counter": 4
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp26"
+            },
+            "fn": "sat_mul"
+          }
+        },
+        {
+          "let": {
+            "init": null,
+            "name": "tmp27",
+            "type": "counter"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "tmp21"
+                }
+              },
+              {
+                "in": {
+                  "var": "tmp26"
+                }
+              },
+              {
+                "inout": {
+                  "var": "over"
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp27"
+            },
+            "fn": "sat_add"
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "var": "tmp21"
+            },
+            "value": {
+              "var": "tmp27"
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "room"
+                },
+                "name": "reserved"
+              }
+            },
+            "value": {
+              "var": "tmp21"
+            }
+          }
+        }
+      ],
+      "name": "pike_room",
+      "params": [
+        {
+          "mode": "in",
+          "name": "re",
+          "type": {
+            "struct": "Re"
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "room",
+          "type": {
+            "struct": "Room"
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "over",
+          "type": "bool"
+        }
+      ],
+      "ret": null
+    },
+    {
+      "body": [
+        {
+          "let": {
             "init": {
               "len": {
                 "var": "subj"
@@ -42127,87 +47275,72 @@
           }
         },
         {
-          "let": {
-            "init": null,
-            "name": "clist",
-            "type": {
-              "vec": {
-                "elem": {
-                  "struct": "Th"
-                },
-                "max": 32848
-              }
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "clist"
             }
           }
         },
         {
-          "let": {
-            "init": null,
-            "name": "nlist",
-            "type": {
-              "vec": {
-                "elem": {
-                  "struct": "Th"
-                },
-                "max": 32848
-              }
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "nlist"
             }
           }
         },
         {
-          "let": {
-            "init": null,
-            "name": "stk",
-            "type": {
-              "vec": {
-                "elem": {
-                  "struct": "Th"
-                },
-                "max": 65696
-              }
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "stk"
             }
           }
         },
         {
-          "let": {
-            "init": null,
-            "name": "seen",
-            "type": "bytes"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "pool",
-            "type": {
-              "vec": {
-                "elem": "u32",
-                "max": 67274752
-              }
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "seen"
             }
           }
         },
         {
-          "let": {
-            "init": null,
-            "name": "rc",
-            "type": {
-              "vec": {
-                "elem": "u32",
-                "max": 131396
-              }
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "pool"
             }
           }
         },
         {
-          "let": {
-            "init": null,
-            "name": "free",
-            "type": {
-              "vec": {
-                "elem": "u32",
-                "max": 131396
-              }
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "rc"
+            }
+          }
+        },
+        {
+          "truncate": {
+            "len": {
+              "u32": 0
+            },
+            "seq": {
+              "var": "free"
             }
           }
         },
@@ -46331,7 +51464,7 @@
           }
         }
       ],
-      "name": "pike_match",
+      "name": "pike_run",
       "params": [
         {
           "mode": "in",
@@ -46374,6 +51507,77 @@
         },
         {
           "mode": "inout",
+          "name": "clist",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Th"
+              },
+              "max": 65700
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "nlist",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Th"
+              },
+              "max": 65700
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "stk",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Th"
+              },
+              "max": 131396
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "seen",
+          "type": "bytes"
+        },
+        {
+          "mode": "inout",
+          "name": "pool",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 134549508
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "rc",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 262796
+            }
+          }
+        },
+        {
+          "mode": "inout",
+          "name": "free",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 262796
+            }
+          }
+        },
+        {
+          "mode": "inout",
           "name": "ov",
           "type": {
             "vec": {
@@ -46391,2181 +51595,6 @@
         }
       ],
       "ret": "u32"
-    },
-    {
-      "body": [
-        {
-          "let": {
-            "init": {
-              "u32": 0
-            },
-            "name": "tmp1",
-            "type": "u32"
-          }
-        },
-        {
-          "while": {
-            "body": [
-              {
-                "let": {
-                  "init": {
-                    "index": {
-                      "base": {
-                        "field": {
-                          "base": {
-                            "var": "re"
-                          },
-                          "name": "reps"
-                        }
-                      },
-                      "index": {
-                        "var": "tmp1"
-                      }
-                    }
-                  },
-                  "name": "tmp2",
-                  "type": {
-                    "struct": "Rep"
-                  }
-                }
-              },
-              {
-                "if": {
-                  "cond": {
-                    "or": {
-                      "left": {
-                        "cmp": {
-                          "left": {
-                            "field": {
-                              "base": {
-                                "var": "tmp2"
-                              },
-                              "name": "lo"
-                            }
-                          },
-                          "op": "ne",
-                          "right": {
-                            "u32": 0
-                          }
-                        }
-                      },
-                      "right": {
-                        "cmp": {
-                          "left": {
-                            "field": {
-                              "base": {
-                                "var": "tmp2"
-                              },
-                              "name": "hi"
-                            }
-                          },
-                          "op": "ne",
-                          "right": {
-                            "u32": 4294967295
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "else": [],
-                  "then": [
-                    {
-                      "return": {
-                        "value": {
-                          "bool": false
-                        }
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "let": {
-                  "init": {
-                    "bool": true
-                  },
-                  "name": "tmp3",
-                  "type": "bool"
-                }
-              },
-              {
-                "call": {
-                  "args": [
-                    {
-                      "in": {
-                        "var": "re"
-                      }
-                    },
-                    {
-                      "in": {
-                        "var": "tmp1"
-                      }
-                    }
-                  ],
-                  "dest": {
-                    "var": "tmp3"
-                  },
-                  "fn": "pike_hollow"
-                }
-              },
-              {
-                "if": {
-                  "cond": {
-                    "var": "tmp3"
-                  },
-                  "else": [],
-                  "then": [
-                    {
-                      "return": {
-                        "value": {
-                          "bool": false
-                        }
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "assign": {
-                  "place": {
-                    "var": "tmp1"
-                  },
-                  "value": {
-                    "bin": {
-                      "left": {
-                        "var": "tmp1"
-                      },
-                      "op": "add",
-                      "right": {
-                        "u32": 1
-                      }
-                    }
-                  }
-                }
-              }
-            ],
-            "cond": {
-              "cmp": {
-                "left": {
-                  "var": "tmp1"
-                },
-                "op": "lt",
-                "right": {
-                  "len": {
-                    "field": {
-                      "base": {
-                        "var": "re"
-                      },
-                      "name": "reps"
-                    }
-                  }
-                }
-              }
-            },
-            "variant": {
-              "bin": {
-                "left": {
-                  "cast": {
-                    "arg": {
-                      "len": {
-                        "field": {
-                          "base": {
-                            "var": "re"
-                          },
-                          "name": "reps"
-                        }
-                      }
-                    },
-                    "type": "counter"
-                  }
-                },
-                "op": "sub",
-                "right": {
-                  "cast": {
-                    "arg": {
-                      "var": "tmp1"
-                    },
-                    "type": "counter"
-                  }
-                }
-              }
-            }
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "u32": 0
-            },
-            "name": "tmp4",
-            "type": "u32"
-          }
-        },
-        {
-          "while": {
-            "body": [
-              {
-                "if": {
-                  "cond": {
-                    "cmp": {
-                      "left": {
-                        "field": {
-                          "base": {
-                            "index": {
-                              "base": {
-                                "field": {
-                                  "base": {
-                                    "var": "re"
-                                  },
-                                  "name": "code"
-                                }
-                              },
-                              "index": {
-                                "var": "tmp4"
-                              }
-                            }
-                          },
-                          "name": "op"
-                        }
-                      },
-                      "op": "eq",
-                      "right": {
-                        "enumval": {
-                          "type": "Op",
-                          "variant": "OpBsr"
-                        }
-                      }
-                    }
-                  },
-                  "else": [],
-                  "then": [
-                    {
-                      "return": {
-                        "value": {
-                          "bool": false
-                        }
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "assign": {
-                  "place": {
-                    "var": "tmp4"
-                  },
-                  "value": {
-                    "bin": {
-                      "left": {
-                        "var": "tmp4"
-                      },
-                      "op": "add",
-                      "right": {
-                        "u32": 1
-                      }
-                    }
-                  }
-                }
-              }
-            ],
-            "cond": {
-              "cmp": {
-                "left": {
-                  "var": "tmp4"
-                },
-                "op": "lt",
-                "right": {
-                  "len": {
-                    "field": {
-                      "base": {
-                        "var": "re"
-                      },
-                      "name": "code"
-                    }
-                  }
-                }
-              }
-            },
-            "variant": {
-              "bin": {
-                "left": {
-                  "cast": {
-                    "arg": {
-                      "len": {
-                        "field": {
-                          "base": {
-                            "var": "re"
-                          },
-                          "name": "code"
-                        }
-                      }
-                    },
-                    "type": "counter"
-                  }
-                },
-                "op": "sub",
-                "right": {
-                  "cast": {
-                    "arg": {
-                      "var": "tmp4"
-                    },
-                    "type": "counter"
-                  }
-                }
-              }
-            }
-          }
-        },
-        {
-          "return": {
-            "value": {
-              "bool": true
-            }
-          }
-        }
-      ],
-      "name": "pike_ok",
-      "params": [
-        {
-          "mode": "in",
-          "name": "re",
-          "type": {
-            "struct": "Re"
-          }
-        }
-      ],
-      "ret": "bool"
-    },
-    {
-      "body": [
-        {
-          "let": {
-            "init": {
-              "bool": false
-            },
-            "name": "tmp1",
-            "type": "bool"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "cap": {
-                    "var": "held"
-                  }
-                }
-              },
-              {
-                "in": {
-                  "len": {
-                    "var": "held"
-                  }
-                }
-              },
-              {
-                "in": {
-                  "u32": 8
-                }
-              },
-              {
-                "in": {
-                  "u32": 32848
-                }
-              },
-              {
-                "inout": {
-                  "var": "mem"
-                }
-              },
-              {
-                "inout": {
-                  "var": "peak"
-                }
-              },
-              {
-                "inout": {
-                  "var": "cost"
-                }
-              },
-              {
-                "in": {
-                  "var": "memlimit"
-                }
-              },
-              {
-                "in": {
-                  "var": "costlimit"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp1"
-            },
-            "fn": "charge_grow"
-          }
-        },
-        {
-          "if": {
-            "cond": {
-              "un": {
-                "arg": {
-                  "var": "tmp1"
-                },
-                "op": "not"
-              }
-            },
-            "else": [],
-            "then": [
-              {
-                "return": {
-                  "value": {
-                    "bool": false
-                  }
-                }
-              }
-            ]
-          }
-        },
-        {
-          "push": {
-            "seq": {
-              "var": "held"
-            },
-            "value": {
-              "structval": {
-                "fields": {
-                  "h": {
-                    "var": "hv"
-                  },
-                  "pc": {
-                    "var": "pcv"
-                  }
-                },
-                "type": "Th"
-              }
-            }
-          }
-        },
-        {
-          "return": {
-            "value": {
-              "bool": true
-            }
-          }
-        }
-      ],
-      "name": "pike_park",
-      "params": [
-        {
-          "mode": "inout",
-          "name": "held",
-          "type": {
-            "vec": {
-              "elem": {
-                "struct": "Th"
-              },
-              "max": 32848
-            }
-          }
-        },
-        {
-          "mode": "in",
-          "name": "pcv",
-          "type": "u32"
-        },
-        {
-          "mode": "in",
-          "name": "hv",
-          "type": "u32"
-        },
-        {
-          "mode": "inout",
-          "name": "mem",
-          "type": "counter"
-        },
-        {
-          "mode": "inout",
-          "name": "peak",
-          "type": "counter"
-        },
-        {
-          "mode": "inout",
-          "name": "cost",
-          "type": "counter"
-        },
-        {
-          "mode": "in",
-          "name": "memlimit",
-          "type": "counter"
-        },
-        {
-          "mode": "in",
-          "name": "costlimit",
-          "type": "counter"
-        }
-      ],
-      "ret": "bool"
-    },
-    {
-      "body": [
-        {
-          "let": {
-            "init": {
-              "bool": false
-            },
-            "name": "over",
-            "type": "bool"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "cast": {
-                "arg": {
-                  "len": {
-                    "field": {
-                      "base": {
-                        "var": "re"
-                      },
-                      "name": "code"
-                    }
-                  }
-                },
-                "type": "counter"
-              }
-            },
-            "name": "tmp1",
-            "type": "counter"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "bin": {
-                "left": {
-                  "cast": {
-                    "arg": {
-                      "bin": {
-                        "left": {
-                          "field": {
-                            "base": {
-                              "var": "re"
-                            },
-                            "name": "ncap"
-                          }
-                        },
-                        "op": "add",
-                        "right": {
-                          "u32": 1
-                        }
-                      }
-                    },
-                    "type": "counter"
-                  }
-                },
-                "op": "mul",
-                "right": {
-                  "counter": 2
-                }
-              }
-            },
-            "name": "tmp2",
-            "type": "counter"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "bin": {
-                "left": {
-                  "var": "tmp2"
-                },
-                "op": "mul",
-                "right": {
-                  "counter": 4
-                }
-              }
-            },
-            "name": "tmp3",
-            "type": "counter"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "cast": {
-                "arg": {
-                  "bin": {
-                    "left": {
-                      "shift": {
-                        "arg": {
-                          "len": {
-                            "field": {
-                              "base": {
-                                "var": "re"
-                              },
-                              "name": "code"
-                            }
-                          }
-                        },
-                        "count": 3,
-                        "op": "shr"
-                      }
-                    },
-                    "op": "add",
-                    "right": {
-                      "u32": 1
-                    }
-                  }
-                },
-                "type": "counter"
-              }
-            },
-            "name": "tmp4",
-            "type": "counter"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "counter": 0
-            },
-            "name": "tmp5",
-            "type": "counter"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "u32": 0
-            },
-            "name": "tmp6",
-            "type": "u32"
-          }
-        },
-        {
-          "while": {
-            "body": [
-              {
-                "if": {
-                  "cond": {
-                    "cmp": {
-                      "left": {
-                        "field": {
-                          "base": {
-                            "index": {
-                              "base": {
-                                "field": {
-                                  "base": {
-                                    "var": "re"
-                                  },
-                                  "name": "code"
-                                }
-                              },
-                              "index": {
-                                "var": "tmp6"
-                              }
-                            }
-                          },
-                          "name": "op"
-                        }
-                      },
-                      "op": "eq",
-                      "right": {
-                        "enumval": {
-                          "type": "Op",
-                          "variant": "OpSave"
-                        }
-                      }
-                    }
-                  },
-                  "else": [],
-                  "then": [
-                    {
-                      "assign": {
-                        "place": {
-                          "var": "tmp5"
-                        },
-                        "value": {
-                          "bin": {
-                            "left": {
-                              "var": "tmp5"
-                            },
-                            "op": "add",
-                            "right": {
-                              "counter": 1
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "assign": {
-                  "place": {
-                    "var": "tmp6"
-                  },
-                  "value": {
-                    "bin": {
-                      "left": {
-                        "var": "tmp6"
-                      },
-                      "op": "add",
-                      "right": {
-                        "u32": 1
-                      }
-                    }
-                  }
-                }
-              }
-            ],
-            "cond": {
-              "cmp": {
-                "left": {
-                  "var": "tmp6"
-                },
-                "op": "lt",
-                "right": {
-                  "len": {
-                    "field": {
-                      "base": {
-                        "var": "re"
-                      },
-                      "name": "code"
-                    }
-                  }
-                }
-              }
-            },
-            "variant": {
-              "bin": {
-                "left": {
-                  "cast": {
-                    "arg": {
-                      "len": {
-                        "field": {
-                          "base": {
-                            "var": "re"
-                          },
-                          "name": "code"
-                        }
-                      }
-                    },
-                    "type": "counter"
-                  }
-                },
-                "op": "sub",
-                "right": {
-                  "cast": {
-                    "arg": {
-                      "var": "tmp6"
-                    },
-                    "type": "counter"
-                  }
-                }
-              }
-            }
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "counter": 0
-            },
-            "name": "tmp7",
-            "type": "counter"
-          }
-        },
-        {
-          "if": {
-            "cond": {
-              "cmp": {
-                "left": {
-                  "var": "tmp1"
-                },
-                "op": "gt",
-                "right": {
-                  "counter": 0
-                }
-              }
-            },
-            "else": [],
-            "then": [
-              {
-                "let": {
-                  "init": null,
-                  "name": "tmp8",
-                  "type": "counter"
-                }
-              },
-              {
-                "call": {
-                  "args": [
-                    {
-                      "in": {
-                        "var": "tmp1"
-                      }
-                    },
-                    {
-                      "in": {
-                        "counter": 2
-                      }
-                    },
-                    {
-                      "inout": {
-                        "var": "over"
-                      }
-                    }
-                  ],
-                  "dest": {
-                    "var": "tmp8"
-                  },
-                  "fn": "sat_mul"
-                }
-              },
-              {
-                "let": {
-                  "init": null,
-                  "name": "tmp9",
-                  "type": "counter"
-                }
-              },
-              {
-                "call": {
-                  "args": [
-                    {
-                      "in": {
-                        "var": "tmp8"
-                      }
-                    },
-                    {
-                      "in": {
-                        "counter": 4
-                      }
-                    },
-                    {
-                      "inout": {
-                        "var": "over"
-                      }
-                    }
-                  ],
-                  "dest": {
-                    "var": "tmp9"
-                  },
-                  "fn": "sat_add"
-                }
-              },
-              {
-                "assign": {
-                  "place": {
-                    "var": "tmp7"
-                  },
-                  "value": {
-                    "var": "tmp9"
-                  }
-                }
-              }
-            ]
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp10",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp7"
-                }
-              },
-              {
-                "in": {
-                  "counter": 16
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp10"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp11",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp1"
-                }
-              },
-              {
-                "in": {
-                  "counter": 2
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp11"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "counter": 0
-            },
-            "name": "tmp12",
-            "type": "counter"
-          }
-        },
-        {
-          "if": {
-            "cond": {
-              "cmp": {
-                "left": {
-                  "var": "tmp11"
-                },
-                "op": "gt",
-                "right": {
-                  "counter": 0
-                }
-              }
-            },
-            "else": [],
-            "then": [
-              {
-                "let": {
-                  "init": null,
-                  "name": "tmp13",
-                  "type": "counter"
-                }
-              },
-              {
-                "call": {
-                  "args": [
-                    {
-                      "in": {
-                        "var": "tmp11"
-                      }
-                    },
-                    {
-                      "in": {
-                        "counter": 2
-                      }
-                    },
-                    {
-                      "inout": {
-                        "var": "over"
-                      }
-                    }
-                  ],
-                  "dest": {
-                    "var": "tmp13"
-                  },
-                  "fn": "sat_mul"
-                }
-              },
-              {
-                "let": {
-                  "init": null,
-                  "name": "tmp14",
-                  "type": "counter"
-                }
-              },
-              {
-                "call": {
-                  "args": [
-                    {
-                      "in": {
-                        "var": "tmp13"
-                      }
-                    },
-                    {
-                      "in": {
-                        "counter": 4
-                      }
-                    },
-                    {
-                      "inout": {
-                        "var": "over"
-                      }
-                    }
-                  ],
-                  "dest": {
-                    "var": "tmp14"
-                  },
-                  "fn": "sat_add"
-                }
-              },
-              {
-                "assign": {
-                  "place": {
-                    "var": "tmp12"
-                  },
-                  "value": {
-                    "var": "tmp14"
-                  }
-                }
-              }
-            ]
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp15",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp12"
-                }
-              },
-              {
-                "in": {
-                  "counter": 8
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp15"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp16",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp1"
-                }
-              },
-              {
-                "in": {
-                  "counter": 4
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp16"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp17",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp16"
-                }
-              },
-              {
-                "in": {
-                  "counter": 2
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp17"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "var": "tmp17"
-            },
-            "name": "tmp18",
-            "type": "counter"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "counter": 0
-            },
-            "name": "tmp19",
-            "type": "counter"
-          }
-        },
-        {
-          "if": {
-            "cond": {
-              "cmp": {
-                "left": {
-                  "var": "tmp18"
-                },
-                "op": "gt",
-                "right": {
-                  "counter": 0
-                }
-              }
-            },
-            "else": [],
-            "then": [
-              {
-                "let": {
-                  "init": null,
-                  "name": "tmp20",
-                  "type": "counter"
-                }
-              },
-              {
-                "call": {
-                  "args": [
-                    {
-                      "in": {
-                        "var": "tmp18"
-                      }
-                    },
-                    {
-                      "in": {
-                        "counter": 2
-                      }
-                    },
-                    {
-                      "inout": {
-                        "var": "over"
-                      }
-                    }
-                  ],
-                  "dest": {
-                    "var": "tmp20"
-                  },
-                  "fn": "sat_mul"
-                }
-              },
-              {
-                "let": {
-                  "init": null,
-                  "name": "tmp21",
-                  "type": "counter"
-                }
-              },
-              {
-                "call": {
-                  "args": [
-                    {
-                      "in": {
-                        "var": "tmp20"
-                      }
-                    },
-                    {
-                      "in": {
-                        "counter": 4
-                      }
-                    },
-                    {
-                      "inout": {
-                        "var": "over"
-                      }
-                    }
-                  ],
-                  "dest": {
-                    "var": "tmp21"
-                  },
-                  "fn": "sat_add"
-                }
-              },
-              {
-                "assign": {
-                  "place": {
-                    "var": "tmp19"
-                  },
-                  "value": {
-                    "var": "tmp21"
-                  }
-                }
-              }
-            ]
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp22",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp19"
-                }
-              },
-              {
-                "in": {
-                  "counter": 8
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp22"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp23",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp18"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp2"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp23"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "counter": 0
-            },
-            "name": "tmp24",
-            "type": "counter"
-          }
-        },
-        {
-          "if": {
-            "cond": {
-              "cmp": {
-                "left": {
-                  "var": "tmp23"
-                },
-                "op": "gt",
-                "right": {
-                  "counter": 0
-                }
-              }
-            },
-            "else": [],
-            "then": [
-              {
-                "let": {
-                  "init": null,
-                  "name": "tmp25",
-                  "type": "counter"
-                }
-              },
-              {
-                "call": {
-                  "args": [
-                    {
-                      "in": {
-                        "var": "tmp23"
-                      }
-                    },
-                    {
-                      "in": {
-                        "counter": 2
-                      }
-                    },
-                    {
-                      "inout": {
-                        "var": "over"
-                      }
-                    }
-                  ],
-                  "dest": {
-                    "var": "tmp25"
-                  },
-                  "fn": "sat_mul"
-                }
-              },
-              {
-                "let": {
-                  "init": null,
-                  "name": "tmp26",
-                  "type": "counter"
-                }
-              },
-              {
-                "call": {
-                  "args": [
-                    {
-                      "in": {
-                        "var": "tmp25"
-                      }
-                    },
-                    {
-                      "in": {
-                        "counter": 4
-                      }
-                    },
-                    {
-                      "inout": {
-                        "var": "over"
-                      }
-                    }
-                  ],
-                  "dest": {
-                    "var": "tmp26"
-                  },
-                  "fn": "sat_add"
-                }
-              },
-              {
-                "assign": {
-                  "place": {
-                    "var": "tmp24"
-                  },
-                  "value": {
-                    "var": "tmp26"
-                  }
-                }
-              }
-            ]
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp27",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp24"
-                }
-              },
-              {
-                "in": {
-                  "counter": 4
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp27"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": {
-              "var": "tmp10"
-            },
-            "name": "tmp28",
-            "type": "counter"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp29",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp28"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp15"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp29"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "var": "tmp28"
-            },
-            "value": {
-              "var": "tmp29"
-            }
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp30",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp28"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp22"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp30"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "var": "tmp28"
-            },
-            "value": {
-              "var": "tmp30"
-            }
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp31",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp28"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp27"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp31"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "var": "tmp28"
-            },
-            "value": {
-              "var": "tmp31"
-            }
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp32",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp3"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp4"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp32"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp33",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp1"
-                }
-              },
-              {
-                "in": {
-                  "counter": 2
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp33"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp34",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp5"
-                }
-              },
-              {
-                "in": {
-                  "counter": 2
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp34"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp35",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp34"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp3"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp35"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp36",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp33"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp35"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp36"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "var": "tmp33"
-            },
-            "value": {
-              "var": "tmp36"
-            }
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp37",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp33"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp4"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp37"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "var": "tmp33"
-            },
-            "value": {
-              "var": "tmp37"
-            }
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp38",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp32"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp3"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp38"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp39",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp28"
-                }
-              },
-              {
-                "in": {
-                  "counter": 3
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp39"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp40",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp38"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp39"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp40"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp41",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp28"
-                }
-              },
-              {
-                "in": {
-                  "counter": 2
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp41"
-            },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp42",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp32"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp41"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp42"
-            },
-            "fn": "sat_add"
-          }
-        },
-        {
-          "if": {
-            "cond": {
-              "var": "over"
-            },
-            "else": [],
-            "then": [
-              {
-                "return": {
-                  "value": {
-                    "bool": false
-                  }
-                }
-              }
-            ]
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "field": {
-                "base": {
-                  "var": "cert"
-                },
-                "name": "config"
-              }
-            },
-            "value": {
-              "enumval": {
-                "type": "Cfg",
-                "variant": "CfgPike"
-              }
-            }
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "field": {
-                "base": {
-                  "var": "cert"
-                },
-                "name": "complexity"
-              }
-            },
-            "value": {
-              "enumval": {
-                "type": "Cc",
-                "variant": "CcLinear"
-              }
-            }
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "field": {
-                "base": {
-                  "var": "cert"
-                },
-                "name": "cost"
-              }
-            },
-            "value": {
-              "structval": {
-                "fields": {
-                  "base": {
-                    "counter": 1
-                  },
-                  "c0": {
-                    "var": "tmp40"
-                  },
-                  "c1": {
-                    "var": "tmp33"
-                  },
-                  "c2": {
-                    "counter": 0
-                  },
-                  "c3": {
-                    "counter": 0
-                  },
-                  "c4": {
-                    "counter": 0
-                  }
-                },
-                "type": "Poly"
-              }
-            }
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "field": {
-                "base": {
-                  "var": "cert"
-                },
-                "name": "stack"
-              }
-            },
-            "value": {
-              "structval": {
-                "fields": {
-                  "base": {
-                    "counter": 1
-                  },
-                  "c0": {
-                    "counter": 0
-                  },
-                  "c1": {
-                    "counter": 0
-                  },
-                  "c2": {
-                    "counter": 0
-                  },
-                  "c3": {
-                    "counter": 0
-                  },
-                  "c4": {
-                    "counter": 0
-                  }
-                },
-                "type": "Poly"
-              }
-            }
-          }
-        },
-        {
-          "assign": {
-            "place": {
-              "field": {
-                "base": {
-                  "var": "cert"
-                },
-                "name": "mem"
-              }
-            },
-            "value": {
-              "structval": {
-                "fields": {
-                  "base": {
-                    "counter": 1
-                  },
-                  "c0": {
-                    "var": "tmp42"
-                  },
-                  "c1": {
-                    "counter": 0
-                  },
-                  "c2": {
-                    "counter": 0
-                  },
-                  "c3": {
-                    "counter": 0
-                  },
-                  "c4": {
-                    "counter": 0
-                  }
-                },
-                "type": "Poly"
-              }
-            }
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "empty",
-            "type": {
-              "vec": {
-                "elem": {
-                  "struct": "Price"
-                },
-                "max": 8208
-              }
-            }
-          }
-        },
-        {
-          "freeze": {
-            "dest": {
-              "field": {
-                "base": {
-                  "var": "cert"
-                },
-                "name": "prices"
-              }
-            },
-            "src": {
-              "var": "empty"
-            }
-          }
-        },
-        {
-          "return": {
-            "value": {
-              "bool": true
-            }
-          }
-        }
-      ],
-      "name": "pike_price",
-      "params": [
-        {
-          "mode": "in",
-          "name": "re",
-          "type": {
-            "struct": "Re"
-          }
-        },
-        {
-          "mode": "inout",
-          "name": "cert",
-          "type": {
-            "struct": "Cert"
-          }
-        }
-      ],
-      "ret": "bool"
     },
     {
       "body": [
@@ -48652,7 +51681,7 @@
                 },
                 "op": "ge",
                 "right": {
-                  "u32": 131396
+                  "u32": 262796
                 }
               }
             },
@@ -48701,7 +51730,7 @@
               },
               {
                 "in": {
-                  "u32": 131396
+                  "u32": 262796
                 }
               },
               {
@@ -48804,7 +51833,7 @@
                     },
                     {
                       "in": {
-                        "u32": 67274752
+                        "u32": 134549508
                       }
                     },
                     {
@@ -48940,7 +51969,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 67274752
+              "max": 134549508
             }
           }
         },
@@ -48950,7 +51979,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 131396
+              "max": 262796
             }
           }
         },
@@ -48960,7 +51989,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 131396
+              "max": 262796
             }
           }
         },
@@ -49416,7 +52445,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 67274752
+              "max": 134549508
             }
           }
         },
@@ -49426,7 +52455,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 131396
+              "max": 262796
             }
           }
         },
@@ -49436,7 +52465,7 @@
           "type": {
             "vec": {
               "elem": "u32",
-              "max": 131396
+              "max": 262796
             }
           }
         },
@@ -57532,6 +60561,26 @@
           }
         },
         {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "cert"
+                },
+                "name": "trail"
+              }
+            },
+            "value": {
+              "field": {
+                "base": {
+                  "var": "whole"
+                },
+                "name": "trail"
+              }
+            }
+          }
+        },
+        {
           "let": {
             "init": null,
             "name": "tmp18",
@@ -57607,7 +60656,15 @@
                         "counter": 1
                       },
                       "c0": {
-                        "var": "setup"
+                        "bin": {
+                          "left": {
+                            "var": "setup"
+                          },
+                          "op": "add",
+                          "right": {
+                            "var": "deliver"
+                          }
+                        }
                       },
                       "c1": {
                         "counter": 0
@@ -85375,6 +88432,12 @@
           }
         },
         {
+          "name": "trail",
+          "type": {
+            "struct": "Poly"
+          }
+        },
+        {
           "name": "mem",
           "type": {
             "struct": "Poly"
@@ -85395,6 +88458,136 @@
         }
       ],
       "name": "Cert"
+    },
+    {
+      "fields": [
+        {
+          "name": "re",
+          "type": {
+            "struct": "Re"
+          }
+        },
+        {
+          "name": "ready",
+          "type": "bool"
+        },
+        {
+          "name": "maxlen",
+          "type": "u32"
+        },
+        {
+          "name": "costcap",
+          "type": "counter"
+        },
+        {
+          "name": "stackcap",
+          "type": "u32"
+        },
+        {
+          "name": "memcap",
+          "type": "counter"
+        },
+        {
+          "name": "regs",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 8704
+            }
+          }
+        },
+        {
+          "name": "bt",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Bt"
+              },
+              "max": 178956970
+            }
+          }
+        },
+        {
+          "name": "trail",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Undo"
+              },
+              "max": 268435455
+            }
+          }
+        },
+        {
+          "name": "clist",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Th"
+              },
+              "max": 65700
+            }
+          }
+        },
+        {
+          "name": "nlist",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Th"
+              },
+              "max": 65700
+            }
+          }
+        },
+        {
+          "name": "stk",
+          "type": {
+            "vec": {
+              "elem": {
+                "struct": "Th"
+              },
+              "max": 131396
+            }
+          }
+        },
+        {
+          "name": "seen",
+          "type": "bytes"
+        },
+        {
+          "name": "pool",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 134549508
+            }
+          }
+        },
+        {
+          "name": "rc",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 262796
+            }
+          }
+        },
+        {
+          "name": "free",
+          "type": {
+            "vec": {
+              "elem": "u32",
+              "max": 262796
+            }
+          }
+        },
+        {
+          "name": "slack",
+          "type": "bytes"
+        }
+      ],
+      "name": "Ctx"
     },
     {
       "fields": [
@@ -85839,6 +89032,35 @@
         }
       ],
       "name": "Rep"
+    },
+    {
+      "fields": [
+        {
+          "name": "lists",
+          "type": "counter"
+        },
+        {
+          "name": "stk",
+          "type": "counter"
+        },
+        {
+          "name": "tables",
+          "type": "counter"
+        },
+        {
+          "name": "pool",
+          "type": "counter"
+        },
+        {
+          "name": "words",
+          "type": "u32"
+        },
+        {
+          "name": "reserved",
+          "type": "counter"
+        }
+      ],
+      "name": "Room"
     },
     {
       "fields": [

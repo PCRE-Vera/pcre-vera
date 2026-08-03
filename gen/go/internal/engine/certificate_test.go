@@ -57,6 +57,7 @@ type certBody struct {
 	Complexity uint32      `json:"complexity"`
 	Cost       certPoly    `json:"cost"`
 	Stack      certPoly    `json:"stack"`
+	Trail      certPoly    `json:"trail"`
 	Mem        certPoly    `json:"mem"`
 	Prices     []certPrice `json:"prices"`
 }
@@ -146,6 +147,7 @@ func buildCert(t *testing.T, body certBody) Cert {
 		complexity: Cc(variant(t, "Cc", body.Complexity, uint32(CcLinear))),
 		cost:       buildPoly(body.Cost),
 		stack:      buildPoly(body.Stack),
+		trail:      buildPoly(body.Trail),
 		mem:        buildPoly(body.Mem),
 		prices:     prices,
 	}
@@ -280,7 +282,7 @@ func TestARegionKindOutsideTheEnumIsRefused(t *testing.T) {
 	for i := range prices {
 		prices[i] = Price{work: one, outs: one, stack: one, trail: one}
 	}
-	cert := Cert{cost: one, stack: one, mem: one, prices: prices}
+	cert := Cert{cost: one, stack: one, trail: one, mem: one, prices: prices}
 	if len(prices) < 2 {
 		t.Fatalf("expected a tree with a region under the root, got %d", len(prices))
 	}

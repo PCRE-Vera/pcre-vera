@@ -169,15 +169,18 @@ class Price:
 class Certificate:
     """What the analyzer produces and the checker refuses to guess at.
 
-    One price per region of the compiled pattern, in the same order. The three
-    whole-pattern bounds are what the accessors report, and they are not the
-    root region's numbers: the root is priced per starting position, and a call
-    pays for setup, for delivering its answer, and for scratch growth on top.
+    One price per region of the compiled pattern, in the same order. Three of
+    the whole-pattern bounds are what the accessors report, and they are not
+    the root region's numbers: the root is priced per starting position, and a
+    call pays for setup, for delivering its answer, and for scratch growth on
+    top. The trail is the fourth, the other array a preallocated context
+    sizes, and is never an accessor's answer.
     """
 
     prices: tuple[Price, ...]
     cost: Poly = ZERO
     stack: Poly = ZERO
+    trail: Poly = ZERO
     mem: Poly = ZERO
     config: str = "CfgBacktrack"
     complexity: str = "CcNotProvenLinear"
@@ -242,6 +245,7 @@ def _certificate(cert: Certificate) -> StructValue:
             "complexity": _tag(cert.complexity, "Cc"),
             "cost": _poly(cert.cost),
             "stack": _poly(cert.stack),
+            "trail": _poly(cert.trail),
             "mem": _poly(cert.mem),
             "prices": _frozen(prices, StructType("Price"), spec.MAX_REGIONS),
         },
@@ -350,6 +354,7 @@ def _read_cert(value: object) -> Certificate:
         prices=tuple(_read_price(one) for one in items(value.fields["prices"])),
         cost=_read_poly(value.fields["cost"]),
         stack=_read_poly(value.fields["stack"]),
+        trail=_read_poly(value.fields["trail"]),
         mem=_read_poly(value.fields["mem"]),
         config=variant_of(value.fields["config"]),
         complexity=variant_of(value.fields["complexity"]),
@@ -437,6 +442,29 @@ class CompiledPattern:
                 },
             ),
         )
+
+
+@dataclass(frozen=True)
+class MatchContext:
+    """A preallocated context, as the interpreter holds one.
+
+    The cell is the generated `Ctx` value, and it is the state: every call on
+    the context reads and writes through it. The two result stores are the
+    context's too, held beside the cell the way every wrapper holds them —
+    the ovector the run cores fill and the converted view a match answers
+    from, both created with the context and overwritten by each call — so a
+    match's answer stays valid exactly until the next call, which is the
+    documented lifetime. `memory` is the reservation the context
+    materialized — the accessors' worstCaseMemory at the declared length,
+    which the corpus holds it to.
+    """
+
+    cell: Cell
+    ovector: Cell
+    view: list[int]
+    cost_cap: int
+    stack_cap: int
+    memory: int
 
 
 class Engine:
@@ -603,11 +631,9 @@ class Engine:
         """One matcher entry point, run: the public `match` takes the match
         configuration, the two internal ones do not, and everything else about
         the pipeline is identical by construction rather than by copy."""
-        bits = _options(match_options, spec.MATCH_OPTIONS, "a match option")
-        if bits is None:
-            return Unsupported(
-                spec.E_UNSUPPORTED_OPTION, 0, f"one of {', '.join(match_options)}"
-            )
+        bits = _match_bits(match_options)
+        if isinstance(bits, Unsupported):
+            return bits
         # A start offset past the end of the subject is the engine's own
         # BadInput, decided in TIR; only a value no u32 could hold is refused
         # here, because there is no way to pass one in. The same exact-integer
@@ -619,11 +645,7 @@ class Engine:
         if match_config is not None and not _in_range(match_config, 0xFFFFFFFF):
             return BadInput()
         budget = limits or self.limits
-        if not _in_range(budget.cost, MAX_COST_LIMIT):
-            return BadInput()
-        if not _in_range(budget.stack, MAX_STACK_LIMIT):
-            return BadInput()
-        if not _in_range(budget.memory, MAX_MEMORY_LIMIT):
+        if not _representable(budget):
             return BadInput()
         interp = self._interp(budget.cost)
         ov = Cell(interp.zero(interp.p.func_map[entry].param("ov").type))
@@ -643,6 +665,16 @@ class Engine:
                 usage,
             ],
         )
+        refused = self._finish(entry, status, usage)
+        if refused is not None:
+            return refused
+        slots = ov.value
+        assert isinstance(slots, Seq)
+        return Match(ovector=tuple(_offset(v) for v in slots.items))
+
+    def _finish(self, entry: str, status: object, usage: Cell):
+        """Record what the run used and name every outcome that carries no
+        ovector; None is MATCHED, whose answer only the caller can read."""
         used = usage.value
         assert isinstance(used, StructValue)
         self.last_usage = Usage(
@@ -658,9 +690,122 @@ class Engine:
             return BadInput()
         if status != spec.MATCHED:
             raise EngineError(f"{entry} returned {status!r}")
-        slots = ov.value
+        return None
+
+    # --- preallocated contexts ---
+    #
+    # The generated `ctx_create` and `ctx_match`, run the same way the Go and
+    # JavaScript wrappers run them: creation validates, sizes and reserves,
+    # matching reuses what creation reserved. The context lives in a `Cell`
+    # so its arrays persist across calls, which is the whole point of it.
+
+    def create_context(
+        self,
+        built: CompiledPattern,
+        *,
+        max_subject_len: int,
+        limits: Limits | None = None,
+        match_config: int = spec.MC_DEFAULT,
+    ):
+        """(status, MatchContext or None): spec.OK and a context, or a refusal.
+
+        The limits are creation's budget and the context's baked ceilings at
+        once: the reservation must fit the memory limit, its zeroing must fit
+        the cost limit at one unit per IR byte, and later calls may lower the
+        cost and stack limits but never raise them.
+        """
+        if not _in_range(max_subject_len, 0xFFFFFFFF):
+            return (spec.BAD_INPUT, None)
+        if not _in_range(match_config, 0xFFFFFFFF):
+            return (spec.BAD_INPUT, None)
+        budget = limits or self.limits
+        if not _representable(budget):
+            return (spec.BAD_INPUT, None)
+        interp = self._interp(budget.cost)
+        held = Cell(interp.zero(StructType("Ctx")))
+        status = interp.call(
+            "ctx_create",
+            [
+                built.re,
+                match_config,
+                max_subject_len,
+                budget.cost,
+                budget.stack,
+                budget.memory,
+                held,
+            ],
+        )
+        assert isinstance(status, int)
+        if status != spec.OK:
+            return (status, None)
+        value = held.value
+        assert isinstance(value, StructValue)
+        memcap = value.fields["memcap"]
+        assert isinstance(memcap, int)
+        # The two result stores, materialized with the context the way every
+        # wrapper materializes them: the ovector reserved to its full size,
+        # so the run cores' own reserve is a no-op, and the converted view
+        # zeroed beside it. The memory bound's setup and deliver terms pay
+        # for both, and both are physical from the start.
+        novec = 2 * (built.captures + 1)
+        slots = interp.zero(interp.p.func_map["ctx_match"].param("ov").type)
         assert isinstance(slots, Seq)
-        return Match(ovector=tuple(_offset(v) for v in slots.items))
+        slots.cap = novec
+        return (
+            spec.OK,
+            MatchContext(
+                cell=held,
+                ovector=Cell(slots),
+                view=[0] * novec,
+                cost_cap=budget.cost,
+                stack_cap=budget.stack,
+                memory=memcap,
+            ),
+        )
+
+    def context_match(
+        self,
+        held: "MatchContext",
+        subject: bytes,
+        *,
+        start: int = 0,
+        match_options: Sequence[str] = (),
+        cost_limit: int | None = None,
+        stack_limit: int | None = None,
+    ):
+        """One call on a context, in the shapes `match_compiled` answers.
+
+        Omitted limits are the baked ceilings; explicit ones may be anything
+        representable, and the engine refuses a raise as BadInput.
+        """
+        bits = _match_bits(match_options)
+        if isinstance(bits, Unsupported):
+            return bits
+        if not _in_range(start, 0xFFFFFFFF):
+            return BadInput()
+        cost = held.cost_cap if cost_limit is None else cost_limit
+        stack = held.stack_cap if stack_limit is None else stack_limit
+        if not _in_range(cost, MAX_COST_LIMIT):
+            return BadInput()
+        if not _in_range(stack, MAX_STACK_LIMIT):
+            return BadInput()
+        interp = self._interp(cost)
+        usage = Cell(interp.zero(StructType("Usage")))
+        status = interp.call(
+            "ctx_match",
+            [held.cell, _blob(subject), start, bits, cost, stack, held.ovector, usage],
+        )
+        refused = self._finish("ctx_match", status, usage)
+        if refused is not None:
+            return refused
+        slots = held.ovector.value
+        assert isinstance(slots, Seq)
+        # The answer lands in the context's own view, which is the store the
+        # memory bound's deliver term pays for; the tuple handed back is the
+        # copy-out, made fresh so a caller may keep it.
+        for i, v in enumerate(slots.items):
+            held.view[i] = _offset(v)
+        return Match(ovector=tuple(held.view))
 
     # --- bound certificates ---
     #
@@ -801,6 +946,26 @@ def _answer(value: object) -> tuple[int, int]:
 def _in_range(value: object, ceiling: int) -> bool:
     """A limit is a whole number a counter can hold, and nothing else."""
     return isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= ceiling
+
+
+def _representable(budget: Limits) -> bool:
+    """Whether all three limits fit the engine's parameters, one rule for
+    every entry point that takes a budget."""
+    return (
+        _in_range(budget.cost, MAX_COST_LIMIT)
+        and _in_range(budget.stack, MAX_STACK_LIMIT)
+        and _in_range(budget.memory, MAX_MEMORY_LIMIT)
+    )
+
+
+def _match_bits(match_options: Sequence[str]):
+    """The option bits, or the Unsupported an unknown name earns."""
+    bits = _options(match_options, spec.MATCH_OPTIONS, "a match option")
+    if bits is None:
+        return Unsupported(
+            spec.E_UNSUPPORTED_OPTION, 0, f"one of {', '.join(match_options)}"
+        )
+    return bits
 
 
 def _offset(value: object) -> int:

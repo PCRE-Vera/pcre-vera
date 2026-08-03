@@ -18,7 +18,18 @@ import functools
 
 from ..dsl import boolean, inout, u32
 from ..tir import ir
-from . import accessors, analyzer, bounds, certificate, compiler, parser, pike, spec, vm
+from . import (
+    accessors,
+    analyzer,
+    bounds,
+    certificate,
+    compiler,
+    context,
+    parser,
+    pike,
+    spec,
+    vm,
+)
 from .layout import Layout
 
 
@@ -131,6 +142,7 @@ def build() -> ir.Program:
     certificate.build(L)
     analyzer.build(L)
     accessors.build(L)
+    context.build(L)
     _entry(L)
     return L.build()
 

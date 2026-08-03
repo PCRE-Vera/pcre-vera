@@ -10,8 +10,8 @@
 // certificate compilation stored for the selected path. The match
 // configuration argument is in its final shape, though only the default
 // value exists — the memoized backtracker is M9, and asking for it early is
-// BadInput, on Match and accessors alike. The preallocated match context
-// follows.
+// BadInput, on Match and accessors alike. NewContext turns the memory bound
+// into a preallocated Context whose Match calls allocate nothing at all.
 //
 // A compiled pattern is immutable, so one may be shared across goroutines; a
 // match call keeps all of its state on its own stack and in scratch it
@@ -24,6 +24,7 @@ package pcrevera
 
 import (
 	"maps"
+	"slices"
 	"strconv"
 
 	"github.com/PCRE-Vera/pcre-vera/gen/go/internal/engine"
@@ -95,7 +96,7 @@ const knownMatchFlags = NotBOL | NotEOL | NotEmpty | NotEmptyAtStart | MatchAnch
 
 // MatchConfig is the one configuration value used consistently across the
 // whole API: Match runs under it, the worst-case accessors price it, and the
-// match context of M5 will bake it in. It only ever chooses memoized
+// match context bakes it in. It only ever chooses memoized
 // backtracking or not — the Pike/backtracking split is fixed at compilation
 // and is deliberately not a switch a caller can reach.
 //
@@ -370,13 +371,7 @@ func (re *Regexp) Match(
 	switch status {
 	case statusMatched:
 		offsets := make([]int32, len(ovector))
-		for i, slot := range ovector {
-			if slot == unset {
-				offsets[i] = -1
-			} else {
-				offsets[i] = int32(slot)
-			}
-		}
+		fillOffsets(offsets, ovector)
 		return offsets, nil
 	case statusNoMatch:
 		return nil, nil
@@ -477,4 +472,167 @@ func answered(answer engine.Answer) (uint64, error) {
 		return 0, &Error{Kind: ExceedsBudget}
 	}
 	return 0, &Error{Kind: Internal, Code: int(answer.Tir_status())}
+}
+
+// Context is a preallocated match context: every byte a match could touch,
+// reserved and zeroed when the context is made, so a Match call on it
+// allocates nothing at all — on the failure paths included.
+//
+// The context is sized for one pattern, one configuration and one maximum
+// subject length, and the limits it was created under are baked ceilings: a
+// call may lower the cost and stack limits and may not raise them, and a
+// longer subject is BadInput rather than a reallocation. The reservation is
+// exactly the pattern's WorstCaseMemory at the declared length — the memory
+// bound made physical, which is what Memory reports.
+//
+// A Context is mutable state and must not be shared between goroutines
+// without external synchronization; the Regexp it came from stays freely
+// shareable.
+type Context struct {
+	ctx     engine.Ctx
+	ovector []uint32
+	offsets []int32
+	usage   engine.Usage
+}
+
+// Shared by every context's failure paths, so failing allocates exactly as
+// much as succeeding: nothing. Sentinel errors held in package variables are
+// the io.EOF convention, and mutating one is the same misuse mutating io.EOF
+// is.
+var (
+	errContextResource = &Error{Kind: ResourceExceeded}
+	errContextBadInput = &Error{Kind: BadInput}
+	errContextOption   = &Error{Kind: UnsupportedOption, Code: codeUnsupportedOption}
+)
+
+// NewContext creates a context for subjects up to maxSubjectLen bytes,
+// reserving everything up front. The limits are creation's own budget and
+// the context's ceilings at once: the reservation must fit limits.Memory,
+// zeroing it must fit limits.Cost at one cost unit per IR byte, and later
+// calls may only lower Cost and Stack. A pattern whose selected path carries
+// no finite bound is ExceedsBudget, the same refusal its accessors report.
+func (re *Regexp) NewContext(
+	maxSubjectLen int,
+	limits Limits,
+	config MatchConfig,
+) (*Context, error) {
+	if maxSubjectLen < 0 || uint64(maxSubjectLen) > uint64(^uint32(0)) {
+		return nil, errContextBadInput
+	}
+	if wideConfig(config) {
+		return nil, errContextBadInput
+	}
+	if limits.Cost > MaxCostLimit || limits.Stack > MaxStackLimit ||
+		limits.Memory > MaxMemoryLimit {
+		return nil, errContextBadInput
+	}
+	c := &Context{}
+	status := engine.Tir_ctx_create(
+		re.program,
+		uint32(config),
+		uint32(maxSubjectLen),
+		limits.Cost,
+		limits.Stack,
+		limits.Memory,
+		&c.ctx,
+	)
+	switch status {
+	case statusOK:
+	case statusBadInput:
+		return nil, errContextBadInput
+	case statusExceedsBudget:
+		return nil, &Error{Kind: ExceedsBudget}
+	case statusResourceExceeded:
+		return nil, errContextResource
+	default:
+		return nil, &Error{Kind: Internal, Code: int(status)}
+	}
+	// The result storage, materialized with the context: the engine-side
+	// ovector the run cores fill, and the converted view Match answers.
+	// The memory bound pays for both — they are the `deliver` share of its
+	// setup term — and both live exactly as long as the context.
+	novec := 2 * (re.groups + 1)
+	c.ovector = make([]uint32, 0, novec)
+	c.offsets = make([]int32, novec)
+	return c, nil
+}
+
+// MaxSubjectLen is the declared maximum this context was sized for.
+func (c *Context) MaxSubjectLen() int { return int(c.ctx.Tir_maxlen()) }
+
+// Memory is the reservation the context materialized, in the IR bytes
+// Limits.Memory is stated in: the pattern's WorstCaseMemory at the declared
+// maximum length, exactly.
+func (c *Context) Memory() uint64 { return c.ctx.Tir_memcap() }
+
+// Match runs the pattern the context was built for, allocating nothing. The
+// cost and stack limits may be at most the ones the context was created
+// under — lower is a caller spending less of what it already paid for,
+// higher is BadInput.
+//
+// The returned ovector is owned by the context and overwritten by the next
+// call on it; a caller who keeps answers across calls copies with
+// CopyOvector. A subject that does not match is a nil ovector and a nil
+// error, exactly as on Regexp.Match.
+func (c *Context) Match(
+	subject []byte,
+	start int,
+	flags MatchFlags,
+	costLimit uint64,
+	stackLimit uint32,
+) ([]int32, error) {
+	if flags&^knownMatchFlags != 0 {
+		return nil, errContextOption
+	}
+	if len(subject) > MaxLength {
+		return nil, errContextBadInput
+	}
+	if start < 0 || uint64(start) > uint64(^uint32(0)) {
+		return nil, errContextBadInput
+	}
+	if costLimit > MaxCostLimit || stackLimit > MaxStackLimit {
+		return nil, errContextBadInput
+	}
+	status := engine.Tir_ctx_match(
+		&c.ctx,
+		subject,
+		uint32(start),
+		uint32(flags),
+		costLimit,
+		stackLimit,
+		&c.ovector,
+		&c.usage,
+	)
+	switch status {
+	case statusMatched:
+		fillOffsets(c.offsets, c.ovector)
+		return c.offsets, nil
+	case statusNoMatch:
+		return nil, nil
+	case statusResourceExceeded:
+		return nil, errContextResource
+	case statusBadInput:
+		return nil, errContextBadInput
+	}
+	return nil, &Error{Kind: Internal, Code: int(status)}
+}
+
+// fillOffsets converts an engine ovector into public byte offsets, with the
+// unset sentinel becoming -1 — one statement of the rule, for the plain
+// path's fresh slice and the context's owned view alike.
+func fillOffsets(dst []int32, src []uint32) {
+	for i, slot := range src {
+		if slot == unset {
+			dst[i] = -1
+		} else {
+			dst[i] = int32(slot)
+		}
+	}
+}
+
+// CopyOvector is the documented copy-out: a fresh slice holding an answer,
+// safe to keep across calls on the context that produced it. It is the one
+// allocation in the context API after creation.
+func CopyOvector(ovector []int32) []int32 {
+	return slices.Clone(ovector)
 }

@@ -6,11 +6,11 @@ the differential tests can ask both the same thing.
 
 What is here is the wave 1 subset of DESIGN.md section 2.1 on the backtracking
 matcher of section 4.3, under caller-supplied cost, stack and memory limits.
-M4 added the two backends around it, and left that surface deliberately
-provisional: compile and match, nothing else. The Pike VM, matcher selection,
-the memoized configuration, the analysis accessors, the match configuration
-argument and the preallocated match context are all M5, and find-all is the
-backends' own sugar over match calls. Wave 2 lands in M8, wave 3 in M10.
+M4 added the two backends around it. M5 has since landed the Pike VM, matcher
+selection, the analysis accessors, the match configuration argument and the
+preallocated match context; the memoized configuration waits for M9, and
+find-all is the backends' own sugar over match calls. Wave 2 lands in M8,
+wave 3 in M10.
 
 M5 has started with the resource analysis of DESIGN.md section 5, which is four
 modules and one split. `compiler` emits the region tree while it still has the
@@ -31,8 +31,10 @@ match configuration, of which only the default exists until M9.
 eligibility, stores it on the compiled pattern, prices the Pike path with the
 closed form of BOUNDS.md section 9, and the public `match` routes an eligible
 pattern there while `bt_match` stays reachable as the internal testing entry
-point. The accessors answer for the selected path. What is still missing from
-M5 is the preallocated match context and the fuzz-scale bound sweeps.
+point. The accessors answer for the selected path. `context` is the
+preallocated match context, the memory bound made physical: creation
+reserves and zeroes exactly what the certificate prices, and a call on one
+reuses it all. What is still missing from M5 is the fuzz-scale bound sweeps.
 """
 
 from .driver import (

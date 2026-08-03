@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   f73ea38099c4a2abf425df43e02c515000505ac2a702c807772cac4cd79490a2
+//   2afc34d0b581ee7c8404bfc539eb148ce08256d527f110de8a9d12ecc4777ee6
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -15,7 +15,7 @@
 // loudly instead of reading undefined off the end of a typed array.
 
 /** SHA-256 of the TIR artifact this module was printed from. */
-export const artifactSha256 = "f73ea38099c4a2abf425df43e02c515000505ac2a702c807772cac4cd79490a2";
+export const artifactSha256 = "2afc34d0b581ee7c8404bfc539eb148ce08256d527f110de8a9d12ecc4777ee6";
 
 /** What a checked operation throws, per TIR-SPEC.md section 12. */
 export class tir_Trap extends Error {
@@ -269,9 +269,10 @@ export const CrRegionStack = 21;
 export const CrRegionTrail = 22;
 export const CrTotalCost = 23;
 export const CrTotalStack = 24;
-export const CrTotalMem = 25;
-export const CrNotLinear = 26;
-export const CrOk = 27;
+export const CrTotalTrail = 25;
+export const CrTotalMem = 26;
+export const CrNotLinear = 27;
+export const CrOk = 28;
 
 // enum Ek
 export const EkErr = 0;
@@ -441,6 +442,7 @@ export class Cert {
     this.complexity = CcNotProvenLinear;
     this.cost = new Poly();
     this.stack = new Poly();
+    this.trail = new Poly();
     this.mem = new Poly();
     this.prices = new tir_Seq(tir_EMPTY_OBJ, 0);
   }
@@ -451,20 +453,66 @@ export class Cert {
     o.complexity = this.complexity;
     o.cost = this.cost.tir_clone();
     o.stack = this.stack.tir_clone();
+    o.trail = this.trail.tir_clone();
     o.mem = this.mem.tir_clone();
     o.prices = this.prices;
     return o;
   }
 }
 
-function tir_new_Cert(config, complexity, cost, stack, mem, prices) {
+function tir_new_Cert(config, complexity, cost, stack, trail, mem, prices) {
   const o = new Cert();
   o.config = config;
   o.complexity = complexity;
   o.cost = cost;
   o.stack = stack;
+  o.trail = trail;
   o.mem = mem;
   o.prices = prices;
+  return o;
+}
+
+export class Ctx {
+  constructor() {
+    this.re = new Re();
+    this.ready = false;
+    this.maxlen = 0;
+    this.costcap = 0;
+    this.stackcap = 0;
+    this.memcap = 0;
+    this.regs = new tir_Seq(tir_EMPTY_U32, 0);
+    this.bt = new tir_Seq(tir_EMPTY_OBJ, 0);
+    this.trail = new tir_Seq(tir_EMPTY_OBJ, 0);
+    this.clist = new tir_Seq(tir_EMPTY_OBJ, 0);
+    this.nlist = new tir_Seq(tir_EMPTY_OBJ, 0);
+    this.stk = new tir_Seq(tir_EMPTY_OBJ, 0);
+    this.seen = new tir_Seq(tir_EMPTY_U8, 0);
+    this.pool = new tir_Seq(tir_EMPTY_U32, 0);
+    this.rc = new tir_Seq(tir_EMPTY_U32, 0);
+    this.free = new tir_Seq(tir_EMPTY_U32, 0);
+    this.slack = new tir_Seq(tir_EMPTY_U8, 0);
+  }
+}
+
+function tir_new_Ctx(re, ready, maxlen, costcap, stackcap, memcap, regs, bt, trail, clist, nlist, stk, seen, pool, rc, free, slack) {
+  const o = new Ctx();
+  o.re = re;
+  o.ready = ready;
+  o.maxlen = maxlen;
+  o.costcap = costcap;
+  o.stackcap = stackcap;
+  o.memcap = memcap;
+  o.regs = regs;
+  o.bt = bt;
+  o.trail = trail;
+  o.clist = clist;
+  o.nlist = nlist;
+  o.stk = stk;
+  o.seen = seen;
+  o.pool = pool;
+  o.rc = rc;
+  o.free = free;
+  o.slack = slack;
   return o;
 }
 
@@ -912,6 +960,39 @@ function tir_new_Rep(lo, hi, greedy, head, body, after) {
   return o;
 }
 
+export class Room {
+  constructor() {
+    this.lists = 0;
+    this.stk = 0;
+    this.tables = 0;
+    this.pool = 0;
+    this.words = 0;
+    this.reserved = 0;
+  }
+
+  tir_clone() {
+    const o = new Room();
+    o.lists = this.lists;
+    o.stk = this.stk;
+    o.tables = this.tables;
+    o.pool = this.pool;
+    o.words = this.words;
+    o.reserved = this.reserved;
+    return o;
+  }
+}
+
+function tir_new_Room(lists, stk, tables, pool, words, reserved) {
+  const o = new Room();
+  o.lists = lists;
+  o.stk = stk;
+  o.tables = tables;
+  o.pool = pool;
+  o.words = words;
+  o.reserved = reserved;
+  return o;
+}
+
 export class Th {
   constructor() {
     this.pc = 0;
@@ -1305,6 +1386,22 @@ export function bsr_at(subj, pos, bsr) {
 }
 
 export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit, ov, use) {
+  let regs = new tir_Seq(tir_EMPTY_U32, 0);
+  let bt = new tir_Seq(tir_EMPTY_OBJ, 0);
+  let trail = new tir_Seq(tir_EMPTY_OBJ, 0);
+  let tmp1 = 1;
+  const tir_t1 = tir_cell(regs);
+  const tir_t2 = tir_cell(bt);
+  const tir_t3 = tir_cell(trail);
+  const tir_t4 = bt_run(re.tir_clone(), subj, start, mopts, costlimit, stacklimit, memlimit, tir_t1, tir_t2, tir_t3, ov, use);
+  regs = tir_t1.v;
+  bt = tir_t2.v;
+  trail = tir_t3.v;
+  tmp1 = tir_t4;
+  return tmp1;
+}
+
+export function bt_run(re, subj, start, mopts, costlimit, stacklimit, memlimit, regs, bt, trail, ov, use) {
   let tmp1 = subj.n;
   let tmp2 = 0;
   let tmp3 = 0;
@@ -1332,9 +1429,6 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
   let tmp16 = ((tmp6 === 2) || ((tmp6 === 3) || (tmp6 === 4)));
   let tmp17 = (((mopts & 1) >>> 0) !== 0);
   let tmp18 = (((mopts & 2) >>> 0) !== 0);
-  let regs = new tir_Seq(tir_EMPTY_U32, 0);
-  let bt = new tir_Seq(tir_EMPTY_OBJ, 0);
-  let trail = new tir_Seq(tir_EMPTY_OBJ, 0);
   let tmp19 = tir_cmul((((tmp9 + tmp10) >>> 0)), 4);
   if (((tmp19 > memlimit) || (tmp19 > costlimit))) {
     return 2;
@@ -1342,11 +1436,14 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
   tmp3 = tmp19;
   tmp4 = tmp19;
   tmp2 = tmp19;
-  tir_reserve(regs, tmp9, 8704, tir_mk_u32);
+  tir_reserve(regs.v, tmp9, 8704, tir_mk_u32);
+  tir_truncate(regs.v, 0);
+  tir_truncate(bt.v, 0);
+  tir_truncate(trail.v, 0);
   tir_reserve(ov.v, tmp10, 512, tir_mk_u32);
   let tmp20 = 0;
   while ((tmp20 < tmp9)) {
-    tir_push(regs, 8704, tir_mk_u32, 4294967295);
+    tir_push(regs.v, 8704, tir_mk_u32, 4294967295);
     tmp20 = ((tmp20 + 1) >>> 0);
   }
   tir_truncate(ov.v, 0);
@@ -1370,12 +1467,12 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
     let tmp26 = 0;
     while ((tmp26 < tmp9)) {
       const tir_t1 = tmp26;
-      tir_bound(regs.n, tir_t1);
-      regs.a[tir_t1] = 4294967295;
+      tir_bound(regs.v.n, tir_t1);
+      regs.v.a[tir_t1] = 4294967295;
       tmp26 = ((tmp26 + 1) >>> 0);
     }
-    tir_truncate(bt, 0);
-    tir_truncate(trail, 0);
+    tir_truncate(bt.v, 0);
+    tir_truncate(trail.v, 0);
     let tmp27 = 0;
     let tmp28 = tmp21;
     let tmp29 = true;
@@ -1447,42 +1544,36 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
           tmp30 = true;
         }
       } else if (tir_t2 === OpSplit) {
-        let tmp36 = trail.n;
-        const tir_t6 = tir_cell(bt);
-        const tir_t7 = tir_cell(tmp3);
-        const tir_t8 = tir_cell(tmp4);
-        const tir_t9 = tir_cell(tmp2);
-        const tir_t10 = push_bt(tir_t6, tir_t7, tir_t8, tir_t9, memlimit, costlimit, stacklimit, tmp32.alt, tmp28, tmp36);
-        bt = tir_t6.v;
-        tmp3 = tir_t7.v;
-        tmp4 = tir_t8.v;
-        tmp2 = tir_t9.v;
-        tmp24 = tir_t10;
+        let tmp36 = trail.v.n;
+        const tir_t6 = tir_cell(tmp3);
+        const tir_t7 = tir_cell(tmp4);
+        const tir_t8 = tir_cell(tmp2);
+        const tir_t9 = push_bt(bt, tir_t6, tir_t7, tir_t8, memlimit, costlimit, stacklimit, tmp32.alt, tmp28, tmp36);
+        tmp3 = tir_t6.v;
+        tmp4 = tir_t7.v;
+        tmp2 = tir_t8.v;
+        tmp24 = tir_t9;
         if ((!tmp24)) {
           tmp22 = 2;
           tmp23 = false;
           tmp29 = false;
         } else {
-          if ((tmp5 < bt.n)) {
-            tmp5 = bt.n;
+          if ((tmp5 < bt.v.n)) {
+            tmp5 = bt.v.n;
           }
         }
         tmp27 = tmp32.arg;
       } else if (tir_t2 === OpJump) {
         tmp27 = tmp32.arg;
       } else if (tir_t2 === OpSave) {
-        const tir_t11 = tir_cell(regs);
-        const tir_t12 = tir_cell(trail);
-        const tir_t13 = tir_cell(tmp3);
-        const tir_t14 = tir_cell(tmp4);
-        const tir_t15 = tir_cell(tmp2);
-        const tir_t16 = write_reg(tir_t11, tir_t12, tir_t13, tir_t14, tir_t15, memlimit, costlimit, bt.n, tmp32.arg, tmp28);
-        regs = tir_t11.v;
-        trail = tir_t12.v;
-        tmp3 = tir_t13.v;
-        tmp4 = tir_t14.v;
-        tmp2 = tir_t15.v;
-        tmp24 = tir_t16;
+        const tir_t10 = tir_cell(tmp3);
+        const tir_t11 = tir_cell(tmp4);
+        const tir_t12 = tir_cell(tmp2);
+        const tir_t13 = write_reg(regs, trail, tir_t10, tir_t11, tir_t12, memlimit, costlimit, bt.v.n, tmp32.arg, tmp28);
+        tmp3 = tir_t10.v;
+        tmp4 = tir_t11.v;
+        tmp2 = tir_t12.v;
+        tmp24 = tir_t13;
         if ((!tmp24)) {
           tmp22 = 2;
           tmp23 = false;
@@ -1499,8 +1590,8 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
         let tmp37 = (!tmp17);
         if ((tmp28 !== 0)) {
           let tmp38 = 0;
-          const tir_t17 = newline_before(subj, tmp28, tmp6);
-          tmp38 = tir_t17;
+          const tir_t14 = newline_before(subj, tmp28, tmp6);
+          tmp38 = tir_t14;
           tmp37 = ((tmp28 !== tmp1) && (tmp38 !== 0));
         }
         if (tmp37) {
@@ -1510,8 +1601,8 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
         }
       } else if (tir_t2 === OpDoll) {
         let tmp39 = false;
-        const tir_t18 = at_line_end(subj, tmp28, tmp6);
-        tmp39 = tir_t18;
+        const tir_t15 = at_line_end(subj, tmp28, tmp6);
+        tmp39 = tir_t15;
         if (((!tmp18) && tmp39)) {
           tmp27 = ((tmp27 + 1) >>> 0);
         } else {
@@ -1527,8 +1618,8 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
         let tmp40 = (!tmp18);
         if ((tmp28 < tmp1)) {
           let tmp41 = 0;
-          const tir_t19 = newline_at(subj, tmp28, tmp6);
-          tmp41 = tir_t19;
+          const tir_t16 = newline_at(subj, tmp28, tmp6);
+          tmp41 = tir_t16;
           tmp40 = (tmp41 !== 0);
         }
         if (tmp40) {
@@ -1550,42 +1641,38 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
         }
       } else if (tir_t2 === OpEodn) {
         let tmp42 = false;
-        const tir_t20 = at_line_end(subj, tmp28, tmp6);
-        tmp42 = tir_t20;
+        const tir_t17 = at_line_end(subj, tmp28, tmp6);
+        tmp42 = tir_t17;
         if (tmp42) {
           tmp27 = ((tmp27 + 1) >>> 0);
         } else {
           tmp30 = true;
         }
       } else if (tir_t2 === OpWordB) {
-        const tir_t21 = word_edge(subj, tmp28);
-        tmp24 = tir_t21;
+        const tir_t18 = word_edge(subj, tmp28);
+        tmp24 = tir_t18;
         if (tmp24) {
           tmp27 = ((tmp27 + 1) >>> 0);
         } else {
           tmp30 = true;
         }
       } else if (tir_t2 === OpNotWordB) {
-        const tir_t22 = word_edge(subj, tmp28);
-        tmp24 = tir_t22;
+        const tir_t19 = word_edge(subj, tmp28);
+        tmp24 = tir_t19;
         if ((!tmp24)) {
           tmp27 = ((tmp27 + 1) >>> 0);
         } else {
           tmp30 = true;
         }
       } else if (tir_t2 === OpRepZero) {
-        const tir_t23 = tir_cell(regs);
-        const tir_t24 = tir_cell(trail);
-        const tir_t25 = tir_cell(tmp3);
-        const tir_t26 = tir_cell(tmp4);
-        const tir_t27 = tir_cell(tmp2);
-        const tir_t28 = write_reg(tir_t23, tir_t24, tir_t25, tir_t26, tir_t27, memlimit, costlimit, bt.n, ((tmp11 + ((Math.imul(tmp32.arg, 2)) >>> 0)) >>> 0), 0);
-        regs = tir_t23.v;
-        trail = tir_t24.v;
-        tmp3 = tir_t25.v;
-        tmp4 = tir_t26.v;
-        tmp2 = tir_t27.v;
-        tmp24 = tir_t28;
+        const tir_t20 = tir_cell(tmp3);
+        const tir_t21 = tir_cell(tmp4);
+        const tir_t22 = tir_cell(tmp2);
+        const tir_t23 = write_reg(regs, trail, tir_t20, tir_t21, tir_t22, memlimit, costlimit, bt.v.n, ((tmp11 + ((Math.imul(tmp32.arg, 2)) >>> 0)) >>> 0), 0);
+        tmp3 = tir_t20.v;
+        tmp4 = tir_t21.v;
+        tmp2 = tir_t22.v;
+        tmp24 = tir_t23;
         if ((!tmp24)) {
           tmp22 = 2;
           tmp23 = false;
@@ -1593,18 +1680,14 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
         }
         tmp27 = ((tmp27 + 1) >>> 0);
       } else if (tir_t2 === OpRepEnter) {
-        const tir_t29 = tir_cell(regs);
-        const tir_t30 = tir_cell(trail);
-        const tir_t31 = tir_cell(tmp3);
-        const tir_t32 = tir_cell(tmp4);
-        const tir_t33 = tir_cell(tmp2);
-        const tir_t34 = write_reg(tir_t29, tir_t30, tir_t31, tir_t32, tir_t33, memlimit, costlimit, bt.n, ((((tmp11 + ((Math.imul(tmp32.arg, 2)) >>> 0)) >>> 0) + 1) >>> 0), tmp28);
-        regs = tir_t29.v;
-        trail = tir_t30.v;
-        tmp3 = tir_t31.v;
-        tmp4 = tir_t32.v;
-        tmp2 = tir_t33.v;
-        tmp24 = tir_t34;
+        const tir_t24 = tir_cell(tmp3);
+        const tir_t25 = tir_cell(tmp4);
+        const tir_t26 = tir_cell(tmp2);
+        const tir_t27 = write_reg(regs, trail, tir_t24, tir_t25, tir_t26, memlimit, costlimit, bt.v.n, ((((tmp11 + ((Math.imul(tmp32.arg, 2)) >>> 0)) >>> 0) + 1) >>> 0), tmp28);
+        tmp3 = tir_t24.v;
+        tmp4 = tir_t25.v;
+        tmp2 = tir_t26.v;
+        tmp24 = tir_t27;
         if ((!tmp24)) {
           tmp22 = 2;
           tmp23 = false;
@@ -1613,7 +1696,7 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
         tmp27 = ((tmp27 + 1) >>> 0);
       } else if (tir_t2 === OpRepLoop) {
         let tmp43 = tir_at(reps, tmp32.arg).tir_clone();
-        let tmp44 = tir_at(regs, ((tmp11 + ((Math.imul(tmp32.arg, 2)) >>> 0)) >>> 0));
+        let tmp44 = tir_at(regs.v, ((tmp11 + ((Math.imul(tmp32.arg, 2)) >>> 0)) >>> 0));
         if ((tmp44 < tmp43.lo)) {
           tmp27 = tmp43.body;
         } else {
@@ -1621,46 +1704,42 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
             tmp27 = tmp43.after;
           } else {
             if (tmp43.greedy) {
-              let tmp45 = trail.n;
-              const tir_t35 = tir_cell(bt);
-              const tir_t36 = tir_cell(tmp3);
-              const tir_t37 = tir_cell(tmp4);
-              const tir_t38 = tir_cell(tmp2);
-              const tir_t39 = push_bt(tir_t35, tir_t36, tir_t37, tir_t38, memlimit, costlimit, stacklimit, tmp43.after, tmp28, tmp45);
-              bt = tir_t35.v;
-              tmp3 = tir_t36.v;
-              tmp4 = tir_t37.v;
-              tmp2 = tir_t38.v;
-              tmp24 = tir_t39;
+              let tmp45 = trail.v.n;
+              const tir_t28 = tir_cell(tmp3);
+              const tir_t29 = tir_cell(tmp4);
+              const tir_t30 = tir_cell(tmp2);
+              const tir_t31 = push_bt(bt, tir_t28, tir_t29, tir_t30, memlimit, costlimit, stacklimit, tmp43.after, tmp28, tmp45);
+              tmp3 = tir_t28.v;
+              tmp4 = tir_t29.v;
+              tmp2 = tir_t30.v;
+              tmp24 = tir_t31;
               if ((!tmp24)) {
                 tmp22 = 2;
                 tmp23 = false;
                 tmp29 = false;
               } else {
-                if ((tmp5 < bt.n)) {
-                  tmp5 = bt.n;
+                if ((tmp5 < bt.v.n)) {
+                  tmp5 = bt.v.n;
                 }
               }
               tmp27 = tmp43.body;
             } else {
-              let tmp46 = trail.n;
-              const tir_t40 = tir_cell(bt);
-              const tir_t41 = tir_cell(tmp3);
-              const tir_t42 = tir_cell(tmp4);
-              const tir_t43 = tir_cell(tmp2);
-              const tir_t44 = push_bt(tir_t40, tir_t41, tir_t42, tir_t43, memlimit, costlimit, stacklimit, tmp43.body, tmp28, tmp46);
-              bt = tir_t40.v;
-              tmp3 = tir_t41.v;
-              tmp4 = tir_t42.v;
-              tmp2 = tir_t43.v;
-              tmp24 = tir_t44;
+              let tmp46 = trail.v.n;
+              const tir_t32 = tir_cell(tmp3);
+              const tir_t33 = tir_cell(tmp4);
+              const tir_t34 = tir_cell(tmp2);
+              const tir_t35 = push_bt(bt, tir_t32, tir_t33, tir_t34, memlimit, costlimit, stacklimit, tmp43.body, tmp28, tmp46);
+              tmp3 = tir_t32.v;
+              tmp4 = tir_t33.v;
+              tmp2 = tir_t34.v;
+              tmp24 = tir_t35;
               if ((!tmp24)) {
                 tmp22 = 2;
                 tmp23 = false;
                 tmp29 = false;
               } else {
-                if ((tmp5 < bt.n)) {
-                  tmp5 = bt.n;
+                if ((tmp5 < bt.v.n)) {
+                  tmp5 = bt.v.n;
                 }
               }
               tmp27 = tmp43.after;
@@ -1670,20 +1749,16 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
       } else if (tir_t2 === OpRepNext) {
         let tmp47 = tir_at(reps, tmp32.arg).tir_clone();
         let tmp48 = ((tmp11 + ((Math.imul(tmp32.arg, 2)) >>> 0)) >>> 0);
-        let tmp49 = ((tir_at(regs, tmp48) + 1) >>> 0);
-        let tmp50 = tir_at(regs, ((tmp48 + 1) >>> 0));
-        const tir_t45 = tir_cell(regs);
-        const tir_t46 = tir_cell(trail);
-        const tir_t47 = tir_cell(tmp3);
-        const tir_t48 = tir_cell(tmp4);
-        const tir_t49 = tir_cell(tmp2);
-        const tir_t50 = write_reg(tir_t45, tir_t46, tir_t47, tir_t48, tir_t49, memlimit, costlimit, bt.n, tmp48, tmp49);
-        regs = tir_t45.v;
-        trail = tir_t46.v;
-        tmp3 = tir_t47.v;
-        tmp4 = tir_t48.v;
-        tmp2 = tir_t49.v;
-        tmp24 = tir_t50;
+        let tmp49 = ((tir_at(regs.v, tmp48) + 1) >>> 0);
+        let tmp50 = tir_at(regs.v, ((tmp48 + 1) >>> 0));
+        const tir_t36 = tir_cell(tmp3);
+        const tir_t37 = tir_cell(tmp4);
+        const tir_t38 = tir_cell(tmp2);
+        const tir_t39 = write_reg(regs, trail, tir_t36, tir_t37, tir_t38, memlimit, costlimit, bt.v.n, tmp48, tmp49);
+        tmp3 = tir_t36.v;
+        tmp4 = tir_t37.v;
+        tmp2 = tir_t38.v;
+        tmp24 = tir_t39;
         if ((!tmp24)) {
           tmp22 = 2;
           tmp23 = false;
@@ -1700,41 +1775,41 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
         if (tmp52) {
           tmp30 = true;
         } else {
-          const tir_t51 = 0;
-          tir_bound(regs.n, tir_t51);
-          regs.a[tir_t51] = tmp21;
-          const tir_t52 = 1;
-          tir_bound(regs.n, tir_t52);
-          regs.a[tir_t52] = tmp28;
+          const tir_t40 = 0;
+          tir_bound(regs.v.n, tir_t40);
+          regs.v.a[tir_t40] = tmp21;
+          const tir_t41 = 1;
+          tir_bound(regs.v.n, tir_t41);
+          regs.v.a[tir_t41] = tmp28;
           tmp31 = true;
           tmp29 = false;
         }
       }
       if (tmp30) {
-        if ((bt.n === 0)) {
+        if ((bt.v.n === 0)) {
           tmp29 = false;
-          tir_truncate(trail, 0);
+          tir_truncate(trail.v, 0);
         } else {
           let tmp53 = new Bt();
-          tmp53 = tir_pop(bt);
+          tmp53 = tir_pop(bt.v);
           tmp27 = tmp53.pc;
           tmp28 = tmp53.pos;
-          let tmp54 = tir_cmul(tir_csub((trail.n), (tmp53.mark)), 4);
+          let tmp54 = tir_cmul(tir_csub((trail.v.n), (tmp53.mark)), 4);
           if ((tmp54 > tir_csub(costlimit, tmp2))) {
             tmp22 = 2;
             tmp23 = false;
             tmp29 = false;
           } else {
             tmp2 = tir_cadd(tmp2, tmp54);
-            while ((tmp53.mark < trail.n)) {
+            while ((tmp53.mark < trail.v.n)) {
               let tmp55 = new Undo();
-              tmp55 = tir_pop(trail);
-              const tir_t53 = tmp55.slot;
-              tir_bound(regs.n, tir_t53);
-              regs.a[tir_t53] = tmp55.old;
+              tmp55 = tir_pop(trail.v);
+              const tir_t42 = tmp55.slot;
+              tir_bound(regs.v.n, tir_t42);
+              regs.v.a[tir_t42] = tmp55.old;
             }
-            if ((bt.n === 0)) {
-              tir_truncate(trail, 0);
+            if ((bt.v.n === 0)) {
+              tir_truncate(trail.v, 0);
             }
             tmp30 = false;
           }
@@ -1766,9 +1841,9 @@ export function bt_match(re, subj, start, mopts, costlimit, stacklimit, memlimit
       tmp2 = tir_cadd(tmp2, tmp56);
       let tmp57 = 0;
       while ((tmp57 < tmp10)) {
-        const tir_t54 = tmp57;
-        tir_bound(ov.v.n, tir_t54);
-        ov.v.a[tir_t54] = tir_at(regs, tmp57);
+        const tir_t43 = tmp57;
+        tir_bound(ov.v.n, tir_t43);
+        ov.v.a[tir_t43] = tir_at(regs.v, tmp57);
         tmp57 = ((tmp57 + 1) >>> 0);
       }
     }
@@ -1970,6 +2045,9 @@ export function cert_check(re, config, cert) {
     return CrBase;
   }
   if ((cert.stack.base === 0)) {
+    return CrBase;
+  }
+  if ((cert.trail.base === 0)) {
     return CrBase;
   }
   if ((cert.mem.base === 0)) {
@@ -2322,7 +2400,7 @@ export function charge_call(re, cert, whole, over) {
   const tir_t16 = poly_mul(scratch.tir_clone(), tir_new_Poly(1, 2, 0, 0, 0, 0), over);
   tmp18 = tir_t16;
   let tmp19 = new Poly();
-  const tir_t17 = poly_add(tir_new_Poly(1, setup, 0, 0, 0, 0), tmp18.tir_clone(), over);
+  const tir_t17 = poly_add(tir_new_Poly(1, tir_cadd(setup, deliver), 0, 0, 0, 0), tmp18.tir_clone(), over);
   tmp19 = tir_t17;
   if (over.v) {
     return CrOverflow;
@@ -2338,8 +2416,13 @@ export function charge_call(re, cert, whole, over) {
   if ((!holds)) {
     return CrTotalStack;
   }
-  const tir_t20 = poly_ge(cert.mem.tir_clone(), tmp19.tir_clone());
+  const tir_t20 = poly_eq(cert.trail.tir_clone(), whole.trail.tir_clone());
   holds = tir_t20;
+  if ((!holds)) {
+    return CrTotalTrail;
+  }
+  const tir_t21 = poly_ge(cert.mem.tir_clone(), tmp19.tir_clone());
+  holds = tir_t21;
   if ((!holds)) {
     return CrTotalMem;
   }
@@ -2776,6 +2859,213 @@ export function compile(pat, popts, nltype, bsr, out) {
 
 export function ct(c, bit) {
   return (((tir_at(CTYPE, ((c) >>> 0)) & bit) & 255) !== 0);
+}
+
+export function ctx_create(re, mcfg, maxlen, costlimit, stacklimit, memlimit, ctx) {
+  ctx.v.ready = false;
+  if ((mcfg !== 0)) {
+    return 3;
+  }
+  if ((maxlen > 2147483647)) {
+    return 3;
+  }
+  let picked = new Cert();
+  let has = false;
+  const tir_t1 = tir_cell(picked);
+  const tir_t2 = re_pick(re.tir_clone(), tir_t1);
+  picked = tir_t1.v;
+  has = tir_t2;
+  if ((!has)) {
+    return 4;
+  }
+  let over = false;
+  let novec = ((Math.imul(((re.ncap + 1) >>> 0), 2)) >>> 0);
+  let answer = tir_cmul((novec), 4);
+  let setup = 0;
+  let ballast = 0;
+  let nregs = 0;
+  let cbt = 0;
+  let ctrail = 0;
+  let clists = 0;
+  let cstk = 0;
+  let ctab = 0;
+  let cpool = 0;
+  let words = 0;
+  if (re.pike) {
+    let room = new Room();
+    const tir_t3 = tir_cell(room);
+    const tir_t4 = tir_cell(over);
+    pike_room(re.tir_clone(), tir_t3, tir_t4);
+    room = tir_t3.v;
+    over = tir_t4.v;
+    words = room.words;
+    clists = room.lists;
+    cstk = room.stk;
+    ctab = room.tables;
+    cpool = room.pool;
+    ballast = room.reserved;
+    setup = tir_cadd(tir_cmul((novec), 4), (words));
+  } else {
+    let tmp1 = new Bound();
+    const tir_t5 = poly_value(picked.stack.tir_clone(), (maxlen));
+    tmp1 = tir_t5;
+    let tmp2 = new Bound();
+    const tir_t6 = poly_value(picked.trail.tir_clone(), (maxlen));
+    tmp2 = tir_t6;
+    if ((!tmp1.ok)) {
+      return 4;
+    }
+    if ((!tmp2.ok)) {
+      return 4;
+    }
+    let tmp3 = 0;
+    if ((tmp1.value > 0)) {
+      let tmp4 = 0;
+      const tir_t7 = tir_cell(over);
+      const tir_t8 = sat_mul(tmp1.value, 2, tir_t7);
+      over = tir_t7.v;
+      tmp4 = tir_t8;
+      let tmp5 = 0;
+      const tir_t9 = tir_cell(over);
+      const tir_t10 = sat_add(tmp4, 4, tir_t9);
+      over = tir_t9.v;
+      tmp5 = tir_t10;
+      tmp3 = tmp5;
+    }
+    cbt = tmp3;
+    let tmp6 = 0;
+    if ((tmp2.value > 0)) {
+      let tmp7 = 0;
+      const tir_t11 = tir_cell(over);
+      const tir_t12 = sat_mul(tmp2.value, 2, tir_t11);
+      over = tir_t11.v;
+      tmp7 = tir_t12;
+      let tmp8 = 0;
+      const tir_t13 = tir_cell(over);
+      const tir_t14 = sat_add(tmp7, 4, tir_t13);
+      over = tir_t13.v;
+      tmp8 = tir_t14;
+      tmp6 = tmp8;
+    }
+    ctrail = tmp6;
+    let tmp9 = 0;
+    const tir_t15 = tir_cell(over);
+    const tir_t16 = sat_mul(cbt, 12, tir_t15);
+    over = tir_t15.v;
+    tmp9 = tir_t16;
+    let tmp10 = 0;
+    const tir_t17 = tir_cell(over);
+    const tir_t18 = sat_mul(ctrail, 8, tir_t17);
+    over = tir_t17.v;
+    tmp10 = tir_t18;
+    let tmp11 = 0;
+    const tir_t19 = tir_cell(over);
+    const tir_t20 = sat_add(tmp9, tmp10, tir_t19);
+    over = tir_t19.v;
+    tmp11 = tir_t20;
+    tmp9 = tmp11;
+    ballast = tmp9;
+    nregs = re.nregs;
+    setup = tir_cmul((((nregs + novec) >>> 0)), 4);
+  }
+  let tmp12 = 0;
+  const tir_t21 = tir_cell(over);
+  const tir_t22 = sat_add(setup, answer, tir_t21);
+  over = tir_t21.v;
+  tmp12 = tir_t22;
+  let tmp13 = 0;
+  const tir_t23 = tir_cell(over);
+  const tir_t24 = sat_mul(ballast, 2, tir_t23);
+  over = tir_t23.v;
+  tmp13 = tir_t24;
+  let tmp14 = 0;
+  const tir_t25 = tir_cell(over);
+  const tir_t26 = sat_add(tmp12, tmp13, tir_t25);
+  over = tir_t25.v;
+  tmp14 = tir_t26;
+  let tmp15 = tmp14;
+  if (over) {
+    return 4;
+  }
+  if ((tmp15 > 2147483647)) {
+    return 4;
+  }
+  if ((tmp15 > memlimit)) {
+    return 2;
+  }
+  if ((tmp15 > costlimit)) {
+    return 2;
+  }
+  let blank = new Ctx();
+  const tir_t27 = ctx.v;
+  ctx.v = blank;
+  blank = tir_t27;
+  tir_reserve(ctx.v.regs, nregs, 8704, tir_mk_u32);
+  tir_reserve(ctx.v.bt, ((cbt) >>> 0), 178956970, tir_mk_obj);
+  tir_reserve(ctx.v.trail, ((ctrail) >>> 0), 268435455, tir_mk_obj);
+  tir_reserve(ctx.v.clist, ((clists) >>> 0), 65700, tir_mk_obj);
+  tir_reserve(ctx.v.nlist, ((clists) >>> 0), 65700, tir_mk_obj);
+  tir_reserve(ctx.v.stk, ((cstk) >>> 0), 131396, tir_mk_obj);
+  tir_reserve(ctx.v.seen, words, 2147483647, tir_mk_u8);
+  tir_reserve(ctx.v.rc, ((ctab) >>> 0), 262796, tir_mk_u32);
+  tir_reserve(ctx.v.free, ((ctab) >>> 0), 262796, tir_mk_u32);
+  tir_reserve(ctx.v.pool, ((cpool) >>> 0), 134549508, tir_mk_u32);
+  tir_reserve(ctx.v.slack, ((ballast) >>> 0), 2147483647, tir_mk_u8);
+  ctx.v.re = re.tir_clone();
+  ctx.v.maxlen = maxlen;
+  ctx.v.costcap = costlimit;
+  ctx.v.stackcap = stacklimit;
+  ctx.v.memcap = tmp15;
+  ctx.v.ready = true;
+  return 0;
+}
+
+export function ctx_match(ctx, subj, start, mopts, costlimit, stacklimit, ov, use) {
+  use.v.cost = 0;
+  use.v.stack = 0;
+  use.v.mem = 0;
+  if ((!ctx.v.ready)) {
+    return 3;
+  }
+  if ((ctx.v.maxlen < subj.n)) {
+    return 3;
+  }
+  if ((costlimit > ctx.v.costcap)) {
+    return 3;
+  }
+  if ((stacklimit > ctx.v.stackcap)) {
+    return 3;
+  }
+  let tmp1 = 1;
+  if (ctx.v.re.pike) {
+    const tir_t1 = tir_cell(ctx.v.clist);
+    const tir_t2 = tir_cell(ctx.v.nlist);
+    const tir_t3 = tir_cell(ctx.v.stk);
+    const tir_t4 = tir_cell(ctx.v.seen);
+    const tir_t5 = tir_cell(ctx.v.pool);
+    const tir_t6 = tir_cell(ctx.v.rc);
+    const tir_t7 = tir_cell(ctx.v.free);
+    const tir_t8 = pike_run(ctx.v.re.tir_clone(), subj, start, mopts, costlimit, stacklimit, ctx.v.memcap, tir_t1, tir_t2, tir_t3, tir_t4, tir_t5, tir_t6, tir_t7, ov, use);
+    ctx.v.clist = tir_t1.v;
+    ctx.v.nlist = tir_t2.v;
+    ctx.v.stk = tir_t3.v;
+    ctx.v.seen = tir_t4.v;
+    ctx.v.pool = tir_t5.v;
+    ctx.v.rc = tir_t6.v;
+    ctx.v.free = tir_t7.v;
+    tmp1 = tir_t8;
+  } else {
+    const tir_t9 = tir_cell(ctx.v.regs);
+    const tir_t10 = tir_cell(ctx.v.bt);
+    const tir_t11 = tir_cell(ctx.v.trail);
+    const tir_t12 = bt_run(ctx.v.re.tir_clone(), subj, start, mopts, costlimit, stacklimit, ctx.v.memcap, tir_t9, tir_t10, tir_t11, ov, use);
+    ctx.v.regs = tir_t9.v;
+    ctx.v.bt = tir_t10.v;
+    ctx.v.trail = tir_t11.v;
+    tmp1 = tir_t12;
+  }
+  use.v.mem = ctx.v.memcap;
+  return tmp1;
 }
 
 export function drop_empty_region(w, at) {
@@ -4199,8 +4489,13 @@ export function pike_check(re, cert) {
   if ((!tmp4)) {
     return CrTotalStack;
   }
-  const tir_t7 = poly_ge(cert.mem.tir_clone(), needed.mem.tir_clone());
+  const tir_t7 = poly_eq(cert.trail.tir_clone(), needed.trail.tir_clone());
   tmp4 = tir_t7;
+  if ((!tmp4)) {
+    return CrTotalTrail;
+  }
+  const tir_t8 = poly_ge(cert.mem.tir_clone(), needed.mem.tir_clone());
+  tmp4 = tir_t8;
   if ((!tmp4)) {
     return CrTotalMem;
   }
@@ -4209,12 +4504,12 @@ export function pike_check(re, cert) {
 
 export function pike_defer(held, pcv, hv, mem, peak, cost, memlimit, costlimit) {
   let tmp1 = false;
-  const tir_t1 = charge_grow(held.v.a.length, held.v.n, 8, 65696, mem, peak, cost, memlimit, costlimit);
+  const tir_t1 = charge_grow(held.v.a.length, held.v.n, 8, 131396, mem, peak, cost, memlimit, costlimit);
   tmp1 = tir_t1;
   if ((!tmp1)) {
     return false;
   }
-  tir_push(held.v, 65696, tir_mk_obj, tir_new_Th(pcv, hv));
+  tir_push(held.v, 131396, tir_mk_obj, tir_new_Th(pcv, hv));
   return true;
 }
 
@@ -4228,12 +4523,12 @@ export function pike_drop(rc, free, h, mem, peak, cost, memlimit, costlimit) {
   rc.v.a[tir_t1] = tmp1;
   if ((tmp1 === 0)) {
     let tmp2 = false;
-    const tir_t2 = charge_grow(free.v.a.length, free.v.n, 4, 131396, mem, peak, cost, memlimit, costlimit);
+    const tir_t2 = charge_grow(free.v.a.length, free.v.n, 4, 262796, mem, peak, cost, memlimit, costlimit);
     tmp2 = tir_t2;
     if ((!tmp2)) {
       return false;
     }
-    tir_push(free.v, 131396, tir_mk_u32, h);
+    tir_push(free.v, 262796, tir_mk_u32, h);
   }
   return true;
 }
@@ -4251,7 +4546,7 @@ export function pike_hollow(re, which) {
     tmp5 = ((tmp5 + 1) >>> 0);
   }
   let pending = new tir_Seq(tir_EMPTY_U32, 0);
-  tir_push(pending, 65696, tir_mk_u32, tmp1.body);
+  tir_push(pending, 131396, tir_mk_u32, tmp1.body);
   let tmp6 = tir_cmul((tmp3), 2);
   while ((pending.n > 0)) {
     let tmp7 = 0;
@@ -4288,52 +4583,26 @@ export function pike_hollow(re, which) {
     } else if (tir_t2 === OpAccept) {
       // nothing
     } else if (tir_t2 === OpSplit) {
-      tir_push(pending, 65696, tir_mk_u32, tmp10.arg);
-      tir_push(pending, 65696, tir_mk_u32, tmp10.alt);
+      tir_push(pending, 131396, tir_mk_u32, tmp10.arg);
+      tir_push(pending, 131396, tir_mk_u32, tmp10.alt);
     } else if (tir_t2 === OpJump) {
-      tir_push(pending, 65696, tir_mk_u32, tmp10.arg);
+      tir_push(pending, 131396, tir_mk_u32, tmp10.arg);
     } else if (tir_t2 === OpRepLoop) {
       let tmp11 = tir_at(re.reps, tmp10.arg).tir_clone();
-      tir_push(pending, 65696, tir_mk_u32, tmp11.body);
-      tir_push(pending, 65696, tir_mk_u32, tmp11.after);
+      tir_push(pending, 131396, tir_mk_u32, tmp11.body);
+      tir_push(pending, 131396, tir_mk_u32, tmp11.after);
     } else if (tir_t2 === OpRepNext) {
       let tmp12 = tir_at(re.reps, tmp10.arg).tir_clone();
-      tir_push(pending, 65696, tir_mk_u32, tmp12.head);
-      tir_push(pending, 65696, tir_mk_u32, tmp12.after);
+      tir_push(pending, 131396, tir_mk_u32, tmp12.head);
+      tir_push(pending, 131396, tir_mk_u32, tmp12.after);
     } else {
-      tir_push(pending, 65696, tir_mk_u32, ((tmp7 + 1) >>> 0));
+      tir_push(pending, 131396, tir_mk_u32, ((tmp7 + 1) >>> 0));
     }
   }
   return false;
 }
 
 export function pike_match(re, subj, start, mopts, costlimit, stacklimit, memlimit, ov, use) {
-  let tmp1 = subj.n;
-  let tmp2 = 0;
-  let tmp3 = 0;
-  let tmp4 = 0;
-  use.v.cost = tmp2;
-  use.v.stack = 0;
-  use.v.mem = tmp4;
-  if ((!re.pike)) {
-    return 3;
-  }
-  if ((start > tmp1)) {
-    return 3;
-  }
-  let code = re.code;
-  let reps = re.reps;
-  let classes = re.classes;
-  let tmp5 = re.nltype;
-  let tmp6 = re.ncap;
-  let tmp7 = ((Math.imul(((tmp6 + 1) >>> 0), 2)) >>> 0);
-  let tmp8 = ((((re.opts & 32) >>> 0) !== 0) || (((mopts & 16) >>> 0) !== 0));
-  let tmp9 = (((mopts & 4) >>> 0) !== 0);
-  let tmp10 = (((mopts & 8) >>> 0) !== 0);
-  let tmp11 = (re.hascrlf === 0);
-  let tmp12 = ((tmp5 === 2) || ((tmp5 === 3) || (tmp5 === 4)));
-  let tmp13 = (((mopts & 1) >>> 0) !== 0);
-  let tmp14 = (((mopts & 2) >>> 0) !== 0);
   let clist = new tir_Seq(tir_EMPTY_OBJ, 0);
   let nlist = new tir_Seq(tir_EMPTY_OBJ, 0);
   let stk = new tir_Seq(tir_EMPTY_OBJ, 0);
@@ -4341,507 +4610,24 @@ export function pike_match(re, subj, start, mopts, costlimit, stacklimit, memlim
   let pool = new tir_Seq(tir_EMPTY_U32, 0);
   let rc = new tir_Seq(tir_EMPTY_U32, 0);
   let free = new tir_Seq(tir_EMPTY_U32, 0);
-  let tmp15 = (((code.n >>> 3) + 1) >>> 0);
-  let tmp16 = tir_cadd(tir_cmul((tmp7), 4), (tmp15));
-  if (((tmp16 > memlimit) || (tmp16 > costlimit))) {
-    return 2;
-  }
-  tmp3 = tmp16;
-  tmp4 = tmp16;
-  tmp2 = tmp16;
-  tir_reserve(ov.v, tmp7, 512, tir_mk_u32);
-  tir_truncate(ov.v, 0);
-  let tmp17 = 0;
-  while ((tmp17 < tmp7)) {
-    tir_push(ov.v, 512, tir_mk_u32, 4294967295);
-    tmp17 = ((tmp17 + 1) >>> 0);
-  }
-  tir_reserve(seen, tmp15, 2147483647, tir_mk_u8);
-  tmp17 = 0;
-  while ((tmp17 < tmp15)) {
-    tir_push(seen, 2147483647, tir_mk_u8, 0);
-    tmp17 = ((tmp17 + 1) >>> 0);
-  }
-  let tmp18 = 4294967295;
-  let tmp19 = true;
-  let tmp20 = 1;
-  let tmp21 = true;
-  let tmp22 = start;
-  let tmp23 = false;
-  let tmp24 = tir_cmul((tmp7), 4);
-  let tmp25 = (tmp15);
-  let tmp26 = (re.crfirst !== 0);
-  while (tmp21) {
-    if ((tmp19 && ((!tmp8) || (tmp22 === start)))) {
-      let tmp27 = false;
-      if (((tmp22 > start) && (tmp12 && tmp11))) {
-        if ((tmp26 && ((tir_at(subj, ((tmp22 - 1) >>> 0)) === 13) && ((tmp22 < tmp1) && (tir_at(subj, tmp22) === 10))))) {
-          tmp27 = true;
-        }
-      }
-      if ((!tmp27)) {
-        let tmp28 = 4294967295;
-        const tir_t1 = tir_cell(pool);
-        const tir_t2 = tir_cell(rc);
-        const tir_t3 = tir_cell(free);
-        const tir_t4 = tir_cell(tmp3);
-        const tir_t5 = tir_cell(tmp4);
-        const tir_t6 = tir_cell(tmp2);
-        const tir_t7 = pike_take(tir_t1, tir_t2, tir_t3, tmp7, tir_t4, tir_t5, tir_t6, memlimit, costlimit);
-        pool = tir_t1.v;
-        rc = tir_t2.v;
-        free = tir_t3.v;
-        tmp3 = tir_t4.v;
-        tmp4 = tir_t5.v;
-        tmp2 = tir_t6.v;
-        tmp28 = tir_t7;
-        if ((tmp28 === 4294967295)) {
-          tmp20 = 2;
-          tmp21 = false;
-        } else {
-          if ((tmp24 > tir_csub(costlimit, tmp2))) {
-            tmp20 = 2;
-            tmp21 = false;
-          } else {
-            tmp2 = tir_cadd(tmp2, tmp24);
-            let tmp29 = ((Math.imul(tmp28, tmp7)) >>> 0);
-            tmp17 = 0;
-            while ((tmp17 < tmp7)) {
-              const tir_t8 = ((tmp29 + tmp17) >>> 0);
-              tir_bound(pool.n, tir_t8);
-              pool.a[tir_t8] = 4294967295;
-              tmp17 = ((tmp17 + 1) >>> 0);
-            }
-            const tir_t9 = tmp29;
-            tir_bound(pool.n, tir_t9);
-            pool.a[tir_t9] = tmp22;
-            const tir_t10 = tir_cell(clist);
-            const tir_t11 = tir_cell(stk);
-            const tir_t12 = tir_cell(seen);
-            const tir_t13 = tir_cell(pool);
-            const tir_t14 = tir_cell(rc);
-            const tir_t15 = tir_cell(free);
-            const tir_t16 = tir_cell(tmp3);
-            const tir_t17 = tir_cell(tmp4);
-            const tir_t18 = tir_cell(tmp2);
-            const tir_t19 = pike_add(tir_t10, tir_t11, tir_t12, tir_t13, tir_t14, tir_t15, code, reps, subj, tmp22, tmp7, tmp5, tmp13, tmp14, 0, tmp28, tir_t16, tir_t17, tir_t18, memlimit, costlimit);
-            clist = tir_t10.v;
-            stk = tir_t11.v;
-            seen = tir_t12.v;
-            pool = tir_t13.v;
-            rc = tir_t14.v;
-            free = tir_t15.v;
-            tmp3 = tir_t16.v;
-            tmp4 = tir_t17.v;
-            tmp2 = tir_t18.v;
-            tmp23 = tir_t19;
-            if ((!tmp23)) {
-              tmp20 = 2;
-              tmp21 = false;
-            }
-          }
-        }
-      }
-    }
-    if (tmp21) {
-      if ((tmp25 > tir_csub(costlimit, tmp2))) {
-        tmp20 = 2;
-        tmp21 = false;
-      } else {
-        tmp2 = tir_cadd(tmp2, tmp25);
-        tmp17 = 0;
-        while ((tmp17 < tmp15)) {
-          const tir_t20 = tmp17;
-          tir_bound(seen.n, tir_t20);
-          seen.a[tir_t20] = 0;
-          tmp17 = ((tmp17 + 1) >>> 0);
-        }
-      }
-    }
-    let tmp30 = 0;
-    while ((tmp21 && (tmp30 < clist.n))) {
-      let tmp31 = tir_at(clist, tmp30).tir_clone();
-      let tmp32 = tmp31.pc;
-      let tmp33 = tmp31.h;
-      if ((1 > tir_csub(costlimit, tmp2))) {
-        tmp20 = 2;
-        tmp21 = false;
-        continue;
-      }
-      tmp2 = tir_cadd(tmp2, 1);
-      let tmp34 = tir_at(code, tmp32).tir_clone();
-      const tir_t21 = tmp34.op;
-      if (tir_t21 === OpChar) {
-        if (((tmp22 < tmp1) && (tir_at(subj, tmp22) === ((tmp34.arg) & 255)))) {
-          const tir_t22 = tir_cell(nlist);
-          const tir_t23 = tir_cell(stk);
-          const tir_t24 = tir_cell(seen);
-          const tir_t25 = tir_cell(pool);
-          const tir_t26 = tir_cell(rc);
-          const tir_t27 = tir_cell(free);
-          const tir_t28 = tir_cell(tmp3);
-          const tir_t29 = tir_cell(tmp4);
-          const tir_t30 = tir_cell(tmp2);
-          const tir_t31 = pike_add(tir_t22, tir_t23, tir_t24, tir_t25, tir_t26, tir_t27, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t28, tir_t29, tir_t30, memlimit, costlimit);
-          nlist = tir_t22.v;
-          stk = tir_t23.v;
-          seen = tir_t24.v;
-          pool = tir_t25.v;
-          rc = tir_t26.v;
-          free = tir_t27.v;
-          tmp3 = tir_t28.v;
-          tmp4 = tir_t29.v;
-          tmp2 = tir_t30.v;
-          tmp23 = tir_t31;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        } else {
-          const tir_t32 = tir_cell(rc);
-          const tir_t33 = tir_cell(free);
-          const tir_t34 = tir_cell(tmp3);
-          const tir_t35 = tir_cell(tmp4);
-          const tir_t36 = tir_cell(tmp2);
-          const tir_t37 = pike_drop(tir_t32, tir_t33, tmp33, tir_t34, tir_t35, tir_t36, memlimit, costlimit);
-          rc = tir_t32.v;
-          free = tir_t33.v;
-          tmp3 = tir_t34.v;
-          tmp4 = tir_t35.v;
-          tmp2 = tir_t36.v;
-          tmp23 = tir_t37;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        }
-      } else if (tir_t21 === OpCharCI) {
-        if (((tmp22 < tmp1) && (tir_at(LOWER, ((tir_at(subj, tmp22)) >>> 0)) === ((tmp34.arg) & 255)))) {
-          const tir_t38 = tir_cell(nlist);
-          const tir_t39 = tir_cell(stk);
-          const tir_t40 = tir_cell(seen);
-          const tir_t41 = tir_cell(pool);
-          const tir_t42 = tir_cell(rc);
-          const tir_t43 = tir_cell(free);
-          const tir_t44 = tir_cell(tmp3);
-          const tir_t45 = tir_cell(tmp4);
-          const tir_t46 = tir_cell(tmp2);
-          const tir_t47 = pike_add(tir_t38, tir_t39, tir_t40, tir_t41, tir_t42, tir_t43, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t44, tir_t45, tir_t46, memlimit, costlimit);
-          nlist = tir_t38.v;
-          stk = tir_t39.v;
-          seen = tir_t40.v;
-          pool = tir_t41.v;
-          rc = tir_t42.v;
-          free = tir_t43.v;
-          tmp3 = tir_t44.v;
-          tmp4 = tir_t45.v;
-          tmp2 = tir_t46.v;
-          tmp23 = tir_t47;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        } else {
-          const tir_t48 = tir_cell(rc);
-          const tir_t49 = tir_cell(free);
-          const tir_t50 = tir_cell(tmp3);
-          const tir_t51 = tir_cell(tmp4);
-          const tir_t52 = tir_cell(tmp2);
-          const tir_t53 = pike_drop(tir_t48, tir_t49, tmp33, tir_t50, tir_t51, tir_t52, memlimit, costlimit);
-          rc = tir_t48.v;
-          free = tir_t49.v;
-          tmp3 = tir_t50.v;
-          tmp4 = tir_t51.v;
-          tmp2 = tir_t52.v;
-          tmp23 = tir_t53;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        }
-      } else if (tir_t21 === OpClass) {
-        let tmp35 = false;
-        if ((tmp22 < tmp1)) {
-          const tir_t54 = class_has(classes, tmp34.arg, tir_at(subj, tmp22));
-          tmp35 = tir_t54;
-        }
-        if (((tmp22 < tmp1) && tmp35)) {
-          const tir_t55 = tir_cell(nlist);
-          const tir_t56 = tir_cell(stk);
-          const tir_t57 = tir_cell(seen);
-          const tir_t58 = tir_cell(pool);
-          const tir_t59 = tir_cell(rc);
-          const tir_t60 = tir_cell(free);
-          const tir_t61 = tir_cell(tmp3);
-          const tir_t62 = tir_cell(tmp4);
-          const tir_t63 = tir_cell(tmp2);
-          const tir_t64 = pike_add(tir_t55, tir_t56, tir_t57, tir_t58, tir_t59, tir_t60, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t61, tir_t62, tir_t63, memlimit, costlimit);
-          nlist = tir_t55.v;
-          stk = tir_t56.v;
-          seen = tir_t57.v;
-          pool = tir_t58.v;
-          rc = tir_t59.v;
-          free = tir_t60.v;
-          tmp3 = tir_t61.v;
-          tmp4 = tir_t62.v;
-          tmp2 = tir_t63.v;
-          tmp23 = tir_t64;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        } else {
-          const tir_t65 = tir_cell(rc);
-          const tir_t66 = tir_cell(free);
-          const tir_t67 = tir_cell(tmp3);
-          const tir_t68 = tir_cell(tmp4);
-          const tir_t69 = tir_cell(tmp2);
-          const tir_t70 = pike_drop(tir_t65, tir_t66, tmp33, tir_t67, tir_t68, tir_t69, memlimit, costlimit);
-          rc = tir_t65.v;
-          free = tir_t66.v;
-          tmp3 = tir_t67.v;
-          tmp4 = tir_t68.v;
-          tmp2 = tir_t69.v;
-          tmp23 = tir_t70;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        }
-      } else if (tir_t21 === OpAny) {
-        if (((tmp22 < tmp1) && true)) {
-          const tir_t71 = tir_cell(nlist);
-          const tir_t72 = tir_cell(stk);
-          const tir_t73 = tir_cell(seen);
-          const tir_t74 = tir_cell(pool);
-          const tir_t75 = tir_cell(rc);
-          const tir_t76 = tir_cell(free);
-          const tir_t77 = tir_cell(tmp3);
-          const tir_t78 = tir_cell(tmp4);
-          const tir_t79 = tir_cell(tmp2);
-          const tir_t80 = pike_add(tir_t71, tir_t72, tir_t73, tir_t74, tir_t75, tir_t76, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t77, tir_t78, tir_t79, memlimit, costlimit);
-          nlist = tir_t71.v;
-          stk = tir_t72.v;
-          seen = tir_t73.v;
-          pool = tir_t74.v;
-          rc = tir_t75.v;
-          free = tir_t76.v;
-          tmp3 = tir_t77.v;
-          tmp4 = tir_t78.v;
-          tmp2 = tir_t79.v;
-          tmp23 = tir_t80;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        } else {
-          const tir_t81 = tir_cell(rc);
-          const tir_t82 = tir_cell(free);
-          const tir_t83 = tir_cell(tmp3);
-          const tir_t84 = tir_cell(tmp4);
-          const tir_t85 = tir_cell(tmp2);
-          const tir_t86 = pike_drop(tir_t81, tir_t82, tmp33, tir_t83, tir_t84, tir_t85, memlimit, costlimit);
-          rc = tir_t81.v;
-          free = tir_t82.v;
-          tmp3 = tir_t83.v;
-          tmp4 = tir_t84.v;
-          tmp2 = tir_t85.v;
-          tmp23 = tir_t86;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        }
-      } else if (tir_t21 === OpAnyNoNL) {
-        let tmp36 = 0;
-        if ((tmp22 < tmp1)) {
-          const tir_t87 = newline_at(subj, tmp22, tmp5);
-          tmp36 = tir_t87;
-        }
-        if (((tmp22 < tmp1) && (tmp36 === 0))) {
-          const tir_t88 = tir_cell(nlist);
-          const tir_t89 = tir_cell(stk);
-          const tir_t90 = tir_cell(seen);
-          const tir_t91 = tir_cell(pool);
-          const tir_t92 = tir_cell(rc);
-          const tir_t93 = tir_cell(free);
-          const tir_t94 = tir_cell(tmp3);
-          const tir_t95 = tir_cell(tmp4);
-          const tir_t96 = tir_cell(tmp2);
-          const tir_t97 = pike_add(tir_t88, tir_t89, tir_t90, tir_t91, tir_t92, tir_t93, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t94, tir_t95, tir_t96, memlimit, costlimit);
-          nlist = tir_t88.v;
-          stk = tir_t89.v;
-          seen = tir_t90.v;
-          pool = tir_t91.v;
-          rc = tir_t92.v;
-          free = tir_t93.v;
-          tmp3 = tir_t94.v;
-          tmp4 = tir_t95.v;
-          tmp2 = tir_t96.v;
-          tmp23 = tir_t97;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        } else {
-          const tir_t98 = tir_cell(rc);
-          const tir_t99 = tir_cell(free);
-          const tir_t100 = tir_cell(tmp3);
-          const tir_t101 = tir_cell(tmp4);
-          const tir_t102 = tir_cell(tmp2);
-          const tir_t103 = pike_drop(tir_t98, tir_t99, tmp33, tir_t100, tir_t101, tir_t102, memlimit, costlimit);
-          rc = tir_t98.v;
-          free = tir_t99.v;
-          tmp3 = tir_t100.v;
-          tmp4 = tir_t101.v;
-          tmp2 = tir_t102.v;
-          tmp23 = tir_t103;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        }
-      } else if (tir_t21 === OpAccept) {
-        let tmp37 = tir_at(pool, ((Math.imul(tmp33, tmp7)) >>> 0));
-        let tmp38 = (tmp37 === tmp22);
-        let tmp39 = (tmp38 && (tmp9 || (tmp10 && (tmp37 === start))));
-        if (tmp39) {
-          const tir_t104 = tir_cell(rc);
-          const tir_t105 = tir_cell(free);
-          const tir_t106 = tir_cell(tmp3);
-          const tir_t107 = tir_cell(tmp4);
-          const tir_t108 = tir_cell(tmp2);
-          const tir_t109 = pike_drop(tir_t104, tir_t105, tmp33, tir_t106, tir_t107, tir_t108, memlimit, costlimit);
-          rc = tir_t104.v;
-          free = tir_t105.v;
-          tmp3 = tir_t106.v;
-          tmp4 = tir_t107.v;
-          tmp2 = tir_t108.v;
-          tmp23 = tir_t109;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          }
-        } else {
-          let tmp40 = tmp33;
-          const tir_t110 = tir_cell(pool);
-          const tir_t111 = tir_cell(rc);
-          const tir_t112 = tir_cell(free);
-          const tir_t113 = tir_cell(tmp40);
-          const tir_t114 = tir_cell(tmp3);
-          const tir_t115 = tir_cell(tmp4);
-          const tir_t116 = tir_cell(tmp2);
-          const tir_t117 = pike_write(tir_t110, tir_t111, tir_t112, tmp7, tir_t113, 1, tmp22, tir_t114, tir_t115, tir_t116, memlimit, costlimit);
-          pool = tir_t110.v;
-          rc = tir_t111.v;
-          free = tir_t112.v;
-          tmp40 = tir_t113.v;
-          tmp3 = tir_t114.v;
-          tmp4 = tir_t115.v;
-          tmp2 = tir_t116.v;
-          tmp23 = tir_t117;
-          if ((!tmp23)) {
-            tmp20 = 2;
-            tmp21 = false;
-          } else {
-            const tir_t118 = tir_cell(rc);
-            const tir_t119 = tir_cell(free);
-            const tir_t120 = tir_cell(tmp3);
-            const tir_t121 = tir_cell(tmp4);
-            const tir_t122 = tir_cell(tmp2);
-            const tir_t123 = pike_drop(tir_t118, tir_t119, tmp18, tir_t120, tir_t121, tir_t122, memlimit, costlimit);
-            rc = tir_t118.v;
-            free = tir_t119.v;
-            tmp3 = tir_t120.v;
-            tmp4 = tir_t121.v;
-            tmp2 = tir_t122.v;
-            tmp23 = tir_t123;
-            if ((!tmp23)) {
-              tmp20 = 2;
-              tmp21 = false;
-            }
-            if (tmp21) {
-              tmp18 = tmp40;
-              tmp19 = false;
-              tmp20 = 0;
-              let tmp41 = ((tmp30 + 1) >>> 0);
-              while ((tmp21 && (tmp41 < clist.n))) {
-                const tir_t124 = tir_cell(rc);
-                const tir_t125 = tir_cell(free);
-                const tir_t126 = tir_cell(tmp3);
-                const tir_t127 = tir_cell(tmp4);
-                const tir_t128 = tir_cell(tmp2);
-                const tir_t129 = pike_drop(tir_t124, tir_t125, tir_at(clist, tmp41).h, tir_t126, tir_t127, tir_t128, memlimit, costlimit);
-                rc = tir_t124.v;
-                free = tir_t125.v;
-                tmp3 = tir_t126.v;
-                tmp4 = tir_t127.v;
-                tmp2 = tir_t128.v;
-                tmp23 = tir_t129;
-                if ((!tmp23)) {
-                  tmp20 = 2;
-                  tmp21 = false;
-                }
-                tmp41 = ((tmp41 + 1) >>> 0);
-              }
-              tmp30 = clist.n;
-              continue;
-            }
-          }
-        }
-      } else {
-        const tir_t130 = tir_cell(rc);
-        const tir_t131 = tir_cell(free);
-        const tir_t132 = tir_cell(tmp3);
-        const tir_t133 = tir_cell(tmp4);
-        const tir_t134 = tir_cell(tmp2);
-        const tir_t135 = pike_drop(tir_t130, tir_t131, tmp33, tir_t132, tir_t133, tir_t134, memlimit, costlimit);
-        rc = tir_t130.v;
-        free = tir_t131.v;
-        tmp3 = tir_t132.v;
-        tmp4 = tir_t133.v;
-        tmp2 = tir_t134.v;
-        tmp23 = tir_t135;
-        if ((!tmp23)) {
-          tmp20 = 2;
-          tmp21 = false;
-        }
-      }
-      tmp30 = ((tmp30 + 1) >>> 0);
-    }
-    if (tmp21) {
-      tir_truncate(clist, 0);
-      const tir_t136 = clist;
-      clist = nlist;
-      nlist = tir_t136;
-      if ((tmp22 >= tmp1)) {
-        tmp21 = false;
-      } else {
-        if (((clist.n === 0) && ((!tmp19) || tmp8))) {
-          tmp21 = false;
-        }
-      }
-    }
-    tmp22 = ((tmp22 + 1) >>> 0);
-  }
-  if ((tmp20 === 0)) {
-    if ((tmp24 > tir_csub(costlimit, tmp2))) {
-      tmp20 = 2;
-    } else {
-      tmp2 = tir_cadd(tmp2, tmp24);
-      tmp17 = 0;
-      while ((tmp17 < tmp7)) {
-        const tir_t137 = tmp17;
-        tir_bound(ov.v.n, tir_t137);
-        ov.v.a[tir_t137] = tir_at(pool, ((((Math.imul(tmp18, tmp7)) >>> 0) + tmp17) >>> 0));
-        tmp17 = ((tmp17 + 1) >>> 0);
-      }
-    }
-  }
-  use.v.cost = tmp2;
-  use.v.stack = 0;
-  use.v.mem = tmp4;
-  return tmp20;
+  let tmp1 = 1;
+  const tir_t1 = tir_cell(clist);
+  const tir_t2 = tir_cell(nlist);
+  const tir_t3 = tir_cell(stk);
+  const tir_t4 = tir_cell(seen);
+  const tir_t5 = tir_cell(pool);
+  const tir_t6 = tir_cell(rc);
+  const tir_t7 = tir_cell(free);
+  const tir_t8 = pike_run(re.tir_clone(), subj, start, mopts, costlimit, stacklimit, memlimit, tir_t1, tir_t2, tir_t3, tir_t4, tir_t5, tir_t6, tir_t7, ov, use);
+  clist = tir_t1.v;
+  nlist = tir_t2.v;
+  stk = tir_t3.v;
+  seen = tir_t4.v;
+  pool = tir_t5.v;
+  rc = tir_t6.v;
+  free = tir_t7.v;
+  tmp1 = tir_t8;
+  return tmp1;
 }
 
 export function pike_ok(re) {
@@ -4871,12 +4657,12 @@ export function pike_ok(re) {
 
 export function pike_park(held, pcv, hv, mem, peak, cost, memlimit, costlimit) {
   let tmp1 = false;
-  const tir_t1 = charge_grow(held.v.a.length, held.v.n, 8, 32848, mem, peak, cost, memlimit, costlimit);
+  const tir_t1 = charge_grow(held.v.a.length, held.v.n, 8, 65700, mem, peak, cost, memlimit, costlimit);
   tmp1 = tir_t1;
   if ((!tmp1)) {
     return false;
   }
-  tir_push(held.v, 32848, tir_mk_obj, tir_new_Th(pcv, hv));
+  tir_push(held.v, 65700, tir_mk_obj, tir_new_Th(pcv, hv));
   return true;
 }
 
@@ -4885,200 +4671,598 @@ export function pike_price(re, cert) {
   let tmp1 = (re.code.n);
   let tmp2 = tir_cmul((((re.ncap + 1) >>> 0)), 2);
   let tmp3 = tir_cmul(tmp2, 4);
-  let tmp4 = ((((re.code.n >>> 3) + 1) >>> 0));
+  let tmp4 = 0;
   let tmp5 = 0;
-  let tmp6 = 0;
-  while ((tmp6 < re.code.n)) {
-    if ((tir_at(re.code, tmp6).op === OpSave)) {
-      tmp5 = tir_cadd(tmp5, 1);
+  while ((tmp5 < re.code.n)) {
+    if ((tir_at(re.code, tmp5).op === OpSave)) {
+      tmp4 = tir_cadd(tmp4, 1);
     }
-    tmp6 = ((tmp6 + 1) >>> 0);
+    tmp5 = ((tmp5 + 1) >>> 0);
   }
-  let tmp7 = 0;
-  if ((tmp1 > 0)) {
-    let tmp8 = 0;
-    const tir_t1 = tir_cell(over);
-    const tir_t2 = sat_mul(tmp1, 2, tir_t1);
-    over = tir_t1.v;
-    tmp8 = tir_t2;
-    let tmp9 = 0;
-    const tir_t3 = tir_cell(over);
-    const tir_t4 = sat_add(tmp8, 4, tir_t3);
-    over = tir_t3.v;
-    tmp9 = tir_t4;
-    tmp7 = tmp9;
-  }
-  let tmp10 = 0;
+  let room = new Room();
+  const tir_t1 = tir_cell(room);
+  const tir_t2 = tir_cell(over);
+  pike_room(re.tir_clone(), tir_t1, tir_t2);
+  room = tir_t1.v;
+  over = tir_t2.v;
+  let tmp6 = room.reserved;
+  let tmp7 = (room.words);
+  let tmp8 = 0;
+  const tir_t3 = tir_cell(over);
+  const tir_t4 = sat_add(tmp3, tmp7, tir_t3);
+  over = tir_t3.v;
+  tmp8 = tir_t4;
+  let tmp9 = 0;
   const tir_t5 = tir_cell(over);
-  const tir_t6 = sat_mul(tmp7, 16, tir_t5);
+  const tir_t6 = sat_mul(tmp1, 2, tir_t5);
   over = tir_t5.v;
-  tmp10 = tir_t6;
-  let tmp11 = 0;
+  tmp9 = tir_t6;
+  let tmp10 = 0;
   const tir_t7 = tir_cell(over);
-  const tir_t8 = sat_mul(tmp1, 2, tir_t7);
+  const tir_t8 = sat_add(tmp4, 2, tir_t7);
   over = tir_t7.v;
-  tmp11 = tir_t8;
+  tmp10 = tir_t8;
+  let tmp11 = 0;
+  const tir_t9 = tir_cell(over);
+  const tir_t10 = sat_mul(tmp10, tmp3, tir_t9);
+  over = tir_t9.v;
+  tmp11 = tir_t10;
   let tmp12 = 0;
-  if ((tmp11 > 0)) {
-    let tmp13 = 0;
-    const tir_t9 = tir_cell(over);
-    const tir_t10 = sat_mul(tmp11, 2, tir_t9);
-    over = tir_t9.v;
-    tmp13 = tir_t10;
-    let tmp14 = 0;
-    const tir_t11 = tir_cell(over);
-    const tir_t12 = sat_add(tmp13, 4, tir_t11);
-    over = tir_t11.v;
-    tmp14 = tir_t12;
-    tmp12 = tmp14;
-  }
-  let tmp15 = 0;
+  const tir_t11 = tir_cell(over);
+  const tir_t12 = sat_add(tmp9, tmp11, tir_t11);
+  over = tir_t11.v;
+  tmp12 = tir_t12;
+  tmp9 = tmp12;
+  let tmp13 = 0;
   const tir_t13 = tir_cell(over);
-  const tir_t14 = sat_mul(tmp12, 8, tir_t13);
+  const tir_t14 = sat_add(tmp9, tmp7, tir_t13);
   over = tir_t13.v;
-  tmp15 = tir_t14;
-  let tmp16 = 0;
+  tmp13 = tir_t14;
+  tmp9 = tmp13;
+  let tmp14 = 0;
   const tir_t15 = tir_cell(over);
-  const tir_t16 = sat_mul(tmp1, 4, tir_t15);
+  const tir_t16 = sat_add(tmp8, tmp3, tir_t15);
   over = tir_t15.v;
-  tmp16 = tir_t16;
-  let tmp17 = 0;
+  tmp14 = tir_t16;
+  let tmp15 = 0;
   const tir_t17 = tir_cell(over);
-  const tir_t18 = sat_add(tmp16, 2, tir_t17);
+  const tir_t18 = sat_mul(tmp6, 3, tir_t17);
   over = tir_t17.v;
-  tmp17 = tir_t18;
-  let tmp18 = tmp17;
-  let tmp19 = 0;
-  if ((tmp18 > 0)) {
-    let tmp20 = 0;
-    const tir_t19 = tir_cell(over);
-    const tir_t20 = sat_mul(tmp18, 2, tir_t19);
-    over = tir_t19.v;
-    tmp20 = tir_t20;
-    let tmp21 = 0;
-    const tir_t21 = tir_cell(over);
-    const tir_t22 = sat_add(tmp20, 4, tir_t21);
-    over = tir_t21.v;
-    tmp21 = tir_t22;
-    tmp19 = tmp21;
-  }
-  let tmp22 = 0;
+  tmp15 = tir_t18;
+  let tmp16 = 0;
+  const tir_t19 = tir_cell(over);
+  const tir_t20 = sat_add(tmp14, tmp15, tir_t19);
+  over = tir_t19.v;
+  tmp16 = tir_t20;
+  let tmp17 = 0;
+  const tir_t21 = tir_cell(over);
+  const tir_t22 = sat_mul(tmp6, 2, tir_t21);
+  over = tir_t21.v;
+  tmp17 = tir_t22;
+  let tmp18 = 0;
   const tir_t23 = tir_cell(over);
-  const tir_t24 = sat_mul(tmp19, 8, tir_t23);
+  const tir_t24 = sat_add(tmp14, tmp17, tir_t23);
   over = tir_t23.v;
-  tmp22 = tir_t24;
-  let tmp23 = 0;
-  const tir_t25 = tir_cell(over);
-  const tir_t26 = sat_mul(tmp18, tmp2, tir_t25);
-  over = tir_t25.v;
-  tmp23 = tir_t26;
-  let tmp24 = 0;
-  if ((tmp23 > 0)) {
-    let tmp25 = 0;
-    const tir_t27 = tir_cell(over);
-    const tir_t28 = sat_mul(tmp23, 2, tir_t27);
-    over = tir_t27.v;
-    tmp25 = tir_t28;
-    let tmp26 = 0;
-    const tir_t29 = tir_cell(over);
-    const tir_t30 = sat_add(tmp25, 4, tir_t29);
-    over = tir_t29.v;
-    tmp26 = tir_t30;
-    tmp24 = tmp26;
-  }
-  let tmp27 = 0;
-  const tir_t31 = tir_cell(over);
-  const tir_t32 = sat_mul(tmp24, 4, tir_t31);
-  over = tir_t31.v;
-  tmp27 = tir_t32;
-  let tmp28 = tmp10;
-  let tmp29 = 0;
-  const tir_t33 = tir_cell(over);
-  const tir_t34 = sat_add(tmp28, tmp15, tir_t33);
-  over = tir_t33.v;
-  tmp29 = tir_t34;
-  tmp28 = tmp29;
-  let tmp30 = 0;
-  const tir_t35 = tir_cell(over);
-  const tir_t36 = sat_add(tmp28, tmp22, tir_t35);
-  over = tir_t35.v;
-  tmp30 = tir_t36;
-  tmp28 = tmp30;
-  let tmp31 = 0;
-  const tir_t37 = tir_cell(over);
-  const tir_t38 = sat_add(tmp28, tmp27, tir_t37);
-  over = tir_t37.v;
-  tmp31 = tir_t38;
-  tmp28 = tmp31;
-  let tmp32 = 0;
-  const tir_t39 = tir_cell(over);
-  const tir_t40 = sat_add(tmp3, tmp4, tir_t39);
-  over = tir_t39.v;
-  tmp32 = tir_t40;
-  let tmp33 = 0;
-  const tir_t41 = tir_cell(over);
-  const tir_t42 = sat_mul(tmp1, 2, tir_t41);
-  over = tir_t41.v;
-  tmp33 = tir_t42;
-  let tmp34 = 0;
-  const tir_t43 = tir_cell(over);
-  const tir_t44 = sat_add(tmp5, 2, tir_t43);
-  over = tir_t43.v;
-  tmp34 = tir_t44;
-  let tmp35 = 0;
-  const tir_t45 = tir_cell(over);
-  const tir_t46 = sat_mul(tmp34, tmp3, tir_t45);
-  over = tir_t45.v;
-  tmp35 = tir_t46;
-  let tmp36 = 0;
-  const tir_t47 = tir_cell(over);
-  const tir_t48 = sat_add(tmp33, tmp35, tir_t47);
-  over = tir_t47.v;
-  tmp36 = tir_t48;
-  tmp33 = tmp36;
-  let tmp37 = 0;
-  const tir_t49 = tir_cell(over);
-  const tir_t50 = sat_add(tmp33, tmp4, tir_t49);
-  over = tir_t49.v;
-  tmp37 = tir_t50;
-  tmp33 = tmp37;
-  let tmp38 = 0;
-  const tir_t51 = tir_cell(over);
-  const tir_t52 = sat_add(tmp32, tmp3, tir_t51);
-  over = tir_t51.v;
-  tmp38 = tir_t52;
-  let tmp39 = 0;
-  const tir_t53 = tir_cell(over);
-  const tir_t54 = sat_mul(tmp28, 3, tir_t53);
-  over = tir_t53.v;
-  tmp39 = tir_t54;
-  let tmp40 = 0;
-  const tir_t55 = tir_cell(over);
-  const tir_t56 = sat_add(tmp38, tmp39, tir_t55);
-  over = tir_t55.v;
-  tmp40 = tir_t56;
-  let tmp41 = 0;
-  const tir_t57 = tir_cell(over);
-  const tir_t58 = sat_mul(tmp28, 2, tir_t57);
-  over = tir_t57.v;
-  tmp41 = tir_t58;
-  let tmp42 = 0;
-  const tir_t59 = tir_cell(over);
-  const tir_t60 = sat_add(tmp32, tmp41, tir_t59);
-  over = tir_t59.v;
-  tmp42 = tir_t60;
+  tmp18 = tir_t24;
   if (over) {
     return false;
   }
   cert.v.config = CfgPike;
   cert.v.complexity = CcLinear;
-  cert.v.cost = tir_new_Poly(1, tmp40, tmp33, 0, 0, 0);
+  cert.v.cost = tir_new_Poly(1, tmp16, tmp9, 0, 0, 0);
   cert.v.stack = tir_new_Poly(1, 0, 0, 0, 0, 0);
-  cert.v.mem = tir_new_Poly(1, tmp42, 0, 0, 0, 0);
+  cert.v.trail = tir_new_Poly(1, 0, 0, 0, 0, 0);
+  cert.v.mem = tir_new_Poly(1, tmp18, 0, 0, 0, 0);
   let empty = new tir_Seq(tir_EMPTY_OBJ, 0);
   cert.v.prices = empty;
   empty = new tir_Seq(tir_EMPTY_OBJ, 0);
   return true;
+}
+
+export function pike_room(re, room, over) {
+  let tmp1 = (re.code.n);
+  let tmp2 = tir_cmul((((re.ncap + 1) >>> 0)), 2);
+  room.v.words = (((re.code.n >>> 3) + 1) >>> 0);
+  let tmp3 = 0;
+  if ((tmp1 > 0)) {
+    let tmp4 = 0;
+    const tir_t1 = sat_mul(tmp1, 2, over);
+    tmp4 = tir_t1;
+    let tmp5 = 0;
+    const tir_t2 = sat_add(tmp4, 4, over);
+    tmp5 = tir_t2;
+    tmp3 = tmp5;
+  }
+  room.v.lists = tmp3;
+  let tmp6 = 0;
+  const tir_t3 = sat_mul(tmp1, 2, over);
+  tmp6 = tir_t3;
+  let tmp7 = 0;
+  if ((tmp6 > 0)) {
+    let tmp8 = 0;
+    const tir_t4 = sat_mul(tmp6, 2, over);
+    tmp8 = tir_t4;
+    let tmp9 = 0;
+    const tir_t5 = sat_add(tmp8, 4, over);
+    tmp9 = tir_t5;
+    tmp7 = tmp9;
+  }
+  room.v.stk = tmp7;
+  let tmp10 = 0;
+  const tir_t6 = sat_mul(tmp1, 4, over);
+  tmp10 = tir_t6;
+  let tmp11 = 0;
+  const tir_t7 = sat_add(tmp10, 2, over);
+  tmp11 = tir_t7;
+  let tmp12 = tmp11;
+  let tmp13 = 0;
+  if ((tmp12 > 0)) {
+    let tmp14 = 0;
+    const tir_t8 = sat_mul(tmp12, 2, over);
+    tmp14 = tir_t8;
+    let tmp15 = 0;
+    const tir_t9 = sat_add(tmp14, 4, over);
+    tmp15 = tir_t9;
+    tmp13 = tmp15;
+  }
+  room.v.tables = tmp13;
+  let tmp16 = 0;
+  const tir_t10 = sat_mul(tmp12, tmp2, over);
+  tmp16 = tir_t10;
+  let tmp17 = 0;
+  if ((tmp16 > 0)) {
+    let tmp18 = 0;
+    const tir_t11 = sat_mul(tmp16, 2, over);
+    tmp18 = tir_t11;
+    let tmp19 = 0;
+    const tir_t12 = sat_add(tmp18, 4, over);
+    tmp19 = tir_t12;
+    tmp17 = tmp19;
+  }
+  room.v.pool = tmp17;
+  let tmp20 = 0;
+  const tir_t13 = sat_mul(room.v.lists, 16, over);
+  tmp20 = tir_t13;
+  let tmp21 = tmp20;
+  let tmp22 = 0;
+  const tir_t14 = sat_mul(room.v.stk, 8, over);
+  tmp22 = tir_t14;
+  let tmp23 = 0;
+  const tir_t15 = sat_add(tmp21, tmp22, over);
+  tmp23 = tir_t15;
+  tmp21 = tmp23;
+  let tmp24 = 0;
+  const tir_t16 = sat_mul(room.v.tables, 8, over);
+  tmp24 = tir_t16;
+  let tmp25 = 0;
+  const tir_t17 = sat_add(tmp21, tmp24, over);
+  tmp25 = tir_t17;
+  tmp21 = tmp25;
+  let tmp26 = 0;
+  const tir_t18 = sat_mul(room.v.pool, 4, over);
+  tmp26 = tir_t18;
+  let tmp27 = 0;
+  const tir_t19 = sat_add(tmp21, tmp26, over);
+  tmp27 = tir_t19;
+  tmp21 = tmp27;
+  room.v.reserved = tmp21;
+}
+
+export function pike_run(re, subj, start, mopts, costlimit, stacklimit, memlimit, clist, nlist, stk, seen, pool, rc, free, ov, use) {
+  let tmp1 = subj.n;
+  let tmp2 = 0;
+  let tmp3 = 0;
+  let tmp4 = 0;
+  use.v.cost = tmp2;
+  use.v.stack = 0;
+  use.v.mem = tmp4;
+  if ((!re.pike)) {
+    return 3;
+  }
+  if ((start > tmp1)) {
+    return 3;
+  }
+  let code = re.code;
+  let reps = re.reps;
+  let classes = re.classes;
+  let tmp5 = re.nltype;
+  let tmp6 = re.ncap;
+  let tmp7 = ((Math.imul(((tmp6 + 1) >>> 0), 2)) >>> 0);
+  let tmp8 = ((((re.opts & 32) >>> 0) !== 0) || (((mopts & 16) >>> 0) !== 0));
+  let tmp9 = (((mopts & 4) >>> 0) !== 0);
+  let tmp10 = (((mopts & 8) >>> 0) !== 0);
+  let tmp11 = (re.hascrlf === 0);
+  let tmp12 = ((tmp5 === 2) || ((tmp5 === 3) || (tmp5 === 4)));
+  let tmp13 = (((mopts & 1) >>> 0) !== 0);
+  let tmp14 = (((mopts & 2) >>> 0) !== 0);
+  tir_truncate(clist.v, 0);
+  tir_truncate(nlist.v, 0);
+  tir_truncate(stk.v, 0);
+  tir_truncate(seen.v, 0);
+  tir_truncate(pool.v, 0);
+  tir_truncate(rc.v, 0);
+  tir_truncate(free.v, 0);
+  let tmp15 = (((code.n >>> 3) + 1) >>> 0);
+  let tmp16 = tir_cadd(tir_cmul((tmp7), 4), (tmp15));
+  if (((tmp16 > memlimit) || (tmp16 > costlimit))) {
+    return 2;
+  }
+  tmp3 = tmp16;
+  tmp4 = tmp16;
+  tmp2 = tmp16;
+  tir_reserve(ov.v, tmp7, 512, tir_mk_u32);
+  tir_truncate(ov.v, 0);
+  let tmp17 = 0;
+  while ((tmp17 < tmp7)) {
+    tir_push(ov.v, 512, tir_mk_u32, 4294967295);
+    tmp17 = ((tmp17 + 1) >>> 0);
+  }
+  tir_reserve(seen.v, tmp15, 2147483647, tir_mk_u8);
+  tmp17 = 0;
+  while ((tmp17 < tmp15)) {
+    tir_push(seen.v, 2147483647, tir_mk_u8, 0);
+    tmp17 = ((tmp17 + 1) >>> 0);
+  }
+  let tmp18 = 4294967295;
+  let tmp19 = true;
+  let tmp20 = 1;
+  let tmp21 = true;
+  let tmp22 = start;
+  let tmp23 = false;
+  let tmp24 = tir_cmul((tmp7), 4);
+  let tmp25 = (tmp15);
+  let tmp26 = (re.crfirst !== 0);
+  while (tmp21) {
+    if ((tmp19 && ((!tmp8) || (tmp22 === start)))) {
+      let tmp27 = false;
+      if (((tmp22 > start) && (tmp12 && tmp11))) {
+        if ((tmp26 && ((tir_at(subj, ((tmp22 - 1) >>> 0)) === 13) && ((tmp22 < tmp1) && (tir_at(subj, tmp22) === 10))))) {
+          tmp27 = true;
+        }
+      }
+      if ((!tmp27)) {
+        let tmp28 = 4294967295;
+        const tir_t1 = tir_cell(tmp3);
+        const tir_t2 = tir_cell(tmp4);
+        const tir_t3 = tir_cell(tmp2);
+        const tir_t4 = pike_take(pool, rc, free, tmp7, tir_t1, tir_t2, tir_t3, memlimit, costlimit);
+        tmp3 = tir_t1.v;
+        tmp4 = tir_t2.v;
+        tmp2 = tir_t3.v;
+        tmp28 = tir_t4;
+        if ((tmp28 === 4294967295)) {
+          tmp20 = 2;
+          tmp21 = false;
+        } else {
+          if ((tmp24 > tir_csub(costlimit, tmp2))) {
+            tmp20 = 2;
+            tmp21 = false;
+          } else {
+            tmp2 = tir_cadd(tmp2, tmp24);
+            let tmp29 = ((Math.imul(tmp28, tmp7)) >>> 0);
+            tmp17 = 0;
+            while ((tmp17 < tmp7)) {
+              const tir_t5 = ((tmp29 + tmp17) >>> 0);
+              tir_bound(pool.v.n, tir_t5);
+              pool.v.a[tir_t5] = 4294967295;
+              tmp17 = ((tmp17 + 1) >>> 0);
+            }
+            const tir_t6 = tmp29;
+            tir_bound(pool.v.n, tir_t6);
+            pool.v.a[tir_t6] = tmp22;
+            const tir_t7 = tir_cell(tmp3);
+            const tir_t8 = tir_cell(tmp4);
+            const tir_t9 = tir_cell(tmp2);
+            const tir_t10 = pike_add(clist, stk, seen, pool, rc, free, code, reps, subj, tmp22, tmp7, tmp5, tmp13, tmp14, 0, tmp28, tir_t7, tir_t8, tir_t9, memlimit, costlimit);
+            tmp3 = tir_t7.v;
+            tmp4 = tir_t8.v;
+            tmp2 = tir_t9.v;
+            tmp23 = tir_t10;
+            if ((!tmp23)) {
+              tmp20 = 2;
+              tmp21 = false;
+            }
+          }
+        }
+      }
+    }
+    if (tmp21) {
+      if ((tmp25 > tir_csub(costlimit, tmp2))) {
+        tmp20 = 2;
+        tmp21 = false;
+      } else {
+        tmp2 = tir_cadd(tmp2, tmp25);
+        tmp17 = 0;
+        while ((tmp17 < tmp15)) {
+          const tir_t11 = tmp17;
+          tir_bound(seen.v.n, tir_t11);
+          seen.v.a[tir_t11] = 0;
+          tmp17 = ((tmp17 + 1) >>> 0);
+        }
+      }
+    }
+    let tmp30 = 0;
+    while ((tmp21 && (tmp30 < clist.v.n))) {
+      let tmp31 = tir_at(clist.v, tmp30).tir_clone();
+      let tmp32 = tmp31.pc;
+      let tmp33 = tmp31.h;
+      if ((1 > tir_csub(costlimit, tmp2))) {
+        tmp20 = 2;
+        tmp21 = false;
+        continue;
+      }
+      tmp2 = tir_cadd(tmp2, 1);
+      let tmp34 = tir_at(code, tmp32).tir_clone();
+      const tir_t12 = tmp34.op;
+      if (tir_t12 === OpChar) {
+        if (((tmp22 < tmp1) && (tir_at(subj, tmp22) === ((tmp34.arg) & 255)))) {
+          const tir_t13 = tir_cell(tmp3);
+          const tir_t14 = tir_cell(tmp4);
+          const tir_t15 = tir_cell(tmp2);
+          const tir_t16 = pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t13, tir_t14, tir_t15, memlimit, costlimit);
+          tmp3 = tir_t13.v;
+          tmp4 = tir_t14.v;
+          tmp2 = tir_t15.v;
+          tmp23 = tir_t16;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        } else {
+          const tir_t17 = tir_cell(tmp3);
+          const tir_t18 = tir_cell(tmp4);
+          const tir_t19 = tir_cell(tmp2);
+          const tir_t20 = pike_drop(rc, free, tmp33, tir_t17, tir_t18, tir_t19, memlimit, costlimit);
+          tmp3 = tir_t17.v;
+          tmp4 = tir_t18.v;
+          tmp2 = tir_t19.v;
+          tmp23 = tir_t20;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        }
+      } else if (tir_t12 === OpCharCI) {
+        if (((tmp22 < tmp1) && (tir_at(LOWER, ((tir_at(subj, tmp22)) >>> 0)) === ((tmp34.arg) & 255)))) {
+          const tir_t21 = tir_cell(tmp3);
+          const tir_t22 = tir_cell(tmp4);
+          const tir_t23 = tir_cell(tmp2);
+          const tir_t24 = pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t21, tir_t22, tir_t23, memlimit, costlimit);
+          tmp3 = tir_t21.v;
+          tmp4 = tir_t22.v;
+          tmp2 = tir_t23.v;
+          tmp23 = tir_t24;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        } else {
+          const tir_t25 = tir_cell(tmp3);
+          const tir_t26 = tir_cell(tmp4);
+          const tir_t27 = tir_cell(tmp2);
+          const tir_t28 = pike_drop(rc, free, tmp33, tir_t25, tir_t26, tir_t27, memlimit, costlimit);
+          tmp3 = tir_t25.v;
+          tmp4 = tir_t26.v;
+          tmp2 = tir_t27.v;
+          tmp23 = tir_t28;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        }
+      } else if (tir_t12 === OpClass) {
+        let tmp35 = false;
+        if ((tmp22 < tmp1)) {
+          const tir_t29 = class_has(classes, tmp34.arg, tir_at(subj, tmp22));
+          tmp35 = tir_t29;
+        }
+        if (((tmp22 < tmp1) && tmp35)) {
+          const tir_t30 = tir_cell(tmp3);
+          const tir_t31 = tir_cell(tmp4);
+          const tir_t32 = tir_cell(tmp2);
+          const tir_t33 = pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t30, tir_t31, tir_t32, memlimit, costlimit);
+          tmp3 = tir_t30.v;
+          tmp4 = tir_t31.v;
+          tmp2 = tir_t32.v;
+          tmp23 = tir_t33;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        } else {
+          const tir_t34 = tir_cell(tmp3);
+          const tir_t35 = tir_cell(tmp4);
+          const tir_t36 = tir_cell(tmp2);
+          const tir_t37 = pike_drop(rc, free, tmp33, tir_t34, tir_t35, tir_t36, memlimit, costlimit);
+          tmp3 = tir_t34.v;
+          tmp4 = tir_t35.v;
+          tmp2 = tir_t36.v;
+          tmp23 = tir_t37;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        }
+      } else if (tir_t12 === OpAny) {
+        if (((tmp22 < tmp1) && true)) {
+          const tir_t38 = tir_cell(tmp3);
+          const tir_t39 = tir_cell(tmp4);
+          const tir_t40 = tir_cell(tmp2);
+          const tir_t41 = pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t38, tir_t39, tir_t40, memlimit, costlimit);
+          tmp3 = tir_t38.v;
+          tmp4 = tir_t39.v;
+          tmp2 = tir_t40.v;
+          tmp23 = tir_t41;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        } else {
+          const tir_t42 = tir_cell(tmp3);
+          const tir_t43 = tir_cell(tmp4);
+          const tir_t44 = tir_cell(tmp2);
+          const tir_t45 = pike_drop(rc, free, tmp33, tir_t42, tir_t43, tir_t44, memlimit, costlimit);
+          tmp3 = tir_t42.v;
+          tmp4 = tir_t43.v;
+          tmp2 = tir_t44.v;
+          tmp23 = tir_t45;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        }
+      } else if (tir_t12 === OpAnyNoNL) {
+        let tmp36 = 0;
+        if ((tmp22 < tmp1)) {
+          const tir_t46 = newline_at(subj, tmp22, tmp5);
+          tmp36 = tir_t46;
+        }
+        if (((tmp22 < tmp1) && (tmp36 === 0))) {
+          const tir_t47 = tir_cell(tmp3);
+          const tir_t48 = tir_cell(tmp4);
+          const tir_t49 = tir_cell(tmp2);
+          const tir_t50 = pike_add(nlist, stk, seen, pool, rc, free, code, reps, subj, ((tmp22 + 1) >>> 0), tmp7, tmp5, tmp13, tmp14, ((tmp32 + 1) >>> 0), tmp33, tir_t47, tir_t48, tir_t49, memlimit, costlimit);
+          tmp3 = tir_t47.v;
+          tmp4 = tir_t48.v;
+          tmp2 = tir_t49.v;
+          tmp23 = tir_t50;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        } else {
+          const tir_t51 = tir_cell(tmp3);
+          const tir_t52 = tir_cell(tmp4);
+          const tir_t53 = tir_cell(tmp2);
+          const tir_t54 = pike_drop(rc, free, tmp33, tir_t51, tir_t52, tir_t53, memlimit, costlimit);
+          tmp3 = tir_t51.v;
+          tmp4 = tir_t52.v;
+          tmp2 = tir_t53.v;
+          tmp23 = tir_t54;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        }
+      } else if (tir_t12 === OpAccept) {
+        let tmp37 = tir_at(pool.v, ((Math.imul(tmp33, tmp7)) >>> 0));
+        let tmp38 = (tmp37 === tmp22);
+        let tmp39 = (tmp38 && (tmp9 || (tmp10 && (tmp37 === start))));
+        if (tmp39) {
+          const tir_t55 = tir_cell(tmp3);
+          const tir_t56 = tir_cell(tmp4);
+          const tir_t57 = tir_cell(tmp2);
+          const tir_t58 = pike_drop(rc, free, tmp33, tir_t55, tir_t56, tir_t57, memlimit, costlimit);
+          tmp3 = tir_t55.v;
+          tmp4 = tir_t56.v;
+          tmp2 = tir_t57.v;
+          tmp23 = tir_t58;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          }
+        } else {
+          let tmp40 = tmp33;
+          const tir_t59 = tir_cell(tmp40);
+          const tir_t60 = tir_cell(tmp3);
+          const tir_t61 = tir_cell(tmp4);
+          const tir_t62 = tir_cell(tmp2);
+          const tir_t63 = pike_write(pool, rc, free, tmp7, tir_t59, 1, tmp22, tir_t60, tir_t61, tir_t62, memlimit, costlimit);
+          tmp40 = tir_t59.v;
+          tmp3 = tir_t60.v;
+          tmp4 = tir_t61.v;
+          tmp2 = tir_t62.v;
+          tmp23 = tir_t63;
+          if ((!tmp23)) {
+            tmp20 = 2;
+            tmp21 = false;
+          } else {
+            const tir_t64 = tir_cell(tmp3);
+            const tir_t65 = tir_cell(tmp4);
+            const tir_t66 = tir_cell(tmp2);
+            const tir_t67 = pike_drop(rc, free, tmp18, tir_t64, tir_t65, tir_t66, memlimit, costlimit);
+            tmp3 = tir_t64.v;
+            tmp4 = tir_t65.v;
+            tmp2 = tir_t66.v;
+            tmp23 = tir_t67;
+            if ((!tmp23)) {
+              tmp20 = 2;
+              tmp21 = false;
+            }
+            if (tmp21) {
+              tmp18 = tmp40;
+              tmp19 = false;
+              tmp20 = 0;
+              let tmp41 = ((tmp30 + 1) >>> 0);
+              while ((tmp21 && (tmp41 < clist.v.n))) {
+                const tir_t68 = tir_cell(tmp3);
+                const tir_t69 = tir_cell(tmp4);
+                const tir_t70 = tir_cell(tmp2);
+                const tir_t71 = pike_drop(rc, free, tir_at(clist.v, tmp41).h, tir_t68, tir_t69, tir_t70, memlimit, costlimit);
+                tmp3 = tir_t68.v;
+                tmp4 = tir_t69.v;
+                tmp2 = tir_t70.v;
+                tmp23 = tir_t71;
+                if ((!tmp23)) {
+                  tmp20 = 2;
+                  tmp21 = false;
+                }
+                tmp41 = ((tmp41 + 1) >>> 0);
+              }
+              tmp30 = clist.v.n;
+              continue;
+            }
+          }
+        }
+      } else {
+        const tir_t72 = tir_cell(tmp3);
+        const tir_t73 = tir_cell(tmp4);
+        const tir_t74 = tir_cell(tmp2);
+        const tir_t75 = pike_drop(rc, free, tmp33, tir_t72, tir_t73, tir_t74, memlimit, costlimit);
+        tmp3 = tir_t72.v;
+        tmp4 = tir_t73.v;
+        tmp2 = tir_t74.v;
+        tmp23 = tir_t75;
+        if ((!tmp23)) {
+          tmp20 = 2;
+          tmp21 = false;
+        }
+      }
+      tmp30 = ((tmp30 + 1) >>> 0);
+    }
+    if (tmp21) {
+      tir_truncate(clist.v, 0);
+      const tir_t76 = clist.v;
+      clist.v = nlist.v;
+      nlist.v = tir_t76;
+      if ((tmp22 >= tmp1)) {
+        tmp21 = false;
+      } else {
+        if (((clist.v.n === 0) && ((!tmp19) || tmp8))) {
+          tmp21 = false;
+        }
+      }
+    }
+    tmp22 = ((tmp22 + 1) >>> 0);
+  }
+  if ((tmp20 === 0)) {
+    if ((tmp24 > tir_csub(costlimit, tmp2))) {
+      tmp20 = 2;
+    } else {
+      tmp2 = tir_cadd(tmp2, tmp24);
+      tmp17 = 0;
+      while ((tmp17 < tmp7)) {
+        const tir_t77 = tmp17;
+        tir_bound(ov.v.n, tir_t77);
+        ov.v.a[tir_t77] = tir_at(pool.v, ((((Math.imul(tmp18, tmp7)) >>> 0) + tmp17) >>> 0));
+        tmp17 = ((tmp17 + 1) >>> 0);
+      }
+    }
+  }
+  use.v.cost = tmp2;
+  use.v.stack = 0;
+  use.v.mem = tmp4;
+  return tmp20;
 }
 
 export function pike_take(pool, rc, free, novec, mem, peak, cost, memlimit, costlimit) {
@@ -5091,24 +5275,24 @@ export function pike_take(pool, rc, free, novec, mem, peak, cost, memlimit, cost
     return tmp1;
   }
   let tmp2 = rc.v.n;
-  if ((tmp2 >= 131396)) {
+  if ((tmp2 >= 262796)) {
     return 4294967295;
   }
   let tmp3 = false;
-  const tir_t2 = charge_grow(rc.v.a.length, rc.v.n, 4, 131396, mem, peak, cost, memlimit, costlimit);
+  const tir_t2 = charge_grow(rc.v.a.length, rc.v.n, 4, 262796, mem, peak, cost, memlimit, costlimit);
   tmp3 = tir_t2;
   if ((!tmp3)) {
     return 4294967295;
   }
-  tir_push(rc.v, 131396, tir_mk_u32, 1);
+  tir_push(rc.v, 262796, tir_mk_u32, 1);
   let tmp4 = 0;
   while ((tmp4 < novec)) {
-    const tir_t3 = charge_grow(pool.v.a.length, pool.v.n, 4, 67274752, mem, peak, cost, memlimit, costlimit);
+    const tir_t3 = charge_grow(pool.v.a.length, pool.v.n, 4, 134549508, mem, peak, cost, memlimit, costlimit);
     tmp3 = tir_t3;
     if ((!tmp3)) {
       return 4294967295;
     }
-    tir_push(pool.v, 67274752, tir_mk_u32, 4294967295);
+    tir_push(pool.v, 134549508, tir_mk_u32, 4294967295);
     tmp4 = ((tmp4 + 1) >>> 0);
   }
   return tmp2;
@@ -5667,11 +5851,12 @@ export function price_call(re, whole, cert, over) {
   tmp17 = tir_t15;
   cert.v.cost = tmp17.tir_clone();
   cert.v.stack = whole.stack.tir_clone();
+  cert.v.trail = whole.trail.tir_clone();
   let tmp18 = new Poly();
   const tir_t16 = poly_mul(scratch.tir_clone(), tir_new_Poly(1, 2, 0, 0, 0, 0), over);
   tmp18 = tir_t16;
   let tmp19 = new Poly();
-  const tir_t17 = poly_add(tir_new_Poly(1, setup, 0, 0, 0, 0), tmp18.tir_clone(), over);
+  const tir_t17 = poly_add(tir_new_Poly(1, tir_cadd(setup, deliver), 0, 0, 0, 0), tmp18.tir_clone(), over);
   tmp19 = tir_t17;
   cert.v.mem = tmp19.tir_clone();
 }
@@ -7782,6 +7967,18 @@ export function tir_zero_Usage() {
   return new Usage();
 }
 
+export function tir_zero_vec_u32_8704() {
+  return new tir_Seq(tir_EMPTY_U32, 0);
+}
+
+export function tir_zero_vec_Bt_178956970() {
+  return new tir_Seq(tir_EMPTY_OBJ, 0);
+}
+
+export function tir_zero_vec_Undo_268435455() {
+  return new tir_Seq(tir_EMPTY_OBJ, 0);
+}
+
 export function tir_zero_Cert() {
   return new Cert();
 }
@@ -7802,11 +7999,15 @@ export function tir_zero_Out() {
   return new Out();
 }
 
-export function tir_zero_vec_Th_32848() {
+export function tir_zero_Ctx() {
+  return new Ctx();
+}
+
+export function tir_zero_vec_Th_65700() {
   return new tir_Seq(tir_EMPTY_OBJ, 0);
 }
 
-export function tir_zero_vec_Th_65696() {
+export function tir_zero_vec_Th_131396() {
   return new tir_Seq(tir_EMPTY_OBJ, 0);
 }
 
@@ -7814,12 +8015,16 @@ export function tir_zero_bytes() {
   return new tir_Seq(tir_EMPTY_U8, 0);
 }
 
-export function tir_zero_vec_u32_67274752() {
+export function tir_zero_vec_u32_134549508() {
   return new tir_Seq(tir_EMPTY_U32, 0);
 }
 
-export function tir_zero_vec_u32_131396() {
+export function tir_zero_vec_u32_262796() {
   return new tir_Seq(tir_EMPTY_U32, 0);
+}
+
+export function tir_zero_Room() {
+  return new Room();
 }
 
 export function tir_zero_vec_Price_8208() {
@@ -7832,16 +8037,4 @@ export function tir_zero_vec_u32_8208() {
 
 export function tir_zero_Acc() {
   return new Acc();
-}
-
-export function tir_zero_vec_Bt_178956970() {
-  return new tir_Seq(tir_EMPTY_OBJ, 0);
-}
-
-export function tir_zero_vec_u32_8704() {
-  return new tir_Seq(tir_EMPTY_U32, 0);
-}
-
-export function tir_zero_vec_Undo_268435455() {
-  return new tir_Seq(tir_EMPTY_OBJ, 0);
 }

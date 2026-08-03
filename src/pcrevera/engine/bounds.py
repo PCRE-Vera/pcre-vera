@@ -140,6 +140,34 @@ def fresh(f, L: Layout, acc, flow):
     f.set(acc.field("flow"), flow)
 
 
+def sat(f, name, a, b, over):
+    """One saturating counter step, the overflow flag threaded through.
+
+    The convention every whole-call closed form is emitted in: `sat_add` or
+    `sat_mul` into a fresh temporary, with saturation accumulating in the
+    caller's flag rather than being decided per step.
+    """
+    out = tmp(f, counter)
+    f.call(name, [a, b, inout(over)], dest=out)
+    return out
+
+
+def growth_cap(f, entries, over):
+    """The growth schedule's final capacity for that many entries.
+
+    Nothing for none, else `GROW_MIN + GROW_FACTOR * entries` (BOUNDS.md
+    section 5): what a doubling run ends up holding, and therefore what a
+    preallocated context reserves up front. One emitter, so the bound that
+    prices a capacity and the reservation that materializes one cannot
+    drift.
+    """
+    held = tmp(f, counter, counter(0))
+    with f.if_(entries > counter(0)):
+        doubled = sat(f, "sat_mul", entries, counter(spec.GROW_FACTOR), over)
+        f.set(held, sat(f, "sat_add", doubled, counter(spec.GROW_MIN), over))
+    return held
+
+
 def _under(p, degree):
     """This bound has no growth and no power above the one named."""
     test = p.field("base") == counter(1)
@@ -420,10 +448,12 @@ __all__ = [
     "finite",
     "flat",
     "fresh",
+    "growth_cap",
     "linear",
     "nothing",
     "plus",
     "poly",
+    "sat",
     "step",
     "times",
     "zero",

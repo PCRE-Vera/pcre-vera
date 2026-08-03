@@ -10,23 +10,28 @@
 // certificate compilation stored for the selected path. The match
 // configuration argument is in its final shape, though only the default
 // value exists — the memoized backtracker is M9, and asking for it early is
-// BAD_INPUT, on match and accessors alike. The preallocated match context
-// follows.
+// BAD_INPUT, on match and accessors alike. createContext turns the memory
+// bound into a preallocated Context whose match calls allocate no backing
+// store at all.
 //
 // Patterns and subjects are byte sequences. A pattern may also be a string,
 // as a convenience, when every code unit is at most 0xff and can therefore be
 // read as one byte; a subject may not, until UTF mode arrives in wave 3.
 
 import {
+  Ctx,
   Out,
   Usage,
   artifactSha256 as engineArtifactSha256,
   compile as engineCompile,
+  ctx_create,
+  ctx_match,
   match as engineMatch,
   re_class,
   re_cost,
   re_mem,
   re_stack,
+  tir_Seq,
   tir_bytes,
   tir_cell,
   tir_zero_vec_u32_512,
@@ -74,8 +79,8 @@ const KNOWN_MATCH_FLAGS = Object.values(MatchFlags).reduce((all, bit) => all | b
 
 /**
  * The one configuration value used consistently across the whole API: match
- * runs under it, the worst-case accessors price it, and the match context of
- * M5 will bake it in. It only ever chooses memoized backtracking or not — the
+ * runs under it, the worst-case accessors price it, and the match context
+ * bakes it in. It only ever chooses memoized backtracking or not — the
  * Pike/backtracking split is fixed at compilation and is deliberately not a
  * switch a caller can reach. MEMOIZED arrives with M9; until then, and on any
  * pattern not eligible for it after that, asking is BAD_INPUT rather than a
@@ -213,6 +218,46 @@ function record(value) {
   return value;
 }
 
+/** A limits record whose three budgets the engine's parameters can carry. */
+function checkedLimits(limits) {
+  record(limits);
+  if (
+    !whole(limits.cost, maxCostLimit) ||
+    !whole(limits.stack, maxStackLimit) ||
+    !whole(limits.memory, maxMemoryLimit)
+  ) {
+    throw badInput();
+  }
+  return limits;
+}
+
+/** The PcreError a refusing engine status names — never a match outcome. */
+function refused(status) {
+  switch (status) {
+    case STATUS_RESOURCE_EXCEEDED:
+      return new PcreError(Kind.RESOURCE_EXCEEDED);
+    case STATUS_BAD_INPUT:
+      return badInput();
+    case STATUS_EXCEEDS_BUDGET:
+      return new PcreError(Kind.EXCEEDS_BUDGET);
+    default:
+      return new PcreError(Kind.INTERNAL, status);
+  }
+}
+
+/**
+ * An engine ovector as public byte offsets, the unset sentinel becoming -1 —
+ * one statement of the rule, for the plain path's fresh store and the
+ * context's owned view alike.
+ */
+function fillOffsets(dst, held) {
+  for (let i = 0; i < held.n; i++) {
+    const slot = held.a[i];
+    dst[i] = slot === UNSET ? -1 : slot;
+  }
+  return dst;
+}
+
 /**
  * The bytes of a pattern. A Uint8Array is the canonical form; a string is a
  * convenience that only works while every code unit fits in a byte, which is
@@ -311,14 +356,7 @@ export class Regexp {
     if (!whole(start, 0xffffffff) || !whole(config, 0xffffffff)) {
       throw badInput();
     }
-    record(limits);
-    if (
-      !whole(limits.cost, maxCostLimit) ||
-      !whole(limits.stack, maxStackLimit) ||
-      !whole(limits.memory, maxMemoryLimit)
-    ) {
-      throw badInput();
-    }
+    checkedLimits(limits);
     const ovector = tir_cell(tir_zero_vec_u32_512());
     const usage = tir_cell(new Usage());
     const status = engineMatch(
@@ -333,24 +371,13 @@ export class Regexp {
       ovector,
       usage,
     );
-    switch (status) {
-      case STATUS_MATCHED: {
-        const offsets = new Int32Array(ovector.v.n);
-        for (let i = 0; i < offsets.length; i++) {
-          const slot = ovector.v.a[i];
-          offsets[i] = slot === UNSET ? -1 : slot;
-        }
-        return offsets;
-      }
-      case STATUS_NO_MATCH:
-        return null;
-      case STATUS_RESOURCE_EXCEEDED:
-        throw new PcreError(Kind.RESOURCE_EXCEEDED);
-      case STATUS_BAD_INPUT:
-        throw badInput();
-      default:
-        throw new PcreError(Kind.INTERNAL, status);
+    if (status === STATUS_MATCHED) {
+      return fillOffsets(new Int32Array(ovector.v.n), ovector.v);
     }
+    if (status === STATUS_NO_MATCH) {
+      return null;
+    }
+    throw refused(status);
   }
 
   /**
@@ -392,6 +419,150 @@ export class Regexp {
   worstCaseMemory(subjectLen, config = MatchConfig.DEFAULT) {
     return answered(re_mem(this.#program, ...asked(subjectLen, config)));
   }
+
+  /**
+   * A preallocated match context for subjects up to maxSubjectLen bytes:
+   * every byte a match could touch, reserved and zeroed here, so a match
+   * call on the context allocates no backing store at all — no array, no
+   * typed array, no growth — failure paths included. What it may still
+   * create are the bounded, short-lived records of this module's value
+   * semantics, which the Go form of the engine does without.
+   *
+   * The limits are creation's own budget and the context's ceilings at
+   * once: the reservation must fit limits.memory, zeroing it must fit
+   * limits.cost at one cost unit per IR byte, and later calls may only
+   * lower the cost and stack limits. A pattern whose selected path carries
+   * no finite bound throws EXCEEDS_BUDGET, the same refusal its accessors
+   * report; the configuration is baked and cannot be changed per call.
+   */
+  createContext(maxSubjectLen, options = {}) {
+    const { limits = defaultLimits(), config = MatchConfig.DEFAULT } =
+      record(options);
+    if (!whole(maxSubjectLen, 0xffffffff) || !whole(config, 0xffffffff)) {
+      throw badInput();
+    }
+    checkedLimits(limits);
+    const held = tir_cell(new Ctx());
+    const status = ctx_create(
+      this.#program,
+      config,
+      maxSubjectLen,
+      limits.cost,
+      limits.stack,
+      limits.memory,
+      held,
+    );
+    if (status !== STATUS_OK) {
+      throw refused(status);
+    }
+    return new Context(held, this.#program.ncap);
+  }
+}
+
+/**
+ * A preallocated match context, made by Regexp.createContext. It is mutable
+ * state: one match at a time, and the ovector a match answers is owned by
+ * the context and overwritten by the next call — copyOvector is the
+ * documented way to keep one.
+ */
+export class Context {
+  #ctx;
+  #subject;
+  #ovector;
+  #usage;
+  #offsets;
+
+  constructor(held, ncap) {
+    const novec = 2 * (ncap + 1);
+    this.#ctx = held;
+    // The result storage and the call scaffolding, materialized with the
+    // context: the engine-side ovector the run cores fill, the converted
+    // view match answers, and the two wrapper cells every call reuses. The
+    // memory bound pays for the ovector and the view — they are the
+    // `deliver` share of its setup term — while the cells are object
+    // headers outside the IR byte accounting. Nothing here is touched
+    // again by the allocator.
+    this.#subject = tir_bytes(new Uint8Array(0));
+    this.#ovector = tir_cell(new tir_Seq(new Uint32Array(novec), 0));
+    this.#usage = tir_cell(new Usage());
+    this.#offsets = new Int32Array(novec);
+    Object.freeze(this);
+  }
+
+  /** The declared maximum subject length this context was sized for. */
+  get maxSubjectLen() {
+    return this.#ctx.v.maxlen;
+  }
+
+  /**
+   * The reservation the context materialized, in the IR bytes limits.memory
+   * is stated in: the pattern's worstCaseMemory at the declared maximum
+   * length, exactly.
+   */
+  get memory() {
+    return this.#ctx.v.memcap;
+  }
+
+  /**
+   * Run the pattern the context was built for, constructing no backing
+   * store. Options are start, flags, costLimit and stackLimit; the limits
+   * default to the baked ceilings and may only be lower — higher is
+   * BAD_INPUT, and so is a subject longer than the declared maximum.
+   *
+   * Returns the context-owned ovector, overwritten by the next call, or
+   * null when the subject does not match.
+   */
+  match(subject, options = {}) {
+    // The defaults are the engine's own baked ceilings, read off the cell
+    // rather than shadowed here, so a caller who lowers nothing spends what
+    // creation set aside.
+    const {
+      start = 0,
+      flags = 0,
+      costLimit = this.#ctx.v.costcap,
+      stackLimit = this.#ctx.v.stackcap,
+    } = record(options);
+    if (!(subject instanceof Uint8Array) || subject.length > maxLength) {
+      throw badInput();
+    }
+    if (!whole(flags, KNOWN_MATCH_FLAGS)) {
+      throw new PcreError(Kind.UNSUPPORTED_OPTION, CODE_UNSUPPORTED_OPTION);
+    }
+    if (!whole(start, 0xffffffff)) {
+      throw badInput();
+    }
+    if (!whole(costLimit, maxCostLimit) || !whole(stackLimit, maxStackLimit)) {
+      throw badInput();
+    }
+    this.#subject.a = subject;
+    this.#subject.n = subject.length;
+    const status = ctx_match(
+      this.#ctx,
+      this.#subject,
+      start,
+      flags,
+      costLimit,
+      stackLimit,
+      this.#ovector,
+      this.#usage,
+    );
+    if (status === STATUS_MATCHED) {
+      return fillOffsets(this.#offsets, this.#ovector.v);
+    }
+    if (status === STATUS_NO_MATCH) {
+      return null;
+    }
+    throw refused(status);
+  }
+}
+
+/**
+ * The documented copy-out: a fresh ovector holding an answer, safe to keep
+ * across calls on the context that produced it. It is the one backing store
+ * the context API creates after creation.
+ */
+export function copyOvector(ovector) {
+  return ovector === null ? null : new Int32Array(ovector);
 }
 
 // What the engine's parameters could not hold is refused at the door — a

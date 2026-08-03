@@ -346,8 +346,17 @@ def _scratch(L: Layout) -> None:
 
 
 def _match(L: Layout) -> None:
+    """The run core, and the plain entry point over it.
+
+    `bt_run` takes its three scratch arrays from the caller, which is what
+    lets a preallocated context own them across calls: reserved once at
+    creation, they are truncated rather than reallocated here, and a push
+    that stays under a reservation never grows anything. `bt_match` is the
+    same matcher with the scratch declared fresh, which is the plain path
+    and exactly what it always was.
+    """
     f = L.func(
-        "bt_match",
+        "bt_run",
         params=[
             ("re", L.Re),
             ("subj", L.frozen_bytes),
@@ -356,6 +365,9 @@ def _match(L: Layout) -> None:
             ("costlimit", counter),
             ("stacklimit", u32),
             ("memlimit", counter),
+            ("regs", L.Regs, "inout"),
+            ("bt", L.Stack, "inout"),
+            ("trail", L.Trail, "inout"),
             ("ov", L.Ovec, "inout"),
             ("use", L.Usage, "inout"),
         ],
@@ -410,9 +422,9 @@ def _match(L: Layout) -> None:
     notbol = tmp(f, boolean, (mopts & u32(spec.NOTBOL)) != u32(0))
     noteol = tmp(f, boolean, (mopts & u32(spec.NOTEOL)) != u32(0))
 
-    regs = f.let("regs", L.Regs)
-    bt = f.let("bt", L.Stack)
-    trail = f.let("trail", L.Trail)
+    regs = f["regs"]
+    bt = f["bt"]
+    trail = f["trail"]
 
     # The register file and the ovector are sized once, and their zeroing is
     # charged, because setup work is work (DESIGN.md section 5).
@@ -423,6 +435,9 @@ def _match(L: Layout) -> None:
     f.set(peak, setup)
     f.set(cost, setup)
     f.reserve(regs, nreg)
+    f.truncate(regs, u32(0))
+    f.truncate(bt, u32(0))
+    f.truncate(trail, u32(0))
     f.reserve(ov, novec)
     k = tmp(f, u32, u32(0))
     with f.while_(k < nreg, down(nreg, k)):
@@ -745,6 +760,45 @@ def _match(L: Layout) -> None:
     f.set(f["use"].field("stack"), stackpeak)
     f.set(f["use"].field("mem"), peak)
     f.ret(result)
+
+    f = L.func(
+        "bt_match",
+        params=[
+            ("re", L.Re),
+            ("subj", L.frozen_bytes),
+            ("start", u32),
+            ("mopts", u32),
+            ("costlimit", counter),
+            ("stacklimit", u32),
+            ("memlimit", counter),
+            ("ov", L.Ovec, "inout"),
+            ("use", L.Usage, "inout"),
+        ],
+        ret=u32,
+    )
+    regs = f.let("regs", L.Regs)
+    bt = f.let("bt", L.Stack)
+    trail = f.let("trail", L.Trail)
+    out = tmp(f, u32, u32(spec.NO_MATCH))
+    f.call(
+        "bt_run",
+        [
+            f["re"],
+            f["subj"],
+            f["start"],
+            f["mopts"],
+            f["costlimit"],
+            f["stacklimit"],
+            f["memlimit"],
+            inout(regs),
+            inout(bt),
+            inout(trail),
+            inout(f["ov"]),
+            inout(f["use"]),
+        ],
+        dest=out,
+    )
+    f.ret(out)
 
     f = L.func(
         "word_edge", params=[("subj", L.frozen_bytes), ("pos", u32)], ret=boolean

@@ -777,3 +777,24 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   bound that something will be *sized* from is not a bound, it is a
   dimension, and dimensions are equalities. Caught in design review of the
   context plan, before any context existed to inherit it.
+- Patched the global typed-array constructors to count what a context match
+  constructs, and broke the wrapper's own `instanceof Uint8Array` check for
+  every subject built before the patch went in: instanceof resolves the
+  global at call time too, and an instance of the real class is not an
+  instance of a subclass planted over it. Instrumentation that swaps a
+  global has to keep the identity questions answering as before, which is
+  what `Symbol.hasInstance` delegation is for.
+- Left the delivered answer out of the memory bound while writing the
+  context's physical-equality contract, then wrote the three physical tests
+  against the same under-count, so they proved the reservation equaled a
+  number that was itself a result store short of what DESIGN.md defines the
+  sum over. A test derived from the implementation's own decomposition
+  inherits the decomposition's omissions; the fix was to read the normative
+  list of stores again and charge `deliver` to memory the way it was
+  already charged to cost.
+- Reserved into whatever context the creation destination already held,
+  forgetting that reserve never shrinks, so recreating a small context over
+  a large one kept the large one's capacities and quietly broke the
+  resident-byte equality — invisible through the wrappers, which always
+  hand in a fresh destination, and exactly the kind of state a generated
+  entry point that accepts any well-typed inout has to reset itself.

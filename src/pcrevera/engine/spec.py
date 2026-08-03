@@ -125,23 +125,40 @@ be."""
 # suspended thread per instruction, the closure walk visits each instruction at
 # most once per position, and each visit pushes at most two continuations.
 
-MAX_THREADS = MAX_CODE
-"""Suspended threads in one list: the closure's visited set admits each
-instruction once, so a list can never hold more entries than the program."""
+# Each declared maximum is the growth schedule's final capacity for the
+# array's semantic entry bound rather than the bound itself. The matcher
+# never holds more entries than the bound; the extra room is what a
+# preallocated context reserves up front, since section 5 prices capacity
+# rather than occupancy and a reservation past the declared maximum is the
+# T-04 trap.
 
-MAX_CLOSURE = 2 * MAX_CODE
-"""Depth of the closure walk's explicit stack. Every instruction is expanded
-at most once per position and pushes at most two continuations, so the stack
-can never hold more than twice the program."""
 
-MAX_BLOCKS = 4 * MAX_CODE + 4
-"""Capture blocks in the copy-on-write pool. Every live handle sits in one of
+def _final_capacity(entries: int) -> int:
+    """What the growth schedule ends up holding for that many entries."""
+    return GROW_MIN + GROW_FACTOR * entries
+
+
+_LIVE_BLOCKS = 4 * MAX_CODE + 4
+"""The most capture blocks ever live at once: every handle sits in one of
 the two thread lists, on the closure stack, or is the recorded match or the
-seed in flight, and each of those is bounded above; sharing only ever needs
-fewer blocks, never more."""
+seed in flight, and each of those is bounded above."""
 
-MAX_POOL = MAX_BLOCKS * MAX_OVEC
-"""Capture slots across every block, as one flat array."""
+MAX_THREADS = _final_capacity(MAX_CODE)
+"""Capacity ceiling of one thread list. The closure's visited set admits each
+instruction once, so a list never holds more entries than the program."""
+
+MAX_CLOSURE = _final_capacity(2 * MAX_CODE)
+"""Capacity ceiling of the closure walk's explicit stack. Every instruction
+is expanded at most once per position and pushes at most two continuations,
+so the stack never holds more than twice the program."""
+
+MAX_BLOCKS = _final_capacity(_LIVE_BLOCKS)
+"""Capacity ceiling of the copy-on-write pool's block tables. Sharing only
+ever needs fewer blocks than the live bound, never more."""
+
+MAX_POOL = _final_capacity(_LIVE_BLOCKS * MAX_OVEC)
+"""Capacity ceiling of the capture slots across every block, as one flat
+array."""
 
 TH_SIZE = 8
 """IR bytes of one thread entry: two u32."""

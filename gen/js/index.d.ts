@@ -5,7 +5,8 @@
 // when eligible, the backtracking matcher otherwise — and match, the limits,
 // and the analysis accessors all describe that path. The match configuration
 // argument is in its final shape with only the default value active until
-// M9; the preallocated match context arrives with the rest of M5.
+// M9; createContext turns the memory bound into a preallocated Context
+// whose match calls allocate no backing store.
 
 /** SHA-256 of the TIR artifact the engine was generated from. */
 export declare const artifactSha256: string;
@@ -48,8 +49,8 @@ export declare const MatchFlags: {
 
 /**
  * The one configuration value used consistently across the whole API: match
- * runs under it, the worst-case accessors price it, and the match context of
- * M5 will bake it in. MEMOIZED arrives with M9; until then asking for it is
+ * runs under it, the worst-case accessors price it, and the match context
+ * bakes it in. MEMOIZED arrives with M9; until then asking for it is
  * BAD_INPUT.
  */
 export declare const MatchConfig: {
@@ -173,7 +174,67 @@ export declare class Regexp {
    * limits.memory is stated in.
    */
   worstCaseMemory(subjectLen: number, config?: number): number;
+
+  /**
+   * A preallocated match context for subjects up to maxSubjectLen bytes:
+   * every byte a match could touch, reserved and zeroed here, so a match
+   * call on the context allocates no backing store at all — no array, no
+   * typed array, no growth. The limits are creation's
+   * budget and the context's ceilings at once; later calls may only lower
+   * the cost and stack limits. Throws EXCEEDS_BUDGET when the selected path
+   * carries no finite bound, RESOURCE_EXCEEDED when the reservation or its
+   * zeroing does not fit the limits.
+   */
+  createContext(maxSubjectLen: number, options?: ContextOptions): Context;
 }
+
+export interface ContextOptions {
+  limits?: Limits;
+  config?: number;
+}
+
+export interface ContextMatchOptions {
+  start?: number;
+  flags?: number;
+  costLimit?: number;
+  stackLimit?: number;
+}
+
+/**
+ * A preallocated match context, made by Regexp.createContext. Mutable state:
+ * one match at a time, and the ovector a match answers is owned by the
+ * context and overwritten by the next call — copyOvector is the documented
+ * way to keep one.
+ */
+export declare class Context {
+  /** The declared maximum subject length this context was sized for. */
+  readonly maxSubjectLen: number;
+
+  /**
+   * The reservation the context materialized, in the IR bytes limits.memory
+   * is stated in: the pattern's worstCaseMemory at the declared maximum
+   * length, exactly.
+   */
+  readonly memory: number;
+
+  /**
+   * Run the pattern the context was built for, constructing no backing
+   * store. The limits default to the baked ceilings and may only be lower
+   * — higher is BAD_INPUT, and so is a subject longer than the declared
+   * maximum.
+   * Returns the context-owned ovector, overwritten by the next call, or
+   * null when the subject does not match.
+   */
+  match(subject: Uint8Array, options?: ContextMatchOptions): Int32Array | null;
+}
+
+/**
+ * The documented copy-out: a fresh ovector holding an answer, safe to keep
+ * across calls on the context that produced it.
+ */
+export declare function copyOvector(
+  ovector: Int32Array | null,
+): Int32Array | null;
 
 /**
  * Compile a pattern, or throw a PcreError saying why not. A string pattern is

@@ -170,6 +170,7 @@ class Layout:
                 "CrRegionTrail",
                 "CrTotalCost",
                 "CrTotalStack",
+                "CrTotalTrail",
                 "CrTotalMem",
                 "CrNotLinear",
                 # Last, so that a verdict nobody assigned is a refusal.
@@ -387,11 +388,16 @@ class Layout:
         # the same reason the compiled pattern is: one of them serves any number
         # of simultaneous accessor calls, and nothing can write through it.
         #
-        # The three whole-pattern bounds are the ones the accessors of
+        # Three of the whole-pattern bounds are the ones the accessors of
         # DESIGN.md section 2.4 report. They are not the root region's numbers:
         # a region is priced per entry into it, and the pattern is entered once
         # per starting position, on top of setup and scratch growth that no
         # region covers.
+        #
+        # `trail` is the fourth, and it is not an accessor's answer: it is the
+        # other array a preallocated context sizes, held to the same section 5
+        # equality as the stack so that the memory bound really pays for what
+        # the two claims demand.
         self.Cert = m.struct(
             "Cert",
             [
@@ -399,6 +405,7 @@ class Layout:
                 ("complexity", self.Cc),
                 ("cost", self.Poly),
                 ("stack", self.Poly),
+                ("trail", self.Poly),
                 ("mem", self.Poly),
                 ("prices", self.FrozenPrices),
             ],
@@ -497,6 +504,69 @@ class Layout:
         self.Usage = m.struct(
             "Usage",
             [("cost", counter), ("stack", u32), ("mem", counter)],
+        )
+
+        # What the Pike VM's scratch comes to, as the growth schedule's final
+        # capacities: one count per array group — each thread list, the
+        # closure stack, each copy-on-write table, the pool — the visited
+        # set's width in bytes, and their weighed sum R, the section 9
+        # reservation. Computed by one function and read by both the pricer
+        # and context creation, so the certificate's memory bound and the
+        # reservation a context materializes cannot disagree.
+        self.Room = m.struct(
+            "Room",
+            [
+                ("lists", counter),
+                ("stk", counter),
+                ("tables", counter),
+                ("pool", counter),
+                ("words", u32),
+                ("reserved", counter),
+            ],
+        )
+
+        # --- the preallocated context (DESIGN.md section 2.4) ---
+        #
+        # Everything a match needs, owned once: the compiled pattern, the
+        # baked ceilings, and every scratch array the selected matcher
+        # touches. Creation reserves each array at the growth schedule's
+        # final capacity for its certificate bound and zeroes the lot,
+        # `slack` materializes the growth-overlap copy the section 5 memory
+        # bound charges for, and together with the two caller-owned result
+        # stores — the ovector the run cores fill and the converted view a
+        # match answers through — the reservations come to exactly
+        # `worstCaseMemory(maxlen)`: a context is the memory bound made
+        # physical, which is what lets a call on one allocate nothing at
+        # all. The ovector travels as a call parameter rather than a field
+        # because a linear field cannot be read through the generated
+        # façade: each wrapper materializes it once beside the context and
+        # hands it in, which is the same ownership either way.
+        #
+        # `ready` is written last by a creation that accepted everything and
+        # first by one that refused, so a context that was never created, or
+        # whose creation refused, answers BadInput rather than matching on
+        # arrays nobody reserved.
+        self.Ctx = m.struct(
+            "Ctx",
+            [
+                ("re", self.Re),
+                ("ready", boolean),
+                ("maxlen", u32),
+                ("costcap", counter),
+                ("stackcap", u32),
+                ("memcap", counter),
+                ("regs", self.Regs),
+                ("bt", self.Stack),
+                ("trail", self.Trail),
+                ("clist", self.Threads),
+                ("nlist", self.Threads),
+                ("stk", self.Closure),
+                ("seen", bytes_),
+                ("pool", self.Slots),
+                ("rc", self.Blocks),
+                ("free", self.Blocks),
+                ("slack", bytes_),
+            ],
         )
 
         # --- constants ---

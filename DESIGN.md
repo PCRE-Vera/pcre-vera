@@ -216,7 +216,17 @@ Each backend must expose, in idiomatic form for its language:
   the compiled pattern's bounds, the caller's limits, and a declared
   maximum subject length, so that match calls made with it perform no
   allocation at all; a subject longer than the declared maximum is
-  rejected as BadInput instead of triggering a resize. The match
+  rejected as BadInput instead of triggering a resize. What "no
+  allocation" means is stated per target, at the strongest each backend's
+  representation admits, and each claim is proved by that backend's own
+  instrumentation: in Go a context match performs literally zero heap
+  allocations, success and failure paths alike, held to
+  `testing.AllocsPerRun`; in JavaScript it constructs no backing store —
+  no array, no typed array, no growth — held by counting constructors,
+  while the printed value semantics may still create bounded short-lived
+  records at call boundaries where Go copies stack values. Driving those
+  records to zero as well is printer work, tracked as such rather than
+  promised early. The match
   configuration is baked in the same way: a context is created for one
   configuration (memoization on or off) and one set of limits, and a
   call through it may lower the cost and stack limits but never raise
@@ -1115,8 +1125,10 @@ BadInput, accessors included, until M9 activates it, and the API docs
 state that explicitly. Done when: wave 1 fuzzing shows zero disagreement between the
 matchers on Pike-eligible patterns and none between our engine, pcre2,
 and both backends anywhere, no bound violation, and a
-context-backed match performs zero allocations under both runtimes'
-allocation profilers.
+context-backed match performs zero heap allocations under Go's allocation
+counter and constructs zero backing stores under JavaScript constructor
+instrumentation, per the section 2.4 per-target statement of the
+no-allocation promise.
 
 M6, Lean layers S and R for wave 1. Spec semantics, reference engine,
 equivalence and termination and bound theorems. At the start of this

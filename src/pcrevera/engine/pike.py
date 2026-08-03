@@ -53,7 +53,7 @@ from __future__ import annotations
 
 from ..dsl import boolean, bytes_, counter, inout, land, lnot, lor, u32, u8
 from . import spec
-from .bounds import const, linear, poly, zero
+from .bounds import const, growth_cap, linear, poly, sat, zero
 from .layout import Layout
 from .parser import down, tmp
 
@@ -576,9 +576,15 @@ def _match(L: Layout) -> None:
     The signature is the backtracking matcher's, stack limit included, so the
     two are callable interchangeably; the stack limit simply has nothing to
     refuse here, and the reported stack usage is zero.
+
+    Like the backtracking side, the core takes its scratch from the caller —
+    the two thread lists, the closure stack, the visited set and the three
+    copy-on-write tables — so a preallocated context can own all of it
+    across calls. `pike_match` declares the same seven fresh, which is the
+    plain path.
     """
     f = L.func(
-        "pike_match",
+        "pike_run",
         params=[
             ("re", L.Re),
             ("subj", L.frozen_bytes),
@@ -587,6 +593,13 @@ def _match(L: Layout) -> None:
             ("costlimit", counter),
             ("stacklimit", u32),
             ("memlimit", counter),
+            ("clist", L.Threads, "inout"),
+            ("nlist", L.Threads, "inout"),
+            ("stk", L.Closure, "inout"),
+            ("seen", bytes_, "inout"),
+            ("pool", L.Slots, "inout"),
+            ("rc", L.Blocks, "inout"),
+            ("free", L.Blocks, "inout"),
             ("ov", L.Ovec, "inout"),
             ("use", L.Usage, "inout"),
         ],
@@ -645,13 +658,17 @@ def _match(L: Layout) -> None:
     notbol = tmp(f, boolean, (mopts & u32(spec.NOTBOL)) != u32(0))
     noteol = tmp(f, boolean, (mopts & u32(spec.NOTEOL)) != u32(0))
 
-    clist = f.let("clist", L.Threads)
-    nlist = f.let("nlist", L.Threads)
-    stk = f.let("stk", L.Closure)
-    seen = f.let("seen", bytes_)
-    pool = f.let("pool", L.Slots)
-    rc = f.let("rc", L.Blocks)
-    free = f.let("free", L.Blocks)
+    clist = f["clist"]
+    nlist = f["nlist"]
+    stk = f["stk"]
+    seen = f["seen"]
+    pool = f["pool"]
+    rc = f["rc"]
+    free = f["free"]
+    # Whatever a previous call on the same scratch left behind is stale here,
+    # so every array starts over. On fresh scratch these are no-ops.
+    for held in (clist, nlist, stk, seen, pool, rc, free):
+        f.truncate(held, u32(0))
 
     # The ovector and the visited set are sized once and their zeroing is
     # charged, the same rule as the backtracking matcher's register file.
@@ -943,11 +960,52 @@ def _match(L: Layout) -> None:
     f.set(f["use"].field("mem"), peak)
     f.ret(result)
 
-
-def _sat(f, name, a, b, over):
-    out = tmp(f, counter)
-    f.call(name, [a, b, inout(over)], dest=out)
-    return out
+    f = L.func(
+        "pike_match",
+        params=[
+            ("re", L.Re),
+            ("subj", L.frozen_bytes),
+            ("start", u32),
+            ("mopts", u32),
+            ("costlimit", counter),
+            ("stacklimit", u32),
+            ("memlimit", counter),
+            ("ov", L.Ovec, "inout"),
+            ("use", L.Usage, "inout"),
+        ],
+        ret=u32,
+    )
+    clist = f.let("clist", L.Threads)
+    nlist = f.let("nlist", L.Threads)
+    stk = f.let("stk", L.Closure)
+    seen = f.let("seen", bytes_)
+    pool = f.let("pool", L.Slots)
+    rc = f.let("rc", L.Blocks)
+    free = f.let("free", L.Blocks)
+    out = tmp(f, u32, u32(spec.NO_MATCH))
+    f.call(
+        "pike_run",
+        [
+            f["re"],
+            f["subj"],
+            f["start"],
+            f["mopts"],
+            f["costlimit"],
+            f["stacklimit"],
+            f["memlimit"],
+            inout(clist),
+            inout(nlist),
+            inout(stk),
+            inout(seen),
+            inout(pool),
+            inout(rc),
+            inout(free),
+            inout(f["ov"]),
+            inout(f["use"]),
+        ],
+        dest=out,
+    )
+    f.ret(out)
 
 
 def _certificate(L: Layout) -> None:
@@ -959,7 +1017,47 @@ def _certificate(L: Layout) -> None:
     form and the checker recomputes it and asks for domination, which is the
     relationship section 9 sanctions — for this configuration the rule is the
     formula, so restating it twice would only be writing the formula twice.
+    The scratch capacities themselves live in `pike_room`, because context
+    creation reserves real arrays from the same counts this form prices:
+    one function, so the bound and the reservation cannot disagree.
     """
+    f = L.func(
+        "pike_room",
+        params=[("re", L.Re), ("room", L.Room, "inout"), ("over", boolean, "inout")],
+    )
+    re = f["re"]
+    room = f["room"]
+    over = f["over"]
+    code = re.field("code")
+    big = tmp(f, counter, code.len().cast(counter))
+    slots = tmp(f, counter, (re.field("ncap") + u32(1)).cast(counter) * counter(2))
+    f.set(room.field("words"), code.len().shr(3) + u32(1))
+    f.set(room.field("lists"), growth_cap(f, big, over))
+    f.set(room.field("stk"), growth_cap(f, sat(f, "sat_mul", big, counter(2), over), over))
+    blocks = tmp(
+        f,
+        counter,
+        sat(f, "sat_add", sat(f, "sat_mul", big, counter(4), over), counter(2), over),
+    )
+    f.set(room.field("tables"), growth_cap(f, blocks, over))
+    f.set(
+        room.field("pool"),
+        growth_cap(f, sat(f, "sat_mul", blocks, slots, over), over),
+    )
+    # The reservation R: the two thread lists, the closure stack, refcounts
+    # and the free list, and the pool, each capacity times its entry size.
+    reserved = tmp(
+        f, counter, sat(f, "sat_mul", room.field("lists"), counter(2 * spec.TH_SIZE), over)
+    )
+    for group, esize in (
+        ("stk", spec.TH_SIZE),
+        ("tables", 2 * spec.REG_SIZE),
+        ("pool", spec.REG_SIZE),
+    ):
+        weighed = sat(f, "sat_mul", room.field(group), counter(esize), over)
+        f.set(reserved, sat(f, "sat_add", reserved, weighed, over))
+    f.set(room.field("reserved"), reserved)
+
     f = L.func(
         "pike_price",
         params=[("re", L.Re), ("cert", L.Cert, "inout")],
@@ -972,7 +1070,6 @@ def _certificate(L: Layout) -> None:
     big = tmp(f, counter, code.len().cast(counter))
     slots = tmp(f, counter, (re.field("ncap") + u32(1)).cast(counter) * counter(2))
     block = tmp(f, counter, slots * counter(spec.REG_SIZE))
-    words = tmp(f, counter, (code.len().shr(3) + u32(1)).cast(counter))
     saves = tmp(f, counter, counter(0))
     pc = tmp(f, u32, u32(0))
     with f.while_(pc < code.len(), down(code.len(), pc)):
@@ -980,69 +1077,29 @@ def _certificate(L: Layout) -> None:
             f.set(saves, saves + counter(1))
         f.set(pc, pc + u32(1))
 
-    def cap(entries):
-        """The section 5 growth schedule's final capacity for that many
-        entries: nothing for none, else four plus twice the count."""
-        held = tmp(f, counter, counter(0))
-        with f.if_(entries > counter(0)):
-            doubled = _sat(f, "sat_mul", entries, counter(spec.GROW_FACTOR), over)
-            f.set(held, _sat(f, "sat_add", doubled, counter(spec.GROW_MIN), over))
-        return held
+    room = f.let("room", L.Room)
+    f.call("pike_room", [re, inout(room), inout(over)])
+    reserved = tmp(f, counter, room.field("reserved"))
+    words = tmp(f, counter, room.field("words").cast(counter))
 
-    # The reservation R: two thread lists, the closure stack, refcounts and
-    # the free list, and the pool, each at its section 9 entry bound times
-    # its entry size.
-    lists = _sat(f, "sat_mul", cap(big), counter(2 * spec.TH_SIZE), over)
-    closure = _sat(
-        f,
-        "sat_mul",
-        cap(_sat(f, "sat_mul", big, counter(2), over)),
-        counter(spec.TH_SIZE),
-        over,
-    )
-    blocks = tmp(
-        f,
-        counter,
-        _sat(
-            f,
-            "sat_add",
-            _sat(f, "sat_mul", big, counter(4), over),
-            counter(2),
-            over,
-        ),
-    )
-    tables = _sat(f, "sat_mul", cap(blocks), counter(2 * spec.REG_SIZE), over)
-    pool = _sat(
-        f,
-        "sat_mul",
-        cap(_sat(f, "sat_mul", blocks, slots, over)),
-        counter(spec.REG_SIZE),
-        over,
-    )
-    reserved = tmp(f, counter, lists)
-    for extra in (closure, tables, pool):
-        f.set(reserved, _sat(f, "sat_add", reserved, extra, over))
-
-    setup = _sat(f, "sat_add", block, words, over)
+    setup = sat(f, "sat_add", block, words, over)
     # One position: the closure's marks and the steps, at most one each per
     # instruction; a copy-on-write per Save plus the accept's own; the seed's
     # block fill; and the visited set cleared.
-    position = _sat(f, "sat_mul", big, counter(2), over)
-    writes = _sat(
-        f,
-        "sat_mul",
-        _sat(f, "sat_add", saves, counter(2), over),
-        block,
-        over,
-    )
-    f.set(position, _sat(f, "sat_add", position, writes, over))
-    f.set(position, _sat(f, "sat_add", position, words, over))
+    position = sat(f, "sat_mul", big, counter(2), over)
+    writes = sat(f, "sat_mul", sat(f, "sat_add", saves, counter(2), over), block, over)
+    f.set(position, sat(f, "sat_add", position, writes, over))
+    f.set(position, sat(f, "sat_add", position, words, over))
 
-    steady = _sat(f, "sat_add", setup, block, over)
-    growth = _sat(f, "sat_mul", reserved, counter(3), over)
-    steady = _sat(f, "sat_add", steady, growth, over)
-    held = _sat(f, "sat_mul", reserved, counter(2), over)
-    resident = _sat(f, "sat_add", setup, held, over)
+    # The delivered answer is charged in both lines: copied out once as
+    # cost, resident alongside the scratch as memory, at one block — a
+    # caller holds the ovector, and a context materializes that store at
+    # creation.
+    base = sat(f, "sat_add", setup, block, over)
+    growth = sat(f, "sat_mul", reserved, counter(3), over)
+    steady = sat(f, "sat_add", base, growth, over)
+    held = sat(f, "sat_mul", reserved, counter(2), over)
+    resident = sat(f, "sat_add", base, held, over)
 
     with f.if_(over):
         f.ret(boolean(False))
@@ -1051,6 +1108,7 @@ def _certificate(L: Layout) -> None:
     f.set(cert.field("complexity"), L.Cc.CcLinear)
     f.set(cert.field("cost"), poly(L, c0=steady, c1=position))
     f.set(cert.field("stack"), zero(L))
+    f.set(cert.field("trail"), zero(L))
     f.set(cert.field("mem"), const(L, resident))
     empty = f.let("empty", L.Prices)
     f.freeze(cert.field("prices"), empty)
@@ -1090,13 +1148,14 @@ def _certificate(L: Layout) -> None:
         f.ret(L.Cr.CrOverflow)
     holds = tmp(f, boolean, boolean(False))
     # The same discipline as the backtracking total check: cost and memory
-    # may overestimate, the stack must equal the requirement — which here is
-    # exactly zero, since no backtrack stack exists on this path, so a
-    # certificate claiming entries the matcher can never push is refused
-    # under the same name section 5's rule uses.
+    # may overestimate, the stack and the trail must equal the requirement —
+    # which here is exactly zero, since neither array exists on this path, so
+    # a certificate claiming entries the matcher can never push is refused
+    # under the same names section 5's rules use.
     for claim, rule, refusal in (
         ("cost", "poly_ge", L.Cr.CrTotalCost),
         ("stack", "poly_eq", L.Cr.CrTotalStack),
+        ("trail", "poly_eq", L.Cr.CrTotalTrail),
         ("mem", "poly_ge", L.Cr.CrTotalMem),
     ):
         f.call(rule, [cert.field(claim), needed.field(claim)], dest=holds)

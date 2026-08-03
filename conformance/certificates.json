@@ -18,7 +18,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 1961
+            "value": 1969
           },
           "n": 0,
           "stack": {
@@ -35,7 +35,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 1961
+            "value": 1969
           },
           "n": 1,
           "stack": {
@@ -52,7 +52,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 1961
+            "value": 1969
           },
           "n": 2,
           "stack": {
@@ -69,7 +69,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 1961
+            "value": 1969
           },
           "n": 10,
           "stack": {
@@ -86,7 +86,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 1961
+            "value": 1969
           },
           "n": 53,
           "stack": {
@@ -103,7 +103,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 1961
+            "value": 1969
           },
           "n": 65535,
           "stack": {
@@ -120,7 +120,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 1961
+            "value": 1969
           },
           "n": 2147483647,
           "stack": {
@@ -233,7 +233,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 809
+            "value": 817
           },
           "n": 0,
           "stack": {
@@ -250,7 +250,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 809
+            "value": 817
           },
           "n": 1,
           "stack": {
@@ -267,7 +267,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 809
+            "value": 817
           },
           "n": 2,
           "stack": {
@@ -284,7 +284,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 809
+            "value": 817
           },
           "n": 10,
           "stack": {
@@ -301,7 +301,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 809
+            "value": 817
           },
           "n": 53,
           "stack": {
@@ -318,7 +318,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 809
+            "value": 817
           },
           "n": 65535,
           "stack": {
@@ -335,7 +335,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 809
+            "value": 817
           },
           "n": 2147483647,
           "stack": {
@@ -663,7 +663,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 2729
+            "value": 2737
           },
           "n": 0,
           "stack": {
@@ -680,7 +680,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 2729
+            "value": 2737
           },
           "n": 1,
           "stack": {
@@ -697,7 +697,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 2729
+            "value": 2737
           },
           "n": 2,
           "stack": {
@@ -714,7 +714,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 2729
+            "value": 2737
           },
           "n": 10,
           "stack": {
@@ -731,7 +731,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 2729
+            "value": 2737
           },
           "n": 53,
           "stack": {
@@ -748,7 +748,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 2729
+            "value": 2737
           },
           "n": 65535,
           "stack": {
@@ -765,7 +765,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 2729
+            "value": 2737
           },
           "n": 2147483647,
           "stack": {
@@ -878,7 +878,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 3882
+            "value": 3890
           },
           "n": 0,
           "stack": {
@@ -895,7 +895,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 3882
+            "value": 3890
           },
           "n": 1,
           "stack": {
@@ -912,7 +912,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 3882
+            "value": 3890
           },
           "n": 2,
           "stack": {
@@ -929,7 +929,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 3882
+            "value": 3890
           },
           "n": 10,
           "stack": {
@@ -946,7 +946,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 3882
+            "value": 3890
           },
           "n": 53,
           "stack": {
@@ -963,7 +963,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 3882
+            "value": 3890
           },
           "n": 65535,
           "stack": {
@@ -980,7 +980,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 3882
+            "value": 3890
           },
           "n": 2147483647,
           "stack": {
@@ -1093,7 +1093,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 2096
+            "value": 2104
           },
           "n": 0,
           "stack": {
@@ -1110,7 +1110,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 2768
+            "value": 2776
           },
           "n": 1,
           "stack": {
@@ -1127,7 +1127,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 3440
+            "value": 3448
           },
           "n": 2,
           "stack": {
@@ -1144,7 +1144,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 8816
+            "value": 8824
           },
           "n": 10,
           "stack": {
@@ -1161,7 +1161,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 37712
+            "value": 37720
           },
           "n": 53,
           "stack": {
@@ -1178,7 +1178,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 44041616
+            "value": 44041624
           },
           "n": 65535,
           "stack": {
@@ -1308,7 +1308,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 3288
+            "value": 3296
           },
           "n": 0,
           "stack": {
@@ -1325,7 +1325,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 6576
+            "value": 6592
           },
           "n": 1,
           "stack": {
@@ -1342,7 +1342,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 13152
+            "value": 13184
           },
           "n": 2,
           "stack": {
@@ -1359,7 +1359,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 3366912
+            "value": 3375104
           },
           "n": 10,
           "stack": {
@@ -1953,7 +1953,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 8491
+            "value": 8499
           },
           "n": 0,
           "stack": {
@@ -1970,7 +1970,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 8491
+            "value": 8499
           },
           "n": 1,
           "stack": {
@@ -1987,7 +1987,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 8491
+            "value": 8499
           },
           "n": 2,
           "stack": {
@@ -2004,7 +2004,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 8491
+            "value": 8499
           },
           "n": 10,
           "stack": {
@@ -2021,7 +2021,7 @@
           "exercise": true,
           "mem": {
             "status": 0,
-            "value": 8491
+            "value": 8499
           },
           "n": 53,
           "stack": {
@@ -2038,7 +2038,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 8491
+            "value": 8499
           },
           "n": 65535,
           "stack": {
@@ -2055,7 +2055,7 @@
           "exercise": false,
           "mem": {
             "status": 0,
-            "value": 8491
+            "value": 8499
           },
           "n": 2147483647,
           "stack": {
@@ -2156,43 +2156,43 @@
       "bounds": [
         {
           "cost": 36,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 48,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 60,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 156,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 672,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 786456,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -2207,43 +2207,43 @@
       "bounds": [
         {
           "cost": 33,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 42,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 51,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 123,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 510,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 589848,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -2258,43 +2258,43 @@
       "bounds": [
         {
           "cost": 268,
-          "mem": 160,
+          "mem": 176,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 296,
-          "mem": 160,
+          "mem": 176,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 324,
-          "mem": 160,
+          "mem": 176,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 548,
-          "mem": 160,
+          "mem": 176,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 1752,
-          "mem": 160,
+          "mem": 176,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 1835248,
-          "mem": 160,
+          "mem": 176,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 160,
+          "mem": 176,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -2309,43 +2309,43 @@
       "bounds": [
         {
           "cost": 254,
-          "mem": 160,
+          "mem": 168,
           "n": 0,
           "stack": 1
         },
         {
           "cost": 268,
-          "mem": 160,
+          "mem": 168,
           "n": 1,
           "stack": 1
         },
         {
           "cost": 282,
-          "mem": 160,
+          "mem": 168,
           "n": 2,
           "stack": 1
         },
         {
           "cost": 394,
-          "mem": 160,
+          "mem": 168,
           "n": 10,
           "stack": 1
         },
         {
           "cost": 996,
-          "mem": 160,
+          "mem": 168,
           "n": 53,
           "stack": 1
         },
         {
           "cost": 917744,
-          "mem": 160,
+          "mem": 168,
           "n": 65535,
           "stack": 1
         },
         {
           "cost": null,
-          "mem": 160,
+          "mem": 168,
           "n": 9007199254740991,
           "stack": 1
         }
@@ -2360,43 +2360,43 @@
       "bounds": [
         {
           "cost": 540,
-          "mem": 336,
+          "mem": 352,
           "n": 0,
           "stack": 1
         },
         {
           "cost": 576,
-          "mem": 336,
+          "mem": 352,
           "n": 1,
           "stack": 1
         },
         {
           "cost": 612,
-          "mem": 336,
+          "mem": 352,
           "n": 2,
           "stack": 1
         },
         {
           "cost": 900,
-          "mem": 336,
+          "mem": 352,
           "n": 10,
           "stack": 1
         },
         {
           "cost": 2448,
-          "mem": 336,
+          "mem": 352,
           "n": 53,
           "stack": 1
         },
         {
           "cost": 2359800,
-          "mem": 336,
+          "mem": 352,
           "n": 65535,
           "stack": 1
         },
         {
           "cost": null,
-          "mem": 336,
+          "mem": 352,
           "n": 9007199254740991,
           "stack": 1
         }
@@ -2411,43 +2411,43 @@
       "bounds": [
         {
           "cost": 252,
-          "mem": 160,
+          "mem": 168,
           "n": 0,
           "stack": 1
         },
         {
           "cost": 264,
-          "mem": 160,
+          "mem": 168,
           "n": 1,
           "stack": 1
         },
         {
           "cost": 276,
-          "mem": 160,
+          "mem": 168,
           "n": 2,
           "stack": 1
         },
         {
           "cost": 372,
-          "mem": 160,
+          "mem": 168,
           "n": 10,
           "stack": 1
         },
         {
           "cost": 888,
-          "mem": 160,
+          "mem": 168,
           "n": 53,
           "stack": 1
         },
         {
           "cost": 786672,
-          "mem": 160,
+          "mem": 168,
           "n": 65535,
           "stack": 1
         },
         {
           "cost": null,
-          "mem": 160,
+          "mem": 168,
           "n": 9007199254740991,
           "stack": 1
         }
@@ -2462,37 +2462,37 @@
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -2513,43 +2513,43 @@
       "bounds": [
         {
           "cost": 1433,
-          "mem": 888,
+          "mem": 896,
           "n": 0,
           "stack": 6
         },
         {
           "cost": 1538,
-          "mem": 888,
+          "mem": 896,
           "n": 1,
           "stack": 6
         },
         {
           "cost": 1643,
-          "mem": 888,
+          "mem": 896,
           "n": 2,
           "stack": 6
         },
         {
           "cost": 2483,
-          "mem": 888,
+          "mem": 896,
           "n": 10,
           "stack": 6
         },
         {
           "cost": 6998,
-          "mem": 888,
+          "mem": 896,
           "n": 53,
           "stack": 6
         },
         {
           "cost": 6882608,
-          "mem": 888,
+          "mem": 896,
           "n": 65535,
           "stack": 6
         },
         {
           "cost": null,
-          "mem": 888,
+          "mem": 896,
           "n": 9007199254740991,
           "stack": 6
         }
@@ -2564,43 +2564,43 @@
       "bounds": [
         {
           "cost": 11927893,
-          "mem": 7340248,
+          "mem": 7340256,
           "n": 0,
           "stack": 65536
         },
         {
           "cost": 12845418,
-          "mem": 7340248,
+          "mem": 7340256,
           "n": 1,
           "stack": 65536
         },
         {
           "cost": 13762943,
-          "mem": 7340248,
+          "mem": 7340256,
           "n": 2,
           "stack": 65536
         },
         {
           "cost": 21103143,
-          "mem": 7340248,
+          "mem": 7340256,
           "n": 10,
           "stack": 65536
         },
         {
           "cost": 60556718,
-          "mem": 7340248,
+          "mem": 7340256,
           "n": 53,
           "stack": 65536
         },
         {
           "cost": 60141928768,
-          "mem": 7340248,
+          "mem": 7340256,
           "n": 65535,
           "stack": 65536
         },
         {
           "cost": null,
-          "mem": 7340248,
+          "mem": 7340256,
           "n": 9007199254740991,
           "stack": 65536
         }
@@ -2615,37 +2615,37 @@
       "bounds": [
         {
           "cost": 955,
-          "mem": 584,
+          "mem": 600,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 1356,
-          "mem": 760,
+          "mem": 776,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1811,
-          "mem": 936,
+          "mem": 952,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 7395,
-          "mem": 2344,
+          "mem": 2360,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 96620,
-          "mem": 9912,
+          "mem": 9928,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 115985089120,
-          "mem": 11534744,
+          "mem": 11534760,
           "n": 65535,
           "stack": 65537
         },
@@ -2666,25 +2666,25 @@
       "bounds": [
         {
           "cost": 2265,
-          "mem": 1384,
+          "mem": 1400,
           "n": 0,
           "stack": 8
         },
         {
           "cost": 4916,
-          "mem": 2768,
+          "mem": 2800,
           "n": 1,
           "stack": 16
         },
         {
           "cost": 10604,
-          "mem": 5536,
+          "mem": 5600,
           "n": 2,
           "stack": 32
         },
         {
           "cost": 4295680,
-          "mem": 1417216,
+          "mem": 1433600,
           "n": 10,
           "stack": 8192
         },
@@ -2717,25 +2717,25 @@
       "bounds": [
         {
           "cost": 1585,
-          "mem": 984,
+          "mem": 992,
           "n": 0,
           "stack": 8
         },
         {
           "cost": 3396,
-          "mem": 1968,
+          "mem": 1984,
           "n": 1,
           "stack": 16
         },
         {
           "cost": 7244,
-          "mem": 3936,
+          "mem": 3968,
           "n": 2,
           "stack": 32
         },
         {
           "cost": 2780160,
-          "mem": 1007616,
+          "mem": 1015808,
           "n": 10,
           "stack": 8192
         },
@@ -2784,31 +2784,31 @@
       "bounds": [
         {
           "cost": 9057,
-          "mem": 5576,
+          "mem": 5584,
           "n": 0,
           "stack": 42
         },
         {
           "cost": 28046,
-          "mem": 16024,
+          "mem": 16032,
           "n": 1,
           "stack": 129
         },
         {
           "cost": 66087,
-          "mem": 35240,
+          "mem": 35248,
           "n": 2,
           "stack": 292
         },
         {
           "cost": 2378207,
-          "mem": 827176,
+          "mem": 827184,
           "n": 10,
           "stack": 7212
         },
         {
           "cost": 623788794,
-          "mem": 75610712,
+          "mem": 75610720,
           "n": 53,
           "stack": 671605
         },
@@ -2920,43 +2920,43 @@
       "bounds": [
         {
           "cost": 36,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 48,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 60,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 156,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 672,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 786456,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -2974,7 +2974,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 24,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -3057,56 +3057,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "literal",
       "note": "Three characters and an accept. The whole cost is one visit per instruction at each of the n + 1 starting positions, plus the register file and the ovector, sized and zeroed once, cleared again per attempt, and copied back out when the match is found. That shape is linear, so the certificate says so and the checker holds it to it.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 268,
-          "mem": 160,
+          "mem": 176,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 296,
-          "mem": 160,
+          "mem": 176,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 324,
-          "mem": 160,
+          "mem": 176,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 548,
-          "mem": 160,
+          "mem": 176,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 1752,
-          "mem": 160,
+          "mem": 176,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 1835248,
-          "mem": 160,
+          "mem": 176,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 160,
+          "mem": 176,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -3124,7 +3132,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 160,
+          "c0": 176,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -3241,56 +3249,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 2,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "capture",
       "note": "The same four instructions, two of them saves. A save records an undo entry, so this pattern needs a trail where the literal needed none \u2014 which is the whole point of pricing the opcodes rather than counting them.",
       "pattern": "286129",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 254,
-          "mem": 160,
+          "mem": 168,
           "n": 0,
           "stack": 1
         },
         {
           "cost": 268,
-          "mem": 160,
+          "mem": 168,
           "n": 1,
           "stack": 1
         },
         {
           "cost": 282,
-          "mem": 160,
+          "mem": 168,
           "n": 2,
           "stack": 1
         },
         {
           "cost": 394,
-          "mem": 160,
+          "mem": 168,
           "n": 10,
           "stack": 1
         },
         {
           "cost": 996,
-          "mem": 160,
+          "mem": 168,
           "n": 53,
           "stack": 1
         },
         {
           "cost": 917744,
-          "mem": 160,
+          "mem": 168,
           "n": 65535,
           "stack": 1
         },
         {
           "cost": null,
-          "mem": 160,
+          "mem": 168,
           "n": 9007199254740991,
           "stack": 1
         }
@@ -3308,7 +3324,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 160,
+          "c0": 168,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -3493,56 +3509,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "alternation",
       "note": "A split, two branches, and the jump the first one leaves by. The region is entered once and both branches are tried, so the ambiguity is two and the accept downstream is charged twice.",
       "pattern": "617c62",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 540,
-          "mem": 336,
+          "mem": 352,
           "n": 0,
           "stack": 1
         },
         {
           "cost": 576,
-          "mem": 336,
+          "mem": 352,
           "n": 1,
           "stack": 1
         },
         {
           "cost": 612,
-          "mem": 336,
+          "mem": 352,
           "n": 2,
           "stack": 1
         },
         {
           "cost": 900,
-          "mem": 336,
+          "mem": 352,
           "n": 10,
           "stack": 1
         },
         {
           "cost": 2448,
-          "mem": 336,
+          "mem": 352,
           "n": 53,
           "stack": 1
         },
         {
           "cost": 2359800,
-          "mem": 336,
+          "mem": 352,
           "n": 65535,
           "stack": 1
         },
         {
           "cost": null,
-          "mem": 336,
+          "mem": 352,
           "n": 9007199254740991,
           "stack": 1
         }
@@ -3560,7 +3584,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 336,
+          "c0": 352,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -3779,56 +3803,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "an-empty-alternation-branch",
       "note": "`(a|)` compiles the second branch to nothing at all, so its region covers no instruction. That is legal for a branch and for nothing else: the alternation reads its shape off the branch list, so the branch has to be there whether or not it holds anything.",
       "pattern": "28617c29",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 252,
-          "mem": 160,
+          "mem": 168,
           "n": 0,
           "stack": 1
         },
         {
           "cost": 264,
-          "mem": 160,
+          "mem": 168,
           "n": 1,
           "stack": 1
         },
         {
           "cost": 276,
-          "mem": 160,
+          "mem": 168,
           "n": 2,
           "stack": 1
         },
         {
           "cost": 372,
-          "mem": 160,
+          "mem": 168,
           "n": 10,
           "stack": 1
         },
         {
           "cost": 888,
-          "mem": 160,
+          "mem": 168,
           "n": 53,
           "stack": 1
         },
         {
           "cost": 786672,
-          "mem": 160,
+          "mem": 168,
           "n": 65535,
           "stack": 1
         },
         {
           "cost": null,
-          "mem": 160,
+          "mem": 168,
           "n": 9007199254740991,
           "stack": 1
         }
@@ -3846,7 +3878,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 160,
+          "c0": 168,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -3963,56 +3995,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "optional",
       "note": "One split whose arms are the body and what follows it.",
       "pattern": "613f",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 252,
-          "mem": 160,
+          "mem": 168,
           "n": 0,
           "stack": 1
         },
         {
           "cost": 264,
-          "mem": 160,
+          "mem": 168,
           "n": 1,
           "stack": 1
         },
         {
           "cost": 276,
-          "mem": 160,
+          "mem": 168,
           "n": 2,
           "stack": 1
         },
         {
           "cost": 372,
-          "mem": 160,
+          "mem": 168,
           "n": 10,
           "stack": 1
         },
         {
           "cost": 888,
-          "mem": 160,
+          "mem": 168,
           "n": 53,
           "stack": 1
         },
         {
           "cost": 786672,
-          "mem": 160,
+          "mem": 168,
           "n": 65535,
           "stack": 1
         },
         {
           "cost": null,
-          "mem": 160,
+          "mem": 168,
           "n": 9007199254740991,
           "stack": 1
         }
@@ -4030,7 +4070,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 160,
+          "c0": 168,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -4147,50 +4187,58 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "lazy-optional",
       "note": "The same shape with the split's arms the other way round, which costs exactly the same and is why the rule takes either order.",
       "pattern": "613f3f",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -4214,7 +4262,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -4331,56 +4379,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "star",
       "note": "An unbounded repetition. Past the minimum count an iteration that consumed nothing is the last one, so the head is reached at most n + 2 times and the cost comes out quadratic once the starting positions are counted in.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 1433,
-          "mem": 888,
+          "mem": 896,
           "n": 0,
           "stack": 6
         },
         {
           "cost": 1538,
-          "mem": 888,
+          "mem": 896,
           "n": 1,
           "stack": 6
         },
         {
           "cost": 1643,
-          "mem": 888,
+          "mem": 896,
           "n": 2,
           "stack": 6
         },
         {
           "cost": 2483,
-          "mem": 888,
+          "mem": 896,
           "n": 10,
           "stack": 6
         },
         {
           "cost": 6998,
-          "mem": 888,
+          "mem": 896,
           "n": 53,
           "stack": 6
         },
         {
           "cost": 6882608,
-          "mem": 888,
+          "mem": 896,
           "n": 65535,
           "stack": 6
         },
         {
           "cost": null,
-          "mem": 888,
+          "mem": 896,
           "n": 9007199254740991,
           "stack": 6
         }
@@ -4398,7 +4454,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 888,
+          "c0": 896,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -4515,50 +4571,58 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 13,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "counted",
       "note": "A bounded one, where the declared maximum is what stops it and the bound has no term in n at all.",
       "pattern": "617b322c357d",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 955,
-          "mem": 584,
+          "mem": 600,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 1356,
-          "mem": 760,
+          "mem": 776,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1811,
-          "mem": 936,
+          "mem": 952,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 7395,
-          "mem": 2344,
+          "mem": 2360,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 96620,
-          "mem": 9912,
+          "mem": 9928,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 115985089120,
-          "mem": 11534744,
+          "mem": 11534760,
           "n": 65535,
           "stack": 65537
         },
@@ -4582,7 +4646,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 408,
+          "c0": 424,
           "c1": 176,
           "c2": 0,
           "c3": 0,
@@ -4733,38 +4797,46 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 5,
+          "c1": 4,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "grouped-repeat",
       "note": "A capturing group inside a star, followed by a literal. The group is entered once per iteration and its saves are charged there, so the trail grows with the loop rather than with the program.",
       "pattern": "286162292a63",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 2265,
-          "mem": 1384,
+          "mem": 1400,
           "n": 0,
           "stack": 8
         },
         {
           "cost": 4916,
-          "mem": 2768,
+          "mem": 2800,
           "n": 1,
           "stack": 16
         },
         {
           "cost": 10604,
-          "mem": 5536,
+          "mem": 5600,
           "n": 2,
           "stack": 32
         },
         {
           "cost": 4295680,
-          "mem": 1417216,
+          "mem": 1433600,
           "n": 10,
           "stack": 8192
         },
@@ -4800,7 +4872,7 @@
         },
         "mem": {
           "base": 2,
-          "c0": 1384,
+          "c0": 1400,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -5053,56 +5125,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 2,
+          "c0": 25,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "alternation-inside-a-loop",
       "note": "The same shape with two branches in the group, and the bound comes out exponential. Structurally it is: the loop hands the next iteration one flow per way the body finished, and nothing in these rules knows that `a` and `b` cannot both match the same byte. The bound may overestimate and never underestimate (DESIGN.md section 5), and a first-byte disjointness rule is what would sharpen this one.",
       "pattern": "28617c62292a63",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 5317,
-          "mem": 3288,
+          "mem": 3296,
           "n": 0,
           "stack": 32
         },
         {
           "cost": 5706,
-          "mem": 3288,
+          "mem": 3296,
           "n": 1,
           "stack": 32
         },
         {
           "cost": 6095,
-          "mem": 3288,
+          "mem": 3296,
           "n": 2,
           "stack": 32
         },
         {
           "cost": 9207,
-          "mem": 3288,
+          "mem": 3296,
           "n": 10,
           "stack": 32
         },
         {
           "cost": 25934,
-          "mem": 3288,
+          "mem": 3296,
           "n": 53,
           "stack": 32
         },
         {
           "cost": 25498432,
-          "mem": 3288,
+          "mem": 3296,
           "n": 65535,
           "stack": 32
         },
         {
           "cost": null,
-          "mem": 3288,
+          "mem": 3296,
           "n": 9007199254740991,
           "stack": 32
         }
@@ -5120,7 +5200,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 3288,
+          "c0": 3296,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -5373,38 +5453,46 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 49,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "ambiguous-body-bounded",
       "note": "A body with two ways to match the same character, repeated at most three times. Each iteration doubles the ways into the next, so the flow through the head is a power of two and the bound stays a number.",
       "pattern": "283f3a617c61297b302c337d",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 1585,
-          "mem": 984,
+          "mem": 992,
           "n": 0,
           "stack": 8
         },
         {
           "cost": 3396,
-          "mem": 1968,
+          "mem": 1984,
           "n": 1,
           "stack": 16
         },
         {
           "cost": 7244,
-          "mem": 3936,
+          "mem": 3968,
           "n": 2,
           "stack": 32
         },
         {
           "cost": 2780160,
-          "mem": 1007616,
+          "mem": 1015808,
           "n": 10,
           "stack": 8192
         },
@@ -5440,7 +5528,7 @@
         },
         "mem": {
           "base": 2,
-          "c0": 984,
+          "c0": 992,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -5693,56 +5781,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 2,
+          "c0": 13,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "exponential",
       "note": "The same body with no upper bound, which is where the growing base comes from: the head is reached n + 2 times, so the flow is a multiple of 2^n and the bound saturates within a few dozen bytes of subject. That is the honest answer rather than a number nobody could budget for.",
       "pattern": "283f3a617c61292a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 36,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 48,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 60,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 156,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 672,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 786456,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -5760,7 +5856,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 24,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -5843,50 +5939,58 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "a-linear-bound-that-does-not-claim-to-be",
       "note": "The class claim of DESIGN.md section 6 may be weaker than the bound, and only weaker. A literal really does cost at most c * (n + 1) and the first case above says so; declining to say so is refusing to make a claim rather than making a wrong one.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -5910,7 +6014,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -6027,38 +6131,46 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 26,
+      "check": 27,
       "config": 0,
       "name": "linear-claim-with-a-square",
       "note": "A star does not, and saying so does not make it so.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 1585,
-          "mem": 984,
+          "mem": 992,
           "n": 0,
           "stack": 8
         },
         {
           "cost": 3396,
-          "mem": 1968,
+          "mem": 1984,
           "n": 1,
           "stack": 16
         },
         {
           "cost": 7244,
-          "mem": 3936,
+          "mem": 3968,
           "n": 2,
           "stack": 32
         },
         {
           "cost": 2780160,
-          "mem": 1007616,
+          "mem": 1015808,
           "n": 10,
           "stack": 8192
         },
@@ -6094,7 +6206,7 @@
         },
         "mem": {
           "base": 2,
-          "c0": 984,
+          "c0": 992,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -6347,14 +6459,22 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 2,
+          "c0": 13,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 26,
+      "check": 27,
       "config": 0,
       "name": "linear-claim-with-a-growing-base",
       "note": "Nor does an exponential bound, however small its coefficient.",
       "pattern": "283f3a617c61292a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
@@ -6497,14 +6617,22 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "over-claimed-to-both-ceilings",
       "note": "A certificate may be generous wherever generosity is legal, and these reach exactly the two ceilings at n = 0: the counter's saturation point for cost and the section 3 byte ceiling for memory. The stack stays exact, because it is held to its equation. What a caller reads back is what the certificate names, not what the checker computed.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
@@ -6647,56 +6775,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "over-claimed-past-both-ceilings",
       "note": "One unit more of each, which no limit could accept, so neither is a number any more. The ceilings differ, which is the whole difference between the projections.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 36,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 178956970
         },
         {
           "cost": 48,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 178956970
         },
         {
           "cost": 60,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 178956970
         },
         {
           "cost": 156,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 178956970
         },
         {
           "cost": 672,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 178956970
         },
         {
           "cost": 786456,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 178956970
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 178956970
         }
@@ -6714,7 +6850,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 24,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -6797,56 +6933,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 24,
       "config": 0,
       "name": "a-stack-at-its-ceiling",
-      "note": "The deepest stack a limit could name, claimed on a program whose derived stack is zero. The evaluation rows still read the claim back as a number at the edge; the checker refuses it, since the stack is the one bound held to equality.",
+      "note": "The deepest stack a limit could name, claimed on a program whose derived stack is zero. The evaluation rows still read the claim back as a number at the edge; the checker refuses it, since the stack is held to equality.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 36,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": null
         },
         {
           "cost": 48,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": null
         },
         {
           "cost": 60,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": null
         },
         {
           "cost": 156,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": null
         },
         {
           "cost": 672,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": null
         },
         {
           "cost": 786456,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": null
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": null
         }
@@ -6864,7 +7008,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 24,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -6947,6 +7091,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 24,
@@ -6954,7 +7106,7 @@
       "name": "a-stack-past-its-ceiling",
       "note": "One entry more, which no limit could accept, so the evaluation rows refuse it too.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
@@ -7097,56 +7249,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 0,
       "name": "past-the-memory-ceiling-and-still-a-cost",
       "note": "One IR byte more than the largest reservation there is, claimed as both. It is refused as memory and is a perfectly ordinary amount of work, which is the whole reason the three projections carry their own ceilings rather than sharing the counter's.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 36,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 48,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 60,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 156,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 672,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 786456,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -7164,7 +7324,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 24,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -7281,6 +7441,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 22,
@@ -7288,7 +7456,7 @@
       "name": "an-uncaptured-certificate-on-a-capture",
       "note": "Four instructions and the same three regions over the same three ranges either way, and the only difference is that two of the instructions are saves. A save records an undo entry, so the certificate for the group that captures nothing is two entries short of the one that does. A checker given only a length could not tell these two programs apart at all.",
       "pattern": "286129",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
@@ -7391,6 +7559,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -7623,6 +7799,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 15,
@@ -7799,6 +7983,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 15,
@@ -7826,43 +8018,43 @@
       "bounds": [
         {
           "cost": 36,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 48,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 60,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 156,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 672,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 786456,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -7880,7 +8072,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 24,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -7963,6 +8155,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 10,
@@ -7970,49 +8170,49 @@
       "name": "configuration-mismatch",
       "note": "A certificate for the Pike VM says nothing about the backtracking one, whatever its numbers are.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 36,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 48,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 60,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 156,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 672,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 786456,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -8030,7 +8230,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 24,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8113,6 +8313,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 9,
@@ -8120,49 +8328,49 @@
       "name": "no-rules-for-the-memoized-path",
       "note": "The memoized path waits for M9, memo table and all.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 2970,
-          "mem": 1961,
+          "mem": 1969,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 2995,
-          "mem": 1961,
+          "mem": 1969,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 3020,
-          "mem": 1961,
+          "mem": 1969,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 3220,
-          "mem": 1961,
+          "mem": 1969,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 4295,
-          "mem": 1961,
+          "mem": 1969,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 1641345,
-          "mem": 1961,
+          "mem": 1969,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 1961,
+          "mem": 1969,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -8180,7 +8388,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 1961,
+          "c0": 1969,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8194,56 +8402,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 1,
       "name": "pike-linear-certificate",
       "note": "The closed form itself: no region prices, a linear claim, and the three whole-call numbers of section 9, accepted exactly.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 11594,
-          "mem": 7610,
+          "mem": 7634,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 11762,
-          "mem": 7610,
+          "mem": 7634,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 11930,
-          "mem": 7610,
+          "mem": 7634,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 13274,
-          "mem": 7610,
+          "mem": 7634,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 20498,
-          "mem": 7610,
+          "mem": 7634,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 11021474,
-          "mem": 7610,
+          "mem": 7634,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 7610,
+          "mem": 7634,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -8261,7 +8477,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 7610,
+          "c0": 7634,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8275,56 +8491,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 27,
+      "check": 28,
       "config": 1,
       "name": "pike-linear-certificate-with-captures",
       "note": "The same closed form where the counts all bite: two groups widen the block, four Saves multiply the copy-on-write term, and the star stops the program being trivial. Exact, so a restatement that drifted on any of those counts is caught here.",
       "pattern": "28612928622a29",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 2970,
-          "mem": 1961,
+          "mem": 1969,
           "n": 0,
           "stack": 1
         },
         {
           "cost": 2995,
-          "mem": 1961,
+          "mem": 1969,
           "n": 1,
           "stack": 1
         },
         {
           "cost": 3020,
-          "mem": 1961,
+          "mem": 1969,
           "n": 2,
           "stack": 1
         },
         {
           "cost": 3220,
-          "mem": 1961,
+          "mem": 1969,
           "n": 10,
           "stack": 1
         },
         {
           "cost": 4295,
-          "mem": 1961,
+          "mem": 1969,
           "n": 53,
           "stack": 1
         },
         {
           "cost": 1641345,
-          "mem": 1961,
+          "mem": 1969,
           "n": 65535,
           "stack": 1
         },
         {
           "cost": null,
-          "mem": 1961,
+          "mem": 1969,
           "n": 9007199254740991,
           "stack": 1
         }
@@ -8342,7 +8566,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 1961,
+          "c0": 1969,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8356,6 +8580,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 24,
@@ -8363,49 +8595,49 @@
       "name": "pike-claiming-a-stack",
       "note": "No backtrack stack exists on the lockstep path, so the stack requirement is exactly zero and the equality rule refuses entries the matcher can never push, under the same name as everywhere.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 2970,
-          "mem": 1961,
+          "mem": 1969,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 2995,
-          "mem": 1961,
+          "mem": 1969,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 3020,
-          "mem": 1961,
+          "mem": 1969,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 3220,
-          "mem": 1961,
+          "mem": 1969,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 4295,
-          "mem": 1961,
+          "mem": 1969,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 1641345,
-          "mem": 1961,
+          "mem": 1969,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 1961,
+          "mem": 1969,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -8423,7 +8655,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 1961,
+          "c0": 1969,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8437,6 +8669,103 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 1,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 25,
+      "config": 1,
+      "name": "pike-claiming-a-trail",
+      "note": "Nor does the undo trail exist there, so the trail claim is held to zero by the same equality, under its own name.",
+      "pattern": "616263",
+      "shape": 28
+    },
+    {
+      "bounds": [
+        {
+          "cost": 2970,
+          "mem": 1969,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 2995,
+          "mem": 1969,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 3020,
+          "mem": 1969,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 3220,
+          "mem": 1969,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 4295,
+          "mem": 1969,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 1641345,
+          "mem": 1969,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 1969,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 1,
+        "config": 1,
+        "cost": {
+          "base": 1,
+          "c0": 2945,
+          "c1": 25,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 1969,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [],
+        "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 11,
@@ -8444,49 +8773,49 @@
       "name": "pike-on-an-ineligible-pattern",
       "note": "A lower bound keeps `a+` off the lockstep path, so no Pike certificate can be about it, whatever its numbers say. Refused before anything is priced.",
       "pattern": "612b",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 2970,
-          "mem": 1961,
+          "mem": 1969,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 2995,
-          "mem": 1961,
+          "mem": 1969,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 3020,
-          "mem": 1961,
+          "mem": 1969,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 3220,
-          "mem": 1961,
+          "mem": 1969,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 4295,
-          "mem": 1961,
+          "mem": 1969,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 1641345,
-          "mem": 1961,
+          "mem": 1969,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 1961,
+          "mem": 1969,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -8504,7 +8833,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 1961,
+          "c0": 1969,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8518,6 +8847,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 10,
@@ -8525,49 +8862,49 @@
       "name": "pike-for-the-other-configuration",
       "note": "A certificate naming the backtracking configuration says nothing here, mirroring the mismatch case above.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 2970,
-          "mem": 1961,
+          "mem": 1969,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 2995,
-          "mem": 1961,
+          "mem": 1969,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 3020,
-          "mem": 1961,
+          "mem": 1969,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 3220,
-          "mem": 1961,
+          "mem": 1969,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 4295,
-          "mem": 1961,
+          "mem": 1969,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 1641345,
-          "mem": 1961,
+          "mem": 1969,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 1961,
+          "mem": 1969,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -8585,7 +8922,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 1961,
+          "c0": 1969,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8668,6 +9005,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 12,
@@ -8675,49 +9020,49 @@
       "name": "pike-with-region-prices",
       "note": "The Pike form carries no region prices \u2014 the visited set makes the whole call a closed form \u2014 so a certificate carrying some is a shape the section 9 rules refuse.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 2970,
-          "mem": 1961,
+          "mem": 1969,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 2995,
-          "mem": 1961,
+          "mem": 1969,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 3020,
-          "mem": 1961,
+          "mem": 1969,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 3220,
-          "mem": 1961,
+          "mem": 1969,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 4295,
-          "mem": 1961,
+          "mem": 1969,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 1641345,
-          "mem": 1961,
+          "mem": 1969,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 1961,
+          "mem": 1969,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -8735,7 +9080,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 1961,
+          "c0": 1969,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8749,56 +9094,64 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 26,
+      "check": 27,
       "config": 1,
       "name": "pike-claiming-less-than-linear",
       "note": "Linearity is the shape of the section 9 rule, so a certificate declining to claim it is refused rather than accepted modestly.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 2969,
-          "mem": 1961,
+          "mem": 1969,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 2993,
-          "mem": 1961,
+          "mem": 1969,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 3017,
-          "mem": 1961,
+          "mem": 1969,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 3209,
-          "mem": 1961,
+          "mem": 1969,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 4241,
-          "mem": 1961,
+          "mem": 1969,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 1575809,
-          "mem": 1961,
+          "mem": 1969,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 1961,
+          "mem": 1969,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -8816,7 +9169,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 1961,
+          "c0": 1969,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8830,6 +9183,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 23,
@@ -8837,49 +9198,49 @@
       "name": "pike-a-unit-short-on-cost",
       "note": "One cost unit under the closed form, refused by name.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 2970,
-          "mem": 1960,
+          "mem": 1968,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 2995,
-          "mem": 1960,
+          "mem": 1968,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 3020,
-          "mem": 1960,
+          "mem": 1968,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 3220,
-          "mem": 1960,
+          "mem": 1968,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 4295,
-          "mem": 1960,
+          "mem": 1968,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 1641345,
-          "mem": 1960,
+          "mem": 1968,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 1960,
+          "mem": 1968,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -8897,7 +9258,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 1960,
+          "c0": 1968,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -8911,50 +9272,58 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 1,
       "name": "pike-a-unit-short-on-memory",
       "note": "And one IR byte under the reservation.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -8978,7 +9347,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -9058,6 +9427,14 @@
           "base": 1,
           "c0": 1,
           "c1": 1,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
           "c2": 0,
           "c3": 0,
           "c4": 0
@@ -9068,43 +9445,43 @@
       "name": "fewer-prices-than-regions",
       "note": "A region nobody priced is a region the composition rules would read a zero out of.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -9128,7 +9505,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -9279,6 +9656,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 12,
@@ -9286,49 +9671,49 @@
       "name": "more-prices-than-regions",
       "note": "And a price nobody emitted a region for is a claim about nothing.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 887,
-          "mem": 552,
+          "mem": 560,
           "n": 0,
           "stack": 4
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 4
         },
         {
           "cost": 1013,
-          "mem": 552,
+          "mem": 560,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 1517,
-          "mem": 552,
+          "mem": 560,
           "n": 10,
           "stack": 4
         },
         {
           "cost": 4226,
-          "mem": 552,
+          "mem": 560,
           "n": 53,
           "stack": 4
         },
         {
           "cost": 4129592,
-          "mem": 552,
+          "mem": 560,
           "n": 65535,
           "stack": 4
         },
         {
           "cost": null,
-          "mem": 552,
+          "mem": 560,
           "n": 9007199254740991,
           "stack": 4
         }
@@ -9346,7 +9731,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 552,
+          "c0": 560,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -9463,50 +9848,58 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 7,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 24,
       "config": 0,
       "name": "a-unit-extra-on-stack",
-      "note": "Cost and memory are bounds and may overestimate; the stack claim is what a preallocated context sizes its backtrack array from, while the memory requirement was priced from the derived number, so any daylight between the two is refused. One entry above exact, at the constant.",
+      "note": "Cost and memory are bounds and may overestimate; the stack claim is what a preallocated context sizes its backtrack array from, while the memory requirement was priced from the root region's number, so any daylight between the two is refused. One entry above exact, at the constant.",
       "pattern": "617b312c327d",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 3
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 5
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 7
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 23
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 109
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 131073
         },
@@ -9530,7 +9923,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -9647,6 +10040,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 24,
@@ -9654,43 +10055,461 @@
       "name": "a-unit-extra-on-a-growing-stack",
       "note": "The same refusal where the stack grows with the subject, one entry above exact at the linear coefficient.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
+    },
+    {
+      "bounds": [
+        {
+          "cost": 268,
+          "mem": 176,
+          "n": 0,
+          "stack": 0
+        },
+        {
+          "cost": 296,
+          "mem": 176,
+          "n": 1,
+          "stack": 0
+        },
+        {
+          "cost": 324,
+          "mem": 176,
+          "n": 2,
+          "stack": 0
+        },
+        {
+          "cost": 548,
+          "mem": 176,
+          "n": 10,
+          "stack": 0
+        },
+        {
+          "cost": 1752,
+          "mem": 176,
+          "n": 53,
+          "stack": 0
+        },
+        {
+          "cost": 1835248,
+          "mem": 176,
+          "n": 65535,
+          "stack": 0
+        },
+        {
+          "cost": null,
+          "mem": 176,
+          "n": 9007199254740991,
+          "stack": 0
+        }
+      ],
+      "cert": {
+        "complexity": 1,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 240,
+          "c1": 28,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 176,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 25,
+      "config": 0,
+      "name": "a-unit-extra-on-trail",
+      "note": "The trail is the other array a context sizes, held to its own equation the same way. One undo entry above exact, at the constant, on the pattern whose two saves are the whole trail.",
+      "pattern": "286129",
+      "shape": 28
+    },
+    {
+      "bounds": [
+        {
+          "cost": 955,
+          "mem": 600,
+          "n": 0,
+          "stack": 2
+        },
+        {
+          "cost": 1356,
+          "mem": 776,
+          "n": 1,
+          "stack": 3
+        },
+        {
+          "cost": 1811,
+          "mem": 952,
+          "n": 2,
+          "stack": 4
+        },
+        {
+          "cost": 7395,
+          "mem": 2360,
+          "n": 10,
+          "stack": 12
+        },
+        {
+          "cost": 96620,
+          "mem": 9928,
+          "n": 53,
+          "stack": 55
+        },
+        {
+          "cost": 115985089120,
+          "mem": 11534760,
+          "n": 65535,
+          "stack": 65537
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 608,
+          "c1": 320,
+          "c2": 27,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 424,
+          "c1": 176,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 12,
+              "c1": 11,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 10,
+              "c1": 9,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 8,
+              "c1": 7,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 1,
+          "c1": 1,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 5,
+          "c1": 5,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 25,
+      "config": 0,
+      "name": "a-unit-extra-on-a-growing-trail",
+      "note": "And where the trail grows with the subject, because the saves sit inside the loop, one entry above exact at the linear coefficient.",
+      "pattern": "286162292a63",
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 704,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 949,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1222,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4414,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52273,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846439,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -9714,7 +10533,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -9831,6 +10650,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 23,
@@ -9838,43 +10665,43 @@
       "name": "cost-one-unit-short",
       "note": "The setup charge, one unit lower than the register file and the ovector really cost to zero.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 704,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 948,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1220,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4404,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52220,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142780904,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -9898,7 +10725,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -10015,6 +10842,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 23,
@@ -10022,43 +10857,43 @@
       "name": "cost-one-unit-short-per-position",
       "note": "The term in n, which is the one that decides whether a long subject fits the budget.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 704,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 946,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1214,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4294,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 49358,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 55847879144,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -10082,7 +10917,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -10199,6 +11034,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 23,
@@ -10206,43 +11049,43 @@
       "name": "cost-one-unit-short-in-the-square",
       "note": "And the square, which is a linear loop run from every starting position and is what dominates any subject worth the name.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 1
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 1
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 1
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 1
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 1
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 1
         },
@@ -10266,7 +11109,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -10383,6 +11226,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 24,
@@ -10390,43 +11241,43 @@
       "name": "stack-one-entry-short",
       "note": "One backtrack entry fewer than the deepest the search goes.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 439,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 551,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 663,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1559,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6375,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340359,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -10450,7 +11301,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 327,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -10567,50 +11418,58 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 1,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 25,
       "config": 0,
-      "name": "memory-one-byte-short",
-      "note": "One IR byte fewer than the peak, which counts the buffer being copied from as well as the one being copied to.",
+      "name": "trail-one-entry-short",
+      "note": "One undo entry fewer than the loop records, which the equality refuses from below exactly as it does from above.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 439,
+          "mem": 447,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 550,
+          "mem": 559,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 661,
+          "mem": 671,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1549,
+          "mem": 1567,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6322,
+          "mem": 6383,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7274824,
+          "mem": 7340367,
           "n": 65535,
           "stack": 65537
         },
@@ -10634,7 +11493,199 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 335,
+          "c1": 112,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 7,
+              "c1": 6,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 1,
+          "c1": 1,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 26,
+      "config": 0,
+      "name": "memory-one-byte-short",
+      "note": "One IR byte fewer than the peak, which counts the buffer being copied from as well as the one being copied to.",
+      "pattern": "612a",
+      "shape": 28
+    },
+    {
+      "bounds": [
+        {
+          "cost": 705,
+          "mem": 447,
+          "n": 0,
+          "stack": 2
+        },
+        {
+          "cost": 950,
+          "mem": 558,
+          "n": 1,
+          "stack": 3
+        },
+        {
+          "cost": 1223,
+          "mem": 669,
+          "n": 2,
+          "stack": 4
+        },
+        {
+          "cost": 4415,
+          "mem": 1557,
+          "n": 10,
+          "stack": 12
+        },
+        {
+          "cost": 52274,
+          "mem": 6330,
+          "n": 53,
+          "stack": 55
+        },
+        {
+          "cost": 60142846440,
+          "mem": 7274832,
+          "n": 65535,
+          "stack": 65537
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 488,
+          "c1": 203,
+          "c2": 14,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 336,
           "c1": 111,
           "c2": 0,
           "c3": 0,
@@ -10751,50 +11802,58 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
-      "check": 25,
+      "check": 26,
       "config": 0,
       "name": "memory-one-byte-short-per-position",
       "note": "And one byte fewer of the capacity the two growing arrays reach.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -10818,7 +11877,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -10935,6 +11994,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 19,
@@ -10942,43 +12009,43 @@
       "name": "region-work-one-visit-short",
       "note": "The root's own price, a visit short. A region is checked against what its children claim, so this fails at the region rather than at the total it feeds.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -11002,7 +12069,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -11116,6 +12183,14 @@
           "base": 1,
           "c0": 1,
           "c1": 1,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
           "c2": 0,
           "c3": 0,
           "c4": 0
@@ -11126,43 +12201,43 @@
       "name": "region-stack-one-entry-short",
       "note": "The repetition pushes one entry per pass through its head, and this claims it pushes fewer.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -11186,7 +12261,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -11300,6 +12375,14 @@
           "base": 1,
           "c0": 1,
           "c1": 1,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
           "c2": 0,
           "c3": 0,
           "c4": 0
@@ -11310,43 +12393,43 @@
       "name": "region-trail-one-entry-short",
       "note": "Its undo entries, which the counter's zeroing, its increment and the position it remembers all fill.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 705,
-          "mem": 440,
+          "mem": 448,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 950,
-          "mem": 552,
+          "mem": 560,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1223,
-          "mem": 664,
+          "mem": 672,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 4415,
-          "mem": 1560,
+          "mem": 1568,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 52274,
-          "mem": 6376,
+          "mem": 6384,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 60142846440,
-          "mem": 7340360,
+          "mem": 7340368,
           "n": 65535,
           "stack": 65537
         },
@@ -11370,7 +12453,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 328,
+          "c0": 336,
           "c1": 112,
           "c2": 0,
           "c3": 0,
@@ -11487,6 +12570,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 20,
@@ -11494,43 +12585,43 @@
       "name": "region-outs-one-way-short",
       "note": "And its ambiguity, one way out short. Understating that would let everything after the loop be priced for fewer passes than it gets.",
       "pattern": "612a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 955,
-          "mem": 584,
+          "mem": 600,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 1356,
-          "mem": 760,
+          "mem": 776,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1811,
-          "mem": 936,
+          "mem": 952,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 7395,
-          "mem": 2344,
+          "mem": 2360,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 96620,
-          "mem": 9912,
+          "mem": 9928,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 115985089120,
-          "mem": 11534744,
+          "mem": 11534760,
           "n": 65535,
           "stack": 65537
         },
@@ -11554,7 +12645,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 408,
+          "c0": 424,
           "c1": 176,
           "c2": 0,
           "c3": 0,
@@ -11705,6 +12796,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 5,
+          "c1": 4,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 19,
@@ -11712,43 +12811,43 @@
       "name": "inner-region-work-one-visit-short",
       "note": "A group three levels down, a visit short, to show that the induction reaches the leaves rather than stopping at what the root claims.",
       "pattern": "286162292a63",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 955,
-          "mem": 584,
+          "mem": 600,
           "n": 0,
           "stack": 2
         },
         {
           "cost": 1356,
-          "mem": 760,
+          "mem": 776,
           "n": 1,
           "stack": 3
         },
         {
           "cost": 1811,
-          "mem": 936,
+          "mem": 952,
           "n": 2,
           "stack": 4
         },
         {
           "cost": 7395,
-          "mem": 2344,
+          "mem": 2360,
           "n": 10,
           "stack": 12
         },
         {
           "cost": 96620,
-          "mem": 9912,
+          "mem": 9928,
           "n": 53,
           "stack": 55
         },
         {
           "cost": 115985089120,
-          "mem": 11534744,
+          "mem": 11534760,
           "n": 65535,
           "stack": 65537
         },
@@ -11772,7 +12871,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 408,
+          "c0": 424,
           "c1": 176,
           "c2": 0,
           "c3": 0,
@@ -11923,6 +13022,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 5,
+          "c1": 4,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 22,
@@ -11930,7 +13037,7 @@
       "name": "inner-region-trail-one-entry-short",
       "note": "And the two saves that group is there for.",
       "pattern": "286162292a63",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
@@ -12169,6 +13276,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -12182,7 +13297,7 @@
       "name": "ambiguity-that-grows-with-the-subject",
       "note": "A star inside a star. The inner one hands the outer one more ways to match at every extra byte of subject, so the pass count is a power of a polynomial and no bound of this shape has that form. A refusal is the honest answer.",
       "pattern": "283f3a612a292a",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
@@ -12495,6 +13610,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 18,
@@ -12502,7 +13625,7 @@
       "name": "a-pass-count-past-the-counter",
       "note": "Two ways round a loop that may go round sixty times is 2^61, which no counter holds. The requirement saturating is not a requirement met.",
       "pattern": "283f3a617c61297b302c36307d",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
@@ -12570,6 +13693,14 @@
         },
         "prices": [],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -12687,6 +13818,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -12817,6 +13956,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 2,
@@ -12941,6 +14088,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 3,
@@ -13059,6 +14214,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -13217,6 +14380,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -13387,6 +14558,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 5,
@@ -13551,6 +14730,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 6,
@@ -13709,6 +14896,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -13907,6 +15102,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -14117,6 +15320,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 8,
@@ -14321,6 +15532,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 8,
@@ -14354,43 +15573,43 @@
       "bounds": [
         {
           "cost": 1,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 0,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 0,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 0,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 0,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 0,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": 0,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -14408,7 +15627,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 24,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -14491,6 +15710,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 13,
@@ -14498,49 +15725,49 @@
       "name": "a-bound-with-no-base",
       "note": "0^n is 1 at n = 0 and 0 after that. No bound has that shape, and one that vanishes on longer subjects would look like a bound that holds.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
         {
           "cost": 36,
-          "mem": 16,
+          "mem": 24,
           "n": 0,
           "stack": 0
         },
         {
           "cost": 48,
-          "mem": 16,
+          "mem": 24,
           "n": 1,
           "stack": 0
         },
         {
           "cost": 60,
-          "mem": 16,
+          "mem": 24,
           "n": 2,
           "stack": 0
         },
         {
           "cost": 156,
-          "mem": 16,
+          "mem": 24,
           "n": 10,
           "stack": 0
         },
         {
           "cost": 672,
-          "mem": 16,
+          "mem": 24,
           "n": 53,
           "stack": 0
         },
         {
           "cost": 786456,
-          "mem": 16,
+          "mem": 24,
           "n": 65535,
           "stack": 0
         },
         {
           "cost": null,
-          "mem": 16,
+          "mem": 24,
           "n": 9007199254740991,
           "stack": 0
         }
@@ -14558,7 +15785,7 @@
         },
         "mem": {
           "base": 1,
-          "c0": 16,
+          "c0": 24,
           "c1": 0,
           "c2": 0,
           "c3": 0,
@@ -14641,6 +15868,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 13,
@@ -14648,7 +15883,7 @@
       "name": "a-price-with-no-base",
       "note": "The same rule inside the tree, where the composition rules would go on to multiply the thing.",
       "pattern": "616263",
-      "shape": 27
+      "shape": 28
     },
     {
       "bounds": [
@@ -14785,6 +16020,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -15023,6 +16266,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 16,
@@ -15193,6 +16444,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -15391,6 +16650,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -15635,6 +16902,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 15,
@@ -15811,6 +17086,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 15,
@@ -15969,6 +17252,14 @@
           }
         ],
         "stack": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
           "base": 1,
           "c0": 0,
           "c1": 0,
@@ -16139,6 +17430,14 @@
           "c2": 0,
           "c3": 0,
           "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
         }
       },
       "check": 15,
@@ -16163,6 +17462,404 @@
       "shape": 15
     }
   ],
-  "note": "Generated by pcrevera.engine.certificate_corpus. Each case compiles a pattern, hands the engine's bound-certificate checker one certificate for the program that came out, and asks for the three bounds it prices at every subject length below. Each analysis compiles a pattern and reads the certificate the compiler's own analyzer produced, or records that it produced none. Every implementation of the engine has to give exactly these answers: the same verdict, the same class, and the same number or the same refusal. A bound of null is the ExceedsBudget of DESIGN.md section 2.4, which is a refusal rather than a number and never a saturated counter; a complexity of null is a pattern the analyzer found no bound for at all. Each accessor entry asks the public analysis accessors the same questions through each language's wrapper: a status is the outcome ordinal of the engine (0 ok, 3 BadInput, 4 ExceedsBudget), and a query marked exercise must additionally survive a match on a subject of that length with the three pinned bounds passed unchanged as the limits, anything but ResourceExceeded.",
+  "contexts": [
+    {
+      "calls": [
+        {
+          "cost": null,
+          "ovector": [
+            2,
+            5
+          ],
+          "stack": null,
+          "start": 0,
+          "status": 0,
+          "subject": "7878616263"
+        },
+        {
+          "cost": null,
+          "stack": null,
+          "start": 0,
+          "status": 1,
+          "subject": "7a7a7a"
+        },
+        {
+          "cost": null,
+          "stack": null,
+          "start": 0,
+          "status": 3,
+          "subject": "6161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161"
+        },
+        {
+          "cost": 50000001,
+          "stack": null,
+          "start": 0,
+          "status": 3,
+          "subject": "616263"
+        },
+        {
+          "cost": null,
+          "stack": 100001,
+          "start": 0,
+          "status": 3,
+          "subject": "616263"
+        },
+        {
+          "cost": 1,
+          "stack": null,
+          "start": 0,
+          "status": 2,
+          "subject": "616263"
+        },
+        {
+          "cost": null,
+          "ovector": [
+            0,
+            3
+          ],
+          "stack": null,
+          "start": 0,
+          "status": 0,
+          "subject": "616263"
+        }
+      ],
+      "creations": [
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 64,
+          "memcap": 1969,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 0
+        },
+        {
+          "config": 1,
+          "cost": 50000000,
+          "maxlen": 64,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        },
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 2147483648,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        },
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 64,
+          "memory": 1968,
+          "stack": 100000,
+          "status": 2
+        },
+        {
+          "config": 0,
+          "cost": 1968,
+          "maxlen": 64,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 2
+        }
+      ],
+      "maxlen": 64,
+      "name": "a-literal-on-the-lockstep-path",
+      "note": "The plain case. The reservation is the section 9 closed form made physical \u2014 no term in the length at all \u2014 and one context answers a match, a no-match, every per-call refusal, and a match again, off the same arrays.",
+      "pattern": "616263"
+    },
+    {
+      "calls": [
+        {
+          "cost": null,
+          "ovector": [
+            1,
+            3,
+            1,
+            2,
+            2,
+            3
+          ],
+          "stack": null,
+          "start": 0,
+          "status": 0,
+          "subject": "786162"
+        },
+        {
+          "cost": null,
+          "ovector": [
+            0,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          "stack": null,
+          "start": 0,
+          "status": 0,
+          "subject": "61"
+        },
+        {
+          "cost": null,
+          "stack": null,
+          "start": 0,
+          "status": 1,
+          "subject": "78"
+        }
+      ],
+      "creations": [
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 64,
+          "memcap": 7634,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 0
+        },
+        {
+          "config": 1,
+          "cost": 50000000,
+          "maxlen": 64,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        },
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 2147483648,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        },
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 64,
+          "memory": 7633,
+          "stack": 100000,
+          "status": 2
+        },
+        {
+          "config": 0,
+          "cost": 7633,
+          "maxlen": 64,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 2
+        }
+      ],
+      "maxlen": 64,
+      "name": "captures-under-a-star",
+      "note": "Two matches in a row on the same context, because the ovector is context-owned and the second answer overwrites the first \u2014 the documented lifetime, pinned.",
+      "pattern": "28612928622a29"
+    },
+    {
+      "calls": [
+        {
+          "cost": null,
+          "ovector": [
+            0,
+            3
+          ],
+          "stack": null,
+          "start": 0,
+          "status": 0,
+          "subject": "616162"
+        },
+        {
+          "cost": null,
+          "stack": 0,
+          "start": 0,
+          "status": 2,
+          "subject": "616162"
+        },
+        {
+          "cost": null,
+          "stack": null,
+          "start": 0,
+          "status": 3,
+          "subject": "616161616161616161616161616161616161616161616161616161616161616161"
+        },
+        {
+          "cost": null,
+          "ovector": [
+            0,
+            1
+          ],
+          "stack": null,
+          "start": 0,
+          "status": 0,
+          "subject": "62"
+        }
+      ],
+      "creations": [
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 32,
+          "memcap": 23608,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 0
+        },
+        {
+          "config": 1,
+          "cost": 50000000,
+          "maxlen": 32,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        },
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 2147483648,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        },
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 32,
+          "memory": 23607,
+          "stack": 100000,
+          "status": 2
+        },
+        {
+          "config": 0,
+          "cost": 23607,
+          "maxlen": 32,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 2
+        }
+      ],
+      "maxlen": 32,
+      "name": "a-backtracker-sized-from-its-claims",
+      "note": "A counted repetition keeps this on the backtracking path, so the arrays are sized from the certificate's stack and trail claims at the declared length \u2014 the reason those claims are held to equality. A stack limit lowered to nothing starves the first fork, and the context is none the worse for it.",
+      "pattern": "617b302c327d622a"
+    },
+    {
+      "calls": [
+        {
+          "cost": null,
+          "ovector": [
+            0,
+            0
+          ],
+          "stack": null,
+          "start": 0,
+          "status": 0,
+          "subject": ""
+        },
+        {
+          "cost": null,
+          "stack": null,
+          "start": 0,
+          "status": 3,
+          "subject": "61"
+        },
+        {
+          "cost": null,
+          "ovector": [
+            0,
+            0
+          ],
+          "stack": null,
+          "start": 0,
+          "status": 0,
+          "subject": ""
+        }
+      ],
+      "creations": [
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 0,
+          "memcap": 2737,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 0
+        },
+        {
+          "config": 1,
+          "cost": 50000000,
+          "maxlen": 0,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        },
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 2147483648,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        },
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 0,
+          "memory": 2736,
+          "stack": 100000,
+          "status": 2
+        },
+        {
+          "config": 0,
+          "cost": 2736,
+          "maxlen": 0,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 2
+        }
+      ],
+      "maxlen": 0,
+      "name": "the-shortest-context-there-is",
+      "note": "A declared maximum of zero is a context for empty subjects, and it still matches them; one byte of subject is past what it was sized for.",
+      "pattern": "612a"
+    },
+    {
+      "calls": [],
+      "creations": [
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 16,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 4
+        },
+        {
+          "config": 1,
+          "cost": 50000000,
+          "maxlen": 16,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        },
+        {
+          "config": 0,
+          "cost": 50000000,
+          "maxlen": 2147483648,
+          "memory": 67108864,
+          "stack": 100000,
+          "status": 3
+        }
+      ],
+      "maxlen": 16,
+      "name": "no-certificate-no-context",
+      "note": "A pattern with no finite bound has no reservation to make, so creation is the same ExceedsBudget the accessors report \u2014 after the argument checks, which come first on every pattern.",
+      "pattern": "283f3a612a292a"
+    }
+  ],
+  "note": "Generated by pcrevera.engine.certificate_corpus. Each case compiles a pattern, hands the engine's bound-certificate checker one certificate for the program that came out, and asks for the three bounds it prices at every subject length below. Each analysis compiles a pattern and reads the certificate the compiler's own analyzer produced, or records that it produced none. Every implementation of the engine has to give exactly these answers: the same verdict, the same class, and the same number or the same refusal. A bound of null is the ExceedsBudget of DESIGN.md section 2.4, which is a refusal rather than a number and never a saturated counter; a complexity of null is a pattern the analyzer found no bound for at all. Each accessor entry asks the public analysis accessors the same questions through each language's wrapper: a status is the outcome ordinal of the engine (0 ok, 3 BadInput, 4 ExceedsBudget), and a query marked exercise must additionally survive a match on a subject of that length with the three pinned bounds passed unchanged as the limits, anything but ResourceExceeded. Each context entry runs its creation ladder through the public context constructor \u2014 a memcap, where present, is the reservation the context must materialize, equal to the worstCaseMemory accessor at the declared length \u2014 and then replays its calls in order on one context, statuses as match outcome ordinals (0 matched, 1 no match, 2 ResourceExceeded, 3 BadInput); a cost or stack of null is the baked ceiling.",
   "schema": 1
 }
