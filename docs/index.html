@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>PCRE-Vera: Formally verified PCRE, with resource contracts</title>
+  <meta name="description" content="PCRE-Vera is a formally verified implementation and specification of the PCRE regular-expression language. Mechanically verified in Lean, it computes resource contracts and generates idiomatic, interoperable Go and JavaScript engines." />
+  <meta property="og:title" content="PCRE-Vera" />
+  <meta property="og:description" content="Formally verified PCRE with resource contracts. One specification, proved in Lean, printed as idiomatic Go and JavaScript." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ===================== NAV ===================== -->
+  <header class="nav" id="top">
+    <div class="container nav__inner">
+      <a class="brand" href="#top" aria-label="PCRE-Vera home">
+        <img src="favicon.svg" alt="" class="brand__logo" width="28" height="28" />
+        <span class="brand__name">PCRE&#8209;<span class="brand__accent">Vera</span></span>
+      </a>
+
+      <nav class="nav__links" id="navLinks" aria-label="Primary">
+        <a href="#problem">Problem</a>
+        <a href="#what">What it is</a>
+        <a href="#contract">Contracts</a>
+        <a href="#how">How it works</a>
+        <a href="#code">Code</a>
+        <a href="#verification">Verification</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div class="nav__actions">
+        <a class="btn btn--ghost btn--sm" href="https://github.com/PCRE-Vera/pcre-vera" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" class="icon"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          <span>GitHub</span>
+        </a>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle color theme" title="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1Zm0-18a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V2a1 1 0 0 1 1-1Zm10 10a1 1 0 0 1-1 1h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1ZM4 12a1 1 0 0 1-1 1H2a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1Zm15.07-7.07a1 1 0 0 1 0 1.41l-.7.7a1 1 0 1 1-1.42-1.41l.71-.7a1 1 0 0 1 1.41 0ZM6.34 17.66a1 1 0 0 1 0 1.41l-.7.71a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0Zm12.73 1.41a1 1 0 0 1-1.41 0l-.71-.7a1 1 0 1 1 1.41-1.42l.71.71a1 1 0 0 1 0 1.41ZM6.34 6.34a1 1 0 0 1-1.41 0l-.71-.7A1 1 0 1 1 6.05 4.2l.7.71a1 1 0 0 1 .71 1.43Z"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M21.75 15.5A9.72 9.72 0 0 1 12.3 21.6 9.6 9.6 0 0 1 2.4 12a9.72 9.72 0 0 1 6.1-9.45.75.75 0 0 1 .97.97A8.22 8.22 0 0 0 9 6.3 8.7 8.7 0 0 0 17.7 15a8.22 8.22 0 0 0 2.78-.47.75.75 0 0 1 .97.97Z"/></svg>
+        </button>
+        <button class="nav__burger" id="navBurger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navLinks">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ===================== HERO ===================== -->
+    <section class="hero">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="container hero__inner">
+        <div class="hero__copy reveal">
+          <span class="eyebrow"><span class="eyebrow__dot"></span>Free &amp; open source &middot; verified in Lean</span>
+          <h1>Regular expressions you can <span class="grad">actually trust</span>.</h1>
+          <p class="lede">
+            PCRE&#8209;Vera is a formally verified implementation and specification of the
+            PCRE regular&#8209;expression language. It proves its matching semantics in Lean,
+            computes a <strong>resource contract</strong> for every pattern, and builds an
+            engine for your programming language (<strong>JavaScript</strong>, <strong>Go</strong>, ...): no C bindings, no drift.
+          </p>
+          <div class="hero__cta">
+            <a class="btn btn--primary" href="https://github.com/PCRE-Vera/pcre-vera" target="_blank" rel="noopener">Get started</a>
+            <a class="btn btn--ghost" href="#code">See it in action</a>
+          </div>
+          <ul class="hero__badges">
+            <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1.2 14.2-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4-6 6Z"/></svg>Mechanically proved</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z"/></svg>Bounded time &amp; memory</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1 15-4-4 1.4-1.4L11 14.2l5.6-5.6L18 10l-7 7Z"/></svg>libpcre2&#8209;compatible</li>
+          </ul>
+        </div>
+
+        <div class="hero__visual reveal" data-delay="120">
+          <div class="code-window">
+            <div class="code-window__bar">
+              <span class="dot dot--r"></span><span class="dot dot--y"></span><span class="dot dot--g"></span>
+              <span class="code-window__title">main.go</span>
+            </div>
+            <pre class="code-window__body"><code><span class="tok-k">package</span> main
+
+<span class="tok-k">import</span> pcrevera <span class="tok-s">"github.com/PCRE-Vera/pcre-vera/gen/go"</span>
+
+<span class="tok-k">func</span> <span class="tok-f">main</span>() {
+    re, _ := pcrevera.<span class="tok-f">Compile</span>(<span class="tok-s">`(?&lt;user&gt;\w+)@(?&lt;host&gt;[\w.]+)`</span>, pcrevera.Options{})
+
+    <span class="tok-c">// Ask, before running: what can this pattern cost?</span>
+    b := re.<span class="tok-f">Bounds</span>()
+    fmt.<span class="tok-f">Println</span>(b.Cost, b.Stack, b.Memory)
+
+    ovector, _ := re.<span class="tok-f">Match</span>(subject, <span class="tok-n">0</span>, <span class="tok-n">0</span>, pcrevera.<span class="tok-f">DefaultLimits</span>())
+}</code></pre>
+          </div>
+          <div class="hero__chip hero__chip--1">
+            <span class="chip-label">cost bound</span><span class="chip-value">O(n) &middot; proved</span>
+          </div>
+          <div class="hero__chip hero__chip--2">
+            <span class="chip-label">stack</span><span class="chip-value">constant</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LOGOS / TRUST STRIP ===================== -->
+    <section class="strip">
+      <div class="container strip__inner reveal">
+        <span>Built on a single mechanized specification</span>
+        <div class="strip__items">
+          <span class="strip__item">Lean&nbsp;4</span>
+          <span class="strip__item">Go</span>
+          <span class="strip__item">JavaScript</span>
+          <span class="strip__item">libpcre2&nbsp;oracle</span>
+          <span class="strip__item">Differential&nbsp;fuzzing</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PROBLEM ===================== -->
+    <section class="section" id="problem">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="kicker">The problem</span>
+          <h2>PCRE is everywhere, and it's a liability.</h2>
+          <p class="section__sub">
+            Perl&#8209;Compatible Regular Expressions are a building block of countless applications.
+            But the way we get them into our programs hasn't kept up with how critical they've become.
+          </p>
+        </div>
+        <div class="grid grid--3">
+          <article class="card reveal">
+            <div class="card__icon" aria-hidden="true">&#9888;</div>
+            <h3>One implementation, in C</h3>
+            <p>There is effectively a single source of truth: <code>libpcre2</code>, a large C codebase. Every correct behavior lives behind that one artifact and its build configuration.</p>
+          </article>
+          <article class="card reveal" data-delay="80">
+            <div class="card__icon" aria-hidden="true">&#128279;</div>
+            <h3>Bindings or half-measures</h3>
+            <p>In other languages the choice is stark: wrap the C library, or rely on partial reimplementations that make no interoperability guarantees. Either way, behavior drifts.</p>
+          </article>
+          <article class="card reveal" data-delay="160">
+            <div class="card__icon" aria-hidden="true">&#9762;</div>
+            <h3>A critical, unbounded component</h3>
+            <p>A regex engine must be bug&#8209;free, since flaws become security issues, and its CPU and memory use must stay under control when processing untrusted data. Today, neither is guaranteed.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== WHAT IT IS ===================== -->
+    <section class="section section--alt" id="what">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="kicker">What PCRE&#8209;Vera is</span>
+          <h2>One specification. Proved once. Run anywhere.</h2>
+          <p class="section__sub">
+            A formally verified implementation and specification of PCRE, designed from the
+            start to be a trustworthy source for implementations in many languages.
+          </p>
+        </div>
+        <div class="grid grid--2">
+          <article class="feature reveal">
+            <div class="feature__num">01</div>
+            <div>
+              <h3>A precise reference semantics</h3>
+              <p>A specification of PCRE that is compatible with <code>libpcre</code> and precise enough to serve as the source for implementations in other programming languages: not an informal description, an executable one.</p>
+            </div>
+          </article>
+          <article class="feature reveal" data-delay="80">
+            <div class="feature__num">02</div>
+            <div>
+              <h3>Resource contracts</h3>
+              <p>For a given regular expression, PCRE&#8209;Vera computes conservative <strong>upper bounds</strong> on the time and memory required to evaluate it, before you ever run a match.</p>
+            </div>
+          </article>
+          <article class="feature reveal" data-delay="120">
+            <div class="feature__num">03</div>
+            <div>
+              <h3>Mechanically verified in Lean</h3>
+              <p>The matching semantics and the contract analysis are verified in Lean, including proofs that the computed contracts are <em>correct</em>, not just plausible.</p>
+            </div>
+          </article>
+          <article class="feature reveal" data-delay="160">
+            <div class="feature__num">04</div>
+            <div>
+              <h3>Generated, idiomatic targets</h3>
+              <p>Code generators translate the verified specification into efficient, idiomatic <strong>Go</strong> and <strong>JavaScript</strong>. Additional target languages can be added using the same approach.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== RESOURCE CONTRACT ===================== -->
+    <section class="section" id="contract">
+      <div class="container contract">
+        <div class="contract__copy reveal">
+          <span class="kicker">Resource contracts</span>
+          <h2>Know the worst case <span class="grad">before</span> you run it.</h2>
+          <p class="section__sub">
+            A compiled pattern can tell you its worst&#8209;case cost, stack depth, and scratch memory
+            up front. Every match then runs under explicit hard limits and returns a deterministic
+            <code>ResourceExceeded</code> instead of running long: never a blown host stack,
+            never unbounded work.
+          </p>
+          <ul class="checklist">
+            <li><strong>Cost</strong>: a closed&#8209;form upper bound on work, as a function of subject length.</li>
+            <li><strong>Stack</strong>: an engine&#8209;managed explicit stack with checked capacity; the host call stack stays constant.</li>
+            <li><strong>Memory</strong>: a bound on every per&#8209;call allocation, enabling allocation&#8209;free matching with a preallocated context.</li>
+            <li><strong>Classification</strong>: the pattern reports its complexity class; the linear case is proved sound.</li>
+          </ul>
+        </div>
+        <div class="contract__visual reveal" data-delay="120">
+          <div class="terminal">
+            <div class="terminal__bar"><span class="dot dot--r"></span><span class="dot dot--y"></span><span class="dot dot--g"></span></div>
+            <pre class="terminal__body"><code><span class="tok-p">$</span> pcre-vera analyze <span class="tok-s">'(?&lt;user&gt;\w+)@(?&lt;host&gt;[\w.]+)'</span>
+
+<span class="tok-c"># resource contract (conservative upper bounds)</span>
+<span class="tok-k">cost</span>    = 41&middot;n + 12       <span class="tok-c"># instruction visits, n = |subject|</span>
+<span class="tok-k">stack</span>   = 3&middot;n + 8         <span class="tok-c"># explicit backtrack entries</span>
+<span class="tok-k">memory</span>  = 512 B           <span class="tok-c"># scratch, fixed for this pattern</span>
+<span class="tok-k">class</span>   = <span class="tok-f">linear</span>          <span class="tok-c"># proved sound</span>
+
+<span class="tok-p">$</span> match --limit cost=1000000 --limit memory=65536
+<span class="tok-f">OK</span>  ovector=[0, 17, 0, 5, 6, 17]</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== HOW IT WORKS ===================== -->
+    <section class="section section--alt" id="how">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="kicker">How it works</span>
+          <h2>Authored once. Proved once. Printed everywhere.</h2>
+          <p class="section__sub">
+            PCRE&#8209;Vera is a pipeline, not a hand&#8209;written library per language. The engine is written
+            once in a small verified&#8209;friendly intermediate representation; the same artifact is both
+            proved in Lean and printed to each target.
+          </p>
+        </div>
+
+        <div class="pipeline reveal">
+          <div class="pipeline__stage">
+            <div class="pipeline__box">
+              <span class="pipeline__label">PCRE pattern</span>
+              <code>(?&lt;user&gt;\w+)@...</code>
+            </div>
+          </div>
+          <div class="pipeline__arrow" aria-hidden="true">&rarr;</div>
+          <div class="pipeline__stage">
+            <div class="pipeline__box pipeline__box--accent">
+              <span class="pipeline__label">Verified IR (TIR)</span>
+              <code>parser + compiler + matcher</code>
+            </div>
+          </div>
+          <div class="pipeline__arrow" aria-hidden="true">&rarr;</div>
+          <div class="pipeline__stage pipeline__stage--fork">
+            <div class="pipeline__box pipeline__box--proof">
+              <span class="pipeline__label">Lean 4</span>
+              <code>semantics &#8743; contracts, proved</code>
+            </div>
+            <div class="pipeline__box">
+              <span class="pipeline__label">Code generators</span>
+              <code>idiomatic Go &middot; JavaScript</code>
+            </div>
+          </div>
+        </div>
+        <p class="pipeline__note reveal">
+          The artifact the proofs were checked against is the same artifact the generators consume,
+          hash&#8209;pinned, so the two can never drift apart.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================== CODE ===================== -->
+    <section class="section" id="code">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="kicker">Idiomatic output</span>
+          <h2>The same engine, native in your language.</h2>
+          <p class="section__sub">Not bindings. Pure Go and pure JavaScript, generated from the verified specification.</p>
+        </div>
+
+        <div class="codeblock reveal">
+          <div class="codeblock__tabs" role="tablist" aria-label="Language">
+            <button class="tab is-active" role="tab" aria-selected="true" data-tab="go" id="tab-go">Go</button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="js" id="tab-js">JavaScript</button>
+            <button class="copy-btn" id="copyBtn" aria-label="Copy code">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1Zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h11v14Z"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <div class="codeblock__panes">
+            <pre class="pane is-active" role="tabpanel" data-pane="go" aria-labelledby="tab-go"><code><span class="tok-k">package</span> main
+
+<span class="tok-k">import</span> (
+    <span class="tok-s">"fmt"</span>
+    <span class="tok-s">"log"</span>
+
+    pcrevera <span class="tok-s">"github.com/PCRE-Vera/pcre-vera/gen/go"</span>
+)
+
+<span class="tok-k">func</span> <span class="tok-f">main</span>() {
+    re, err := pcrevera.<span class="tok-f">Compile</span>(<span class="tok-s">`(?&lt;user&gt;\w+)@(?&lt;host&gt;[\w.]+)`</span>, pcrevera.Options{})
+    <span class="tok-k">if</span> err != <span class="tok-n">nil</span> {
+        log.<span class="tok-f">Fatal</span>(err)
+    }
+
+    subject := []<span class="tok-k">byte</span>(<span class="tok-s">"write to alice@example.org, please"</span>)
+    ovector, err := re.<span class="tok-f">Match</span>(subject, <span class="tok-n">0</span>, <span class="tok-n">0</span>, pcrevera.<span class="tok-f">DefaultLimits</span>())
+    <span class="tok-k">if</span> err != <span class="tok-n">nil</span> {
+        log.<span class="tok-f">Fatal</span>(err)
+    }
+    <span class="tok-k">if</span> ovector == <span class="tok-n">nil</span> {
+        fmt.<span class="tok-f">Println</span>(<span class="tok-s">"no match"</span>)
+        <span class="tok-k">return</span>
+    }
+
+    group := <span class="tok-k">func</span>(n <span class="tok-k">int</span>) <span class="tok-k">string</span> {
+        <span class="tok-k">return</span> <span class="tok-k">string</span>(subject[ovector[<span class="tok-n">2</span>*n]:ovector[<span class="tok-n">2</span>*n+<span class="tok-n">1</span>]])
+    }
+    fmt.<span class="tok-f">Printf</span>(<span class="tok-s">"%s is %s at %s\n"</span>,
+        <span class="tok-f">group</span>(<span class="tok-n">0</span>), <span class="tok-f">group</span>(re.<span class="tok-f">SubexpIndex</span>(<span class="tok-s">"user"</span>)), <span class="tok-f">group</span>(re.<span class="tok-f">SubexpIndex</span>(<span class="tok-s">"host"</span>)))
+}</code></pre>
+            <pre class="pane" role="tabpanel" data-pane="js" aria-labelledby="tab-js" hidden><code><span class="tok-k">import</span> { compile, defaultLimits } <span class="tok-k">from</span> <span class="tok-s">"pcre-vera"</span>;
+
+<span class="tok-k">const</span> re = <span class="tok-f">compile</span>(<span class="tok-c">String.raw</span><span class="tok-s">`(?&lt;user&gt;\w+)@(?&lt;host&gt;[\w.]+)`</span>);
+
+<span class="tok-k">const</span> subject = <span class="tok-k">new</span> <span class="tok-f">TextEncoder</span>().<span class="tok-f">encode</span>(<span class="tok-s">"write to alice@example.org, please"</span>);
+<span class="tok-k">const</span> ovector = re.<span class="tok-f">match</span>(subject, { limits: <span class="tok-f">defaultLimits</span>() });
+
+<span class="tok-k">if</span> (ovector === <span class="tok-n">null</span>) {
+  console.<span class="tok-f">log</span>(<span class="tok-s">"no match"</span>);
+} <span class="tok-k">else</span> {
+  <span class="tok-k">const</span> group = (n) =&gt;
+    <span class="tok-k">new</span> <span class="tok-f">TextDecoder</span>().<span class="tok-f">decode</span>(subject.<span class="tok-f">subarray</span>(ovector[<span class="tok-n">2</span> * n], ovector[<span class="tok-n">2</span> * n + <span class="tok-n">1</span>]));
+  console.<span class="tok-f">log</span>(<span class="tok-s">`${group(0)} is ${group(re.groupIndex("user"))} at ${group(re.groupIndex("host"))}`</span>);
+}</code></pre>
+          </div>
+          <div class="codeblock__out">// both print:  <span class="tok-f">alice@example.org is alice at example.org</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== VERIFICATION ===================== -->
+    <section class="section section--alt" id="verification">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="kicker">Correctness &amp; interoperability</span>
+          <h2>Tested against the reference. Proved against the spec.</h2>
+          <p class="section__sub">
+            Verification isn't a single proof; it's layered, so every claim has a mechanism behind it.
+          </p>
+        </div>
+        <div class="grid grid--3">
+          <article class="card reveal">
+            <div class="card__icon" aria-hidden="true">&#9726;</div>
+            <h3>A pinned oracle</h3>
+            <p>"Correct PCRE" isn't one behavior; it's one build. PCRE&#8209;Vera pins a specific <code>pcre2</code> release, its tarball hash, and its full configuration, so the ground truth is reproducible.</p>
+          </article>
+          <article class="card reveal" data-delay="80">
+            <div class="card__icon" aria-hidden="true">&#8646;</div>
+            <h3>Differential testing &amp; fuzzing</h3>
+            <p>An extensive interoperability suite and fuzzing tools compare every generated engine against the pinned oracle and each other: match outcomes, capture offsets, and compile errors, edge cases included.</p>
+          </article>
+          <article class="card reveal" data-delay="160">
+            <div class="card__icon" aria-hidden="true">&#10003;</div>
+            <h3>Lean proofs</h3>
+            <p>The matching semantics and the contract analysis are mechanically verified in Lean, including that the computed resource contracts are correct. The proved artifact is the shipped artifact.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== FAQ ===================== -->
+    <section class="section" id="faq">
+      <div class="container container--narrow">
+        <div class="section__head reveal">
+          <span class="kicker">FAQ</span>
+          <h2>Questions, answered.</h2>
+        </div>
+        <div class="faq reveal">
+          <details>
+            <summary>Is this just another regex library?</summary>
+            <p>No. PCRE&#8209;Vera is a verified <em>specification</em> plus generators. You don't get a hand&#8209;ported library per language; you get engines printed from a single artifact that was proved correct in Lean and checked against a pinned <code>libpcre2</code>.</p>
+          </details>
+          <details>
+            <summary>Does it use the C library under the hood?</summary>
+            <p>No. The Go and JavaScript outputs are pure, dependency&#8209;free implementations in the target language, not bindings to <code>libpcre2</code>. The C library is only used as a test oracle.</p>
+          </details>
+          <details>
+            <summary>What exactly is a "resource contract"?</summary>
+            <p>For a given pattern, PCRE&#8209;Vera computes conservative upper bounds on the time and memory needed to evaluate it, as a function of the subject length. You can read those bounds before running a match, and enforce them at match time as hard limits.</p>
+          </details>
+          <details>
+            <summary>Does this make my app hard-realtime?</summary>
+            <p>No. PCRE&#8209;Vera guarantees deterministically bounded work per call and allocation&#8209;free matching with a preallocated context. Garbage collection, JIT warmup, and scheduling belong to your runtime and sit outside the model.</p>
+          </details>
+          <details>
+            <summary>Which languages are supported?</summary>
+            <p>Go and JavaScript today, generated from the verified specification. Additional targets can be added using the same approach; the IR and proofs don't change.</p>
+          </details>
+          <details>
+            <summary>Is it free and open source?</summary>
+            <p>Yes. PCRE&#8209;Vera is a free, open&#8209;source tool. It is the new name of the project formerly known as <code>pcre-truste</code>.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CTA ===================== -->
+    <section class="cta">
+      <div class="container cta__inner reveal">
+        <h2>Bring provable PCRE to your stack.</h2>
+        <p>High&#8209;quality, interoperable, resource&#8209;aware PCRE, for more programming languages.</p>
+        <div class="cta__actions">
+          <a class="btn btn--primary btn--lg" href="https://github.com/PCRE-Vera/pcre-vera" target="_blank" rel="noopener">Star on GitHub</a>
+          <a class="btn btn--ghost btn--lg" href="#code">Read the docs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <a class="brand" href="#top">
+          <img src="favicon.svg" alt="" class="brand__logo" width="24" height="24" />
+          <span class="brand__name">PCRE&#8209;<span class="brand__accent">Vera</span></span>
+        </a>
+        <p>Formally verified PCRE with resource contracts.<br/>Formerly <code>pcre-truste</code>.</p>
+      </div>
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h4>Project</h4>
+          <a href="#what">What it is</a>
+          <a href="#how">How it works</a>
+          <a href="#verification">Verification</a>
+        </div>
+        <div class="footer__col">
+          <h4>Developers</h4>
+          <a href="#code">Examples</a>
+          <a href="#contract">Resource contracts</a>
+          <a href="https://github.com/PCRE-Vera/pcre-vera" target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <div class="footer__col">
+          <h4>More</h4>
+          <a href="#faq">FAQ</a>
+          <a href="#problem">Why it exists</a>
+        </div>
+      </div>
+    </div>
+    <div class="container footer__bar">
+      <span>&copy; <span id="year">2026</span> PCRE&#8209;Vera contributors. Free &amp; open source.</span>
+      <span>Made with rigor &middot; proved in Lean</span>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
