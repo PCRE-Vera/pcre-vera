@@ -947,53 +947,44 @@ than in code:
   memory reservation. WorstCaseMemory is priced from the stack and the undo
   trail capacities together, so a live-versus-peak refinement would have to
   cover the trail as well or the reservation stays quadratic.
-- Wrote into PLAN-POST-M6.md that all three Pike carve-outs "classify
-  notProvenLinear", repeating DESIGN.md's own error instead of checking the
-  implementation. BOUNDS.md classifies from the certified bound's shape, not
-  from matcher selection, and `a{2}` and `\R` classify Linear on the
-  backtracking path today. Having just catalogued a document's discrepancies
-  is no license to copy its sentences into a new one unverified.
-- Required, in the census gate, that already-Linear patterns "only cheapen"
-  when migrating to the Pike path, without measuring a single one. Measured,
-  `a{2}` at n=1000 goes from 63,887 cost, 3 stack, 560 memory in counter
-  form to 25,392, 0 and 1,585 in Pike shape: cost and stack fall and the
-  conservative constant reservation rises, and bare \R does not move at
-  all. Pareto improvement was an assumption dressed as an acceptance
-  criterion; the gate is no classification regression plus a recorded
-  tradeoff.
-- Wrote that "every bounded {m,n} today classifies Linear" after measuring
-  a{2} and a{2,8} and generalizing. A bounded repetition of an ambiguous
-  body — (?:a+){2}, (?:a+b){2}, (?:a+|b){2} — has no accepted certificate
-  and answers ExceedsBudget on every accessor, class included. Two simple
-  examples are evidence about simple examples; the category claim needed a
-  probe over the category, and the probe took a minute.
-- Wrote that the compiler "emits counter-based Rep opcodes for every
-  quantifier" when optionals compile to one Split, x{1,1} to the body alone,
-  and pure stars are the form pike_ok accepts — the counter form is only what
-  is left. I had read the optional-items rule in BOUNDS.md 4.3 and the
-  compiler's special cases and generalized past both anyway.
-- Called the 9.13 million measurement "the measured worst case" when the log
-  it came from says "the worst subject found"; a hostile case a probe found
-  is not an established maximum. Same sentence claimed "the arithmetic is
-  exact" about a certificate whose cost and memory lines are deliberately
-  conservative upper bounds — exact as stored, not exact about the run.
-- Asserted that M6 theorems not textually mentioning bytecode "replay
-  mechanically by construction". THEOREMS.md's own inventory has R.compile
-  restating the real compiler and S-12 quantified over Pike-eligible
-  patterns, so the lowering changes what those theorems are about however
-  they are worded; the inventory has to classify by semantic dependence.
-- Presented aa's measured accessor numbers as what migrating a{2} moves to,
-  as if the automatic lowering existed; today they are the measurement of a
-  different pattern that happens to be the expected lowered shape. An
-  expectation labeled as a measurement is how a plan starts lying to itself.
-- Three exactness slips in the plan rewrite, all caught by the user's read:
-  defined Pike candidacy as "constructs within every cap" when fit is
-  necessary and not sufficient (\R fits and stays ineligible); wrote the
-  register fit check against the global ceiling MAX_OVEC + 2*MAX_REPS
-  instead of the candidate's own novec + 2*rep_count; and gave the report
-  one certificate-status column when the two analyses are independent —
-  a*b*c*d* carries an accepted Pike certificate and classifies Linear while
-  the backtracking analyzer answers ArOverflow, which one column would
-  record as a contradiction. Also wrote that partial lowering "buys
-  nothing" when it measurably shaves a backtracking certificate; the honest
-  statement is that it buys no Pike eligibility.
+
+## RefineProto (S-8 prototype)
+
+- Reached for `set` and `conv_lhs` out of Mathlib habit; this project is
+  batteries-only and neither exists here. Recorded in api-faq.md.
+- Wrote `altOut`'s patched jump target as `stM.code.size + 1` expecting it
+  to be definitionally the size of the pushed array; `(a.push x).size`
+  does not reduce on an abstract array, so the `rfl` characterization of
+  `compileAlt`'s cons step failed until the statement spelled the push.
+- First statement of the fragment lemma read "running the fragment with an
+  empty stack yields the enumeration or nomatch", which is wrong for empty
+  fragments (`cat []` falls through to the continuation, it does not
+  fail); the fix — threading an ambient stack and treating the exit pc as
+  the continuation — is the formulation that ended up load-bearing.
+- The module overview initially said a completed `btStep` "equals" the
+  mirror; it refines it (the metered side can stop early), and the review
+  caught the overclaim.
+## Monotone (S-9)
+
+- Reached for `Option.noConfusion h` to kill constructor-clash equations in
+  the S-9 proofs; its universe metavariables do not elaborate from an
+  `Eq Prop` argument alone, and plain `cases h` was the right tool.
+- Scripted the `circM`/`dollM` arms like the other assertions. Their test
+  is itself an if-expression, so `split at h` decides the inner condition
+  first and the one-split script bound the wrong hypothesis; both matchers
+  needed a two-level case.
+- Assumed `pikeRun`'s `let (st, mh, ended) :=` destructuring compiles to a
+  tuple match. Single-constructor structures destructure into projections,
+  so the split lands on `match (...).2.snd` and the loop lemma had to be
+  restated over the whole answer triple (`pikeLoop_mono_end`).
+- Added `rw [hcc] at hs ⊢` after `rcases hcc : ctxCreate ... with ⟨cst, octx⟩`;
+  rcases had already generalized the scrutinee in the goal (though not in
+  `hs`), so the rewrite found nothing there.
+- Assumed `split` on a match introduces only the per-arm equation. It also
+  generalizes the scrutinee into a fresh inaccessible variable, so the
+  `rename_i` slots in the `pikeAdd_go_congr` closers were off by one per
+  nested match until the traced context showed the extra `POut PikeSt`
+  binders.
+- Expected `rw [getElem!_neg ...]` to close `default.op = Op.chr` by its
+  trailing rfl. The rewrite's rfl check does not unfold the derived
+  `Inhabited` instance; an explicit `rfl` afterwards does.
