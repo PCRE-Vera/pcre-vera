@@ -3,15 +3,18 @@
 DESIGN.md section 2.4 promises that a caller who plans ahead can pay for a
 match before running one: name the longest subject there will be, and get back
 an object that owns every byte a match on it could touch. This is that object.
-Creation is the section 5 memory bound made physical — each scratch array is
-reserved at the growth schedule's final capacity for its own term of the
-bound, the growth-overlap copy the bound charges for is materialized as a
-ballast reservation, and the pieces — together with the two result stores
-each wrapper materializes once beside the context, the ovector the run cores
-fill and the converted view a match answers through — sum to exactly the
-accessors' worstCaseMemory at the declared length. A call on the context then
-allocates nothing: the run cores truncate what is already there, and a push
-that stays under a reservation never grows anything.
+Creation is the section 5 memory bound made physical, and it takes that number
+from the accessor a caller would ask rather than computing it a second time:
+`re_mem` at the declared length is what gets reserved, down to the byte. Each
+scratch array is reserved at the growth schedule's final capacity for its own
+term of the bound, the two result stores each wrapper materializes beside the
+context are the ovector the run cores fill and the converted view a match
+answers through, and the ballast is everything else the bound charges for —
+the growth-overlap copy, and whatever the polynomial arithmetic of BOUNDS.md
+section 2 rounds up when a bound has growth and carries its constants at the
+larger base. A call on the context then allocates nothing: the run cores
+truncate what is already there, and a push that stays under a reservation
+never grows anything.
 
 Both configurations are served, sized differently. A Pike-eligible pattern
 needs capacities read straight off the program — the section 9 counts — and a
@@ -22,12 +25,14 @@ priced from the same numbers, and any daylight between the two would have one
 of them lying.
 
 Creation answers in the outcome vocabulary of `match`, and the order of the
-refusals is the frozen contract. A configuration that is not the default and a
-length past MAX_LENGTH are BadInput before anything else is looked at; a
-pattern whose selected path carries no certificate, or whose reservation has
-no representable size, is the same ExceedsBudget the accessors report; and a
-reservation the caller's memory limit does not cover, or whose zeroing the
-cost limit does not pay for at one unit per IR byte, is ResourceExceeded. The
+refusals is the frozen contract — the accessor's own order, since the accessor
+is what is asked first. A configuration that is not the default and a length
+past MAX_LENGTH are BadInput before anything else is looked at; a pattern
+whose selected path carries no certificate, whose bound is past the section 3
+byte ceiling, or whose arrays have no representable size, is the same
+ExceedsBudget the accessors report; and a reservation the caller's memory
+limit does not cover, or whose zeroing the cost limit does not pay for at one
+unit per IR byte, is ResourceExceeded. The
 limits handed to creation are also the baked ceilings: a call on the context
 may lower the cost and stack limits and may not raise them, the configuration
 cannot be changed, and a subject longer than the declared maximum is refused
@@ -37,7 +42,6 @@ cannot be changed, and a subject longer than the declared maximum is refused
 from __future__ import annotations
 
 from ..dsl import boolean, counter, inout, lnot, u32
-from ..tir.types import CEILING
 from . import spec
 from .bounds import growth_cap, sat
 from .layout import Layout
@@ -68,10 +72,20 @@ def _create(L: Layout) -> None:
     # First, so that a refused creation leaves a context that refuses to
     # match, whatever the slots held before.
     f.set(ctx.field("ready"), boolean(False))
-    with f.if_(f["mcfg"] != u32(spec.MC_DEFAULT)):
-        f.ret(u32(spec.BAD_INPUT))
-    with f.if_(f["maxlen"] > u32(spec.MAX_LENGTH)):
-        f.ret(u32(spec.BAD_INPUT))
+    # What a call on a subject this long may hold, asked of the very accessor
+    # a caller would ask. That is the point of DESIGN.md section 2.4's promise
+    # that creation can be planned from the accessors: the reservation is
+    # their number rather than a second computation of it that has to agree
+    # with them. It brings creation's first two refusals with it, in the order
+    # the contract fixes — a configuration this release cannot be asked about
+    # and a length no subject can have are BadInput, a pattern with no
+    # certificate on its selected path and a bound past the section 3 byte
+    # ceiling are ExceedsBudget.
+    answered = f.let("answered", L.Answer)
+    f.call("re_mem", [re, f["mcfg"], f["maxlen"].cast(counter)], dest=answered)
+    with f.if_(answered.field("status") != u32(spec.OK)):
+        f.ret(answered.field("status"))
+    resident = f.let("resident", counter, answered.field("value"))
     picked = f.let("picked", L.Cert)
     has = f.let("has", boolean, boolean(False))
     f.call("re_pick", [re, inout(picked)], dest=has)
@@ -138,28 +152,22 @@ def _create(L: Layout) -> None:
         f.set(nregs, re.field("nregs"))
         f.set(setup, (nregs + novec).cast(counter) * counter(spec.REG_SIZE))
 
-    # The section 5 memory line, with its own names: setup, one more
-    # `answer` for the delivered result store, and the reservation twice —
-    # once held by the arrays, once as the growth-overlap the ballast
-    # materializes.
-    resident = tmp(
+    # What the arrays themselves come to: the section 5 memory line without
+    # the growth-overlap copy, since that is the one term no array holds.
+    held = tmp(
         f,
         counter,
-        sat(
-            f,
-            "sat_add",
-            sat(f, "sat_add", setup, answer, over),
-            sat(f, "sat_mul", ballast, counter(2), over),
-            over,
-        ),
+        sat(f, "sat_add", sat(f, "sat_add", setup, answer, over), ballast, over),
     )
-
     with f.if_(over):
         f.ret(u32(spec.EXCEEDS_BUDGET))
-    # The section 3 byte ceiling, the same one the memory accessor applies: a
-    # reservation no valid limit could name is a refusal, and it is also what
-    # lets every entry count below fit its vector's declared maximum.
-    with f.if_(resident > counter(CEILING)):
+    # A bound that does not cover the arrays its own claims size is one no
+    # context can be built from, since reserving the arrays would hold more
+    # than the number the caller was told. The checker holds the stack and
+    # trail claims to the walk the memory bound was priced from, so this is
+    # unreachable rather than unlikely — and a refusal is what an unreachable
+    # case is worth.
+    with f.if_(held > resident):
         f.ret(u32(spec.EXCEEDS_BUDGET))
     with f.if_(resident > f["memlimit"]):
         f.ret(u32(spec.RESOURCE_EXCEEDED))
@@ -188,7 +196,13 @@ def _create(L: Layout) -> None:
     f.reserve(ctx.field("rc"), ctab.cast(u32))
     f.reserve(ctx.field("free"), ctab.cast(u32))
     f.reserve(ctx.field("pool"), cpool.cast(u32))
-    f.reserve(ctx.field("slack"), ballast.cast(u32))
+    # The ballast, which is what makes the reservation the accessor's number
+    # exactly: the growth-overlap copy the memory bound charges for, and
+    # whatever the polynomial arithmetic of BOUNDS.md section 2 rounded up on
+    # the way there — nothing at all when the bound has no growth, and a real
+    # number of bytes when it does, since a constant added to an exponential
+    # bound is carried at the larger base.
+    f.reserve(ctx.field("slack"), (resident - held).cast(u32))
 
     f.set(ctx.field("re"), re)
     f.set(ctx.field("maxlen"), f["maxlen"])

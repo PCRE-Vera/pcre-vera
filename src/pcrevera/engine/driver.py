@@ -466,6 +466,67 @@ class MatchContext:
     stack_cap: int
     memory: int
 
+    @property
+    def resident(self) -> int:
+        """Every byte this context reserved, counted off the stores themselves.
+
+        The arrays in the cell weighed at the IR sizes, plus the ovector the
+        run cores fill and the view a match answers through. Nothing here is
+        assumed: it is what the object really holds, which is the claim
+        BOUNDS.md section 5 makes about the memory bound, and it lives beside
+        the object rather than beside any one of the things that ask it, since
+        the Python tests and the sweep both do.
+        """
+        value = self.cell.value
+        assert isinstance(value, StructValue)
+        total = 0
+        for name, esize in WEIGHED:
+            array = value.fields[name]
+            assert isinstance(array, Seq)
+            total += array.cap * esize
+        slots = self.ovector.value
+        assert isinstance(slots, Seq)
+        return total + (slots.cap + len(self.view)) * spec.REG_SIZE
+
+
+WEIGHED = (
+    ("regs", spec.REG_SIZE),
+    ("bt", spec.BT_SIZE),
+    ("trail", spec.UNDO_SIZE),
+    ("clist", spec.TH_SIZE),
+    ("nlist", spec.TH_SIZE),
+    ("stk", spec.TH_SIZE),
+    ("seen", 1),
+    ("rc", spec.REG_SIZE),
+    ("free", spec.REG_SIZE),
+    ("pool", spec.REG_SIZE),
+    ("slack", 1),
+)
+"""What one element of each context array weighs, from BOUNDS.md section 3.
+
+The IR sizes the memory bound is stated in, in one place: a context whose
+reservation drifted from the bound cannot agree with a sum taken from here, and
+an array added to `Ctx` is a line added here rather than in every runner that
+weighs one.
+"""
+
+
+def statused(outcome: object) -> int:
+    """The outcome ordinal a driver answer stands for.
+
+    The mapping between the four answer types and the numbers `spec` gives
+    them, which every corpus writes down and every runner reads back.
+    """
+    if isinstance(outcome, Match):
+        return spec.MATCHED
+    if isinstance(outcome, NoMatch):
+        return spec.NO_MATCH
+    if isinstance(outcome, ResourceExceeded):
+        return spec.RESOURCE_EXCEEDED
+    if isinstance(outcome, BadInput):
+        return spec.BAD_INPUT
+    raise EngineError(f"a call answered {outcome!r}")
+
 
 class Engine:
     """The wave 1 engine, one instance per user of it.

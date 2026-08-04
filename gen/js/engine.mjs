@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   2afc34d0b581ee7c8404bfc539eb148ce08256d527f110de8a9d12ecc4777ee6
+//   6a6dfaddef328fdb85950946041356ab3a55a766835ab415dc7d764d02569451
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -15,7 +15,7 @@
 // loudly instead of reading undefined off the end of a typed array.
 
 /** SHA-256 of the TIR artifact this module was printed from. */
-export const artifactSha256 = "2afc34d0b581ee7c8404bfc539eb148ce08256d527f110de8a9d12ecc4777ee6";
+export const artifactSha256 = "6a6dfaddef328fdb85950946041356ab3a55a766835ab415dc7d764d02569451";
 
 /** What a checked operation throws, per TIR-SPEC.md section 12. */
 export class tir_Trap extends Error {
@@ -2863,18 +2863,19 @@ export function ct(c, bit) {
 
 export function ctx_create(re, mcfg, maxlen, costlimit, stacklimit, memlimit, ctx) {
   ctx.v.ready = false;
-  if ((mcfg !== 0)) {
-    return 3;
+  let answered = new Answer();
+  const tir_t1 = re_mem(re.tir_clone(), mcfg, (maxlen));
+  answered = tir_t1;
+  if ((answered.status !== 0)) {
+    return answered.status;
   }
-  if ((maxlen > 2147483647)) {
-    return 3;
-  }
+  let resident = answered.value;
   let picked = new Cert();
   let has = false;
-  const tir_t1 = tir_cell(picked);
-  const tir_t2 = re_pick(re.tir_clone(), tir_t1);
-  picked = tir_t1.v;
-  has = tir_t2;
+  const tir_t2 = tir_cell(picked);
+  const tir_t3 = re_pick(re.tir_clone(), tir_t2);
+  picked = tir_t2.v;
+  has = tir_t3;
   if ((!has)) {
     return 4;
   }
@@ -2893,11 +2894,11 @@ export function ctx_create(re, mcfg, maxlen, costlimit, stacklimit, memlimit, ct
   let words = 0;
   if (re.pike) {
     let room = new Room();
-    const tir_t3 = tir_cell(room);
-    const tir_t4 = tir_cell(over);
-    pike_room(re.tir_clone(), tir_t3, tir_t4);
-    room = tir_t3.v;
-    over = tir_t4.v;
+    const tir_t4 = tir_cell(room);
+    const tir_t5 = tir_cell(over);
+    pike_room(re.tir_clone(), tir_t4, tir_t5);
+    room = tir_t4.v;
+    over = tir_t5.v;
     words = room.words;
     clists = room.lists;
     cstk = room.stk;
@@ -2907,11 +2908,11 @@ export function ctx_create(re, mcfg, maxlen, costlimit, stacklimit, memlimit, ct
     setup = tir_cadd(tir_cmul((novec), 4), (words));
   } else {
     let tmp1 = new Bound();
-    const tir_t5 = poly_value(picked.stack.tir_clone(), (maxlen));
-    tmp1 = tir_t5;
+    const tir_t6 = poly_value(picked.stack.tir_clone(), (maxlen));
+    tmp1 = tir_t6;
     let tmp2 = new Bound();
-    const tir_t6 = poly_value(picked.trail.tir_clone(), (maxlen));
-    tmp2 = tir_t6;
+    const tir_t7 = poly_value(picked.trail.tir_clone(), (maxlen));
+    tmp2 = tir_t7;
     if ((!tmp1.ok)) {
       return 4;
     }
@@ -2921,85 +2922,80 @@ export function ctx_create(re, mcfg, maxlen, costlimit, stacklimit, memlimit, ct
     let tmp3 = 0;
     if ((tmp1.value > 0)) {
       let tmp4 = 0;
-      const tir_t7 = tir_cell(over);
-      const tir_t8 = sat_mul(tmp1.value, 2, tir_t7);
-      over = tir_t7.v;
-      tmp4 = tir_t8;
+      const tir_t8 = tir_cell(over);
+      const tir_t9 = sat_mul(tmp1.value, 2, tir_t8);
+      over = tir_t8.v;
+      tmp4 = tir_t9;
       let tmp5 = 0;
-      const tir_t9 = tir_cell(over);
-      const tir_t10 = sat_add(tmp4, 4, tir_t9);
-      over = tir_t9.v;
-      tmp5 = tir_t10;
+      const tir_t10 = tir_cell(over);
+      const tir_t11 = sat_add(tmp4, 4, tir_t10);
+      over = tir_t10.v;
+      tmp5 = tir_t11;
       tmp3 = tmp5;
     }
     cbt = tmp3;
     let tmp6 = 0;
     if ((tmp2.value > 0)) {
       let tmp7 = 0;
-      const tir_t11 = tir_cell(over);
-      const tir_t12 = sat_mul(tmp2.value, 2, tir_t11);
-      over = tir_t11.v;
-      tmp7 = tir_t12;
+      const tir_t12 = tir_cell(over);
+      const tir_t13 = sat_mul(tmp2.value, 2, tir_t12);
+      over = tir_t12.v;
+      tmp7 = tir_t13;
       let tmp8 = 0;
-      const tir_t13 = tir_cell(over);
-      const tir_t14 = sat_add(tmp7, 4, tir_t13);
-      over = tir_t13.v;
-      tmp8 = tir_t14;
+      const tir_t14 = tir_cell(over);
+      const tir_t15 = sat_add(tmp7, 4, tir_t14);
+      over = tir_t14.v;
+      tmp8 = tir_t15;
       tmp6 = tmp8;
     }
     ctrail = tmp6;
     let tmp9 = 0;
-    const tir_t15 = tir_cell(over);
-    const tir_t16 = sat_mul(cbt, 12, tir_t15);
-    over = tir_t15.v;
-    tmp9 = tir_t16;
+    const tir_t16 = tir_cell(over);
+    const tir_t17 = sat_mul(cbt, 12, tir_t16);
+    over = tir_t16.v;
+    tmp9 = tir_t17;
     let tmp10 = 0;
-    const tir_t17 = tir_cell(over);
-    const tir_t18 = sat_mul(ctrail, 8, tir_t17);
-    over = tir_t17.v;
-    tmp10 = tir_t18;
+    const tir_t18 = tir_cell(over);
+    const tir_t19 = sat_mul(ctrail, 8, tir_t18);
+    over = tir_t18.v;
+    tmp10 = tir_t19;
     let tmp11 = 0;
-    const tir_t19 = tir_cell(over);
-    const tir_t20 = sat_add(tmp9, tmp10, tir_t19);
-    over = tir_t19.v;
-    tmp11 = tir_t20;
+    const tir_t20 = tir_cell(over);
+    const tir_t21 = sat_add(tmp9, tmp10, tir_t20);
+    over = tir_t20.v;
+    tmp11 = tir_t21;
     tmp9 = tmp11;
     ballast = tmp9;
     nregs = re.nregs;
     setup = tir_cmul((((nregs + novec) >>> 0)), 4);
   }
   let tmp12 = 0;
-  const tir_t21 = tir_cell(over);
-  const tir_t22 = sat_add(setup, answer, tir_t21);
-  over = tir_t21.v;
-  tmp12 = tir_t22;
+  const tir_t22 = tir_cell(over);
+  const tir_t23 = sat_add(setup, answer, tir_t22);
+  over = tir_t22.v;
+  tmp12 = tir_t23;
   let tmp13 = 0;
-  const tir_t23 = tir_cell(over);
-  const tir_t24 = sat_mul(ballast, 2, tir_t23);
-  over = tir_t23.v;
-  tmp13 = tir_t24;
-  let tmp14 = 0;
-  const tir_t25 = tir_cell(over);
-  const tir_t26 = sat_add(tmp12, tmp13, tir_t25);
-  over = tir_t25.v;
-  tmp14 = tir_t26;
-  let tmp15 = tmp14;
+  const tir_t24 = tir_cell(over);
+  const tir_t25 = sat_add(tmp12, ballast, tir_t24);
+  over = tir_t24.v;
+  tmp13 = tir_t25;
+  let tmp14 = tmp13;
   if (over) {
     return 4;
   }
-  if ((tmp15 > 2147483647)) {
+  if ((tmp14 > resident)) {
     return 4;
   }
-  if ((tmp15 > memlimit)) {
+  if ((resident > memlimit)) {
     return 2;
   }
-  if ((tmp15 > costlimit)) {
+  if ((resident > costlimit)) {
     return 2;
   }
   let blank = new Ctx();
-  const tir_t27 = ctx.v;
+  const tir_t26 = ctx.v;
   ctx.v = blank;
-  blank = tir_t27;
+  blank = tir_t26;
   tir_reserve(ctx.v.regs, nregs, 8704, tir_mk_u32);
   tir_reserve(ctx.v.bt, ((cbt) >>> 0), 178956970, tir_mk_obj);
   tir_reserve(ctx.v.trail, ((ctrail) >>> 0), 268435455, tir_mk_obj);
@@ -3010,12 +3006,12 @@ export function ctx_create(re, mcfg, maxlen, costlimit, stacklimit, memlimit, ct
   tir_reserve(ctx.v.rc, ((ctab) >>> 0), 262796, tir_mk_u32);
   tir_reserve(ctx.v.free, ((ctab) >>> 0), 262796, tir_mk_u32);
   tir_reserve(ctx.v.pool, ((cpool) >>> 0), 134549508, tir_mk_u32);
-  tir_reserve(ctx.v.slack, ((ballast) >>> 0), 2147483647, tir_mk_u8);
+  tir_reserve(ctx.v.slack, ((tir_csub(resident, tmp14)) >>> 0), 2147483647, tir_mk_u8);
   ctx.v.re = re.tir_clone();
   ctx.v.maxlen = maxlen;
   ctx.v.costcap = costlimit;
   ctx.v.stackcap = stacklimit;
-  ctx.v.memcap = tmp15;
+  ctx.v.memcap = resident;
   ctx.v.ready = true;
   return 0;
 }

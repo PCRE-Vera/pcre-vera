@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   2afc34d0b581ee7c8404bfc539eb148ce08256d527f110de8a9d12ecc4777ee6
+//   6a6dfaddef328fdb85950946041356ab3a55a766835ab415dc7d764d02569451
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -18,7 +18,7 @@ package engine
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact this package was printed
 // from.
-const ArtifactSHA256 = "2afc34d0b581ee7c8404bfc539eb148ce08256d527f110de8a9d12ecc4777ee6"
+const ArtifactSHA256 = "6a6dfaddef328fdb85950946041356ab3a55a766835ab415dc7d764d02569451"
 
 // Tir_Trap is what a checked operation panics with, per TIR-SPEC.md section 12.
 type Tir_Trap struct {
@@ -2310,16 +2310,17 @@ func ct(c uint8, bit uint8) bool {
 
 func ctx_create(re Re, mcfg uint32, maxlen uint32, costlimit uint64, stacklimit uint32, memlimit uint64, ctx *Ctx) uint32 {
 	(*ctx).ready = false
-	if (mcfg != uint32(0)) {
-		return uint32(3)
+	var answered Answer
+	tir_t1 := re_mem(re, mcfg, uint64(maxlen))
+	answered = tir_t1
+	if (answered.status != uint32(0)) {
+		return answered.status
 	}
-	if (maxlen > uint32(2147483647)) {
-		return uint32(3)
-	}
+	var resident uint64 = answered.value
 	var picked Cert
 	var has bool = false
-	tir_t1 := re_pick(re, &picked)
-	has = tir_t1
+	tir_t2 := re_pick(re, &picked)
+	has = tir_t2
 	if (!has) {
 		return uint32(4)
 	}
@@ -2348,11 +2349,11 @@ func ctx_create(re Re, mcfg uint32, maxlen uint32, costlimit uint64, stacklimit 
 		setup = tir_cadd(tir_cmul(uint64(novec), uint64(4)), uint64(words))
 	} else {
 		var tmp1 Bound
-		tir_t2 := poly_value(picked.stack, uint64(maxlen))
-		tmp1 = tir_t2
+		tir_t3 := poly_value(picked.stack, uint64(maxlen))
+		tmp1 = tir_t3
 		var tmp2 Bound
-		tir_t3 := poly_value(picked.trail, uint64(maxlen))
-		tmp2 = tir_t3
+		tir_t4 := poly_value(picked.trail, uint64(maxlen))
+		tmp2 = tir_t4
 		if (!tmp1.ok) {
 			return uint32(4)
 		}
@@ -2362,59 +2363,56 @@ func ctx_create(re Re, mcfg uint32, maxlen uint32, costlimit uint64, stacklimit 
 		var tmp3 uint64 = uint64(0)
 		if (tmp1.value > uint64(0)) {
 			var tmp4 uint64
-			tir_t4 := sat_mul(tmp1.value, uint64(2), &over)
-			tmp4 = tir_t4
+			tir_t5 := sat_mul(tmp1.value, uint64(2), &over)
+			tmp4 = tir_t5
 			var tmp5 uint64
-			tir_t5 := sat_add(tmp4, uint64(4), &over)
-			tmp5 = tir_t5
+			tir_t6 := sat_add(tmp4, uint64(4), &over)
+			tmp5 = tir_t6
 			tmp3 = tmp5
 		}
 		cbt = tmp3
 		var tmp6 uint64 = uint64(0)
 		if (tmp2.value > uint64(0)) {
 			var tmp7 uint64
-			tir_t6 := sat_mul(tmp2.value, uint64(2), &over)
-			tmp7 = tir_t6
+			tir_t7 := sat_mul(tmp2.value, uint64(2), &over)
+			tmp7 = tir_t7
 			var tmp8 uint64
-			tir_t7 := sat_add(tmp7, uint64(4), &over)
-			tmp8 = tir_t7
+			tir_t8 := sat_add(tmp7, uint64(4), &over)
+			tmp8 = tir_t8
 			tmp6 = tmp8
 		}
 		ctrail = tmp6
 		var tmp9 uint64
-		tir_t8 := sat_mul(cbt, uint64(12), &over)
-		tmp9 = tir_t8
+		tir_t9 := sat_mul(cbt, uint64(12), &over)
+		tmp9 = tir_t9
 		var tmp10 uint64
-		tir_t9 := sat_mul(ctrail, uint64(8), &over)
-		tmp10 = tir_t9
+		tir_t10 := sat_mul(ctrail, uint64(8), &over)
+		tmp10 = tir_t10
 		var tmp11 uint64
-		tir_t10 := sat_add(tmp9, tmp10, &over)
-		tmp11 = tir_t10
+		tir_t11 := sat_add(tmp9, tmp10, &over)
+		tmp11 = tir_t11
 		tmp9 = tmp11
 		ballast = tmp9
 		nregs = re.nregs
 		setup = tir_cmul(uint64((nregs + novec)), uint64(4))
 	}
 	var tmp12 uint64
-	tir_t11 := sat_add(setup, answer, &over)
-	tmp12 = tir_t11
+	tir_t12 := sat_add(setup, answer, &over)
+	tmp12 = tir_t12
 	var tmp13 uint64
-	tir_t12 := sat_mul(ballast, uint64(2), &over)
-	tmp13 = tir_t12
-	var tmp14 uint64
-	tir_t13 := sat_add(tmp12, tmp13, &over)
-	tmp14 = tir_t13
-	var tmp15 uint64 = tmp14
+	tir_t13 := sat_add(tmp12, ballast, &over)
+	tmp13 = tir_t13
+	var tmp14 uint64 = tmp13
 	if over {
 		return uint32(4)
 	}
-	if (tmp15 > uint64(2147483647)) {
+	if (tmp14 > resident) {
 		return uint32(4)
 	}
-	if (tmp15 > memlimit) {
+	if (resident > memlimit) {
 		return uint32(2)
 	}
-	if (tmp15 > costlimit) {
+	if (resident > costlimit) {
 		return uint32(2)
 	}
 	var blank Ctx
@@ -2432,12 +2430,12 @@ func ctx_create(re Re, mcfg uint32, maxlen uint32, costlimit uint64, stacklimit 
 	tir_reserve(&(*ctx).rc, uint32(ctab), 262796)
 	tir_reserve(&(*ctx).free, uint32(ctab), 262796)
 	tir_reserve(&(*ctx).pool, uint32(cpool), 134549508)
-	tir_reserve(&(*ctx).slack, uint32(ballast), 2147483647)
+	tir_reserve(&(*ctx).slack, uint32(tir_csub(resident, tmp14)), 2147483647)
 	(*ctx).re = re
 	(*ctx).maxlen = maxlen
 	(*ctx).costcap = costlimit
 	(*ctx).stackcap = stacklimit
-	(*ctx).memcap = tmp15
+	(*ctx).memcap = resident
 	(*ctx).ready = true
 	return uint32(0)
 }

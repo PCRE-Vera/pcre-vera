@@ -1032,16 +1032,45 @@ proofs honest against the real pcre2.
 - Differential fuzzing. A grammar-based pattern generator (weighted toward
   nasty constructs: nested quantifiers, empty-matching groups, boundary
   anchors) plus random and structure-aware subjects. Each case runs against
-  pcre2, the Python IR interpreter, the generated Go, and the generated JS;
-  any disagreement is a bug, minimized automatically and added to the corpus.
-  Fuzzing runs in CI continuously; our cost limit does the budgeting, pcre2
+  pcre2, the Python IR interpreter, the generated Go, and the generated JS —
+  including the cases pcre2 has no opinion about, since a construct outside
+  the claimed subset still has to be refused with the same code at the same
+  offset by every implementation of this engine, and only the comparison with
+  pcre2 is skipped. Any disagreement is a bug, minimized automatically and
+  added to a corpus: to the semantic one when what disagreed is an answer,
+  and to the sweep's own kept cases when it is an invariant — a bound, a
+  limit edge, a context, the two matchers — since a corpus of expected
+  answers never asks those and a regression filed there would guard nothing.
+  Our cost limit does the budgeting, pcre2
   gets a generous match_limit purely as an external safety net, and results
   are compared only when our engine completes within its budget.
+  The generator is `pcrevera.sweep`, and a case is a function of the numbers
+  its manifest was generated from and its own index, which is what lets a
+  manifest be rebuilt rather than kept and a failure be named by a manifest
+  hash and an index rather than carried around as a pattern. The generator
+  those numbers name belongs to the repository rather than to the host's
+  standard library, so a manifest hash means the same thing on every
+  interpreter. One population, one
+  generator: the smoke test that runs on every commit and the campaign that
+  runs for an hour differ in scale and in nothing else. What runs in ordinary
+  CI is a committed shard — `conformance/sweep.json`, one deterministic slice
+  of that population with every answer recorded, replayed by all three engines
+  and by pcre2 — plus a small generated campaign against the oracle. The
+  sustained side of this, meaning rotating seeds, scheduled long runs, deeper
+  minimization and the week-long campaign, is M9's infrastructure and is
+  called out there; M5 owns the harness, the shard and the campaign that
+  closes the milestone. Both are stated here because "runs continuously" and
+  "M9 builds the continuous runner" are easy to read as the same sentence.
 - Cross-matcher agreement. On Pike-eligible patterns, Pike VM and
   backtracking VM results are compared on every fuzz case through the
   internal testing entry point, each matcher running with limits
   at or above its own analyzer bounds, mirroring the sufficient-budget
-  premise of the section 6 agreement corollary.
+  premise of the section 6 agreement corollary. Where the backtracking
+  analyzer has no finite certificate for such a pattern there are no
+  sufficient bounds to run it under, and the pair is counted apart rather
+  than folded in with the agreements: an answer is still compared, since a
+  disagreement is a bug whatever the budget was, but a run that hits a capped
+  budget says nothing and is never reported as agreement.
 - Resource bound tests. For each fuzz case, run with instrumentation and
   assert that actual cost, stack depth, and scratch memory never exceed
   the analyzer's bounds, memory measured the way section 5 defines it:
@@ -1059,7 +1088,11 @@ proofs honest against the real pcre2.
   contexts is tested at creation instead, `CreateCtx` succeeding at the
   reservation and failing one IR byte below it. This tests Layer A and the enforcement paths empirically on
   inputs the proofs quantify over anyway, and catches analyzer
-  regressions instantly.
+  regressions instantly. Re-running is what the edges cost, so they are run
+  once per distinct observed usage of a case and no more than a stated number
+  of times per case; both limits are deterministic, so a replay edges exactly
+  the same trials, and the count of edge checks is part of the coverage report
+  rather than something a reader has to infer.
 - Conformance suite. A language-neutral JSON corpus of (pattern, options,
   subject, expected result, expected bounds) checked into the repo; each
   backend has a tiny runner. Backends must agree bit for bit with each other

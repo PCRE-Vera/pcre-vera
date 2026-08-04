@@ -73,6 +73,7 @@ from .driver import (
     canonical,
     coef,
     items,
+    statused,
     variant_of,
 )
 from .program import program
@@ -1973,19 +1974,6 @@ def _creation(built, name: str, want: int, **args):
     return row, held
 
 
-def _statused(outcome) -> int:
-    """The outcome ordinal a driver result stands for."""
-    if isinstance(outcome, Match):
-        return spec.MATCHED
-    if isinstance(outcome, NoMatch):
-        return spec.NO_MATCH
-    if isinstance(outcome, ResourceExceeded):
-        return spec.RESOURCE_EXCEEDED
-    if isinstance(outcome, BadInput):
-        return spec.BAD_INPUT
-    raise AssertionError(f"a context call answered {outcome!r}")
-
-
 def contexts() -> list[dict]:
     """Every context case: the creation ladder, then one context's life."""
     out = []
@@ -2036,7 +2024,7 @@ def contexts() -> list[dict]:
                     cost_limit=one.cost,
                     stack_limit=one.stack,
                 )
-                if _statused(got) != one.status:
+                if statused(got) != one.status:
                     raise AssertionError(
                         f"{case.name}: {one.subject!r} answers {got!r}, "
                         f"the case says {one.status}"

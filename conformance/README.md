@@ -1,10 +1,10 @@
 # The conformance corpora
 
-Three language-neutral JSON files and a small runner per backend. They are what
+Four language-neutral JSON files and a small runner per backend. They are what
 makes "the Python interpreter, the generated Go, and the generated JavaScript
 agree bit for bit" a thing that gets checked rather than hoped for.
 
-All three are generated — `make generate` writes them — and all three are
+All four are generated — `make generate` writes them — and all four are
 committed, so a change to any of them shows up as a reviewable diff and
 `make generate-verify` fails on a checkout where one has drifted.
 
@@ -67,6 +67,51 @@ half of this corpus exists because a certificate has no way in through the
 public API, so without it the checker would be the one piece of the engine that
 both backends carried and neither ran.
 
+`sweep.json` is the committed shard of the differential sweep of DESIGN.md
+section 8, and it is the one file here whose cases nobody wrote. They are
+generated: `pcrevera.sweep.population` builds a case out of the numbers a
+manifest was generated from and the case's own index, and the shard is one case
+in every seven of a small population, kept whole — the pattern, up to eight
+subjects with their own match flags and start offsets, the options, the newline
+and BSR conventions, and the length a preallocated context is created for.
+
+What it records is everything four implementations have to agree about. The
+compile outcome and, per trial, the ovector; the three certified bounds at that
+subject length and the cost, stack and memory the run really used; the
+backtracking matcher's answer where the Pike VM was the one selected; and a
+context's reservation and what each call on it used. A trial marked `edges`
+also has its three limits re-run at the observed value and one below, which is
+the deterministic budget boundary of section 8; the runners compute those
+limits from the recorded bound the same way, so a backend whose accessors
+disagree runs at different limits and fails on the numbers rather than passing
+quietly.
+
+Its `regressions` are the same records for cases nobody generated either: the
+ones the sweep has actually found and a reducer has shrunk, kept in
+`oracle/corpus/sweep-regressions.json` because a generated population is
+rebuilt from a seed and would stop finding them the moment the seed moved on.
+They are replayed through exactly the same battery rather than compared to an
+expected answer, and that is the point of keeping them here rather than in the
+wave 1 corpus: what each one guards is a certified bound, a limit edge, a
+context reservation or the two matchers agreeing, and a corpus of expected
+answers never asks any of those. A disagreement about an answer still goes to
+`oracle/corpus/wave1.json`, which is what that file is for.
+
+A compile outcome comes in three kinds. `compiled` carries the identity of the
+program, `compileError` is a pcre2 error the engine reproduces, and `declined`
+is one of our own codes — a construct outside the claimed subset, or a pattern
+past a documented limit. pcre2 has no opinion about a decline, per the oracle
+policy of DESIGN.md section 1, but every implementation of this engine has to
+refuse it with the same code at the same offset, so the case is recorded like
+any other and only the comparison with pcre2 is skipped.
+
+The file is generated from the engine alone, with no pcre2 anywhere near it, so
+that regenerating a committed file never needs a build of the pinned library.
+pcre2's opinion of the same cases is a test rather than a file:
+`tests/test_sweep.py` replays the shard through the oracle in the same run that
+replays it through the interpreter. The chain is the wave 1 corpus's — pcre2
+agrees with Python, and Go and JavaScript agree with the file.
+
 The runners, one row per file and one column per language:
 
 ```
@@ -89,7 +134,19 @@ The runners, one row per file and one column per language:
 |                   | gen/js/test/accessors     | the generated JavaScript  |
 |                   |   .test.mjs               |                           |
 +-------------------+---------------------------+---------------------------+
+| sweep.json        | tests/test_sweep.py       | the Python interpreter    |
+|                   | gen/go/internal/engine/   | the generated Go          |
+|                   |   sweep_test.go           |                           |
+|                   | gen/js/test/sweep         | the generated JavaScript  |
+|                   |   .test.mjs               |                           |
++-------------------+---------------------------+---------------------------+
 ```
+
+Both sweep runners sit inside the generated module, and for a reason of their
+own: the resource half of the sweep is about the `Usage` a call reports, which
+the public API does not return. Reaching the generated entry points keeps every
+observed number under test without widening what the wrappers promise, and the
+wrappers stay covered by the conformance and accessor runners.
 
 The Go certificate runner sits inside the generated package rather than beside
 the wrapper, because TIR field names are printed verbatim and Go cannot reach a

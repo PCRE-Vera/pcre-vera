@@ -36,7 +36,14 @@ export default [
     // `node --test` does not read a helper as an empty test file.
     files: ["test/**/*.mjs", "corpus.mjs"],
     languageOptions: {
-      globals: { TextDecoder: "readonly", TextEncoder: "readonly", URL: "readonly" },
+      globals: {
+        TextDecoder: "readonly",
+        TextEncoder: "readonly",
+        URL: "readonly",
+        // The sweep runner reads one environment variable, which is how a
+        // campaign's results are replayed here instead of the committed shard.
+        process: "readonly",
+      },
     },
   },
   {

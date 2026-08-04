@@ -11,7 +11,7 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
 
-import { ascii, load, section, unhex } from "../corpus.mjs";
+import { ascii, load, resident, section, unhex } from "../corpus.mjs";
 import { PcreError, compile } from "../index.mjs";
 import {
   Ctx,
@@ -100,23 +100,6 @@ test("the context corpus", () => {
   }
 });
 
-// What one element of each array weighs, from BOUNDS.md section 3, restated
-// so a context whose reservation drifted from the bound cannot agree with
-// this sum.
-const WEIGHED = [
-  ["regs", 4],
-  ["bt", 12],
-  ["trail", 8],
-  ["clist", 8],
-  ["nlist", 8],
-  ["stk", 8],
-  ["seen", 1],
-  ["rc", 4],
-  ["free", 4],
-  ["pool", 4],
-  ["slack", 1],
-];
-
 test("a context is the memory bound made physical", () => {
   for (const [pattern, maxlen] of [
     ["abc", 64],
@@ -133,15 +116,7 @@ test("a context is the memory bound made physical", () => {
     const held = tir_cell(new Ctx());
     const status = ctx_create(re, 0, maxlen, 2 ** 40, 100_000, 2 ** 31 - 1, held);
     assert.equal(status, 0, pattern);
-    let resident = 0;
-    for (const [name, esize] of WEIGHED) {
-      resident += held.v[name].a.length * esize;
-    }
-    // Plus the two result stores the wrapper materializes beside the
-    // context: the engine ovector the run cores fill, and the converted
-    // view a match answers through.
-    resident += 2 * (re.ncap + 1) * 4 * 2;
-    assert.equal(resident, held.v.memcap, `${pattern} at ${maxlen}`);
+    assert.equal(resident(held.v, re), held.v.memcap, `${pattern} at ${maxlen}`);
     const bound = re_mem(re, 0, maxlen);
     assert.equal(bound.status, 0, pattern);
     assert.equal(bound.value, held.v.memcap, pattern);

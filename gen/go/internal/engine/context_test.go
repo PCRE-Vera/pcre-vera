@@ -26,6 +26,14 @@ func residentBytes(ctx *Ctx) uint64 {
 		uint64(cap(ctx.slack))
 }
 
+// Everything a context reserved, the arrays plus the two result stores the
+// wrapper materializes beside it: the engine ovector the run cores fill, and
+// the converted view a match answers through. One statement of the sum, since
+// both runners in this package ask for it.
+func residentTotal(re Re, ctx *Ctx) uint64 {
+	return residentBytes(ctx) + uint64(2*(re.ncap+1))*4*2
+}
+
 func TestAContextIsTheMemoryBoundMadePhysical(t *testing.T) {
 	for _, tc := range []struct {
 		pattern string
@@ -44,11 +52,7 @@ func TestAContextIsTheMemoryBoundMadePhysical(t *testing.T) {
 		if status != 0 {
 			t.Fatalf("%s: creation answered %d", tc.pattern, status)
 		}
-		// The two result stores the wrapper materializes beside the
-		// context: the engine ovector the run cores fill, and the
-		// converted view a match answers through.
-		results := uint64(2*(re.ncap+1)) * 4 * 2
-		if got := residentBytes(&ctx) + results; got != ctx.memcap {
+		if got := residentTotal(re, &ctx); got != ctx.memcap {
 			t.Fatalf(
 				"%s at %d: %d resident bytes against a reservation of %d",
 				tc.pattern, tc.maxlen, got, ctx.memcap,

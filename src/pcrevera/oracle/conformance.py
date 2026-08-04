@@ -64,9 +64,15 @@ def _expectation(case: wave1.Case) -> dict[str, Any]:
     raise ValueError(f"the conformance corpus has no form for {case.expect!r}")
 
 
-def _flags(names: tuple[str, ...], table: dict[str, int]) -> int:
+def flags(chosen: tuple[str, ...], table: dict[str, int]) -> int:
+    """The bits an option table gives those names, and `names` back again.
+
+    Public because the sweep manifest writes the same numbers for the same
+    reason this file does: only Python holds the tables, so a document that
+    another language has to read carries what the engine takes.
+    """
     bits = 0
-    for name in names:
+    for name in chosen:
         bits |= table[name]
     return bits
 
@@ -75,14 +81,14 @@ def _case(case: wave1.Case) -> dict[str, Any]:
     entry: dict[str, Any] = {
         "name": case.name,
         "pattern": case.pattern.hex(),
-        "flags": _flags(case.options, spec.COMPILE_OPTIONS),
+        "flags": flags(case.options, spec.COMPILE_OPTIONS),
         "newline": spec.NEWLINE_CONVENTIONS[case.newline or "LF"],
         "bsr": spec.BSR_CONVENTIONS[case.bsr or "UNICODE"],
         "expect": _expectation(case),
     }
     if case.subject is not None:
         entry["subject"] = case.subject.hex()
-        entry["matchFlags"] = _flags(case.match_options, spec.MATCH_OPTIONS)
+        entry["matchFlags"] = flags(case.match_options, spec.MATCH_OPTIONS)
         entry["start"] = case.start
     if case.note:
         # The sentence saying what the case pins, which is what a reader of a
@@ -156,10 +162,10 @@ def load(path=PATH) -> wave1.Corpus:
                 pattern=bytes.fromhex(entry["pattern"]),
                 subject=None if "subject" not in entry else bytes.fromhex(entry["subject"]),
                 expect=_decode(expect),
-                options=_names(entry["flags"], spec.COMPILE_OPTIONS),
-                match_options=_names(entry.get("matchFlags", 0), spec.MATCH_OPTIONS),
-                newline=_convention(entry["newline"], spec.NEWLINE_CONVENTIONS),
-                bsr=_convention(entry["bsr"], spec.BSR_CONVENTIONS),
+                options=names(entry["flags"], spec.COMPILE_OPTIONS),
+                match_options=names(entry.get("matchFlags", 0), spec.MATCH_OPTIONS),
+                newline=convention(entry["newline"], spec.NEWLINE_CONVENTIONS),
+                bsr=convention(entry["bsr"], spec.BSR_CONVENTIONS),
                 start=entry.get("start", 0),
                 note=entry.get("note", ""),
             )
@@ -190,11 +196,11 @@ def _decode(expect: dict[str, Any]) -> wave1.Expectation:
     raise ValueError(f"unknown expectation kind: {expect['kind']!r}")
 
 
-def _names(bits: int, table: dict[str, int]) -> tuple[str, ...]:
+def names(bits: int, table: dict[str, int]) -> tuple[str, ...]:
     return tuple(name for name, bit in table.items() if bits & bit)
 
 
-def _convention(value: int, table: dict[str, int]) -> str:
+def convention(value: int, table: dict[str, int]) -> str:
     for name, number in table.items():
         if number == value:
             return name
@@ -205,10 +211,14 @@ __all__ = [
     "NOTE",
     "PATH",
     "SCHEMA",
+    "convention",
     "corpus",
     "corpus_text",
     "document",
+    "flags",
     "load",
+    "names",
     "read",
+    "section",
     "text",
 ]

@@ -26,6 +26,34 @@ export function unhex(text) {
   return bytes;
 }
 
+// What one element of each context array weighs, from BOUNDS.md section 3, and
+// the sum a created context therefore holds: the arrays, plus the two result
+// stores the wrapper materializes beside it — the engine ovector the run cores
+// fill and the converted view a match answers through. Here rather than in a
+// runner because both of them ask it, and a second copy of the table is a
+// second thing to move when an array is added.
+const WEIGHED = [
+  ["regs", 4],
+  ["bt", 12],
+  ["trail", 8],
+  ["clist", 8],
+  ["nlist", 8],
+  ["stk", 8],
+  ["seen", 1],
+  ["rc", 4],
+  ["free", 4],
+  ["pool", 4],
+  ["slack", 1],
+];
+
+export function resident(ctx, re) {
+  let total = 2 * (re.ncap + 1) * 4 * 2;
+  for (const [name, esize] of WEIGHED) {
+    total += ctx[name].a.length * esize;
+  }
+  return total;
+}
+
 // And the bytes a test spells as plain text, for the subjects and patterns a
 // runner writes beside the corpus rather than in it.
 export function ascii(text) {
@@ -33,7 +61,14 @@ export function ascii(text) {
 }
 
 export function load(name) {
-  const path = fileURLToPath(new URL(`../../conformance/${name}`, import.meta.url));
+  return read(fileURLToPath(new URL(`../../conformance/${name}`, import.meta.url)), name);
+}
+
+// The same thing by path rather than by name, for the one corpus that has a
+// bigger version of itself: a sweep campaign writes a result document of
+// exactly the shard's shape, and replaying it here is what makes "the same
+// manifest through all four implementations" true at campaign scale too.
+export function read(path, name = path) {
   const document = JSON.parse(readFileSync(path, "utf8"));
   assert.equal(document.schema, SCHEMA, `${name} has an unexpected schema`);
   section(document, "cases", name);
@@ -46,7 +81,18 @@ export function load(name) {
 // Asking for a section by name is what keeps the "is this a corpus at all"
 // rule here rather than at every place that reads a second one.
 export function section(document, key, name) {
+  const held = list(document, key, name);
+  assert.ok(held.length > 0, `${name} holds no ${key}`);
+  return held;
+}
+
+// And one that may legitimately be empty, but must be there: a repository that
+// has not found an invariant failure yet has no sweep regressions to keep, and
+// a runner that refused the empty list would refuse the shard of a clean
+// checkout. A missing key is still an error, since that is what a typo looks
+// like.
+export function list(document, key, name) {
   const held = document[key];
-  assert.ok(Array.isArray(held) && held.length > 0, `${name} holds no ${key}`);
+  assert.ok(Array.isArray(held), `${name} has no ${key}`);
   return held;
 }

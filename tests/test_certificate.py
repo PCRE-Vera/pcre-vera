@@ -25,7 +25,6 @@ from dataclasses import replace
 
 import pytest
 
-import test_engine_differential as differential
 from pcrevera.engine import (
     Certificate,
     Engine,
@@ -55,6 +54,7 @@ from pcrevera.engine import driver
 from pcrevera.engine.driver import CompiledPattern, Limits, ResourceExceeded
 from pcrevera.oracle import corpus as wave1
 from pcrevera.engine.program import program
+from pcrevera.sweep.population import CROSS, population
 from pcrevera.tir.interp import Cell
 from pcrevera.tir.types import CAP, CEILING, StructType
 
@@ -681,7 +681,10 @@ def test_generated_patterns_are_priced_or_refused_too() -> None:
     longer — so what is left is the count, which says the shapes below reached
     the analyzer at all rather than being skipped as outside wave 1.
     """
-    generated = [text.encode("latin-1") for text in differential._patterns(seed=5, extra=200)]
+    generated = [
+        one.pattern
+        for one in population(5, structured=len(CROSS) + 200, hostile=0, subjects=1)
+    ]
     assert sum(built.certificate is not None for _, built in _emitted(generated)) > 150
 
 

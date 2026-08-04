@@ -400,6 +400,18 @@ whole-pattern claims, so any daylight between a claim and the walk would
 demand an array the memory number never paid for. The checker refuses the
 daylight rather than reasoning about it.
 
+What a context reserves is `mem` evaluated at the declared maximum length,
+and it asks the accessor for that number rather than recomputing it. The
+distinction matters because the two are not always the same arithmetic: the
+capacities above are numbers, while `mem` is a polynomial, and section 2 adds
+two bounds with different bases under the larger of the two. On a pattern
+whose bound has growth, the constants of `setup`, `deliver` and the growth
+schedule are therefore carried at that base, and the polynomial sits above
+the sum of the real capacities. The difference is materialized: a context
+reserves the arrays its claims size and a ballast for the rest, so its
+resident bytes are the accessor's number exactly, on every pattern rather
+than only on the ones whose bounds happen not to grow.
+
 ## 6. Classification
 
 A certificate that calls itself linear is claiming its cost is at most

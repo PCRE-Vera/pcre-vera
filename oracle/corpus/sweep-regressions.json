@@ -1,0 +1,65 @@
+{
+  "cases": [
+    {
+      "budget": {
+        "cost": 200000,
+        "memory": 4194304,
+        "stack": 65536
+      },
+      "case": {
+        "bsr": 0,
+        "family": "cross",
+        "flags": 17,
+        "index": 406,
+        "maxlen": 4,
+        "newline": 0,
+        "pattern": "28617c62297b322c7d",
+        "seed": 20260803,
+        "trials": [
+          {
+            "matchFlags": 0,
+            "start": 0,
+            "subject": "61626162"
+          },
+          {
+            "matchFlags": 0,
+            "start": 0,
+            "subject": ""
+          }
+        ]
+      },
+      "edges": 6,
+      "name": "sweep-20260803-406-context",
+      "note": "the memory accessor and the context reservation parted company on a bound with growth: creation summed the arrays its own claims size while worstCaseMemory evaluated the polynomial, which carries its constants at the larger base. Creation now reserves exactly what re_mem answers"
+    },
+    {
+      "budget": {
+        "cost": 200000,
+        "memory": 4194304,
+        "stack": 65536
+      },
+      "case": {
+        "bsr": 0,
+        "family": "cross",
+        "flags": 32,
+        "index": 413,
+        "maxlen": 4,
+        "newline": 1,
+        "pattern": "28617c292a3f",
+        "seed": 20260803,
+        "trials": [
+          {
+            "matchFlags": 0,
+            "start": 0,
+            "subject": "61616161"
+          }
+        ]
+      },
+      "edges": 6,
+      "name": "sweep-20260803-413-context",
+      "note": "the memory accessor and the context reservation parted company on a bound with growth: creation summed the arrays its own claims size while worstCaseMemory evaluated the polynomial, which carries its constants at the larger base. Creation now reserves exactly what re_mem answers, and the ballast makes up the difference"
+    }
+  ],
+  "note": "Cases the differential sweep found and a reducer shrank, kept because a generated population is rebuilt from a seed and would not find them again once the seed moved on. What each one guards is an invariant no semantic corpus checks \u2014 a certified bound, a limit edge, a preallocated context, the two matchers agreeing, the analyzer and the checker agreeing \u2014 so they are replayed through the whole sweep battery rather than compared to an expected answer. Their answers live in the regressions section of conformance/sweep.json, which every implementation replays.",
+  "schema": 1
+}

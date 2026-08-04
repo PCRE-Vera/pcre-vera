@@ -26,8 +26,10 @@ same for the resource bounds.
 ## Where the project is
 
 M0 (scaffolding), M1 (the pcre2 oracle), M2 (the TIR core), M3 (the wave 1
-engine) and M4 (the Go and JavaScript backends) are done. M5, the Pike VM and
-the resource analyzer, has started; the Lean proofs follow from M6 on.
+engine), M4 (the Go and JavaScript backends) and M5 (the Pike VM, the resource
+analyzer, the analysis accessors and the preallocated context) are done. The
+wave 1 artifact is frozen at the hash `THEOREMS.md` records, and that is what
+the Lean proofs of M6 and M7 target.
 
 Four things work today, and everything else leans on them.
 
@@ -108,8 +110,16 @@ computes what those limits would have to be, which is the analysis below, and
 the accessors on the compiled pattern report it before anything runs.
 
 `oracle/corpus/wave1.json` is 264 hand-written cases that our engine, the
-pinned pcre2, and the expectation all have to agree on. A generated sweep in
-`tmp/` puts far more than that to both engines at once.
+pinned pcre2, and the expectation all have to agree on. Beside it,
+`pcrevera.sweep` generates cases nobody wrote: a case is a function of a seed
+and an index, so a campaign is a command rather than a directory of files, and
+a failure is a line of arguments rather than a pattern somebody has to keep.
+`make
+sweep` runs the whole thing — patterns from a grammar aimed at nested
+quantifiers and empty-matching groups, a hostile-syntax population beside it,
+subjects built from the bytes each pattern mentions — and every case is asked
+three independent questions: what pcre2 says, what the other matcher says, and
+whether the run fit the bound the analysis certified.
 
 The fourth is the pair of backends. `make generate` writes
 `gen/engine.tir.json` — the canonical artifact, whose SHA-256 is the identity
@@ -140,10 +150,12 @@ uses two — and overflows a named constant, which Go folds at compile time and
 would refuse rather than wrap.
 
 `conformance/corpus.json` is the wave 1 corpus restated in a form any language
-can read, and `conformance/certificates.json` does the same for the analysis
-below. All three files run against the Python interpreter, the generated Go,
-and the generated JavaScript, and all three languages have to give the same
-answers.
+can read, `conformance/certificates.json` does the same for the analysis below,
+and `conformance/sweep.json` is a committed slice of the generated sweep, with
+the ovector, the certified bounds and the observed cost, stack and memory of
+every trial written down. All four files run against the Python interpreter,
+the generated Go, and the generated JavaScript, and all three languages have to
+give the same answers.
 
 Compilation now fixes each pattern's execution path: the lockstep Pike VM
 when the pattern is eligible — every repetition a pure star whose body has to
@@ -159,7 +171,7 @@ in JavaScript, each proven by that runtime's own instrumentation.
 The match configuration argument is in its final shape too, though only the
 default value exists until M9 activates memoization.
 
-M5 has started with the resource analysis. DESIGN.md section 5 does not have
+The heart of M5 is the resource analysis. DESIGN.md section 5 does not have
 one analyzer computing numbers everything then trusts; it has an analyzer that
 searches for a bound certificate and a deliberately small checker that decides
 whether to believe one.
@@ -287,6 +299,7 @@ make setup          # the Python environment, through uv
 make oracle-verify  # build the pinned pcre2 and check it against the pin
 make test           # the Python tests, seed corpus included
 make generate       # rewrite the artifact, both backends, and the corpora
+make sweep          # the full differential sweep against pcre2
 make check          # all of the above, plus lake build, go test, node --test
 ```
 
@@ -311,6 +324,7 @@ own has no dependencies at all.
 | BOUNDS.md         | the resource bounds, rule by rule                    |
 | LOG.md            | what was asked and what was done, step by step       |
 | MISTAKES.md       | what earlier drafts got wrong, kept as a trap list   |
+| THEOREMS.md       | the frozen artifact and the M6 theorem inventory     |
 | api-faq.md        | APIs that did not behave the way we first assumed    |
 | src/pcrevera/     | the generator and all its tooling                    |
 | oracle/           | the pcre2 pin, the C shim, the seed corpus           |

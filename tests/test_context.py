@@ -16,11 +16,11 @@ import pytest
 from pcrevera.engine import spec
 from pcrevera.engine.certificate_corpus import compiled, contexts, load_contexts
 from pcrevera.engine.driver import (
+    WEIGHED,
     BadInput,
     Engine,
     Limits,
     Match,
-    MatchContext,
     NoMatch,
     ResourceExceeded,
 )
@@ -84,43 +84,19 @@ def test_one_context_answers_its_calls_in_order(entry):
             assert isinstance(got, BadInput), where
 
 
-# What one element of each array weighs, from BOUNDS.md section 3: the IR
-# sizes the memory bound is stated in, restated here so a context whose
-# reservation drifted from the bound cannot agree with this sum.
-WEIGHED = (
-    ("regs", spec.REG_SIZE),
-    ("bt", spec.BT_SIZE),
-    ("trail", spec.UNDO_SIZE),
-    ("clist", spec.TH_SIZE),
-    ("nlist", spec.TH_SIZE),
-    ("stk", spec.TH_SIZE),
-    ("seen", 1),
-    ("rc", spec.REG_SIZE),
-    ("free", spec.REG_SIZE),
-    ("pool", spec.REG_SIZE),
-    ("slack", 1),
-)
-
-
 def _arrays(value: StructValue) -> int:
-    """The bytes a context struct's arrays hold, weighed at the IR sizes."""
+    """The bytes a context struct's arrays hold, weighed at the IR sizes.
+
+    The weights are the driver's, since the sum they are for is the contract
+    rather than this test's opinion of it; what is here is the half of it that
+    a context built without a wrapper has, for the recreation test below.
+    """
     total = 0
     for name, esize in WEIGHED:
         array = value.fields[name]
         assert isinstance(array, Seq)
         total += array.cap * esize
     return total
-
-
-def _resident(held: MatchContext) -> int:
-    """Every byte the context reserved, counted off the stores themselves:
-    the arrays in the cell, the ovector the run cores fill, and the view a
-    match answers from — all persistent, so nothing here is assumed."""
-    value = held.cell.value
-    assert isinstance(value, StructValue)
-    slots = held.ovector.value
-    assert isinstance(slots, Seq)
-    return _arrays(value) + (slots.cap + len(held.view)) * spec.REG_SIZE
 
 
 @pytest.mark.parametrize(
@@ -142,7 +118,7 @@ def test_the_reservation_is_the_memory_bound_made_physical(pattern, maxlen):
     assert status == spec.OK and held is not None
     answered = ENGINE.worst_case(built, "mem", maxlen)
     assert answered == (spec.OK, held.memory)
-    assert _resident(held) == held.memory
+    assert held.resident == held.memory
 
 
 def test_recreating_over_a_larger_context_lets_its_arrays_go():
@@ -180,12 +156,12 @@ def test_capacities_hold_still_across_the_context_lifetime():
     built = compiled(b"a{0,2}b*")
     status, held = ENGINE.create_context(built, max_subject_len=32)
     assert status == spec.OK and held is not None
-    before = _resident(held)
+    before = held.resident
     for subject in (b"aab", b"b" * 32, b"", b"x" * 33, b"aabbbb"):
         ENGINE.context_match(held, subject)
     ENGINE.context_match(held, b"aab", cost_limit=1)
     ENGINE.context_match(held, b"aab", stack_limit=0)
-    assert _resident(held) == before
+    assert held.resident == before
 
 
 def test_a_context_call_reports_the_reservation_as_its_memory():

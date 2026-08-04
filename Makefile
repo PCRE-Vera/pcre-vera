@@ -6,7 +6,7 @@ UV ?= uv
 .NOTPARALLEL:
 
 .PHONY: help setup test oracle oracle-verify corpus generate generate-verify \
-        lean go js js-lint check clean distclean
+        sweep lean go js js-lint check clean distclean
 
 help:
 	@echo "setup            install the Python environment"
@@ -16,6 +16,7 @@ help:
 	@echo "corpus           run the seed corpus against the oracle"
 	@echo "generate         write the artifact, both backends, and the corpora"
 	@echo "generate-verify  fail if any committed generated file has drifted"
+	@echo "sweep            run the full differential sweep against pcre2"
 	@echo "lean             lake build"
 	@echo "go               go vet and go test on the generated Go"
 	@echo "js               node --test on the generated JavaScript"
@@ -44,6 +45,15 @@ generate: setup
 
 generate-verify: setup
 	$(UV) run python -m pcrevera.backends verify
+
+# The campaign of DESIGN.md section 8, which is minutes rather than seconds and
+# so is not part of `check`: the committed shard under conformance/ is what
+# runs on every commit. SWEEP holds whatever a run wants to change — a seed, a
+# population size, an output directory.
+SWEEP ?= --jobs 8
+
+sweep: setup
+	$(UV) run python -m pcrevera.sweep run $(SWEEP)
 
 lean:
 	cd lean && lake build

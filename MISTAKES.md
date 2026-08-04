@@ -798,3 +798,118 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   resident-byte equality — invisible through the wrappers, which always
   hand in a fresh destination, and exactly the kind of state a generated
   entry point that accepts any well-typed inout has to reset itself.
+- Computed the context reservation a second time instead of asking the
+  accessor for it, and never noticed the two numbers part company: creation
+  evaluated the certificate's stack and trail claims at the declared length
+  and summed real capacities, while `worstCaseMemory` evaluated the memory
+  polynomial, and a polynomial with growth carries its constant terms at the
+  larger base. On `(a|b){2,}` at a declared maximum of four the accessor said
+  77696 bytes and the context held 74456 — safe, since the arrays covered
+  every byte a call could touch, but DESIGN.md section 2.4 promises the two
+  are the same number and the whole point of that promise is that a caller
+  can plan creation from the accessors. Two computations of one quantity
+  agree only until an approximation is introduced into one of them; creation
+  now calls `re_mem` and the ballast makes up the difference. The generated
+  sweep found it on the first population it was pointed at, on a pattern
+  nobody would have hand-written into the corpus, which is the argument for
+  the sweep in one sentence.
+- Ran the limit edges of DESIGN.md section 8 on the selected matcher only,
+  on a page that says "on both matchers", and did not notice because the
+  cross-matcher check beside it does run both — for semantics. Two checks
+  over the same pair of matchers, one of which quietly covers half of what
+  it says, is what a review is for; the fix was to make the runner take
+  the matcher as an argument so the two askings cannot drift again.
+- Recorded the backtracking bound as a "priced" boolean rather than as the
+  numbers, so the cross-matcher record pinned only whether the bound was
+  sufficient, not what it was. The public accessors answer for the
+  selected path, so nothing else in the sweep would have caught a
+  backtracking analyzer that drifted inside the limits both the old and
+  the new bound allow. A recorded flag derived from a number is worth
+  less than the number.
+- Wrote that the population's first forty-five cases cross every option
+  family with every convention when the product is sixty-six, and wrote
+  the test over a population of five hundred, which passed without ever
+  looking at the prefix the sentence was about. A test whose input is
+  bigger than the claim does not test the claim.
+- Let `make sweep` exit zero on a run whose completion gate was not
+  cleared. An evidence gate that only prints is a gate nobody has to pass.
+- Named a promoted corpus case after the seed and index alone, when a case
+  can fail in more than one way and a failure document can hold two records
+  for it. The corpus loader refuses a duplicate name, so the promotion
+  would have reported success and left the file unloadable. The name now
+  carries the disagreement class, and promotion refuses a name the corpus
+  already has before writing anything rather than after.
+- Promoted every class of sweep failure into the wave 1 corpus, which only
+  asks what an answer is. A bound violation, a limit edge, a context or a
+  cross-matcher disagreement filed there is a case that compiles and matches
+  correctly and says nothing at all about the invariant it was found by —
+  a regression test that guards nothing is worse than none, because it
+  reports the bug as covered. Promotion dispatches by class now, and the
+  invariant cases are replayed through the whole battery instead.
+- Let the reducer keep a subject on a compile disagreement, because delta
+  debugging stops at one element and nothing tried the empty list. The
+  promoted case then became a match case for a compile bug. When a
+  dimension's zero is meaningful, the shrink has to offer it explicitly.
+- Dropped declined cases from the sweep record, reasoning that pcre2 has no
+  opinion about them. It does not, and the other two implementations of our
+  own engine still have to refuse the same pattern with the same code at the
+  same offset — thirty-one cases of a campaign that never reached Go or
+  JavaScript, in a harness whose whole claim is four implementations per
+  case. "The oracle cannot answer this" is not "nobody can".
+- Wrote that a case is a function of its seed and its index when the subject
+  count and the structured-population size are part of it too — which the
+  replay command had always carried, so the code was right and four
+  documents were wrong.
+- Drew the population from `random`, whose seeding is stable but whose
+  shuffle and range algorithms are CPython's to change, and then wrote the
+  resulting manifest hash into a freeze record. A number that names an
+  artifact forever cannot be computed by something that only promises to
+  behave the same today.
+- Wrote a rejection rule for the owned generator that counted its tail over
+  the largest value rather than over the sample space, making residue zero
+  one draw in 2^64 more likely than the others while the docstring said
+  unbiased. The bias is unobservable and the wrong claim is not: an
+  off-by-one that only an equation can see needs a test that asks the
+  equation, not a histogram.
+- Made the sweep's regression section mandatory and non-empty in both
+  generated runners, so a repository that had not yet found an invariant
+  failure could not replay its own shard. A facility has to work on the day
+  it is added, with nothing in it.
+- Promoted an invariant regression on the strength of a compile-and-match
+  comparison with pcre2, which is exactly the check a bound violation, a
+  limit edge or a context reservation survives. A promotion has to run the
+  battery the case was found by, not the one the corpus it lands in
+  happens to use — and running it also lets a case whose right answer is a
+  decline be promoted, since the oracle policy lives in the battery.
+- Kept the sweep's budget out of the failure record, so a reducer shrank
+  under the default limits whatever the run had used. A ResourceExceeded is
+  a decline under one budget and a finding under another, so that is
+  shrinking towards a different failure than the one that was found.
+- Recorded the kept regressions under the default budget while inserting
+  them into a result document whose runners apply that document's budget.
+  Two numbers for the same run, and only one of them written down.
+- Asserted that a context call reports the reservation as its memory, and
+  that it answers what the plain call answered, without excluding the call
+  the context refuses: a subject past the declared maximum never begins, so
+  it reports nothing and owes a BadInput rather than an agreement. No
+  generated case can have one — the declared maximum is the longest subject
+  — which is why only a hand-written regression found it.
+- Let the generated runners read the decline contract off the record: a
+  declined case with no offset was replayed as a case that never had one,
+  so deleting the offset of an unsupported-construct record passed. Which
+  refusals carry an offset is a contract, and a runner that takes it from
+  the file it is checking has stopped checking that part of the file.
+- Stored a promoted regression without the budget and edge count its
+  failure was found under, then reran it under whichever document it was
+  riding in. A regression found only under a custom limit is a regression
+  only under that limit; the conditions are part of the case, not of
+  whoever replays it.
+- Decoded the sweep's regression section into a Go slice, which cannot tell
+  a key that was absent from a list that was empty, so deleting the section
+  from a document made the runner replay nothing and say nothing. The
+  contract was "present but possibly empty" and half of it was
+  unrepresentable in the type chosen for it; a pointer says both.
+- Called the cross-backend figure a count of recorded numbers in three
+  places after making it count every leaf, which includes the name of a
+  compile outcome and the flag that marks an edged trial. A count is
+  described by what it counts.

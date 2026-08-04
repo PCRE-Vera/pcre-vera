@@ -16,6 +16,7 @@ from ..engine import certificate_corpus
 from ..engine.program import program
 from ..oracle import conformance
 from ..paths import GEN_DIR
+from ..sweep import shard
 from . import go, js, lowering
 
 GO_PATH = GEN_DIR / "go" / "internal" / "engine" / "engine.go"
@@ -75,6 +76,7 @@ def generate() -> tuple[str, list[Output]]:
         Output(conformance.PATH, conformance.corpus_text()),
         Output(lowering.PATH, lowering.corpus_text()),
         Output(certificate_corpus.PATH, certificate_corpus.corpus_text()),
+        Output(shard.PATH, shard.corpus_text()),
     ]
 
 

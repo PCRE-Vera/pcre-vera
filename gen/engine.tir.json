@@ -21694,11 +21694,55 @@
           }
         },
         {
+          "let": {
+            "init": null,
+            "name": "answered",
+            "type": {
+              "struct": "Answer"
+            }
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "var": "re"
+                }
+              },
+              {
+                "in": {
+                  "var": "mcfg"
+                }
+              },
+              {
+                "in": {
+                  "cast": {
+                    "arg": {
+                      "var": "maxlen"
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            ],
+            "dest": {
+              "var": "answered"
+            },
+            "fn": "re_mem"
+          }
+        },
+        {
           "if": {
             "cond": {
               "cmp": {
                 "left": {
-                  "var": "mcfg"
+                  "field": {
+                    "base": {
+                      "var": "answered"
+                    },
+                    "name": "status"
+                  }
                 },
                 "op": "ne",
                 "right": {
@@ -21711,7 +21755,12 @@
               {
                 "return": {
                   "value": {
-                    "u32": 3
+                    "field": {
+                      "base": {
+                        "var": "answered"
+                      },
+                      "name": "status"
+                    }
                   }
                 }
               }
@@ -21719,28 +21768,17 @@
           }
         },
         {
-          "if": {
-            "cond": {
-              "cmp": {
-                "left": {
-                  "var": "maxlen"
+          "let": {
+            "init": {
+              "field": {
+                "base": {
+                  "var": "answered"
                 },
-                "op": "gt",
-                "right": {
-                  "u32": 2147483647
-                }
+                "name": "value"
               }
             },
-            "else": [],
-            "then": [
-              {
-                "return": {
-                  "value": {
-                    "u32": 3
-                  }
-                }
-              }
-            ]
+            "name": "resident",
+            "type": "counter"
           }
         },
         {
@@ -22708,12 +22746,12 @@
             "args": [
               {
                 "in": {
-                  "var": "ballast"
+                  "var": "tmp12"
                 }
               },
               {
                 "in": {
-                  "counter": 2
+                  "var": "ballast"
                 }
               },
               {
@@ -22725,47 +22763,15 @@
             "dest": {
               "var": "tmp13"
             },
-            "fn": "sat_mul"
-          }
-        },
-        {
-          "let": {
-            "init": null,
-            "name": "tmp14",
-            "type": "counter"
-          }
-        },
-        {
-          "call": {
-            "args": [
-              {
-                "in": {
-                  "var": "tmp12"
-                }
-              },
-              {
-                "in": {
-                  "var": "tmp13"
-                }
-              },
-              {
-                "inout": {
-                  "var": "over"
-                }
-              }
-            ],
-            "dest": {
-              "var": "tmp14"
-            },
             "fn": "sat_add"
           }
         },
         {
           "let": {
             "init": {
-              "var": "tmp14"
+              "var": "tmp13"
             },
-            "name": "tmp15",
+            "name": "tmp14",
             "type": "counter"
           }
         },
@@ -22791,11 +22797,11 @@
             "cond": {
               "cmp": {
                 "left": {
-                  "var": "tmp15"
+                  "var": "tmp14"
                 },
                 "op": "gt",
                 "right": {
-                  "counter": 2147483647
+                  "var": "resident"
                 }
               }
             },
@@ -22816,7 +22822,7 @@
             "cond": {
               "cmp": {
                 "left": {
-                  "var": "tmp15"
+                  "var": "resident"
                 },
                 "op": "gt",
                 "right": {
@@ -22841,7 +22847,7 @@
             "cond": {
               "cmp": {
                 "left": {
-                  "var": "tmp15"
+                  "var": "resident"
                 },
                 "op": "gt",
                 "right": {
@@ -23075,7 +23081,15 @@
             "cap": {
               "cast": {
                 "arg": {
-                  "var": "ballast"
+                  "bin": {
+                    "left": {
+                      "var": "resident"
+                    },
+                    "op": "sub",
+                    "right": {
+                      "var": "tmp14"
+                    }
+                  }
                 },
                 "type": "u32"
               }
@@ -23161,7 +23175,7 @@
               }
             },
             "value": {
-              "var": "tmp15"
+              "var": "resident"
             }
           }
         },
