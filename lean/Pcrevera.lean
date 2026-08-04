@@ -12,7 +12,6 @@ import Pcrevera.Ref.Cert
 import Pcrevera.Corpus.Decode
 import Pcrevera.Corpus.Run
 import Pcrevera.Proofs.Meter
-import Pcrevera.Proofs.RefineProto
 import Pcrevera.Proofs.Refine
 import Pcrevera.Proofs.CtxReserve
 import Pcrevera.Proofs.BtTermination
@@ -23,3 +22,12 @@ import Pcrevera.Proofs.Monotone
 import Pcrevera.Proofs.BadInput
 import Pcrevera.Proofs.PolySound
 import Pcrevera.Proofs.CrFirst
+import Pcrevera.Proofs.ValLength
+import Pcrevera.Proofs.Agreement
+import Pcrevera.Proofs.CtxSufficient
+import Pcrevera.Proofs.ExecRefine
+import Pcrevera.Proofs.PikeBounds
+import Pcrevera.Proofs.BtBounds
+import Pcrevera.Proofs.ExecBacktrack
+import Pcrevera.Proofs.WfDecide
+import Pcrevera.Proofs.PikeRefine

@@ -94,7 +94,8 @@ def main (args : List String) : IO UInt32 := do
     IO.eprintln f
   if failures.isEmpty then
     IO.println s!"corpuscheck: {replayed} cases replayed, {skipped} skipped \
-      (compile refusals stay with the parser), 0 disagreements"
+      (compile refusals stay with the parser), 0 disagreements, every \
+      replayed tree well formed for the refinement theorems"
     return 0
   else
     IO.eprintln s!"corpuscheck: {failures.length} disagreements"

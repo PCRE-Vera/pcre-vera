@@ -115,3 +115,118 @@ In a `cases a <;> simp only [f] at h <;> try cases h` pipeline the
 surviving hypotheses `h : some A = some x` are *eaten* by `cases h` —
 it unifies `x := A` and removes `h`. A following `subst h` then fails
 with "unknown identifier". Either drop the subst or don't `cases h`.
+
+## `List.mem_of_mem_filter` is not there
+
+Batteries at this toolchain has `List.mem_filter : a ∈ l.filter p ↔ a ∈ l
+∧ p a = true` and nothing shorter, so a membership out of a filtered list
+reads `(List.mem_filter.mp h).1`.
+
+## Round-tripping a `Nat` through `UInt32`
+
+`(n.toUInt32).toNat = n` under `n < 2 ^ 32` is
+`simp [Nat.toUInt32, Nat.mod_eq_of_lt h]` — naming `UInt32.toNat_ofNat`
+as well is flagged as an unused argument, the unfolding of `Nat.toUInt32`
+already exposes the modulus. `(n + 1).toUInt32 = n.toUInt32 + 1` is
+`simp [Nat.toUInt32]`, unconditionally. Injectivity below the wrap comes
+from `congrArg UInt32.toNat` plus the same two rewrites.
+
+## `rw` with the equations of a well-founded definition leaves side goals
+
+For a `def` whose last arm is a catch-all, `rw [f]` on a specific
+constructor produces the body *and* one goal per earlier pattern saying
+the scrutinee is not that pattern. `simp [f]` closes them; `rw [f] <;>
+simp` also works when the body still needs work.
+
+## `Array.all_eq_true` hands you an index, not an element
+
+`as.all p = true ↔ ∀ (i : Nat) (_ : i < as.size), p as[i] = true`. The
+`List` twin quantifies over members, so the two are used differently:
+`List.all_eq_true.mp h x hx` against `Array.all_eq_true.mp h i hi`. Passing
+an anonymous constructor `⟨i, hi⟩` fails with "the expected type `Nat` has
+more than one constructor".
+
+## `by_contra` is a Mathlib tactic
+
+The proofs here run on Batteries only. `rcases Nat.lt_or_ge a b with h | h`
+does the job whenever the contradiction is about an order, and
+`Classical.byContradiction` is there for the rest.
+
+## `obtain ⟨…⟩ := f x ?_` puts the hole where you did not expect it
+
+A synthetic hole inside the term of an `obtain` becomes a goal whose
+position relative to the main goal is not the reading order of the script,
+so a following `·` bullet pair reports "no goals to be solved". Proving the
+side condition as a named `have` before the `obtain` is both shorter and
+stable.
+
+## A `∀` over `getElem!` indices needs the index type spelled
+
+`∀ pc, (Array.replicate n false)[pc]! = false` leaves the index type a
+metavariable and `GetElem?` resolution gets stuck on it. Write
+`∀ pc : Nat, …`.
+
+## `List.count_cons` compares the cons head against the counted element
+
+`count a (b :: l) = count a l + if b == a then 1 else 0` — the head is on
+the left of the `==`. A hypothesis in the shape `x ≠ h` is therefore the
+wrong way round for `simp` to discharge the `if` when counting `x` in
+`h :: rest`, and the simp argument is silently reported as unused. Two
+one-line wrappers (`count a (a :: l) = count a l + 1`, and the `≠` case
+with the flip built in) keep the direction out of every later proof.
+
+## `simp [eq_comm]` loops
+
+Reaching for `eq_comm` to line up an `if x = h` against an `if h = x`
+rewrites forever and ends in "maximum recursion depth". Proving the
+singleton count as its own lemma, by `by_cases` and `List.count_eq_zero`,
+is both shorter and terminating.
+
+## Batteries has no `List.Nodup.length_le_of_subset`
+
+At this toolchain neither core nor Batteries has the "a duplicate-free list
+is no longer than any list it is a subset of" lemma. Counting with
+multiplicity instead — `∑_{k < n} l.count k ≤ l.length`, by induction on
+`l` — needs only `List.count_cons` and gives the same bound without any
+`Nodup` bookkeeping.
+
+## `Array.getElem!` after `Array.set!` and `Array.push`
+
+Core has `Array.getElem!_set!_self` and `Array.getElem!_set!_ne` (in
+`Init.Data.Array.Lemmas`); the `ne` one wants the *set* index first, so the
+side condition reads `i ≠ j` where `j` is the one being read. There is no
+matching pair for `push`: `getElem!_pos` plus `Array.getElem_push_lt` is the
+way, and `simp` does not find `getElem_push_lt` on its own.
+
+## `Array.size_push` takes the pushed value explicitly
+
+`Array.size_push : ∀ (v : α), (xs.push v).size = xs.size + 1`, so
+`exact Array.size_push` against a fully applied goal is a type mismatch.
+`by simp` closes it; `Array.size_set!` takes all three explicitly and is
+fine as a rewrite.
+
+## `exact ih hok` can pin an induction hypothesis' implicit arguments early
+
+In `∀ {k st st'}, f k st = .ok st' → P st st'`, closing the step case with
+`exact ih hok` elaborates the expected type first, which fixes `ih`'s
+implicit state to the outer one before `hok` is even looked at. Destructing
+the result — `obtain ⟨h1, h2⟩ := ih hok` and then rebuilding it — lets the
+state come from `hok`, where it belongs.
+
+## `rw [f.eq_def]` does not iota-reduce the match it exposes
+
+Rewriting with a definition whose body is a `match` on a constructor
+leaves the match standing; `rw`'s closing `rfl` sometimes lands and
+sometimes does not, so a following `rw` at the exposed subterm fails to
+find its pattern. The reliable shape is a one-line wrapper per arm —
+`search_cat_eq`, `search_grp_eq` and friends, each proved by
+`rw [Spec.search.eq_def]` and, where the arm has a guard of its own,
+`simp only []` to zeta-reduce before `rw [if_pos …]`.
+
+## `first | tac₁ | tac₂` does not catch errors inside a nested `by`
+
+`exact absurd h (by simp)` in an alternative whose `by simp` fails logs an
+error rather than failing the alternative, so `first` never moves on. Give
+the alternative a plain term — a tiny lemma such as `absurd_error` above a
+`first` chain — so that a branch it does not fit fails to elaborate
+instead of failing to close.

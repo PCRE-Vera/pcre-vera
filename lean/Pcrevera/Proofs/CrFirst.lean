@@ -23,7 +23,7 @@ the other maintains the processed set — marked, off the worklist, no
 witness, successors all marked — and closes it under ε-steps.
 
 The compiled side is then pinned by `Frag`, a relation reading each
-construct's laid-down shape off `compileNode` the way RefineProto's
+construct's laid-down shape off `compileNode` the way the refinement's
 `FragAt` does, extended to the whole wave 1 AST, the class table and
 the repetition table included. Two inductions over a derivation finish
 the job: `Frag.closed` builds the fragment's ε-closure and reads
@@ -853,7 +853,7 @@ theorem crWalk_rep_many {rhi : Option Nat} (h0 : rhi ≠ some 0)
 `Frag code classes reps r0 a lo hi` pins what `compileNode` laid down for
 `a` on `[lo, hi)`: cells where the walk needs them, the class byte the
 CR test reads, and the repetition record the two rep opcodes consult.
-The shape mirrors RefineProto's `FragAt`, extended to the whole wave 1
+The shape mirrors the refinement's `FragAt`, extended to the whole wave 1
 AST; constructs that compile to nothing are all carried by `empty`,
 which only remembers that `crWalk` calls them transparent. -/
 
@@ -1687,7 +1687,7 @@ it opened — so a finished fragment survives the rest of compilation.
 the repetition watermark the construct started from, and
 `compileNode_facts` proves each construct lays down its `Frag` and
 honors the contract. The alternation chain gets the strengthened
-statement its late jump patching needs, exactly like RefineProto's
+statement its late jump patching needs, exactly like the refinement's
 `compileAlt_facts`. -/
 
 private theorem getBang_push_lt {α : Type _} [Inhabited α] (a : Array α)

@@ -988,3 +988,125 @@ than in code:
 - Expected `rw [getElem!_neg ...]` to close `default.op = Op.chr` by its
   trailing rfl. The rewrite's rfl check does not unfold the derived
   `Inhabited` instance; an explicit `rfl` afterwards does.
+
+## Lean, S-8 backtracking round
+
+- Assumed `repCount (.cat []) = 0` was `rfl`. Definitions that use
+  `List.attach` for termination compile by well-founded recursion, so
+  nothing unfolds definitionally; `rw [repCount]` works, and on the
+  catch-all arm it leaves one "no earlier pattern matches" goal per
+  skipped pattern, which `simp` discharges.
+- Spelled the compiled high bound as an inline `match hi with | some h => h
+  | none => none32` in the `FragAt` constructor and again in a `have`. The
+  two elaborate to different matchers — the second generalizes every
+  context hypothesis that mentions `hi` — so the constructor's field no
+  longer typechecked against it. Naming the function (`hiCode`) ended the
+  problem.
+- Expected `simp` to close `Resumes … ↔ Resumes …` once both sides
+  normalized to the same printed term. What was left was the `Decidable`
+  instance inside an `ite` whose condition simp had rewritten
+  (`decide (pos < s.size) = true` against `pos < s.size`), and instances do
+  not print. Reading the enumeration's answer through a defeq type
+  ascription before the case split avoids the mismatch entirely.
+- Ran `split at h` on an `if` sitting inside `match some st2 with …`. The
+  branches mention the match-bound variable, so the rewrite cannot abstract
+  them and the pattern is reported as not found; `simp only [] at h`
+  iota-reduces the match first, and then the `if` is rewritable.
+- Fed `omega` a hypothesis about `(mctx re s mo).s.size` while the goal
+  spoke of `s.size`. They are definitionally equal and omega treats each as
+  its own atom; a one-line `have` at the wanted type is the fix.
+- Reached for `getBang_set_eq` on a goal spelled with `Array.set!`. The
+  helpers are stated over `Array.setIfInBounds`, so
+  `rw [Array.set!_eq_setIfInBounds]` has to come first.
+
+## The Lean model's out-of-range read (M6)
+
+While proving the per-attempt bound, the backtracking-bounds work found that
+`cert_shape` never asks whether a program contains an `Accept`. A straight-line
+region of tests with none walks off the end of its own code, and the two sides
+of that walk differ: TIR's checked indexing traps (TIR-SPEC.md T-01), while the
+Lean reference reads `getElem!`'s default instruction and charges for it. The
+per-attempt bound is false for such a program in the model.
+
+No pattern can produce one — `generate` always emits the trailing `Accept`, so
+every compiled program has one — and the bound theorems carry the existence of
+an `Accept` as an explicit hypothesis rather than assume it away. What the
+episode is worth recording for is the shape of the mistake it nearly caused: a
+total-by-default read is not the same failure as a trap, and a model that
+answers where the engine stops will happily prove something about a program
+neither of them can run.
+
+## Reading the Pike eligibility flags back (M6)
+
+Four things went wrong on the first pass at `PikeRefine.lean`, all of them
+about *where* a fact lives rather than whether it is true.
+
+- Wrote `PikeShape` so that a `{0,0}` repetition constrained its body. The
+  compiler emits nothing at all for that form, so the fragment relation has
+  no body derivation to induct on and the clause is unprovable — and it is
+  also unwanted, since the specification never looks at that body either.
+  The predicate now says nothing about it.
+- Asked `pikeOk_rep` for a bounded high and then tried to conclude
+  `hi = none` by `omega` on `RepInfo.hi ⟨…⟩ = none32`. `rw [hinfo]` leaves
+  a projection applied to a literal record, which `omega` treats as an
+  opaque atom; restating it at the wanted type with a `have` fixes it.
+- Split `pikeHollow.go`'s opcode match with `split` and then expected
+  `rfl` to close each branch. The left-hand side reduces, the right-hand
+  side is still a match on the same scrutinee, so the branch equation has
+  to be rewritten in before anything is definitional.
+- Rewrote the run hypothesis guard by guard and then had to undo the
+  rewrites to apply the step lemma. Two small step lemmas — one for a fresh
+  pc, one for a pc already marked — say the whole iteration in one rewrite
+  and the invariant proof reads straight through.
+
+## Lean, PikeBounds round 3
+
+- Assumed the backtracking side's `chargeGrow_doubles` argument would carry
+  to the Pike arrays. It does not: it says the declared maximum is out of
+  reach because no memory limit could pay for an array that large, and
+  `maxThreads * thSize` is 525600 against a ceiling of 2^31 - 1. The Pike
+  no-clamp fact has to come from the arrays' own entry bounds instead.
+- Read `Owned.size_le` as a bound on the pool. It is not one on its own —
+  `rc.size ≤ free.size + live.length` is nearly an identity, since the free
+  list is itself only bounded by the table. The bound is about where the
+  table grows, so the fact belongs on `pikeTake` and not on the invariant.
+- Wrote a record update as `{ st with m := mm, poolCap := cap,` and put the
+  remaining field on the next line at the indentation of `st`. Structure
+  instance fields are parsed at the column of the first one, so the parser
+  stopped at the comma and asked for a `}`. Breaking the line right after
+  `with` is the habit that always works.
+- Wrote `(Charged.idle …).mono (by omega)`. The receiver of a projection is
+  elaborated without the expected type, so the `rfl` proving
+  `st'.reserved = st.reserved` unified `st'` with `st` instead of with the
+  goal's state. `refine Charged.mono (Charged.idle ?_ rfl rfl h) (by omega)`
+  fixes it, and the same reordering fixes a hypothesis order that pins an
+  implicit state from the wrong argument.
+- Used `subst hxh` on `hxh : x = h` where `h` was the theorem's parameter
+  and `x` the freshly introduced index. `subst` eliminated `h`, so every
+  later mention of it was an unknown identifier. `rw [hxh]` keeps both.
+- Gave every growth wrapper the headroom hypotheses of all the arrays it
+  might touch. A park into `nlist` then needed room in the untouched
+  `clist`, and a take off the free list needed the room only the fresh path
+  wants — so the lemma is unusable exactly when the other array is at its
+  bound. Each hypothesis belongs behind the branch test that reaches the
+  growth: `if intoNext then nlist else clist`, `free.size = 0 → …`.
+- Wrote `pikeDrop_owned` so that the handle is in the live list, and forgot
+  that `stepThreads` drops the match sentinel before it has a match. The
+  wrapper's hypothesis makes `none32` impossible, so the one call the VM
+  really makes was the one it could not cover; the sentinel needs a no-op
+  lemma of its own.
+
+## Reading the closure loop against its own step relation (M6)
+
+- Guarded the 24 opcode branches of `pike_add` with
+  `exact absurd hok (by simp)` inside a `first` chain. The nested `by`
+  logs its failure instead of failing the alternative, so every ok-branch
+  reported an unsolved goal. A named lemma applied as a plain term is what
+  makes a `first` chain behave.
+- Stated `epsTargets` for `repLoop`/`repNext` as `[body, after]`
+  regardless of greediness. Harmless for reachability, wrong for the
+  preference order the same list has to carry later; fixed before anything
+  depended on it.
+- Wrote the empty-iteration path out of a `repNext` as a step to the
+  repetition's *body* rather than to its *exit*. The path being built is
+  the one that leaves the loop, not the one that goes round again.

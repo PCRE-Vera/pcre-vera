@@ -1,5 +1,6 @@
 import Pcrevera.Corpus.Decode
 import Pcrevera.Ref.Exec
+import Pcrevera.Proofs.WfDecide
 
 /-!
 # Replaying the corpora through the reference engine (R-10)
@@ -38,6 +39,15 @@ def backtrackRun (re : Re) (s : ByteArray) (start : Nat) (mo : MOpts)
 /-- An ovector as the record spells it: -1 for unset. -/
 def offsets (ov : Array UInt32) : List Int :=
   ov.toList.map fun v => if v == unset32 then -1 else Int.ofNat v.toNat
+
+/-- The well-formedness the refinement theorems quantify over, asked of the
+tree the engine's own parser produced. `Wf` names the shapes a parse never
+emits, and until M10 proves the parser that is a claim to be tested rather
+than assumed — so every replayed case checks it, and a pattern that failed
+would be a finding about the hypothesis rather than about the run. -/
+def wfAgrees (p : Pat) : Option String :=
+  if Refine.wfB p then none
+  else some "the parsed tree is not well formed for the refinement theorems"
 
 /-- One instruction against the engine's, classes compared by meaning. -/
 def instAgrees (mine : Inst) (mineClasses : Array UInt8)
@@ -363,6 +373,8 @@ def runSweepCase (bridge : BridgeCase) (caseJ : Lean.Json) (budget : Limits) :
   let (verdict, cp) := compileFull p
   let re := cp.re
   let mut failures : List String := []
+  if let some why := wfAgrees p then
+    failures := failures ++ [why]
   if let some why := compileAgrees re expected then
     return [s!"compile: {why}"]
   if let some why := ← certsAgree verdict cp expected then
@@ -411,6 +423,8 @@ def runCorpusCase (bridge : BridgeCase) (caseJ : Lean.Json) : D (List String) :=
       hascrlf := expected.hascrlf }
   let (verdict, cp) := compileFull p
   let re := cp.re
+  if let some why := wfAgrees p then
+    return [why]
   if let some why := compileAgrees re expected then
     return [s!"compile: {why}"]
   if let some why := ← certsAgree verdict cp expected then
