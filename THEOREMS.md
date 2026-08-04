@@ -207,8 +207,8 @@ gating rule of DESIGN.md section 6 keeps an unproved feature behind
 The Lean lives in `lean/Pcrevera`: `Spec/` is layer S, `Ref/` is layer R,
 `Corpus/` is the replay of section 3's R-10, and `Proofs/` is everything
 below. `lake build` checks all of it and `make lean` runs the replay after
-it. No statement here uses `sorry`, no definition is `partial`, and every
-theorem named below depends on nothing beyond Lean's own three axioms.
+it. Nothing anywhere uses `sorry` or `partial`, and every theorem named
+below depends on nothing beyond Lean's own three axioms.
 
     +------+------------------------+--------------------------------------+
     | S-1  | proved                 | Spec/Ast.lean                        |

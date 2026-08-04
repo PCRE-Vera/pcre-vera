@@ -1233,3 +1233,96 @@ structure that already travels through every helper.
 - Left `hlt` in `count_stay`'s signature out of symmetry with its neighbour;
   the containment conclusion never uses it, and the unused-variable linter
   said so.
+
+## The per-position account (PikeBounds round eight)
+
+- Planned to price every mark as if it could force a copy-on-write, which
+  would have bounded a position's copies by `C`. The certificate says `S`,
+  the `Save` count, so the measure has to be weighted by the opcode at the
+  pc being marked. Reading the price back off BOUNDS.md before writing the
+  measure would have caught it; reading it off the Lean statement did not,
+  because `(S + 2) * B` looks the same as `(C + 2) * B` until you ask which
+  is which.
+- Assumed `Charged … st out` survives replacing `st` by a state that differs
+  only in a field the reading never looks at. It does not: `Charged` is a
+  structure, so the two are different types and unification compares the
+  states field by field. `Charged.ofState` transports it across a state with
+  the same meter and the same capacities, and is needed exactly once, where
+  the closure pops its worklist before dropping a handle.
+- Gave an arm helper a hypothesis list beginning with `stA.stk.size ≤
+  st.stk.size`, which is provable with `stA := st`. The elaborator obligingly
+  picked `st` and every later argument then failed to typecheck. Putting the
+  `Charged … st stA` hypothesis first pins the state before anything else is
+  read.
+- Wrote a structure instance as `{ st with stk := …, seen := …, m := … }`
+  with the continuation lines indented less than the first field. Structure
+  instance fields are column sensitive: the parser stops at the first token
+  left of the first field and reports `unexpected identifier; expected '}'`
+  at the end of the previous line, which reads as if the field value were at
+  fault. Putting `{ st with` on its own line and the fields under it is the
+  form that always works.
+- Used `simp only [hop]` where the only work being done was reducing a match
+  whose scrutinee `cases hop :` had already replaced by a constructor. The
+  lemma was doing nothing, the unused-simp-arg linter said so, and `dsimp
+  only` is the tactic that means what was meant.
+- Wrote `.mono (by omega)` on a term whose target bound was still a
+  metavariable when the `by` block ran. `refine … ?_` puts the side goal
+  after unification, where the bound is known.
+- Expected `rw` to close `1 + x ≤ 1 + x`. It tries `rfl` for `Eq` and `Iff`
+  only; an order goal needs `omega` or `Nat.le_refl` after it.
+
+## The closure's ordering (PikeRefine, correspondence round)
+
+- Called `epsReach_antisymm` "no closure walk comes back where it started" in
+  three places. Antisymmetry is not that: `EpsReach` is reflexive, so a
+  non-empty walk from a pc back to itself pairs with `refl` and the theorem
+  concludes only `a = a`. The fact the priority argument actually needs is
+  `epsReach_no_cycle` — one step out and no way back — and the ingredients
+  were already there, so the claim was ahead of the proof by one lemma.
+  Caught in review, which is where a statement written as prose first and
+  proved second usually gets caught.
+- Planned the thread-list correspondence around decoding a pool block into
+  the mirror's register file before noticing the two are not the same width:
+  `pike_add` keeps no repetition counters, so a block is `novec` slots where
+  the mirror's file is `novec + 2 * reps.size`. Read as a mirror file a block
+  would answer zero for every counter, and at position zero a `repNext` would
+  take the empty-match exit the closure never takes. The correspondence is
+  `Agree novec`, and `Fit` belongs on the mirror's side.
+
+## A check that was never reached (M6)
+
+The corpus replay cross-checks a bridge skip against the record — the engine
+refused this pattern, the record says so too, and the codes agree — so that a
+bridge which skipped every case cannot replay nothing and report success. The
+check was written inside the per-case runner, and the driver only called that
+runner for cases the bridge had *not* skipped. It was dead from the moment it
+was written, and a tampered bridge passed.
+
+What caught it was running the tamper rather than reading the code. The lesson
+is the ordinary one about guards: a check belongs on the path the thing it
+guards against actually takes, and the way to find out which path that is, is
+to take it.
+
+## S-10 and R-9(b) for a forking program (BtBounds round nine)
+
+- Passed `_` for the state a step lemma is about and let unification pick
+  the enclosing `st` rather than the record the goal was really about. The
+  failure reads as an application type mismatch several arguments later.
+  Where the goal names a record, name it in the call too.
+- Composed two `Steady`s as `Steady.trans ⟨rfl, rfl, rfl, rfl⟩ h`. The
+  anonymous constructor pinned the middle state to `st` before `h` was
+  looked at, so the composition had the wrong middle. Naming the middle
+  state in a `have` first is the fix, and the same trap applies to any
+  transitivity lemma whose middle is implicit.
+- Dropped a `have hpopT := owed_pop T hne` while transcribing the pop
+  bookkeeping from one induction to the next. Nothing complained until an
+  `omega` several arguments away came back with a counterexample about
+  `owed T`; the missing fact is always the one whose atom appears in the
+  counterexample with no relation to anything.
+- Wrote `simp only [regSize] at hcost ⊢` and forgot that the branch
+  hypothesis `split` had just introduced still carried `regSize`
+  unexpanded, so omega saw `(a - b) * regSize` and `4 * (…)` as unrelated
+  atoms. Name the branch hypothesis with `rename_i` and simp it too.
+- Kept copy-pasting `dsimp only;` from the `Within` proof into the budget
+  and steady proofs, where the state was already a variable and there was
+  nothing to reduce. "dsimp made no progress" is an error, not a warning.

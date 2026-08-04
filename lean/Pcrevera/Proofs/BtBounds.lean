@@ -120,12 +120,21 @@ program. `attemptsWithin_forward` joins that to the fork account, and R-6,
 R-7 and R-8 follow for a tree of groups, alternations and optional items —
 BOUNDS.md sections 4.1, 4.2 and 4.3.
 
+S-10 and R-9's second half follow on the same class. `btStep_budget` carries
+the same potential as a precondition — the cost so far, plus what the pricing
+says is still to come, plus what is left of the growth allowance — so every
+pre-charge test the engine makes passes, including the four that only exist
+once a program forks. `btStep_steady` says that a call whose arrays already
+hold the claims never grows either of them, which is R-9(b) in the only
+shape it can have for a forking program.
+
 Section 4.4 is where the code-level pricing genuinely stops. A counted
-repetition's `RepNext` jumps back to its own head, so what is still to come
-from that point depends on the counter and not on the program point alone,
-and `costAt` would not even be well defined. That wants a pricing indexed by
-more than the program point, which is a design step rather than another
-rung, and it is honestly open.
+repetition's `RepNext` jumps back to its own head, so `Flow` would force a
+natural number to be larger than itself, and what is still to come from that
+point depends on the counter and the position rather than on the program
+point alone. The last section of this file writes down what a pricing
+indexed by those would have to look like; it is a design step rather than
+another rung, and it is honestly open.
 
 One thing the checker does not ask about turns out to be load-bearing: that
 the program cannot walk off the end of its own code. `cert_shape` admits a
@@ -156,6 +165,8 @@ open Pcrevera
 
 /-! ## The bound algebra, in the projection form a flag chain leaves behind -/
 
+set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 1000000 in
 set_option maxHeartbeats 1000000 in
 set_option maxHeartbeats 1000000 in
 /-- A clean flag out of `polyAdd` means the flag went in clean: every step
@@ -4651,6 +4662,50 @@ theorem flow_of_cert {re : Re} {cert : Cert}
   · have hpe : pc = re.code.size - 1 := by omega
     exact absurd (hpe ▸ hlast) hacc
 
+/-- What the two tree inductions come to at the root: the code-level pricing
+at the entry point is inside the root region's claim, and the two claims a
+context sizes its arrays from are the certificate's own `stack` and
+`trail`. -/
+theorem cert_prices_flow {re : Re} {cert : Cert}
+    (hcert : certCheck re .backtrack cert = .crOk)
+    (hopt : ∀ j, j < re.regions.size → (re.regions[j]!).kind = .«repeat» →
+      (re.code[(re.regions[j]!).lo]!).op = .split)
+    (hends : ∀ j, j < re.regions.size →
+      ((re.regions[j]!).kind = .alt ∨ (re.regions[j]!).kind = .«repeat») →
+      (re.regions[j]!).hi < re.code.size)
+    (hlast : (re.code[re.code.size - 1]!).op = .accept) (n : Nat) :
+    flowCost re.code unitVisit 0 ≤ (cert.prices[0]!).work.val n ∧
+      flowCost re.code unitRecord 0 ≤ cert.trail.val n ∧
+      flowCost re.code unitPush 0 ≤ cert.stack.val n := by
+  obtain ⟨-, -, hsize, -, hshape, over, hregions⟩ := certCheck_bt_spec hcert
+  obtain ⟨hpos, -, hlo0, hhi0⟩ := certShape_root hshape
+  obtain ⟨hstc, htrc⟩ := certCheck_bt_claims hcert
+  have hok := code_ok_of_cert hcert hopt hends
+  have hfwd : ∀ q, q < re.code.size → Inst.forward re.code q :=
+    fun q hq => ⟨fun hs => ⟨((hok q hq).2.1 hs).1, ((hok q hq).2.1 hs).2.2.1⟩,
+      fun hj => ((hok q hq).2.2 hj).1⟩
+  have hpr := certCheckRegions_all re.regions.size 0 over hregions
+  have hsh := certShapeWalk_all re.regions.size 0 (certShape_walk hshape)
+  obtain ⟨hw, hr, ht⟩ := region_priced (n := n) hfwd
+    (fun i h1 h2 => (certShape_facts hshape i h1 h2).1)
+    (fun i h1 h2 => (certShape_facts hshape i h1 h2).2.2.2)
+    (fun i hi => region_hi_le hshape i i (Nat.le_refl _) hi)
+    (region_lo_le hshape) hopt hsize
+    (fun j hj => hsh j (Nat.zero_le _) (by omega))
+    (fun j hj => hpr j (Nat.zero_le _) (by omega))
+    re.regions.size 0 (by omega) hpos
+  have h0v : flowCost re.code unitVisit re.code.size = 0 :=
+    flowCost_out (Nat.le_refl _)
+  have h0r : flowCost re.code unitRecord re.code.size = 0 :=
+    flowCost_out (Nat.le_refl _)
+  have h0t : flowCost re.code unitPush re.code.size = 0 :=
+    flowCost_out (Nat.le_refl _)
+  rw [hlo0, hhi0, h0v, Nat.mul_zero, Nat.add_zero] at hw
+  rw [hlo0, hhi0, h0r, Nat.mul_zero, Nat.add_zero] at hr
+  rw [hlo0, hhi0, h0t, Nat.mul_zero, Nat.add_zero] at ht
+  rw [htrc, hstc]
+  exact ⟨hw, hr, ht⟩
+
 /-- Section 4 for a tree of groups, alternations and optional items: one
 entry into the program visits at most the root region's claimed `work`,
 records at most its `trail` and never pushes past its `stack`.
@@ -4678,39 +4733,9 @@ theorem attemptsWithin_forward {re : Re} {s : ByteArray} {mo : MOpts}
     (hlim : lim.mem ≤ ceiling) :
     AttemptsWithin re s mo lim start (btSetup re) (cert.stack.val s.size)
       (cert.trail.val s.size) ((cert.prices[0]!).work.val s.size) := by
-  have hsized : 0 < re.code.size := code_size_pos hlast
-  obtain ⟨-, -, hsize, -, hshape, over, hregions⟩ := certCheck_bt_spec hcert
-  obtain ⟨hpos, -, hlo0, hhi0⟩ := certShape_root hshape
-  obtain ⟨hstc, htrc⟩ := certCheck_bt_claims hcert
-  have hok := code_ok_of_cert hcert hopt hends
-  have hfwd : ∀ q, q < re.code.size → Inst.forward re.code q :=
-    fun q hq => ⟨fun hs => ⟨((hok q hq).2.1 hs).1, ((hok q hq).2.1 hs).2.2.1⟩,
-      fun hj => ((hok q hq).2.2 hj).1⟩
-  have hpr := certCheckRegions_all re.regions.size 0 over hregions
-  have hsh := certShapeWalk_all re.regions.size 0 (certShape_walk hshape)
-  obtain ⟨hw, hr, ht⟩ := region_priced (n := s.size) hfwd
-    (fun i h1 h2 => (certShape_facts hshape i h1 h2).1)
-    (fun i h1 h2 => (certShape_facts hshape i h1 h2).2.2.2)
-    (fun i hi => region_hi_le hshape i i (Nat.le_refl _) hi)
-    (region_lo_le hshape) hopt hsize
-    (fun j hj => hsh j (Nat.zero_le _) (by omega))
-    (fun j hj => hpr j (Nat.zero_le _) (by omega))
-    re.regions.size 0 (by omega) hpos
-  have h0v : flowCost re.code unitVisit re.code.size = 0 :=
-    flowCost_out (Nat.le_refl _)
-  have h0r : flowCost re.code unitRecord re.code.size = 0 :=
-    flowCost_out (Nat.le_refl _)
-  have h0t : flowCost re.code unitPush re.code.size = 0 :=
-    flowCost_out (Nat.le_refl _)
-  rw [hlo0, hhi0, h0v, Nat.mul_zero, Nat.add_zero] at hw
-  rw [hlo0, hhi0, h0r, Nat.mul_zero, Nat.add_zero] at hr
-  rw [hlo0, hhi0, h0t, Nat.mul_zero, Nat.add_zero] at ht
-  refine attemptsWithin_of_flow (flow_of_cert hcert hopt hends hlast) hlim
-    hsized hw ?_ ?_
-  · rw [htrc]
-    exact hr
-  · rw [hstc]
-    exact ht
+  obtain ⟨hw, hr, ht⟩ := cert_prices_flow hcert hopt hends hlast s.size
+  exact attemptsWithin_of_flow (flow_of_cert hcert hopt hends hlast) hlim
+    (code_size_pos hlast) hw hr ht
 
 /-- R-6 for a pattern with groups, alternation and optional items, nested as
 deep as it likes. -/
@@ -4811,5 +4836,1054 @@ theorem btRun_mem_le_alt {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
     (hlim : lim.mem ≤ ceiling) :
     (btRun re s start mo lim 0 0).usage.mem ≤ cert.mem.val s.size :=
   btRun_mem_le hcert (attemptsWithin_alt hcert hnorep hends hlast hlim)
+
+/-! ## S-10 for the forward class
+
+Every refusal in the engine is a pre-charge test, and on a program that
+never forks there is one of them — the per-visit unit. Once a program forks
+there are four more: the stack limit at a push, the memory and the cost
+tests inside the growth schedule, and the replay a pop charges before it
+puts the registers back. So the invariant that carries a budget through an
+attempt has to know what each of those is worth, and the pricing already
+does.
+
+What it carries is the fork account's potential read as a precondition
+rather than a postcondition: the cost charged so far, plus what the pricing
+says is still to come, plus what is left of the growth allowance, stays
+inside the caller's cost limit. The growth allowance is section 5's
+`3 * scratch` less what the run has already reserved, which is exactly the
+amount `charge_grow` can still ask for — so the cost test inside the
+schedule passes rather than merely happening not to fail.
+
+The other two tests are simpler. The stack limit passes because the depth
+account already says the run never pushes past the claim and the claim is
+inside the caller's limit. The memory test passes because holding both
+buffers during a copy is at most twice the section 5 scratch, which is what
+the certificate's memory line paid for.
+-/
+
+/-- Every point a pricing covers costs at least the visit it is about to
+make, which is what makes the budget test before that visit pass. -/
+theorem Flow.pos {re : Re} {Ok : Nat → Prop} {W R T : Nat → Nat} {pc : Nat}
+    (h : Flow re Ok W R T) (hok : Ok pc) : 1 ≤ W pc := by
+  rcases h pc hok with ⟨-, hw⟩ | ⟨-, -, -, hw, -, -⟩ | ⟨-, -, hw, -, -⟩ |
+    ⟨-, -, hw, -, -⟩ | ⟨-, -, -, -, hw, -, -⟩
+  all_goals omega
+
+/-- What a run has reserved is inside what section 5 paid for. -/
+theorem reserved_le {st : BtSt} {stack trail : Nat}
+    (hbt : st.btCap ≤ capacityOf stack) (htr : st.trailCap ≤ capacityOf trail) :
+    st.reserved ≤ btScratch stack trail := by
+  simp only [BtSt.reserved, btScratch]
+  exact Nat.add_le_add (Nat.mul_le_mul_right _ hbt) (Nat.mul_le_mul_right _ htr)
+
+/-- A growth step the section 5 numbers paid for is one the caller's limits
+admit. The memory test passes because both buffers together are at most
+twice the claim's capacity; the cost test passes because the schedule
+doubles, so the buffer taken and the buffer copied out of come to less than
+three times what the reservation grows by; and the declared maximum is not
+reached because the memory limit would have been hit first. -/
+theorem chargeGrow_ok {oldcap len esize maxv other base claim : Nat}
+    {m : Meter} {lim : Limits}
+    (hmem : m.mem = base + oldcap * esize + other)
+    (hlen : len < claim) (hroom : oldcap ≤ capacityOf claim)
+    (hmax : capacityOf claim < maxv)
+    (hmemlim : base + 2 * (capacityOf claim * esize) + other ≤ lim.mem)
+    (hcost : m.cost + 3 * (capacityOf claim * esize) ≤
+      lim.cost + 3 * (oldcap * esize)) :
+    ∃ p, chargeGrow oldcap len esize maxv m lim = some p := by
+  rw [chargeGrow_unfold]
+  simp only [growMin, growFactor]
+  have hcap : capacityOf claim = 4 + 2 * claim := by
+    unfold capacityOf
+    rw [if_neg (by omega)]
+    simp only [growMin, growFactor]
+  split
+  · exact ⟨_, rfl⟩
+  rename_i h1
+  have hnc : min maxv (max 4 (oldcap * 2)) ≤ capacityOf claim := by omega
+  have hoe : oldcap * esize ≤ capacityOf claim * esize :=
+    Nat.mul_le_mul_right _ hroom
+  have hne : min maxv (max 4 (oldcap * 2)) * esize ≤ capacityOf claim * esize :=
+    Nat.mul_le_mul_right _ hnc
+  split
+  · exfalso
+    omega
+  split
+  · exfalso
+    omega
+  split
+  · exfalso
+    have hstep : min maxv (max 4 (oldcap * 2)) + 4 * oldcap ≤
+        3 * capacityOf claim := by omega
+    have hmul := Nat.mul_le_mul_right esize hstep
+    rw [Nat.add_mul, Nat.mul_assoc, Nat.mul_assoc] at hmul
+    omega
+  · exact ⟨_, rfl⟩
+
+
+
+/-- Neither declared maximum is in reach of a claim the memory line paid
+for: the ceiling would be hit at a quarter of it. -/
+theorem stack_room {stack trail setup : Nat} {lim : Limits}
+    (hmemlim : setup + 2 * btScratch stack trail ≤ lim.mem)
+    (hlim : lim.mem ≤ ceiling) : capacityOf stack < maxStack := by
+  have hroof : ceiling < maxStack * 24 := by decide
+  simp only [btScratch, btSize, undoSize] at hmemlim
+  omega
+
+/-- And the trail's. -/
+theorem trail_room {stack trail setup : Nat} {lim : Limits}
+    (hmemlim : setup + 2 * btScratch stack trail ≤ lim.mem)
+    (hlim : lim.mem ≤ ceiling) : capacityOf trail < maxTrail := by
+  have hroof : ceiling < maxTrail * 16 := by decide
+  simp only [btScratch, btSize, undoSize] at hmemlim
+  omega
+
+/-- So a push inside the claimed depth is one the caller's limits admit. The
+stack limit is the one test here that has nothing to do with the growth
+schedule, and it passes because the depth account already says the run never
+gets past the claim. -/
+theorem pushBt_ok {st : BtSt} {lim : Limits} {pc pos mark setup stack trail : Nat}
+    (hmem : st.m.mem = setup + st.reserved)
+    (hbt : st.btCap ≤ capacityOf stack) (htr : st.trailCap ≤ capacityOf trail)
+    (hsize : st.bt.size < stack) (hstacklim : stack ≤ lim.stack)
+    (hmemlim : setup + 2 * btScratch stack trail ≤ lim.mem)
+    (hlim : lim.mem ≤ ceiling)
+    (hcost : st.m.cost + 3 * btScratch stack trail ≤ lim.cost + 3 * st.reserved) :
+    ∃ st', pushBt st lim pc pos mark = some st' := by
+  have hb : st.btCap * btSize ≤ capacityOf stack * btSize :=
+    Nat.mul_le_mul_right _ hbt
+  have ht : st.trailCap * undoSize ≤ capacityOf trail * undoSize :=
+    Nat.mul_le_mul_right _ htr
+  simp only [BtSt.reserved] at hmem hcost
+  simp only [btScratch] at hcost hmemlim
+  simp only [pushBt]
+  rw [if_neg (by omega)]
+  obtain ⟨p, hp⟩ := chargeGrow_ok (claim := stack) (base := setup)
+    (oldcap := st.btCap) (len := st.bt.size) (esize := btSize) (maxv := maxStack)
+    (m := st.m) (lim := lim)
+    (other := st.trailCap * undoSize) (by omega) hsize hbt
+    (stack_room (trail := trail) (setup := setup) (by simp only [btScratch]; omega)
+      hlim)
+    (by omega) (by omega)
+  rw [hp]
+  exact ⟨_, rfl⟩
+
+/-- And so is the fork that makes it. -/
+theorem fork_ok {st : BtSt} {lim : Limits} {target pos setup stack trail : Nat}
+    (hmem : st.m.mem = setup + st.reserved)
+    (hbt : st.btCap ≤ capacityOf stack) (htr : st.trailCap ≤ capacityOf trail)
+    (hsize : st.bt.size < stack) (hstacklim : stack ≤ lim.stack)
+    (hmemlim : setup + 2 * btScratch stack trail ≤ lim.mem)
+    (hlim : lim.mem ≤ ceiling)
+    (hcost : st.m.cost + 3 * btScratch stack trail ≤ lim.cost + 3 * st.reserved) :
+    ∃ st', fork st lim target pos = some st' := by
+  obtain ⟨p, hp⟩ := pushBt_ok (pc := target) (pos := pos) (mark := st.trail.size)
+    hmem hbt htr hsize hstacklim hmemlim hlim hcost
+  simp only [fork, hp]
+  exact ⟨_, rfl⟩
+
+/-- The same for an undo entry inside the claimed trail. -/
+theorem writeReg_ok {st : BtSt} {lim : Limits} {slot : Nat} {value : UInt32}
+    {setup stack trail : Nat}
+    (hmem : st.m.mem = setup + st.reserved)
+    (hbt : st.btCap ≤ capacityOf stack) (htr : st.trailCap ≤ capacityOf trail)
+    (hsize : st.trail.size < trail)
+    (hmemlim : setup + 2 * btScratch stack trail ≤ lim.mem)
+    (hlim : lim.mem ≤ ceiling)
+    (hcost : st.m.cost + 3 * btScratch stack trail ≤ lim.cost + 3 * st.reserved) :
+    ∃ st', writeReg st lim slot value = some st' := by
+  have hb : st.btCap * btSize ≤ capacityOf stack * btSize :=
+    Nat.mul_le_mul_right _ hbt
+  have ht : st.trailCap * undoSize ≤ capacityOf trail * undoSize :=
+    Nat.mul_le_mul_right _ htr
+  simp only [BtSt.reserved] at hmem hcost
+  simp only [btScratch] at hcost hmemlim
+  simp only [writeReg]
+  split
+  · obtain ⟨p, hp⟩ := chargeGrow_ok (claim := trail) (base := setup)
+      (oldcap := st.trailCap) (len := st.trail.size) (esize := undoSize)
+      (maxv := maxTrail) (m := st.m) (lim := lim)
+      (other := st.btCap * btSize) (by omega) hsize htr
+      (trail_room (stack := stack) (setup := setup) (by simp only [btScratch]; omega)
+        hlim)
+      (by omega) (by omega)
+    rw [hp]
+    exact ⟨_, rfl⟩
+  · exact ⟨_, rfl⟩
+
+
+
+/-- A failed path on a budget that covers it. The replay a pop charges is
+one register width per undo entry it puts back, and the trail account is
+already holding that much — so the test before the replay passes for the
+same reason the cost line of section 5 has `4 * trail` in it. -/
+theorem btFail_budget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start attempt setup stack trail fuel : Nat} {Ok : Nat → Prop}
+    {W R T : Nat → Nat}
+    (hstep : ∀ (pc pos : Nat) (st : BtSt), Ok pc → Resumes Ok st.bt →
+      st.bt.size + T pc + owed T st.bt ≤ stack →
+      st.trail.size + R pc + owed R st.bt ≤ trail →
+      st.btCap ≤ capacityOf stack → st.trailCap ≤ capacityOf trail →
+      st.m.mem = setup + st.reserved →
+      st.m.cost + (W pc + owed W st.bt +
+          regSize * (st.trail.size + R pc + owed R st.bt))
+        + 3 * btScratch stack trail ≤ lim.cost + 3 * st.reserved →
+      W pc + owed W st.bt + regSize * (st.trail.size + R pc + owed R st.bt) ≤ fuel →
+      (btStep re s mo lim start attempt fuel pc pos st).inBudget) :
+    ∀ (st : BtSt), Resumes Ok st.bt →
+      st.bt.size + owed T st.bt ≤ stack →
+      st.trail.size + owed R st.bt ≤ trail →
+      st.btCap ≤ capacityOf stack → st.trailCap ≤ capacityOf trail →
+      st.m.mem = setup + st.reserved →
+      st.m.cost + (owed W st.bt + regSize * (st.trail.size + owed R st.bt))
+        + 3 * btScratch stack trail ≤ lim.cost + 3 * st.reserved →
+      owed W st.bt + regSize * (st.trail.size + owed R st.bt) ≤ fuel →
+      (btFail re s mo lim start attempt fuel st).inBudget := by
+  intro st hres hdepth hrec hbt htr hmem hcost hfuel
+  have hres' := reserved_le hbt htr
+  rw [btFail]
+  split
+  · trivial
+  · rename_i hne
+    dsimp only
+    have hpopW := owed_pop W hne
+    have hpopR := owed_pop R hne
+    have hpopT := owed_pop T hne
+    have hsize : st.bt.pop.size = st.bt.size - 1 := by simp
+    split
+    · rename_i hbad
+      exfalso
+      simp only [regSize] at hcost hbad
+      omega
+    · rename_i hroom
+      rcases hrt : replayTrail st.trail st.regs st.bt.back!.mark with ⟨t', r'⟩
+      dsimp only
+      have hts : t'.size = min st.trail.size st.bt.back!.mark := by
+        have hall := replayTrail_size st.trail.size st.trail st.regs
+          st.bt.back!.mark (Nat.le_refl _)
+        rw [hrt] at hall
+        exact hall
+      have key : ∀ tt : Array Undo, tt.size ≤ min st.trail.size st.bt.back!.mark →
+          (btStep re s mo lim start attempt fuel st.bt.back!.pc st.bt.back!.pos
+            ⟨r', st.bt.pop, st.btCap, tt, st.trailCap,
+              ⟨st.m.cost + (st.trail.size - st.bt.back!.mark) * regSize,
+                st.m.mem, st.m.peak⟩, st.stackpeak⟩).inBudget := by
+        intro tt htt
+        refine hstep st.bt.back!.pc st.bt.back!.pos _ (hres.back hne) hres.pop
+          (by dsimp only; omega) (by dsimp only; omega)
+          (by dsimp only; exact hbt) (by dsimp only; exact htr)
+          (by dsimp only [BtSt.reserved] at hmem ⊢; omega) ?_ ?_
+        · dsimp only [BtSt.reserved] at hmem hcost hres' ⊢
+          simp only [regSize] at *
+          omega
+        · dsimp only
+          simp only [regSize] at *
+          omega
+      split
+      · exact key #[] (by simp)
+      · exact key t' (by omega)
+
+
+
+/-- What one visit leaves alone, spelled out so the budget arithmetic can
+name it. -/
+theorem BtSt.tick_reserved (st : BtSt) : (BtSt.tick st).reserved = st.reserved := rfl
+theorem BtSt.tick_cost (st : BtSt) : (BtSt.tick st).m.cost = st.m.cost + 1 := rfl
+theorem BtSt.tick_bt (st : BtSt) : (BtSt.tick st).bt = st.bt := rfl
+theorem BtSt.tick_trail (st : BtSt) : (BtSt.tick st).trail = st.trail := rfl
+theorem BtSt.tick_btCap (st : BtSt) : (BtSt.tick st).btCap = st.btCap := rfl
+theorem BtSt.tick_trailCap (st : BtSt) :
+    (BtSt.tick st).trailCap = st.trailCap := rfl
+
+/-- One entry into a priced program, on a budget that covers it: no test the
+engine makes along the way is one it fails.
+
+The invariant is the fork account's potential read as a precondition — the
+cost charged so far, plus what the pricing says is still to come, plus what
+is left of the growth allowance, inside the caller's cost limit. The growth
+allowance is section 5's `3 * scratch` less what the run has already
+reserved, which is exactly what `charge_grow` can still ask for. -/
+theorem btStep_budget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start attempt setup stack trail : Nat} {Ok : Nat → Prop} {W R T : Nat → Nat}
+    (hflow : Flow re Ok W R T) (hlim : lim.mem ≤ ceiling)
+    (hmemlim : setup + 2 * btScratch stack trail ≤ lim.mem)
+    (hstacklim : stack ≤ lim.stack) :
+    ∀ (fuel pc pos : Nat) (st : BtSt), Ok pc → Resumes Ok st.bt →
+      st.bt.size + T pc + owed T st.bt ≤ stack →
+      st.trail.size + R pc + owed R st.bt ≤ trail →
+      st.btCap ≤ capacityOf stack → st.trailCap ≤ capacityOf trail →
+      st.m.mem = setup + st.reserved →
+      st.m.cost + (W pc + owed W st.bt +
+          regSize * (st.trail.size + R pc + owed R st.bt))
+        + 3 * btScratch stack trail ≤ lim.cost + 3 * st.reserved →
+      W pc + owed W st.bt + regSize * (st.trail.size + R pc + owed R st.bt) ≤ fuel →
+      (btStep re s mo lim start attempt fuel pc pos st).inBudget := by
+  intro fuel
+  induction fuel with
+  | zero =>
+      intro pc pos st hok hres hdepth hrec hbt htr hmem hcost hfuel
+      exact absurd (hflow.pos hok) (by omega)
+  | succ fuel ih =>
+      intro pc pos st hok hres hdepth hrec hbt htr hmem hcost hfuel
+      have hres' := reserved_le hbt htr
+      have hpos1 : 1 ≤ W pc := hflow.pos hok
+      have hcostlt : ¬ st.m.cost ≥ lim.cost := by omega
+      have htickmem : (BtSt.tick st).m.mem = setup + (BtSt.tick st).reserved := by
+        rw [BtSt.tick_reserved]
+        exact hmem
+      have hfail := btFail_budget (W := W) (R := R) (T := T) (Ok := Ok) ih
+      rcases hflow pc hok with ⟨hop, hW⟩ | ⟨hop, hoka, hokb, hW, hR, hT⟩ |
+        ⟨hop, hoka, hW, hR, hT⟩ | ⟨hop, hok1, hW, hR, hT⟩ |
+        ⟨hloose, hns, hna, hok1, hW, hR, hT⟩
+      -- The Accept: an answer, or one last failure handed back.
+      · rcases btStep_accept hop hcostlt with ⟨regs, heq⟩ | heq
+        · rw [heq]
+          trivial
+        · rw [heq]
+          exact hfail (BtSt.tick st) hres (by rw [BtSt.tick_bt]; omega)
+            (by rw [BtSt.tick_bt, BtSt.tick_trail]; omega)
+            (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr) htickmem
+            (by rw [BtSt.tick_bt, BtSt.tick_trail, BtSt.tick_cost,
+                  BtSt.tick_reserved]
+                simp only [regSize] at hcost ⊢
+                omega)
+            (by rw [BtSt.tick_bt, BtSt.tick_trail]
+                simp only [regSize] at hcost hfuel ⊢
+                omega)
+      -- A split: the entry is pushed, then the first arm.
+      · obtain ⟨st', hfk⟩ :=
+          fork_ok (setup := setup) (stack := stack) (trail := trail)
+            (target := (re.code[pc]!).alt) (pos := pos) htickmem
+            (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr)
+            (by rw [BtSt.tick_bt]; omega) hstacklim hmemlim hlim
+            (by rw [BtSt.tick_cost, BtSt.tick_reserved]; omega)
+        rw [btStep_split_some hop hcostlt hfk]
+        obtain ⟨hwin, hsz, htl, htc⟩ :=
+          fork_within (setup := setup) (stack := stack) (trail := trail) hlim
+            htickmem (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr)
+            (by rw [BtSt.tick_bt]; omega) hfk
+        have hpush := fork_pushed hfk
+        have hoW : owed W st'.bt = owed W st.bt + W (re.code[pc]!).alt := by
+          rw [hpush, owed_push]
+          rfl
+        have hoR : owed R st'.bt = owed R st.bt + R (re.code[pc]!).alt := by
+          rw [hpush, owed_push]
+          rfl
+        have hoT : owed T st'.bt = owed T st.bt + T (re.code[pc]!).alt := by
+          rw [hpush, owed_push]
+          rfl
+        have hts : st'.trail.size = st.trail.size := by rw [htl]; rfl
+        have hszv : st'.bt.size = st.bt.size + 1 := by rw [hsz]; rfl
+        have hch := hwin.charged
+        rw [BtSt.tick_reserved, BtSt.tick_cost] at hch
+        exact ih (re.code[pc]!).arg pos st' hoka (hpush ▸ hres.push hokb)
+          (by omega) (by omega) hwin.btRoom hwin.trailRoom hwin.held
+          (by simp only [regSize] at hcost ⊢; omega)
+          (by simp only [regSize] at hfuel ⊢; omega)
+      -- A jump: the target, with the visit charged.
+      · rw [btStep_jump hop hcostlt]
+        exact ih (re.code[pc]!).arg pos (BtSt.tick st) hoka
+          (by rw [BtSt.tick_bt]; exact hres)
+          (by rw [BtSt.tick_bt]; omega)
+          (by rw [BtSt.tick_bt, BtSt.tick_trail]; omega)
+          (by rw [BtSt.tick_btCap]; exact hbt)
+          (by rw [BtSt.tick_trailCap]; exact htr) htickmem
+          (by rw [BtSt.tick_bt, BtSt.tick_trail, BtSt.tick_cost, BtSt.tick_reserved]
+              simp only [regSize] at hcost ⊢
+              omega)
+          (by rw [BtSt.tick_bt, BtSt.tick_trail]
+              simp only [regSize] at hfuel ⊢
+              omega)
+      -- A Save: the undo entry, then on.
+      · obtain ⟨st', hw⟩ :=
+          writeReg_ok (setup := setup) (stack := stack) (trail := trail)
+            (slot := (re.code[pc]!).arg) (value := pos.toUInt32) htickmem
+            (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr)
+            (by rw [BtSt.tick_trail]; omega) hmemlim hlim
+            (by rw [BtSt.tick_cost, BtSt.tick_reserved]; omega)
+        rw [btStep_save_some hop hcostlt hw]
+        obtain ⟨hwin, hts, hbteq, hbc, hsp⟩ :=
+          writeReg_within (setup := setup) (stack := stack) (trail := trail)
+            hlim htickmem (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr)
+            (by rw [BtSt.tick_trail]; omega) hw
+        have htsv : st'.trail.size ≤ st.trail.size + 1 := by
+          rw [BtSt.tick_trail] at hts
+          omega
+        have hbtv : st'.bt = st.bt := by rw [hbteq]; rfl
+        have hch := hwin.charged
+        rw [BtSt.tick_reserved, BtSt.tick_cost] at hch
+        exact ih (pc + 1) pos st' hok1 (hbtv ▸ hres)
+          (by rw [hbtv]; omega) (by rw [hbtv]; omega)
+          hwin.btRoom hwin.trailRoom hwin.held
+          (by rw [hbtv]; simp only [regSize] at hcost ⊢; omega)
+          (by rw [hbtv]; simp only [regSize] at hfuel ⊢; omega)
+      -- Anything else a region holds loose.
+      · rcases btStep_plain hloose hns hna hcostlt with ⟨pos', heq⟩ | heq
+        · rw [heq]
+          exact ih (pc + 1) pos' (BtSt.tick st) hok1
+            (by rw [BtSt.tick_bt]; exact hres)
+            (by rw [BtSt.tick_bt]; omega)
+            (by rw [BtSt.tick_bt, BtSt.tick_trail]; omega)
+            (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr) htickmem
+            (by rw [BtSt.tick_bt, BtSt.tick_trail, BtSt.tick_cost,
+                  BtSt.tick_reserved]
+                simp only [regSize] at hcost ⊢
+                omega)
+            (by rw [BtSt.tick_bt, BtSt.tick_trail]
+                simp only [regSize] at hfuel ⊢
+                omega)
+        · rw [heq]
+          exact hfail (BtSt.tick st) hres (by rw [BtSt.tick_bt]; omega)
+            (by rw [BtSt.tick_bt, BtSt.tick_trail]; omega)
+            (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr) htickmem
+            (by rw [BtSt.tick_bt, BtSt.tick_trail, BtSt.tick_cost,
+                  BtSt.tick_reserved]
+                simp only [regSize] at hcost ⊢
+                omega)
+            (by rw [BtSt.tick_bt, BtSt.tick_trail]
+                simp only [regSize] at hfuel ⊢
+                omega)
+
+
+
+/-- Every attempt of a run stays inside the caller's limits: the companion
+of `AttemptsWithin`, and the section 4 half of S-10. -/
+def AttemptsInBudget (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (start setup stack trail work : Nat) : Prop :=
+  ∀ (attempt fuel : Nat) (st : BtSt), st.bt = #[] → st.trail = #[] →
+    st.btCap ≤ capacityOf stack → st.trailCap ≤ capacityOf trail →
+    st.m.mem = setup + st.reserved →
+    st.m.cost + (work + regSize * trail) + 3 * btScratch stack trail ≤
+      lim.cost + 3 * st.reserved →
+    work + regSize * trail ≤ fuel →
+    (btStep re s mo lim start attempt fuel 0 attempt st).inBudget
+
+/-- A pricing gives it, the same way it gives `AttemptsWithin`. -/
+theorem attemptsInBudget_of_flow {re : Re} {s : ByteArray} {mo : MOpts}
+    {lim : Limits} {start setup stack trail work : Nat} {Ok : Nat → Prop}
+    {W R T : Nat → Nat} (hflow : Flow re Ok W R T) (hlim : lim.mem ≤ ceiling)
+    (hmemlim : setup + 2 * btScratch stack trail ≤ lim.mem)
+    (hstacklim : stack ≤ lim.stack)
+    (hstart : Ok 0) (hw : W 0 ≤ work) (hr : R 0 ≤ trail) (ht : T 0 ≤ stack) :
+    AttemptsInBudget re s mo lim start setup stack trail work := by
+  intro attempt fuel st hbt htrail hbtcap htrcap hmem hcost hfuel
+  have hsz : st.bt.size = 0 := by rw [hbt]; rfl
+  have htz : st.trail.size = 0 := by rw [htrail]; rfl
+  have howW : owed W st.bt = 0 := by rw [hbt]; exact owed_empty W
+  have howR : owed R st.bt = 0 := by rw [hbt]; exact owed_empty R
+  have howT : owed T st.bt = 0 := by rw [hbt]; exact owed_empty T
+  refine btStep_budget hflow hlim hmemlim hstacklim fuel 0 attempt st hstart
+    (fun i hi => by omega) (by omega) (by omega) hbtcap htrcap hmem ?_ ?_ <;>
+    (simp only [regSize] at hcost hfuel ⊢; omega)
+
+/-- The attempt loop on a budget that covers every starting position it can
+still take. The reset is charged before each attempt and the growth is
+charged once across the call, so the budget the loop carries is the whole
+call's and not one attempt's. -/
+theorem btLoop_budget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start setup stack trail work deliver : Nat}
+    (hatt : AttemptsInBudget re s mo lim start setup stack trail work)
+    (hattw : AttemptsWithin re s mo lim start setup stack trail work) :
+    ∀ (steps attempt : Nat) (st : BtSt), attempt ≤ s.size →
+      s.size + 1 - attempt ≤ steps →
+      st.btCap ≤ capacityOf stack → st.trailCap ≤ capacityOf trail →
+      st.m.mem = setup + st.reserved →
+      st.m.cost + steps * (btReset re + (work + regSize * trail)) + deliver
+        + 3 * btScratch stack trail ≤ lim.cost + 3 * st.reserved →
+      (btLoop re s mo lim start steps attempt st).inBudget := by
+  intro steps
+  induction steps with
+  | zero =>
+      intro attempt st hat hsteps hbt htr hmem hcost
+      omega
+  | succ steps ih =>
+      intro attempt st hat hsteps hbt htr hmem hcost
+      have hres' := reserved_le hbt htr
+      rw [Nat.succ_mul] at hcost
+      rw [btLoop_succ]
+      split
+      · rename_i hbad
+        exfalso
+        simp only [btReset] at hcost
+        omega
+      · have hst0 : (⟨Array.replicate re.nregs unset32, #[], st.btCap, #[],
+            st.trailCap, ⟨st.m.cost + re.nregs * regSize, st.m.mem, st.m.peak⟩,
+            st.stackpeak⟩ : BtSt).reserved = st.reserved := rfl
+        have hin := hatt attempt (lim.cost + 1 - (st.m.cost + re.nregs * regSize))
+          ⟨Array.replicate re.nregs unset32, #[], st.btCap, #[], st.trailCap,
+            ⟨st.m.cost + re.nregs * regSize, st.m.mem, st.m.peak⟩, st.stackpeak⟩
+          rfl rfl hbt htr (by simpa only [BtSt.reserved] using hmem)
+          (by rw [hst0]; dsimp only; simp only [btReset] at hcost; omega)
+          (by simp only [btReset] at hcost; omega)
+        have hq := hattw attempt (lim.cost + 1 - (st.m.cost + re.nregs * regSize))
+          ⟨Array.replicate re.nregs unset32, #[], st.btCap, #[], st.trailCap,
+            ⟨st.m.cost + re.nregs * regSize, st.m.mem, st.m.peak⟩, st.stackpeak⟩
+          rfl rfl hbt htr (by simpa only [BtSt.reserved] using hmem)
+        split
+        · trivial
+        · rename_i st' hout
+          rw [hout] at hin
+          exact absurd hin (by simp [AttemptOut.inBudget])
+        · rename_i st' hout
+          rw [hout] at hq
+          simp only [AttemptOut.state] at hq
+          split
+          · trivial
+          · rename_i hanch
+            simp only [Bool.or_eq_true, decide_eq_true_eq, not_or] at hanch
+            have hch := hq.charged
+            rw [hst0] at hch
+            dsimp only at hch
+            have hr2 := reserved_le hq.btRoom hq.trailRoom
+            refine ih _ st' ?_ ?_ hq.btRoom hq.trailRoom hq.held ?_
+            · split
+              · rename_i hskip
+                have hlt := Re.skipsAttempt_lt hskip
+                omega
+              · omega
+            · split
+              · rename_i hskip
+                have hlt := Re.skipsAttempt_lt hskip
+                omega
+              · omega
+            · simp only [btReset] at hcost ⊢
+              omega
+
+
+
+/-- S-10 for the forward class: a caller whose three limits sit at or above
+what the certificate names never sees ResourceExceeded.
+
+The stack limit appears here for the first time. On a program that never
+forks nothing is pushed and no depth can be refused, so `btRun_inBudget_nest`
+did not need it; once a program forks it is a real test, and what makes it
+pass is that the depth account never leaves the claim. -/
+theorem btRun_inBudget_forward {re : Re} {s : ByteArray} {mo : MOpts}
+    {lim : Limits} {start : Nat} {cert : Cert}
+    (hcert : certCheck re .backtrack cert = .crOk)
+    (hopt : ∀ j, j < re.regions.size → (re.regions[j]!).kind = .«repeat» →
+      (re.code[(re.regions[j]!).lo]!).op = .split)
+    (hends : ∀ j, j < re.regions.size →
+      ((re.regions[j]!).kind = .alt ∨ (re.regions[j]!).kind = .«repeat») →
+      (re.regions[j]!).hi < re.code.size)
+    (hlast : (re.code[re.code.size - 1]!).op = .accept)
+    (hlim : lim.mem ≤ ceiling)
+    (hcost : cert.cost.val s.size ≤ lim.cost)
+    (hmem : cert.mem.val s.size ≤ lim.mem)
+    (hstack : cert.stack.val s.size ≤ lim.stack) :
+    (btRun re s start mo lim 0 0).outcome ≠ .resourceExceeded := by
+  obtain ⟨hdomc, hdomm⟩ := certCheck_bt_dom hcert s.size
+  obtain ⟨hsetupc, hsetupm⟩ := btRun_setup_ok hcert hcost hmem
+  have hattw := attemptsWithin_forward (s := s) (mo := mo) (lim := lim)
+    (start := start) hcert hopt hends hlast hlim
+  obtain ⟨hw, hr, ht⟩ := cert_prices_flow hcert hopt hends hlast s.size
+  have hmemlim : btSetup re + 2 * btScratch (cert.stack.val s.size)
+      (cert.trail.val s.size) ≤ lim.mem := by omega
+  have hatt := attemptsInBudget_of_flow (s := s) (mo := mo) (start := start)
+    (flow_of_cert hcert hopt hends hlast) hlim hmemlim hstack
+    (code_size_pos hlast) hw hr ht
+  have hsteps : (s.size + 1 - start) * (btReset re + ((cert.prices[0]!).work.val s.size
+      + regSize * cert.trail.val s.size)) ≤
+      (s.size + 1) * (btReset re + ((cert.prices[0]!).work.val s.size
+        + regSize * cert.trail.val s.size)) :=
+    Nat.mul_le_mul_right _ (by omega)
+  rw [btRun_caps]
+  split
+  · simp
+  rename_i hstartle
+  split
+  · rename_i hguard
+    simp only [Bool.or_eq_true, decide_eq_true_eq] at hguard
+    omega
+  have hloopin := btLoop_budget (deliver := btDeliver re) hatt hattw
+    (s.size + 1 - start) start
+    ⟨Array.replicate re.nregs unset32, #[], 0, #[], 0,
+      ⟨btSetup re, btSetup re, btSetup re⟩, 0⟩ (by omega) (by omega)
+    (Nat.zero_le _) (Nat.zero_le _) (by simp [BtSt.reserved])
+    (by simp only [BtSt.reserved]; omega)
+  have hloopw := btLoop_within hattw (s.size + 1 - start) start
+    ⟨Array.replicate re.nregs unset32, #[], 0, #[], 0,
+      ⟨btSetup re, btSetup re, btSetup re⟩, 0⟩ (Nat.zero_le _) (Nat.zero_le _)
+    (by simp [BtSt.reserved])
+  split
+  · rename_i st' hout
+    rw [hout] at hloopw
+    simp only [RunEnd.state] at hloopw
+    have hr2 := reserved_le hloopw.btRoom hloopw.trailRoom
+    have hch := hloopw.charged
+    simp only [BtSt.reserved] at hch hr2
+    split
+    · rename_i hbad
+      exfalso
+      omega
+    · simp
+  · simp
+  · rename_i st' hout
+    rw [hout] at hloopin
+    exact absurd hloopin (by simp [RunEnd.inBudget])
+
+
+
+/-- And on the alternation-only class. -/
+theorem btRun_inBudget_alt {re : Re} {s : ByteArray} {mo : MOpts}
+    {lim : Limits} {start : Nat} {cert : Cert}
+    (hcert : certCheck re .backtrack cert = .crOk)
+    (hnorep : ∀ j, j < re.regions.size → (re.regions[j]!).kind ≠ .«repeat»)
+    (hends : ∀ j, j < re.regions.size → (re.regions[j]!).kind = .alt →
+      (re.regions[j]!).hi < re.code.size)
+    (hlast : (re.code[re.code.size - 1]!).op = .accept)
+    (hlim : lim.mem ≤ ceiling)
+    (hcost : cert.cost.val s.size ≤ lim.cost)
+    (hmem : cert.mem.val s.size ≤ lim.mem)
+    (hstack : cert.stack.val s.size ≤ lim.stack) :
+    (btRun re s start mo lim 0 0).outcome ≠ .resourceExceeded :=
+  btRun_inBudget_forward hcert (fun j hj hk => absurd hk (hnorep j hj))
+    (fun j hj hk => hends j hj (hk.resolve_right (hnorep j hj))) hlast hlim
+    hcost hmem hstack
+
+/-! ## R-9's second half for a forking program
+
+`btRun_no_growth` says a call allocates nothing, and it says it of programs
+that never push. That shape does not survive alternation and should not: a
+program that forks pushes, and a run that starts with nothing reserved
+allocates the first time it does. What a preallocated context buys is that
+it does not start with nothing.
+
+So the honest statement is the one about capacities. A call whose backtrack
+array and undo trail already hold the claims never grows either of them, and
+the resident bytes it reports are the register file and the ovector it was
+handed. `Steady` is what that comes to one step at a time — the two
+capacities, the resident bytes and the peak, all unmoved — and what makes it
+hold is the fork account's own depth and trail accounts: a push happens only
+while the stack is inside the claim, and the claim is inside the capacity,
+so `charge_grow` finds room and returns without charging.
+
+Nothing here mentions the caller's limits. A run that never grows never
+reaches a growth test, and the two tests that remain — the stack limit and
+the per-visit cost — can still refuse. Refusing is not allocating, and
+`Steady` holds on the refusal path too.
+-/
+
+/-- A stretch of a run that allocated nothing: both capacities, the resident
+bytes and the peak all where they were. -/
+structure Steady (st out : BtSt) : Prop where
+  btCap : out.btCap = st.btCap
+  trailCap : out.trailCap = st.trailCap
+  held : out.m.mem = st.m.mem
+  resident : out.m.peak = st.m.peak
+
+/-- Two such stretches in a row. -/
+theorem Steady.trans {st mid out : BtSt} (h₁ : Steady st mid) (h₂ : Steady mid out) :
+    Steady st out :=
+  ⟨by rw [h₂.btCap, h₁.btCap], by rw [h₂.trailCap, h₁.trailCap],
+    by rw [h₂.held, h₁.held], by rw [h₂.resident, h₁.resident]⟩
+
+/-- A growth step with room to spare is not a growth step: `charge_grow`
+answers the capacity it was given, charges nothing and moves no memory. -/
+theorem chargeGrow_room {oldcap len esize maxv : Nat} {m : Meter} {lim : Limits}
+    (h : len < oldcap) : chargeGrow oldcap len esize maxv m lim = some (m, oldcap) := by
+  rw [chargeGrow_unfold, if_pos h]
+
+/-- So a push under the reservation allocates nothing. -/
+theorem pushBt_steady {st st' : BtSt} {lim : Limits} {pc pos mark : Nat}
+    (hcap : st.bt.size < st.btCap) (h : pushBt st lim pc pos mark = some st') :
+    Steady st st' ∧ st'.bt = st.bt.push ⟨pc, pos, mark⟩ ∧ st'.trail = st.trail := by
+  simp only [pushBt, chargeGrow_room hcap] at h
+  split at h
+  · exact absurd h (by simp)
+  · simp only [Option.some.injEq] at h
+    subst h
+    exact ⟨⟨rfl, rfl, rfl, rfl⟩, rfl, rfl⟩
+
+/-- Nor does the fork that makes it. -/
+theorem fork_steady {st st' : BtSt} {lim : Limits} {target pos : Nat}
+    (hcap : st.bt.size < st.btCap) (h : fork st lim target pos = some st') :
+    Steady st st' ∧ st'.bt = st.bt.push ⟨target, pos, st.trail.size⟩ ∧
+      st'.trail = st.trail := by
+  simp only [fork] at h
+  split at h
+  · exact absurd h (by simp)
+  · rename_i mid hp
+    obtain ⟨hs, hb, ht⟩ := pushBt_steady hcap hp
+    simp only [Option.some.injEq] at h
+    subst h
+    exact ⟨⟨hs.btCap, hs.trailCap, hs.held, hs.resident⟩, hb, ht⟩
+
+/-- Nor an undo entry under the reservation. -/
+theorem writeReg_steady {st st' : BtSt} {lim : Limits} {slot : Nat}
+    {value : UInt32} (hcap : st.trail.size < st.trailCap)
+    (h : writeReg st lim slot value = some st') :
+    Steady st st' ∧ st'.bt = st.bt ∧ st'.trail.size ≤ st.trail.size + 1 := by
+  simp only [writeReg, chargeGrow_room hcap] at h
+  split at h
+  · simp only [Option.some.injEq] at h
+    subst h
+    exact ⟨⟨rfl, rfl, rfl, rfl⟩, rfl, by simp⟩
+  · simp only [Option.some.injEq] at h
+    subst h
+    exact ⟨⟨rfl, rfl, rfl, rfl⟩, rfl, by simp⟩
+
+
+
+/-- A failed path never allocates: it pops, replays and lets go. -/
+theorem btFail_steady {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start attempt stack trail fuel : Nat} {Ok : Nat → Prop} {W R T : Nat → Nat}
+    (hstep : ∀ (pc pos : Nat) (st : BtSt), Ok pc → Resumes Ok st.bt →
+      st.bt.size + T pc + owed T st.bt ≤ stack →
+      st.trail.size + R pc + owed R st.bt ≤ trail →
+      stack ≤ st.btCap → trail ≤ st.trailCap →
+      Steady st (btStep re s mo lim start attempt fuel pc pos st).state) :
+    ∀ (st : BtSt), Resumes Ok st.bt →
+      st.bt.size + owed T st.bt ≤ stack →
+      st.trail.size + owed R st.bt ≤ trail →
+      stack ≤ st.btCap → trail ≤ st.trailCap →
+      Steady st (btFail re s mo lim start attempt fuel st).state := by
+  intro st hres hdepth hrec hbt htr
+  rw [btFail]
+  split
+  · exact ⟨rfl, rfl, rfl, rfl⟩
+  · rename_i hne
+    dsimp only
+    have hpopR := owed_pop R hne
+    have hpopT := owed_pop T hne
+    have hsize : st.bt.pop.size = st.bt.size - 1 := by simp
+    split
+    · exact ⟨rfl, rfl, rfl, rfl⟩
+    · rcases hrt : replayTrail st.trail st.regs st.bt.back!.mark with ⟨t', r'⟩
+      dsimp only
+      have hts : t'.size = min st.trail.size st.bt.back!.mark := by
+        have hall := replayTrail_size st.trail.size st.trail st.regs
+          st.bt.back!.mark (Nat.le_refl _)
+        rw [hrt] at hall
+        exact hall
+      have key : ∀ tt : Array Undo, tt.size ≤ st.trail.size →
+          Steady st
+            (btStep re s mo lim start attempt fuel st.bt.back!.pc st.bt.back!.pos
+              ⟨r', st.bt.pop, st.btCap, tt, st.trailCap,
+                ⟨st.m.cost + (st.trail.size - st.bt.back!.mark) * regSize,
+                  st.m.mem, st.m.peak⟩, st.stackpeak⟩).state := by
+        intro tt htt
+        have hpre : Steady st ⟨r', st.bt.pop, st.btCap, tt, st.trailCap,
+            ⟨st.m.cost + (st.trail.size - st.bt.back!.mark) * regSize,
+              st.m.mem, st.m.peak⟩, st.stackpeak⟩ := ⟨rfl, rfl, rfl, rfl⟩
+        exact hpre.trans
+          (hstep st.bt.back!.pc st.bt.back!.pos
+            ⟨r', st.bt.pop, st.btCap, tt, st.trailCap,
+              ⟨st.m.cost + (st.trail.size - st.bt.back!.mark) * regSize,
+                st.m.mem, st.m.peak⟩, st.stackpeak⟩
+            (hres.back hne) hres.pop (by dsimp only; omega) (by dsimp only; omega)
+            (by dsimp only; exact hbt) (by dsimp only; exact htr))
+      split
+      · exact key #[] (by simp)
+      · exact key t' (by omega)
+
+/-- One entry into a priced program on capacities that already cover the
+claims allocates nothing. The depth and trail accounts are what make it
+true: a push happens only while the stack is inside the claim, and the claim
+is inside the capacity, so `charge_grow` finds room. -/
+theorem btStep_steady {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start attempt stack trail : Nat} {Ok : Nat → Prop} {W R T : Nat → Nat}
+    (hflow : Flow re Ok W R T) :
+    ∀ (fuel pc pos : Nat) (st : BtSt), Ok pc → Resumes Ok st.bt →
+      st.bt.size + T pc + owed T st.bt ≤ stack →
+      st.trail.size + R pc + owed R st.bt ≤ trail →
+      stack ≤ st.btCap → trail ≤ st.trailCap →
+      Steady st (btStep re s mo lim start attempt fuel pc pos st).state := by
+  intro fuel
+  induction fuel with
+  | zero =>
+      intro pc pos st hok hres hdepth hrec hbt htr
+      rw [btStep]
+      exact ⟨rfl, rfl, rfl, rfl⟩
+  | succ fuel ih =>
+      intro pc pos st hok hres hdepth hrec hbt htr
+      by_cases hcost : st.m.cost ≥ lim.cost
+      · rw [btStep_exceeded_of_le hcost]
+        exact ⟨rfl, rfl, rfl, rfl⟩
+      have hfail := btFail_steady (W := W) (R := R) (T := T) (Ok := Ok) ih
+      have htick : Steady st (BtSt.tick st) := ⟨rfl, rfl, rfl, rfl⟩
+      rcases hflow pc hok with ⟨hop, hW⟩ | ⟨hop, hoka, hokb, hW, hR, hT⟩ |
+        ⟨hop, hoka, hW, hR, hT⟩ | ⟨hop, hok1, hW, hR, hT⟩ |
+        ⟨hloose, hns, hna, hok1, hW, hR, hT⟩
+      · rcases btStep_accept hop hcost with ⟨regs, heq⟩ | heq
+        · rw [heq]
+          exact ⟨rfl, rfl, rfl, rfl⟩
+        · rw [heq]
+          exact htick.trans (hfail (BtSt.tick st) hres
+            (by rw [BtSt.tick_bt]; omega)
+            (by rw [BtSt.tick_bt, BtSt.tick_trail]; omega)
+            (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr))
+      · cases hfk : fork (BtSt.tick st) lim (re.code[pc]!).alt pos with
+        | none =>
+            rw [btStep_split_none hop hcost hfk]
+            exact ⟨rfl, rfl, rfl, rfl⟩
+        | some st' =>
+            rw [btStep_split_some hop hcost hfk]
+            obtain ⟨hs, hpush, htl⟩ :=
+              fork_steady (by rw [BtSt.tick_bt, BtSt.tick_btCap]; omega) hfk
+            have hoR : owed R st'.bt = owed R st.bt + R (re.code[pc]!).alt := by
+              rw [hpush, BtSt.tick_bt, owed_push]
+            have hoT : owed T st'.bt = owed T st.bt + T (re.code[pc]!).alt := by
+              rw [hpush, BtSt.tick_bt, owed_push]
+            have hts : st'.trail.size = st.trail.size := by
+              rw [htl, BtSt.tick_trail]
+            have hszv : st'.bt.size = st.bt.size + 1 := by
+              rw [hpush]
+              simp [BtSt.tick_bt]
+            refine (htick.trans hs).trans
+              (ih (re.code[pc]!).arg pos st' hoka
+                (hpush ▸ (BtSt.tick_bt st ▸ hres).push hokb) (by omega) (by omega)
+                (by rw [hs.btCap, BtSt.tick_btCap]; exact hbt)
+                (by rw [hs.trailCap, BtSt.tick_trailCap]; exact htr))
+      · rw [btStep_jump hop hcost]
+        exact htick.trans (ih (re.code[pc]!).arg pos (BtSt.tick st) hoka
+          (by rw [BtSt.tick_bt]; exact hres)
+          (by rw [BtSt.tick_bt]; omega)
+          (by rw [BtSt.tick_bt, BtSt.tick_trail]; omega)
+          (by rw [BtSt.tick_btCap]; exact hbt)
+          (by rw [BtSt.tick_trailCap]; exact htr))
+      · cases hw : writeReg (BtSt.tick st) lim (re.code[pc]!).arg pos.toUInt32 with
+        | none =>
+            rw [btStep_save_none hop hcost hw]
+            exact ⟨rfl, rfl, rfl, rfl⟩
+        | some st' =>
+            rw [btStep_save_some hop hcost hw]
+            obtain ⟨hs, hbteq, hts⟩ :=
+              writeReg_steady (by rw [BtSt.tick_trail, BtSt.tick_trailCap]; omega) hw
+            have hbtv : st'.bt = st.bt := by rw [hbteq, BtSt.tick_bt]
+            rw [BtSt.tick_trail] at hts
+            exact (htick.trans hs).trans
+              (ih (pc + 1) pos st' hok1 (hbtv ▸ hres)
+                (by rw [hbtv]; omega) (by rw [hbtv]; omega)
+                (by rw [hs.btCap, BtSt.tick_btCap]; exact hbt)
+                (by rw [hs.trailCap, BtSt.tick_trailCap]; exact htr))
+      · rcases btStep_plain hloose hns hna hcost with ⟨pos', heq⟩ | heq
+        · rw [heq]
+          exact htick.trans (ih (pc + 1) pos' (BtSt.tick st) hok1
+            (by rw [BtSt.tick_bt]; exact hres)
+            (by rw [BtSt.tick_bt]; omega)
+            (by rw [BtSt.tick_bt, BtSt.tick_trail]; omega)
+            (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr))
+        · rw [heq]
+          exact htick.trans (hfail (BtSt.tick st) hres
+            (by rw [BtSt.tick_bt]; omega)
+            (by rw [BtSt.tick_bt, BtSt.tick_trail]; omega)
+            (by rw [BtSt.tick_btCap]; exact hbt)
+            (by rw [BtSt.tick_trailCap]; exact htr))
+
+
+
+/-- Every attempt of such a run allocates nothing. -/
+def AttemptsSteady (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (start stack trail : Nat) : Prop :=
+  ∀ (attempt fuel : Nat) (st : BtSt), st.bt = #[] → st.trail = #[] →
+    stack ≤ st.btCap → trail ≤ st.trailCap →
+    Steady st (btStep re s mo lim start attempt fuel 0 attempt st).state
+
+/-- A pricing gives it, and only the two array claims are used — what the
+run visits does not enter. -/
+theorem attemptsSteady_of_flow {re : Re} {s : ByteArray} {mo : MOpts}
+    {lim : Limits} {start stack trail : Nat} {Ok : Nat → Prop} {W R T : Nat → Nat}
+    (hflow : Flow re Ok W R T) (hstart : Ok 0) (hr : R 0 ≤ trail)
+    (ht : T 0 ≤ stack) : AttemptsSteady re s mo lim start stack trail := by
+  intro attempt fuel st hbt htrail hbtcap htrcap
+  have hsz : st.bt.size = 0 := by rw [hbt]; rfl
+  have htz : st.trail.size = 0 := by rw [htrail]; rfl
+  have howR : owed R st.bt = 0 := by rw [hbt]; exact owed_empty R
+  have howT : owed T st.bt = 0 := by rw [hbt]; exact owed_empty T
+  exact btStep_steady hflow fuel 0 attempt st hstart (fun i hi => by omega)
+    (by omega) (by omega) hbtcap htrcap
+
+/-- And the attempt loop, whose reset truncates both arrays capacity in
+hand. -/
+theorem btLoop_steady {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start stack trail : Nat} (hatt : AttemptsSteady re s mo lim start stack trail) :
+    ∀ (steps attempt : Nat) (st : BtSt), stack ≤ st.btCap → trail ≤ st.trailCap →
+      Steady st (btLoop re s mo lim start steps attempt st).state := by
+  intro steps
+  induction steps with
+  | zero =>
+      intro attempt st hbt htr
+      rw [btLoop]
+      exact ⟨rfl, rfl, rfl, rfl⟩
+  | succ steps ih =>
+      intro attempt st hbt htr
+      rw [btLoop_succ]
+      split
+      · exact ⟨rfl, rfl, rfl, rfl⟩
+      · have hpre : Steady st ⟨Array.replicate re.nregs unset32, #[], st.btCap, #[],
+            st.trailCap, ⟨st.m.cost + re.nregs * regSize, st.m.mem, st.m.peak⟩,
+            st.stackpeak⟩ := ⟨rfl, rfl, rfl, rfl⟩
+        have hst := hatt attempt (lim.cost + 1 - (st.m.cost + re.nregs * regSize))
+          ⟨Array.replicate re.nregs unset32, #[], st.btCap, #[], st.trailCap,
+            ⟨st.m.cost + re.nregs * regSize, st.m.mem, st.m.peak⟩, st.stackpeak⟩
+          rfl rfl hbt htr
+        split
+        · rename_i endPos st' hout
+          rw [hout] at hst
+          exact hpre.trans hst
+        · rename_i st' hout
+          rw [hout] at hst
+          exact hpre.trans hst
+        · rename_i st' hout
+          rw [hout] at hst
+          simp only [AttemptOut.state] at hst
+          split
+          · exact hpre.trans hst
+          · refine (hpre.trans hst).trans (ih _ st' ?_ ?_)
+            · rw [hst.btCap]
+              exact hbt
+            · rw [hst.trailCap]
+              exact htr
+
+/-- R-9's second half for a forking program: a call whose two arrays already
+hold the claims never grows either, so the resident bytes it reports are the
+register file and the ovector it was handed.
+
+The shape this has for the group nest does not survive alternation, and it
+should not. A program that forks pushes, and a run that starts with nothing
+reserved allocates the first time it does; what a preallocated context buys
+is that it does not start with nothing. So the statement is about
+capacities, and it asks nothing at all of the caller's limits — a run that
+never grows never reaches a growth test, and the two tests that remain can
+still refuse without allocating. -/
+theorem btRun_no_growth_forward {re : Re} {s : ByteArray} {mo : MOpts}
+    {lim : Limits} {start btCap trailCap : Nat} {cert : Cert}
+    (hcert : certCheck re .backtrack cert = .crOk)
+    (hopt : ∀ j, j < re.regions.size → (re.regions[j]!).kind = .«repeat» →
+      (re.code[(re.regions[j]!).lo]!).op = .split)
+    (hends : ∀ j, j < re.regions.size →
+      ((re.regions[j]!).kind = .alt ∨ (re.regions[j]!).kind = .«repeat») →
+      (re.regions[j]!).hi < re.code.size)
+    (hlast : (re.code[re.code.size - 1]!).op = .accept)
+    (hbtcap : cert.stack.val s.size ≤ btCap)
+    (htrcap : cert.trail.val s.size ≤ trailCap) :
+    (btRun re s start mo lim btCap trailCap).usage.mem ≤ btSetup re := by
+  obtain ⟨-, hr, ht⟩ := cert_prices_flow hcert hopt hends hlast s.size
+  have hatt := attemptsSteady_of_flow (s := s) (mo := mo) (lim := lim)
+    (start := start) (flow_of_cert hcert hopt hends hlast) (code_size_pos hlast)
+    (Nat.le_trans hr htrcap) (Nat.le_trans ht hbtcap)
+  rw [btRun_caps]
+  split
+  · exact Nat.zero_le _
+  split
+  · exact Nat.zero_le _
+  have hloop := btLoop_steady hatt (s.size + 1 - start) start
+    ⟨Array.replicate re.nregs unset32, #[], btCap, #[], trailCap,
+      ⟨btSetup re, btSetup re, btSetup re⟩, 0⟩ (Nat.le_refl _) (Nat.le_refl _)
+  have hpeak := hloop.resident
+  dsimp only at hpeak
+  split
+  · rename_i st' hout
+    rw [hout] at hpeak
+    simp only [RunEnd.state] at hpeak
+    split <;> simp only [BtSt.usage] <;> omega
+  · rename_i st' hout
+    rw [hout] at hpeak
+    simp only [RunEnd.state] at hpeak
+    simp only [BtSt.usage]
+    omega
+  · rename_i st' hout
+    rw [hout] at hpeak
+    simp only [RunEnd.state] at hpeak
+    simp only [BtSt.usage]
+    omega
+
+/-- And on the alternation-only class. -/
+theorem btRun_no_growth_alt {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start btCap trailCap : Nat} {cert : Cert}
+    (hcert : certCheck re .backtrack cert = .crOk)
+    (hnorep : ∀ j, j < re.regions.size → (re.regions[j]!).kind ≠ .«repeat»)
+    (hends : ∀ j, j < re.regions.size → (re.regions[j]!).kind = .alt →
+      (re.regions[j]!).hi < re.code.size)
+    (hlast : (re.code[re.code.size - 1]!).op = .accept)
+    (hbtcap : cert.stack.val s.size ≤ btCap)
+    (htrcap : cert.trail.val s.size ≤ trailCap) :
+    (btRun re s start mo lim btCap trailCap).usage.mem ≤ btSetup re :=
+  btRun_no_growth_forward hcert (fun j hj hk => absurd hk (hnorep j hj))
+    (fun j hj hk => hends j hj (hk.resolve_right (hnorep j hj))) hlast hbtcap htrcap
+
+/-! ## What section 4.4 would need
+
+Counted repetition is not here, and this is the account of what it would
+take rather than a start on it.
+
+**Why the pricing stops.** `Flow` prices a program point by what the rest of
+the attempt may still cost from it, and every clause of it makes that number
+strictly larger than the numbers at the successors. A counted repetition's
+`RepNext` jumps back to `rep.head`, so going round the loop would force
+`W head ≥ 1 + … + W head`, which no natural number satisfies. That is not a
+limitation of `costAt`, which merely fails to be definable; it is a fact
+about `Flow` itself, and a program with a counted repetition has no pricing
+of this shape at all.
+
+**What the index has to be.** Read off the VM: `RepLoop` decides which way to
+go by reading the counter register, and `RepNext` writes the counter one
+higher and then decides between the head and the exit by comparing the
+current position against the one `RepEnter` remembered. So what is still to
+come from the head depends on the counter, and what is still to come from
+the tail depends on the counter and on the position. A pricing for section
+4.4 is therefore `W : pc → count → pos → Nat`, and the measure that makes
+the recursion well founded is the lexicographic
+`(n - pos, ceiling - count, code.size - pc)`.
+
+Bounded above, only the middle component is needed: `K = max(rep.lo,
+rep.hi) + 1` passes through the head, `W head K` is the pass that reads the
+counter and leaves, and the recurrence is
+`W head c ≥ 2 + b.work + w * (1 + W head (c+1))` — the head, the `RepEnter`,
+the body, and one `RepNext` per way the body found to finish, each of them
+returning to the head with the counter one higher. Summing that is exactly
+BOUNDS.md's `S = w^0 + … + w^(K-1)` and its `work = 1 + S * (2 + b.work + w)`.
+
+Unbounded, the count has no syntactic bound and the empty-match rule is what
+supplies one: past `rep.lo`, an iteration that consumed nothing is the last
+one. That is a statement about positions rather than about the program, and
+proving it against the VM means reading the register `RepEnter` wrote back
+out — the first place in this development where the accounting depends on
+what the registers *hold* rather than on how many of them were written.
+
+**The part that is not just another index.** `owed` weighs every backtrack
+entry at the pricing of its resumption point. With a counter index the
+weight of an entry is the pricing at its resumption point *under the
+counters the replay will restore*, and the replay depends on the trail below
+that entry — so the fold stops being pointwise.
+
+The mark discipline is what makes it tractable: `replay_trail` puts back
+exactly the registers written since the entry's mark, so the counters at
+resumption are the ones that were in force when `fork` pushed it. The design
+that follows is a ghost weight per entry, fixed at push time: `owed` becomes
+a fold over a list of numbers carried beside `bt`, with an invariant tying
+that list to the stack and to the trail. `fork` extends it, `bt_fail`
+consumes it, and the five cases of `btStep_priced` are otherwise untouched.
+The alternative — making the potential read the counters out of `st.regs` —
+keeps `owed` a fold over `bt`, but the fold then has to replay as it walks
+down the stack, which is worse.
+
+**What survives either way.** Everything below the pricing. `Within`, the
+growth schedule, `btLoop_within`, `chargeCall_dom` and the whole of section
+5 are stated over `owed` and a spend rather than over a `Nat → Nat`, so a
+ghost-weight `owed` slots straight in; so do the budget invariant of S-10
+and `Steady`. The checker side is untouched too — `scan_repeat`'s counted
+arm and `shape_repeat`'s five parts are already transcribed and already
+priced.
+
+**What it costs.** A second flow relation with the two extra indices, a
+re-proof of `btStep_priced` against it with four new opcode cases, the
+ghost-stack invariant, and the empty-match lemma. The last of those has no
+analogue anywhere in this file, because it is the only bound in BOUNDS.md
+that comes from the subject rather than from the program.
+-/
+
 
 end Pcrevera.Ref

@@ -103,53 +103,60 @@ def moptsOf (bits : Nat) : MOpts :=
     notemptyAtStart := bits &&& 8 != 0
     anchored := bits &&& 16 != 0 }
 
-/-- One bridge AST node, the exporter's constructor-per-node encoding. -/
-partial def astOf (j : Json) : D Ast := do
-  let parts ← match j.getArr? with
-    | .ok v => pure v
-    | .error e => .error e
-  let tag ← match parts[0]!.getStr? with
-    | .ok v => pure v
-    | .error e => .error e
-  match tag with
-  | "nul" => .ok .nul
-  | "chr" => do .ok (.chr (UInt8.ofNat (← asNat parts[1]!)))
-  | "chrCI" => do .ok (.chrCI (UInt8.ofNat (← asNat parts[1]!)))
-  | "cls" => do
-      let bytes ← hexBytes (← match parts[1]!.getStr? with
-        | .ok v => pure v | .error e => .error e)
-      if h : bytes.size = 32 then
-        .ok (.cls ⟨bytes.data, h⟩)
-      else .error "a class bitmap is 32 bytes"
-  | "any" => .ok .any
-  | "anyNoNL" => .ok .anyNoNL
-  | "bsr" => .ok .bsr
-  | "cat" => do
-      let kids ← match parts[1]!.getArr? with
-        | .ok v => pure v | .error e => .error e
-      .ok (.cat (← kids.toList.mapM astOf))
-  | "alt" => do
-      let arms ← match parts[1]!.getArr? with
-        | .ok v => pure v | .error e => .error e
-      .ok (.alt (← arms.toList.mapM astOf))
-  | "grp" => do .ok (.grp (← asNat parts[1]!) (← astOf parts[2]!))
-  | "rep" => do
-      let lo ← asNat parts[1]!
-      let hi ← asNat parts[2]!
-      let greedy ← asNat parts[3]!
-      .ok (.rep lo (if hi == none32 then none else some hi) (greedy != 0)
-        (← astOf parts[4]!))
-  | "circ" => .ok .circ
-  | "circM" => .ok .circM
-  | "doll" => .ok .doll
-  | "dollE" => .ok .dollE
-  | "dollM" => .ok .dollM
-  | "sod" => .ok .sod
-  | "eod" => .ok .eod
-  | "eodn" => .ok .eodn
-  | "wordB" => .ok .wordB
-  | "notWordB" => .ok .notWordB
-  | _ => .error s!"{tag} names no AST constructor"
+/-- One bridge AST node, the exporter's constructor-per-node encoding.
+
+Fuel bounds the nesting the decoder follows, and the parser's own depth
+limit is far below it, so running out is a malformed bridge rather than a
+deep pattern. -/
+def astOf (fuel : Nat) (j : Json) : D Ast := do
+  match fuel with
+  | 0 => .error "the bridged tree nests deeper than the parser admits"
+  | fuel + 1 => do
+    let parts ← match j.getArr? with
+      | .ok v => pure v
+      | .error e => .error e
+    let tag ← match parts[0]!.getStr? with
+      | .ok v => pure v
+      | .error e => .error e
+    match tag with
+    | "nul" => .ok .nul
+    | "chr" => do .ok (.chr (UInt8.ofNat (← asNat parts[1]!)))
+    | "chrCI" => do .ok (.chrCI (UInt8.ofNat (← asNat parts[1]!)))
+    | "cls" => do
+        let bytes ← hexBytes (← match parts[1]!.getStr? with
+          | .ok v => pure v | .error e => .error e)
+        if h : bytes.size = 32 then
+          .ok (.cls ⟨bytes.data, h⟩)
+        else .error "a class bitmap is 32 bytes"
+    | "any" => .ok .any
+    | "anyNoNL" => .ok .anyNoNL
+    | "bsr" => .ok .bsr
+    | "cat" => do
+        let kids ← match parts[1]!.getArr? with
+          | .ok v => pure v | .error e => .error e
+        .ok (.cat (← kids.toList.mapM (astOf fuel)))
+    | "alt" => do
+        let arms ← match parts[1]!.getArr? with
+          | .ok v => pure v | .error e => .error e
+        .ok (.alt (← arms.toList.mapM (astOf fuel)))
+    | "grp" => do .ok (.grp (← asNat parts[1]!) (← astOf fuel parts[2]!))
+    | "rep" => do
+        let lo ← asNat parts[1]!
+        let hi ← asNat parts[2]!
+        let greedy ← asNat parts[3]!
+        .ok (.rep lo (if hi == none32 then none else some hi) (greedy != 0)
+          (← astOf fuel parts[4]!))
+    | "circ" => .ok .circ
+    | "circM" => .ok .circM
+    | "doll" => .ok .doll
+    | "dollE" => .ok .dollE
+    | "dollM" => .ok .dollM
+    | "sod" => .ok .sod
+    | "eod" => .ok .eod
+    | "eodn" => .ok .eodn
+    | "wordB" => .ok .wordB
+    | "notWordB" => .ok .notWordB
+    | _ => .error s!"{tag} names no AST constructor"
 
 def opOf (n : Nat) : D Op :=
   match n with
@@ -223,7 +230,7 @@ def bridgeCaseOf (j : Json) : D BridgeCase := do
   match fieldOpt j "skip" with
   | some code => .ok ⟨some (← asNat code), none, none⟩
   | none =>
-      .ok ⟨none, some (← astOf (← field j "ast")),
+      .ok ⟨none, some (← astOf 4096 (← field j "ast")),
         some (← bridgeReOf (← field j "re"))⟩
 
 end Pcrevera.Corpus

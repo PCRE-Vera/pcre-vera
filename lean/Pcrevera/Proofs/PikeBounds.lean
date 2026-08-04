@@ -4109,12 +4109,12 @@ theorem pikeWrite_seen {st : PikeSt} {novec h slot : Nat} {value : UInt32}
 
 /-! ### What a closure build spends -/
 
-/-- A block whose last holder is letting it go is not on the free list, so
-the free list has room for it. -/
+/-- A block someone is holding is not on the free list, so the free list has
+room for one more — which is all a drop about to free a block needs. -/
 theorem free_room {novec : Nat} {rc free : Array Nat} {pool : Array UInt32}
     {h bound : Nat} {rest : List Nat}
-    (how : Owned novec rc free pool (h :: rest)) (hb : rc.size ≤ bound)
-    (h1 : rc[h]! ≤ 1) : free.size < bound := by
+    (how : Owned novec rc free pool (h :: rest)) (hb : rc.size ≤ bound) :
+    free.size < bound := by
   have hlt : h < rc.size := how.reach h List.mem_cons_self
   have hc := how.count h hlt
   have hcnt : 1 ≤ (h :: rest).count h := by
@@ -4211,7 +4211,7 @@ theorem pikeAdd_go_spent (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
                 st.stk.back!.h lim)) :=
             Charged.ofState (pikeDrop_charged (setup := setup)
               (h := st.stk.back!.h) (lim := lim) hwf hroomsP hok.held
-              (fun h1 => free_room hownP hok.table h1)) rfl rfl
+              (fun _ => free_room hownP hok.table)) rfl rfl
           have hsnP := pikeDrop_seen (st := { st with stk := st.stk.pop })
             (h := st.stk.back!.h) (lim := lim)
           split
@@ -4319,7 +4319,7 @@ theorem pikeAdd_go_spent (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
                     (outSt id (pikeAdd.go re s mo lim intoNext pos f stB))) := by
               intro stA hh c hchA hcw hstkA hrangeA hseenA hparkA hownA htabA
               have hch := pikeDrop_charged (setup := setup) (h := hh) (lim := lim)
-                hwf hchA.rooms hchA.held (fun h1 => free_room hownA htabA h1)
+                hwf hchA.rooms hchA.held (fun _ => free_room hownA htabA)
               have hsn := pikeDrop_seen (st := stA) (h := hh) (lim := lim)
               refine ⟨?_, ?_⟩
               · intro stE he

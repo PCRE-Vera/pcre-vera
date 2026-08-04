@@ -361,3 +361,43 @@ behind.
 the module the declaration lives in, so it is
 `open private rootSt from Pcrevera.Proofs.Refine`. It has to sit at the top
 level, before the `namespace` that will use the name.
+
+## `Array.foldl_toList` goes from the list to the array, not the other way
+
+`theorem Array.foldl_toList : as.toList.foldl f init = as.foldl f init`. The
+name reads as if it rewrote an array fold into a list fold, and it is stated
+the other way round, so a proof that wants to reach a list fold rewrites with
+`← Array.foldl_toList` — or, as here, states the list side and finishes with
+the array side on the right.
+
+## `List.take_add_one` splits off an `Option`, not an element
+
+`l.take (n + 1) = l.take n ++ l[n]?.toList`. Reaching for a `l.take n ++
+[l[n]]` shape and proving `n < l.length` first is the reflex; the library
+does not need the bound because it appends `l[n]?.toList`, which is empty
+past the end. With the bound in hand, `List.getElem?_eq_getElem` turns the
+option into `some l[n]` and `Option.toList_some` finishes the job.
+
+## `rw [Nat.add_zero]` rewrites one instance, `simp only` rewrites them all
+
+`rw` instantiates the lemma's metavariables from the first match it finds and
+then rewrites every occurrence *of that instance*. A goal holding both
+`1 + 0` and `x + 0` therefore needs two `rw`s, in the right order, and the
+second fails outright if the first already consumed its match. `simp only
+[Nat.add_zero]` does the obvious thing and is what to reach for when the
+instances differ.
+
+## A constant has to be unfolded everywhere omega will look
+
+`simp only [regSize] at hcost ⊢` leaves every other hypothesis — including
+the one `split` has just introduced anonymously — with `regSize` opaque, and
+omega then treats `k * regSize` and `k * 4` as unrelated atoms. Name the
+branch hypothesis with `rename_i` and unfold the constant there too, or use
+`at *`.
+
+## Anonymous constructors pin implicit arguments before the later ones are seen
+
+`Trans.trans ⟨rfl, rfl⟩ h` elaborates the anonymous constructor first, which
+forces the middle term to whatever makes the `rfl`s typecheck, and `h` is
+then rejected. Introduce the middle term with a `have` carrying its full
+type, then compose.

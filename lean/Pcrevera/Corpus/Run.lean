@@ -75,6 +75,8 @@ def compileAgrees (mine : Re) (theirs : BridgeRe) : Option String :=
     some s!"nregs {mine.nregs} vs {theirs.nregs}"
   else if mine.crfirst != theirs.crfirst then
     some s!"crfirst {mine.crfirst} vs {theirs.crfirst}"
+  else if mine.hascrlf != theirs.hascrlf then
+    some s!"hascrlf {mine.hascrlf} vs {theirs.hascrlf}"
   else if mine.pike != theirs.pike then
     some s!"pike {mine.pike} vs {theirs.pike}"
   else none
@@ -171,7 +173,8 @@ def runEdges (run : Limits → RunResult) (used : Usage) (limits : Limits)
   for dim in [0, 1, 2] do
     let (observed, edge) := atEdge limits used dim 0
     let again := run edge
-    if again.outcome != got.outcome || offsets again.ovec != offsets got.ovec then
+    if again.outcome != got.outcome || offsets again.ovec != offsets got.ovec
+        || !sameUsage again.usage used then
       return some s!"at the observed limit (dim {dim}, {observed}) the run changed"
     if observed != 0 then
       let (_, below) := atEdge limits used dim 1
@@ -344,7 +347,8 @@ def runContext (cp : CompiledPat) (caseJ : Lean.Json) (budget : Limits) :
           if dim == 0 then run v budget.stack else run budget.mem v
         let again := at_ observed
         if again.outcome != first.outcome ||
-            offsets again.ovec != offsets first.ovec then
+            offsets again.ovec != offsets first.ovec ||
+            !sameUsage again.usage first.usage then
           failures := failures ++
             [s!"a context call at its observed limit (dim {dim}) changed"]
         if observed != 0 then
@@ -358,9 +362,21 @@ record, replay every trial, pin the Pike VM's refusal on an ineligible
 program, and replay the context half. -/
 def runSweepCase (bridge : BridgeCase) (caseJ : Lean.Json) (budget : Limits) :
     D (List String) := do
+  let kind ← strField (← field caseJ "compile") "kind"
   match bridge.skip with
-  | some _ => return []
+  | some code =>
+      -- A skip is the bridge saying the engine refused this pattern, and the
+      -- record says so too or one of them is wrong. Without this a bridge
+      -- that skipped everything would replay nothing and report success.
+      if kind == "compiled" then
+        return ["the bridge skipped a case the record says compiled"]
+      let want ← natField (← field caseJ "compile") "code"
+      if code != want then
+        return [s!"the bridge skipped with {code}, the record refuses with {want}"]
+      return []
   | none =>
+  if kind != "compiled" then
+    return [s!"the bridge carries a tree for a case the record records as {kind}"]
   let some ast := bridge.ast | .error "a bridged case carries no AST"
   let some expected := bridge.expected | .error "a bridged case carries no re"
   let flags ← natFieldD caseJ "flags" 0
@@ -409,9 +425,21 @@ def runSweepCase (bridge : BridgeCase) (caseJ : Lean.Json) (budget : Limits) :
 
 /-- One conformance case: outcome and ovector at the default limits. -/
 def runCorpusCase (bridge : BridgeCase) (caseJ : Lean.Json) : D (List String) := do
+  let expect ← field caseJ "expect"
+  let kind ← strField expect "kind"
   match bridge.skip with
-  | some _ => return []
+  | some code =>
+      -- The same cross-check as the sweep's: the bridge and the record have
+      -- to agree that the engine refused this pattern, and on the code.
+      if kind != "compileError" then
+        return [s!"the bridge skipped a case the record records as {kind}"]
+      let want ← natField expect "code"
+      if code != want then
+        return [s!"the bridge skipped with {code}, the record refuses with {want}"]
+      return []
   | none =>
+  if kind == "compileError" then
+    return ["the bridge carries a tree for a case the record refuses"]
   let some ast := bridge.ast | .error "a bridged case carries no AST"
   let some expected := bridge.expected | .error "a bridged case carries no re"
   let flags ← natFieldD caseJ "flags" 0

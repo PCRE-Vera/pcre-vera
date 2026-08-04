@@ -41,13 +41,14 @@ def main (args : List String) : IO UInt32 := do
     let name ← orDie "case name" (strField c "name")
     let entry ← orDie s!"bridge {name}" (field corpusBridge name)
     let decoded ← orDie s!"bridge {name}" (bridgeCaseOf entry)
-    if decoded.skip.isSome then
-      skipped := skipped + 1
-    else
-      replayed := replayed + 1
-      match runCorpusCase decoded c with
-      | .error e => failures := failures ++ [s!"corpus {name}: {e}"]
-      | .ok bad => failures := failures ++ bad.map (s!"corpus {name}: {·}")
+    if decoded.skip.isSome then skipped := skipped + 1
+    else replayed := replayed + 1
+    -- Called for a skip too: the runner cross-checks it against the record,
+    -- so a bridge that skipped everything fails rather than replaying nothing
+    -- and reporting success.
+    match runCorpusCase decoded c with
+    | .error e => failures := failures ++ [s!"corpus {name}: {e}"]
+    | .ok bad => failures := failures ++ bad.map (s!"corpus {name}: {·}")
 
   let budgetJ ← orDie "sweep budget" (field sweep "budget")
   let budget : Limits :=
@@ -63,13 +64,11 @@ def main (args : List String) : IO UInt32 := do
     let key := s!"{family}-{index}"
     let entry ← orDie s!"bridge {key}" (field sweepBridge key)
     let decoded ← orDie s!"bridge {key}" (bridgeCaseOf entry)
-    if decoded.skip.isSome then
-      skipped := skipped + 1
-    else
-      replayed := replayed + 1
-      match runSweepCase decoded c budget with
-      | .error e => failures := failures ++ [s!"sweep {key}: {e}"]
-      | .ok bad => failures := failures ++ bad.map (s!"sweep {key}: {·}")
+    if decoded.skip.isSome then skipped := skipped + 1
+    else replayed := replayed + 1
+    match runSweepCase decoded c budget with
+    | .error e => failures := failures ++ [s!"sweep {key}: {e}"]
+    | .ok bad => failures := failures ++ bad.map (s!"sweep {key}: {·}")
 
   let regBridge ← orDie "bridge regressions" (field bridge "regressions")
   let regressions ← orDie "sweep regressions" (arrField sweep "regressions")
@@ -82,13 +81,11 @@ def main (args : List String) : IO UInt32 := do
       { cost := ← orDie "budget" (natField budgetJ "cost")
         stack := ← orDie "budget" (natField budgetJ "stack")
         mem := ← orDie "budget" (natField budgetJ "memory") }
-    if decoded.skip.isSome then
-      skipped := skipped + 1
-    else
-      replayed := replayed + 1
-      match runSweepCase decoded c own with
-      | .error e => failures := failures ++ [s!"regression {name}: {e}"]
-      | .ok bad => failures := failures ++ bad.map (s!"regression {name}: {·}")
+    if decoded.skip.isSome then skipped := skipped + 1
+    else replayed := replayed + 1
+    match runSweepCase decoded c own with
+    | .error e => failures := failures ++ [s!"regression {name}: {e}"]
+    | .ok bad => failures := failures ++ bad.map (s!"regression {name}: {·}")
 
   for f in failures do
     IO.eprintln f

@@ -38,10 +38,14 @@ eligibility buys, and the guards.
   head. `FragAt.rows` says the repetition table really describes the
   blocks it was emitted for, and with that the two relations reach the
   same places (`hollowReach_of_epsReach`). `pikeOk_no_eps_loop` states the
-  acyclicity the visited set rests on: on an eligible program a star's
-  loop-back edge can never be re-armed without consuming a byte, so no
-  closure goes round the loop twice and depth-first in split order really
-  is the backtracking preference order.
+  first half of the acyclicity the visited set rests on: on an eligible
+  program a star's loop-back edge can never be re-armed without consuming
+  a byte. `FragAt.epsForward` is the other half — every closure edge in
+  the program runs forward, except a `repNext`'s offer of its own block's
+  body — and `epsReach_no_cycle` puts the two together: no closure walk
+  ever takes a step and comes back where it started. That is what makes
+  depth-first in split order the backtracking preference order, and a
+  marked pc one the closure is done with.
 
 * **The empty iteration, ruled out.** `frag_empty_reach` says a construct
   that matched without moving spells a non-consuming path from its
@@ -125,7 +129,9 @@ eligibility buys, and the guards.
   `resumes_drop` is the form the thread list wants: an entry whose search
   has already come back empty is one the list can do without.
   `compile_runs_dedup` states it with every side condition about the
-  program discharged.
+  program discharged, and `resumes_drop_dup` is the visited set's own
+  step — a pending list already carrying this pc at this position higher
+  up answers the same without the second copy.
 
 * **The bumpalong, on this side.** `pikeSeed_skip_spec`: the position loop
   declines a starting position exactly where `Spec.scan` skips an attempt.
@@ -1264,6 +1270,81 @@ theorem FragAt.cells {code : Array Inst} {classes : Array UInt8}
                 fun hq => by simp at hq, fun hq => by simp at hq,
                 fun _ => ⟨hrow, by simp [hinfo]⟩, fun hq => by simp at hq⟩
 
+/-- Where the four repetition opcodes may stand, and how far a save may
+reach: each repetition cell sits at the address its own row names, and no
+capture slot climbs into the counters above the ovector. The compiler
+lays the program out that way; the invariants below only read it back. -/
+structure CellsOk (re : Re) : Prop where
+  zero : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repZero →
+    (re.code[q]! : Inst).arg < re.reps.size ∧
+      q + 1 = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).head
+  head : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repLoop →
+    (re.code[q]! : Inst).arg < re.reps.size ∧
+      q = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).head
+  enter : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repEnter →
+    (re.code[q]! : Inst).arg < re.reps.size ∧
+      q = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).body
+  next : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repNext →
+    (re.code[q]! : Inst).arg < re.reps.size ∧
+      q = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).after - 1
+  save : ∀ q : Nat, (re.code[q]! : Inst).op = Op.save →
+    (re.code[q]! : Inst).arg < re.novec
+
+/-- And the cell fact for a whole compiled pattern. Past the root's own
+code sit the ENDANCHORED assertion and the accept, and past the end of
+the program every read hands back the default `chr`; none of the three is
+a repetition cell or a save. -/
+theorem compile_cellsOk {p : Pat} (hc : Covered p.root)
+    (hcaps : CapsBelow (2 * (p.ncap + 1)) p.root) : CellsOk (compile p) := by
+  obtain ⟨hfrag, hrsz, hopen, hanch⟩ := compile_shape hc
+  have hnovec : (compile p).novec = 2 * (p.ncap + 1) := rfl
+  have hall : ∀ q : Nat,
+      (((compile p).code[q]!).op = Op.repZero →
+        ((compile p).code[q]!).arg < (compile p).reps.size ∧
+          q + 1 = ((compile p).reps[((compile p).code[q]!).arg]!).head) ∧
+      (((compile p).code[q]!).op = Op.repLoop →
+        ((compile p).code[q]!).arg < (compile p).reps.size ∧
+          q = ((compile p).reps[((compile p).code[q]!).arg]!).head) ∧
+      (((compile p).code[q]!).op = Op.repEnter →
+        ((compile p).code[q]!).arg < (compile p).reps.size ∧
+          q = ((compile p).reps[((compile p).code[q]!).arg]!).body) ∧
+      (((compile p).code[q]!).op = Op.repNext →
+        ((compile p).code[q]!).arg < (compile p).reps.size ∧
+          q = ((compile p).reps[((compile p).code[q]!).arg]!).after - 1) ∧
+      (((compile p).code[q]!).op = Op.save →
+        ((compile p).code[q]!).arg < (compile p).novec) := by
+    intro q
+    rcases Nat.lt_or_ge q (compileNode p.root 0 rootSt).code.size with hq | hq
+    · exact hfrag.cells (by rw [hnovec]; exact hcaps) q (Nat.zero_le _) hq
+    · have hsize := compile_code_size p
+      have hcellop : ((compile p).code[q]!).op = Op.accept ∨
+          ((compile p).code[q]!).op = Op.eod ∨
+          ((compile p).code[q]!).op = Op.chr := by
+        rcases Nat.lt_or_ge q (compile p).code.size with hlt | hge
+        · by_cases hend : p.opts.endanchored = true
+          · rw [if_pos hend] at hsize
+            rcases Nat.lt_or_ge q ((compileNode p.root 0 rootSt).code.size + 1)
+              with h1 | h1
+            · rw [show q = (compileNode p.root 0 rootSt).code.size from by omega,
+                (hanch hend).1]
+              exact Or.inr (Or.inl rfl)
+            · rw [show q = (compileNode p.root 0 rootSt).code.size + 1 from by
+                  omega, (hanch hend).2]
+              exact Or.inl rfl
+          · rw [if_neg (by simpa using hend)] at hsize
+            rw [show q = (compileNode p.root 0 rootSt).code.size from by omega,
+              hopen (eq_false_of_ne_true hend)]
+            exact Or.inl rfl
+        · rw [getElem!_neg (compile p).code q (by omega)]
+          exact Or.inr (Or.inr rfl)
+      refine ⟨fun hq' => ?_, fun hq' => ?_, fun hq' => ?_, fun hq' => ?_,
+        fun hq' => ?_⟩ <;>
+        (rcases hcellop with h' | h' | h' <;> rw [hq'] at h' <;>
+          exact absurd h' (by decide))
+  exact ⟨fun q hq => (hall q).1 hq, fun q hq => (hall q).2.1 hq,
+    fun q hq => (hall q).2.2.1 hq, fun q hq => (hall q).2.2.2.1 hq,
+    fun q hq => (hall q).2.2.2.2 hq⟩
+
 /-- Greediness orders a repetition's two arms; it does not change which
 two they are. -/
 private theorem mem_ite_pair {α : Type _} {c : Bool} {x y t : α} :
@@ -1329,6 +1410,231 @@ theorem pikeOk_no_eps_loop {code : Array Inst} {reps : Array RepInfo}
     (h : EpsReach code reps (reps[r]!).body q) :
     q < code.size ∧ q ≠ (reps[r]!).after - 1 :=
   (pikeOk_star hok hr).2.2 q (hollowReach_of_epsReach hrows h)
+
+/-- Where the closure defers, read at a whole program: forward, to a cell
+after itself, with one exception — a `repNext` offers its own block's
+body, which is behind it. -/
+def EpsForward (re : Re) : Prop :=
+  ∀ pc, ∀ t ∈ epsTargets re.code re.reps pc,
+    pc < t ∨ ((re.code[pc]! : Inst).op = Op.repNext ∧
+      t = (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).body)
+
+/-- Which way a fragment's edges run. Every cell defers forward, with the
+`repNext` exception, so a closure that comes back where it started went
+round some star's loop-back edge — and `pikeOk_no_eps_loop` is what says
+it cannot have. -/
+theorem FragAt.epsForward {code : Array Inst} {classes : Array UInt8}
+    {reps : Array RepInfo} {r0 : Nat} {a : Ast} {lo hi : Nat}
+    (h : FragAt code classes reps r0 a lo hi) :
+    ∀ pc, lo ≤ pc → pc < hi → ∀ t ∈ epsTargets code reps pc,
+      pc < t ∨ ((code[pc]!).op = Op.repNext ∧
+        t = (reps[(code[pc]!).arg]!).body) := by
+  induction h with
+  | nul | catNil | repNone => intro pc h1 h2 _ _; omega
+  | @chr b r0 lo hcell | @chrCI b r0 lo hcell | @any r0 lo hcell
+  | @anyNoNL r0 lo hcell | @bsr r0 lo hcell =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      simp [epsTargets, hcell] at ht
+  | @cls bits r0 idx lo hcell hblob hsem =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      simp [epsTargets, hcell] at ht
+  | @assn a' op r0 lo ha hcell =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      have hop : (code[lo]!).op = op := by rw [hcell]
+      cases a' <;> simp only [assnOp] at ha <;> try cases ha
+      all_goals
+        (simp only [epsTargets, hop, List.mem_singleton] at ht
+         omega)
+  | @catCons k kids r0 lo mid hi hk hkids ihk ihkids =>
+      intro pc h1 h2 t ht
+      have hle2 := hkids.le
+      rcases Nat.lt_or_ge pc mid with hm | hm
+      · exact ihk pc h1 hm t ht
+      · exact ihkids pc hm h2 t ht
+  | @altOne a' r0 lo hi ha iha => exact iha
+  | @altCons a' b rest r0 lo j hi hsplit ha hjump hrest iha ihrest =>
+      intro pc h1 h2 t ht
+      have hle1 := ha.le
+      have hle2 := hrest.le
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · rw [show pc = lo from by omega] at ht
+        simp only [epsTargets, hsplit, List.mem_cons, List.not_mem_nil,
+          or_false] at ht
+        left
+        omega
+      · rcases Nat.lt_or_ge pc j with hp2 | hp2
+        · exact iha pc hp hp2 t ht
+        · rcases Nat.eq_or_lt_of_le hp2 with hj | hj
+          · rw [show pc = j from by omega] at ht
+            simp only [epsTargets, hjump, List.mem_singleton] at ht
+            left
+            omega
+          · exact ihrest pc (by omega) h2 t ht
+  | @grpZero body r0 lo hi hbody ihbody => exact ihbody
+  | @grpCap cap body r0 lo j hcap hopen hbody hclose ihbody =>
+      intro pc h1 h2 t ht
+      have hle := hbody.le
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · rw [show pc = lo from by omega] at ht
+        simp only [epsTargets, hopen, List.mem_singleton] at ht
+        left
+        omega
+      · rcases Nat.lt_or_ge pc j with hp2 | hp2
+        · exact ihbody pc hp hp2 t ht
+        · rw [show pc = j from by omega] at ht
+          simp only [epsTargets, hclose, List.mem_singleton] at ht
+          left
+          omega
+  | @repOne greedy body r0 lo hi hbody ihbody => exact ihbody
+  | @repOpt lo' greedy body r0 sp j hlo hsplit hbody ihbody =>
+      intro pc h1 h2 t ht
+      have hle := hbody.le
+      rcases Nat.lt_or_ge pc (sp + 1) with hp | hp
+      · rw [show pc = sp from by omega] at ht
+        left
+        cases greedy <;>
+          (simp only [epsTargets, hsplit, if_true, Bool.false_eq_true, if_false,
+             List.mem_cons, List.not_mem_nil, or_false] at ht
+           omega)
+      · exact ihbody pc hp h2 t ht
+  | @repGen lo' hi' greedy body r0 lo j hzero hloop henter hnext hrow hinfo
+      hbound hnot0 hnot1 hbody ihbody =>
+      intro pc h1 h2 t ht
+      have hle := hbody.le
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · rw [show pc = lo from by omega] at ht
+        simp only [epsTargets, hzero, List.mem_singleton] at ht
+        left
+        omega
+      · rcases Nat.lt_or_ge pc (lo + 2) with hp2 | hp2
+        · rw [show pc = lo + 1 from by omega] at ht
+          simp only [epsTargets, hloop, hinfo, mem_ite_pair] at ht
+          left
+          omega
+        · rcases Nat.lt_or_ge pc (lo + 3) with hp3 | hp3
+          · rw [show pc = lo + 2 from by omega] at ht
+            simp only [epsTargets, henter, List.mem_singleton] at ht
+            left
+            omega
+          · rcases Nat.lt_or_ge pc j with hp4 | hp4
+            · exact ihbody pc hp3 hp4 t ht
+            · rw [show pc = j from by omega] at ht ⊢
+              simp only [epsTargets, hnext, hinfo, mem_ite_pair] at ht
+              rcases ht with rfl | rfl
+              · exact Or.inr ⟨by rw [hnext], by rw [hnext, hinfo]⟩
+              · left
+                omega
+
+/-- Past the end of the program the closure defers nowhere. -/
+private theorem epsTargets_past {code : Array Inst} {reps : Array RepInfo}
+    {pc : Nat} (h : code.size ≤ pc) : epsTargets code reps pc = [] := by
+  rw [epsTargets, getElem!_neg code pc (by omega)]
+  rfl
+
+/-- The same at a whole compiled pattern. What sits past the root's own
+code is the ENDANCHORED assertion, which defers to the accept in front of
+it, and the accept, which defers nowhere. -/
+theorem compile_epsForward {p : Pat} (hc : Covered p.root) :
+    EpsForward (compile p) := by
+  obtain ⟨hfrag, hrsz, hopen, hanch⟩ := compile_shape hc
+  intro pc t ht
+  rcases Nat.lt_or_ge pc (compileNode p.root 0 rootSt).code.size with hp | hp
+  · exact hfrag.epsForward pc (Nat.zero_le _) hp t ht
+  · have hsize := compile_code_size p
+    rcases Nat.lt_or_ge pc (compile p).code.size with hlt | hge
+    · by_cases hend : p.opts.endanchored = true
+      · rw [if_pos hend] at hsize
+        rcases Nat.lt_or_ge pc ((compileNode p.root 0 rootSt).code.size + 1)
+          with h1 | h1
+        · rw [show pc = (compileNode p.root 0 rootSt).code.size from by omega]
+            at ht ⊢
+          simp only [epsTargets, (hanch hend).1, List.mem_singleton] at ht
+          left
+          omega
+        · rw [show pc = (compileNode p.root 0 rootSt).code.size + 1 from by
+              omega] at ht
+          simp [epsTargets, (hanch hend).2] at ht
+      · rw [if_neg (by simpa using hend)] at hsize
+        rw [show pc = (compileNode p.root 0 rootSt).code.size from by omega]
+          at ht
+        simp [epsTargets, hopen (eq_false_of_ne_true hend)] at ht
+    · rw [epsTargets_past hge] at ht
+      simp at ht
+
+/-- One walk, read for the loop-back edge it must have taken to go
+backward: either it only ever went forward, or some star's `repNext` sent
+it to that star's body, with the walk reaching the `repNext` on the way in
+and carrying on out of the body. -/
+theorem epsReach_back {re : Re} (hcells : CellsOk re) (hfwd : EpsForward re) :
+    ∀ {a b : Nat}, EpsReach re.code re.reps a b →
+      a ≤ b ∨ ∃ r, r < re.reps.size ∧
+        EpsReach re.code re.reps (re.reps[r]!).body b ∧
+        EpsReach re.code re.reps a ((re.reps[r]!).after - 1) := by
+  intro a b h
+  induction h with
+  | refl => exact Or.inl (Nat.le_refl _)
+  | @step pc mid q hmid hrest ih =>
+      rcases hfwd pc mid hmid with hlt | ⟨hop, hbody⟩
+      · rcases ih with hle | ⟨r, hr, h1, h2⟩
+        · exact Or.inl (by omega)
+        · exact Or.inr ⟨r, hr, h1, .step hmid h2⟩
+      · obtain ⟨harg, hafter⟩ := hcells.next pc hop
+        exact Or.inr ⟨(re.code[pc]!).arg, harg, hbody ▸ hrest, hafter ▸ .refl⟩
+
+/-- And so no closure walk comes back where it started. One that took a
+step and returned would have gone round some star's loop-back edge — the
+one edge in the program that runs backward — and from that star's body
+its own `repNext` is exactly what `pike_ok` refused. That is the
+acyclicity the priority ordering rests on: depth-first in split order
+really is the backtracking preference order, and a pc the visited set has
+marked is one the closure is done with. -/
+theorem epsReach_no_cycle {re : Re} (hok : pikeOk re.code re.reps = true)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hcells : CellsOk re) (hfwd : EpsForward re) {pc mid : Nat}
+    (hmid : mid ∈ epsTargets re.code re.reps pc)
+    (hback : EpsReach re.code re.reps mid pc) : False := by
+  rcases epsReach_back hcells hfwd hback with hle | ⟨r, hr, hb1, hb2⟩
+  · rcases hfwd pc mid hmid with hlt | ⟨hop, hbody⟩
+    · omega
+    · obtain ⟨harg, hafter⟩ := hcells.next pc hop
+      exact (pikeOk_no_eps_loop hok hrows harg (hbody ▸ hback)).2 hafter
+  · exact (pikeOk_no_eps_loop hok hrows hr (hb1.trans (.step hmid hb2))).2 rfl
+
+/-- The reachability is a partial order, which is the same fact read
+between two pcs rather than round one. -/
+theorem epsReach_antisymm {re : Re} (hok : pikeOk re.code re.reps = true)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hcells : CellsOk re) (hfwd : EpsForward re) {a b : Nat}
+    (h1 : EpsReach re.code re.reps a b)
+    (h2 : EpsReach re.code re.reps b a) : a = b := by
+  rcases epsReach_back hcells hfwd h1 with hab | ⟨r, hr, hb1, hb2⟩
+  · rcases epsReach_back hcells hfwd h2 with hba | ⟨r, hr, hb1, hb2⟩
+    · omega
+    · exact absurd rfl (pikeOk_no_eps_loop hok hrows hr
+        ((hb1.trans h1).trans hb2)).2
+  · exact absurd rfl (pikeOk_no_eps_loop hok hrows hr
+      ((hb1.trans h2).trans hb2)).2
+
+/-- The same at a compiled pattern, every side condition discharged. -/
+theorem compile_epsReach_no_cycle {p : Pat} (hw : Wf p)
+    (hpike : (compile p).pike = true) {pc mid : Nat}
+    (hmid : mid ∈ epsTargets (compile p).code (compile p).reps pc)
+    (hback : EpsReach (compile p).code (compile p).reps mid pc) : False :=
+  epsReach_no_cycle (re := compile p) hpike
+    (fun _ hi => compile_rows hw.1.covered hi)
+    (compile_cellsOk hw.1.covered hw.2) (compile_epsForward hw.1.covered)
+    hmid hback
+
+theorem compile_epsReach_antisymm {p : Pat} (hw : Wf p)
+    (hpike : (compile p).pike = true) {a b : Nat}
+    (h1 : EpsReach (compile p).code (compile p).reps a b)
+    (h2 : EpsReach (compile p).code (compile p).reps b a) : a = b :=
+  epsReach_antisymm (re := compile p) hpike
+    (fun _ hi => compile_rows hw.1.covered hi)
+    (compile_cellsOk hw.1.covered hw.2) (compile_epsForward hw.1.covered) h1 h2
 
 /-! ## An empty match is a non-consuming path
 
@@ -1889,81 +2195,6 @@ theorem eff_hollow_fork {re : Re} {s : ByteArray} {mo : MOpts}
     simp only [eff, hop] at h <;>
     simp only [hollowTargets, hop] <;>
     (repeat' split at h) <;> simp_all
-
-/-- Where the four repetition opcodes may stand, and how far a save may
-reach: each repetition cell sits at the address its own row names, and no
-capture slot climbs into the counters above the ovector. The compiler
-lays the program out that way; the invariants below only read it back. -/
-structure CellsOk (re : Re) : Prop where
-  zero : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repZero →
-    (re.code[q]! : Inst).arg < re.reps.size ∧
-      q + 1 = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).head
-  head : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repLoop →
-    (re.code[q]! : Inst).arg < re.reps.size ∧
-      q = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).head
-  enter : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repEnter →
-    (re.code[q]! : Inst).arg < re.reps.size ∧
-      q = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).body
-  next : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repNext →
-    (re.code[q]! : Inst).arg < re.reps.size ∧
-      q = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).after - 1
-  save : ∀ q : Nat, (re.code[q]! : Inst).op = Op.save →
-    (re.code[q]! : Inst).arg < re.novec
-
-/-- And the cell fact for a whole compiled pattern. Past the root's own
-code sit the ENDANCHORED assertion and the accept, and past the end of
-the program every read hands back the default `chr`; none of the three is
-a repetition cell or a save. -/
-theorem compile_cellsOk {p : Pat} (hc : Covered p.root)
-    (hcaps : CapsBelow (2 * (p.ncap + 1)) p.root) : CellsOk (compile p) := by
-  obtain ⟨hfrag, hrsz, hopen, hanch⟩ := compile_shape hc
-  have hnovec : (compile p).novec = 2 * (p.ncap + 1) := rfl
-  have hall : ∀ q : Nat,
-      (((compile p).code[q]!).op = Op.repZero →
-        ((compile p).code[q]!).arg < (compile p).reps.size ∧
-          q + 1 = ((compile p).reps[((compile p).code[q]!).arg]!).head) ∧
-      (((compile p).code[q]!).op = Op.repLoop →
-        ((compile p).code[q]!).arg < (compile p).reps.size ∧
-          q = ((compile p).reps[((compile p).code[q]!).arg]!).head) ∧
-      (((compile p).code[q]!).op = Op.repEnter →
-        ((compile p).code[q]!).arg < (compile p).reps.size ∧
-          q = ((compile p).reps[((compile p).code[q]!).arg]!).body) ∧
-      (((compile p).code[q]!).op = Op.repNext →
-        ((compile p).code[q]!).arg < (compile p).reps.size ∧
-          q = ((compile p).reps[((compile p).code[q]!).arg]!).after - 1) ∧
-      (((compile p).code[q]!).op = Op.save →
-        ((compile p).code[q]!).arg < (compile p).novec) := by
-    intro q
-    rcases Nat.lt_or_ge q (compileNode p.root 0 rootSt).code.size with hq | hq
-    · exact hfrag.cells (by rw [hnovec]; exact hcaps) q (Nat.zero_le _) hq
-    · have hsize := compile_code_size p
-      have hcellop : ((compile p).code[q]!).op = Op.accept ∨
-          ((compile p).code[q]!).op = Op.eod ∨
-          ((compile p).code[q]!).op = Op.chr := by
-        rcases Nat.lt_or_ge q (compile p).code.size with hlt | hge
-        · by_cases hend : p.opts.endanchored = true
-          · rw [if_pos hend] at hsize
-            rcases Nat.lt_or_ge q ((compileNode p.root 0 rootSt).code.size + 1)
-              with h1 | h1
-            · rw [show q = (compileNode p.root 0 rootSt).code.size from by omega,
-                (hanch hend).1]
-              exact Or.inr (Or.inl rfl)
-            · rw [show q = (compileNode p.root 0 rootSt).code.size + 1 from by
-                  omega, (hanch hend).2]
-              exact Or.inl rfl
-          · rw [if_neg (by simpa using hend)] at hsize
-            rw [show q = (compileNode p.root 0 rootSt).code.size from by omega,
-              hopen (eq_false_of_ne_true hend)]
-            exact Or.inl rfl
-        · rw [getElem!_neg (compile p).code q (by omega)]
-          exact Or.inr (Or.inr rfl)
-      refine ⟨fun hq' => ?_, fun hq' => ?_, fun hq' => ?_, fun hq' => ?_,
-        fun hq' => ?_⟩ <;>
-        (rcases hcellop with h' | h' | h' <;> rw [hq'] at h' <;>
-          exact absurd h' (by decide))
-  exact ⟨fun q hq => (hall q).1 hq, fun q hq => (hall q).2.1 hq,
-    fun q hq => (hall q).2.2.1 hq, fun q hq => (hall q).2.2.2.1 hq,
-    fun q hq => (hall q).2.2.2.2 hq⟩
 
 /-- A recorded entry position is one the run has already reached, or the
 sentinel nothing has written yet. -/
@@ -2866,6 +3097,33 @@ theorem compile_runs_dedup {p : Pat} {s : ByteArray} {mo : MOpts}
     (fun _ hi => compile_rows hw.1.covered hi)
     (compile_noMidEntry hw.1.covered) hs hfit hufit hstk h
 
+/-- The step the closure's visited set takes, spelled on a pending list.
+An entry the list already carries higher up — same pc, same position —
+makes a second copy of itself dead weight: whatever the copy would find,
+the first one finds first, and where the first comes back empty the
+dedup lemma says the copy does too. This is the soundness of dropping a
+marked pc, and the only thing the correspondence needs from the visited
+set. -/
+theorem resumes_drop_dup {p : Pat} {s : ByteArray} {mo : MOpts}
+    {start attempt pc : Nat} {t t₀ : Spec.Thread} {A B : List Entry}
+    {r : Out} (hw : Wf p) (hpike : (compile p).pike = true)
+    (hs : s.size ≤ ceiling) (hmem : (pc, t₀) ∈ A) (hpos : t₀.pos = t.pos)
+    (hfit₀ : Fit (compile p) s pc t₀.pos t₀.regs)
+    (hfit : Fit (compile p) s pc t.pos t.regs) :
+    Resumes (compile p) s mo start attempt (A ++ (pc, t) :: B) r ↔
+      Resumes (compile p) s mo start attempt (A ++ B) r := by
+  rw [resumes_append, resumes_append]
+  refine or_congr Iff.rfl (and_congr_right fun hA => ?_)
+  refine resumes_drop ?_
+  obtain ⟨A₁, A₂, rfl⟩ := List.mem_iff_append.mp hmem
+  have hmid : Runs (compile p) s mo start attempt pc t₀.pos t₀.regs [] .nomatch := by
+    have h1 := (resumes_append.mp hA).resolve_left (by simp)
+    have h2 := (resumes_cons.mp h1.2)
+    exact ((runs_append (stk := []) (stk₂ := A₂)).mp
+      (by simpa using h2)).resolve_left (by simp) |>.1
+  exact compile_runs_dedup (pos := t.pos) (regs := t₀.regs) (u := t.regs)
+    hw hpike hs (hpos ▸ hfit₀) hfit List.Forall₂.nil (hpos ▸ hmid)
+
 /-! ## The capture pool, read as a register file
 
 A lockstep thread carries an integer handle into a flat pool of
@@ -3322,13 +3580,19 @@ bookkeeping itself:
 
 * the closure at one position builds the deduplicated, preference-ordered
   list of the surviving threads the backtracking enumeration would have
-  there. Dropping a later duplicate of a pc is sound, and that is
-  `compile_runs_dedup` with `resumes_drop` on top of it. What the
-  correspondence still owes is the invariant itself: the built list, read
-  through `blockAt`, against `frag_runs`' pending continuations,
-  order-preserving and dropping only duplicates. `pikeAdd_go_marks`
-  already reads a build against `epsTargets`, which is where that
-  induction starts;
+  there. Its two ingredients are in hand: `resumes_drop_dup` is the
+  visited set's step, sound by the dedup lemma, and
+  `compile_epsReach_no_cycle` is the ordering it needs — a marked pc is
+  one the closure has finished with, because no walk steps out and comes
+  back. What is
+  owed is the invariant that runs the induction over `pikeAdd.go`: the
+  parked list and the worklist, decoded through `blockAt`, read as a
+  pending list that answers what the mirror's continuation answers, with
+  a marked pc standing for a segment of the parked prefix. The decoding is
+  by `Agree re.novec`, not equality — a pool block is `novec` slots wide
+  where the mirror's file carries the repetition counters above them —
+  and the `Fit` the dedup wants is carried on the mirror's side, where the
+  seed's blank file has it and `eff_fit_goto`/`eff_fit_fork` keep it;
 * one position step, then the loop, seeding at lowest priority for the
   leftmost rule and letting an accepting thread kill everything below it
   while higher-priority threads may still overwrite it;
