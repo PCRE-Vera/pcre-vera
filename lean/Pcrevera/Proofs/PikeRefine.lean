@@ -1,5 +1,6 @@
 import Pcrevera.Proofs.Refine
 import Pcrevera.Proofs.Agreement
+import Pcrevera.Proofs.PikeBounds
 
 /-!
 # Towards S-8, the lockstep half
@@ -60,11 +61,82 @@ eligibility buys, and the guards.
   that star's `repNext`, so within one position the loop-back edge is taken
   at most once.
 
+* **The mirror's non-consuming moves.** `eff_hollow_goto` and
+  `eff_hollow_fork` say every move the backtracking mirror makes without
+  advancing the position is a step of `pike_hollow`'s walk, `repNext`'s
+  return to its deciding head included — which is why the walk was
+  written to go through the head. On that bridge rests the invariant
+  `EntryPast`/`EntryFresh`: a recorded entry position is one already
+  reached, and where a repetition's own `repNext` is still in reach
+  without consuming, the iteration under way did not start here.
+  `eff_entry_goto` and `eff_entry_fork` preserve it, and
+  `eff_repNext_loops` is the payoff — the machine-level twin of
+  `frag_rep_body_consumes`, saying the mirror at a `repNext` always
+  returns to its head, so the empty-match rule is dead code there too.
+
+* **The capture pool.** A lockstep thread carries a handle into a flat
+  pool where the specification's threads carry the block itself, so the
+  correspondence needs a decoding. `blockAt` is it — `deliver_eq_blockAt`
+  says it is the very slice `pike_run` hands back on a match — and what
+  the rest asks of it is three facts: `blockAt_seed` (a seed starts blank
+  but for the attempt in slot 0), `pikeTake_pool` (taking a block only
+  appends, so a block the pool already had reads the same afterwards) and
+  `pikeWrite_block` (a write is a register write, in place through an
+  unshared handle and on a fresh copy through a shared one).
+  `pikeWrite_block_owned` discharges its room hypotheses from `Owned`, the
+  ownership reading of `PikeBounds`, whose `blocks` clause says the pool
+  is the refcount table's blocks laid end to end.
+
+* **No way into the middle of a block.** The count a `repLoop` reads is
+  the one `repZero` left, and the reason is an address one.
+  `FragAt.targets` says a construct's compiled form never spells an
+  address outside its own range, `FragAt.blockIn` nests every repetition
+  row's block inside the fragment that claimed it, and
+  `FragAt.noMidEntry` reads the two together — an edge that lands in a
+  block starts in that block or at the `repZero` in front of it.
+  `FragAt.cells` is the same induction read down the other side, over
+  what each construct pins rather than what it targets: every repetition
+  opcode stands at the address its own row names and every save lands
+  inside the ovector. `compile_noMidEntry` and `compile_cellsOk` state
+  the two for a whole compiled pattern, the ENDANCHORED assertion and the
+  accept behind the root included.
+
+* **The count at the deciding head.** `CountPast` is what a
+  configuration inside a block carries: while the round's `repEnter` is
+  still ahead, a count no larger than the position it stands at, and once
+  that cell is behind, a count no larger than the position the round
+  began at — which `EntryPast` turns back into the first, since a
+  recorded entry position is one already reached. `eff_count_goto` and
+  `eff_count_fork` preserve it — away from a block's three writing cells
+  a move can only be carrying a count that was already live — and the
+  entry-position invariant turns the second half into a strict
+  inequality, so the bump at `repNext` never reaches the sentinel.
+  `eff_repLoop_forks` is the payoff and the twin of `eff_repNext_loops`:
+  wherever those invariants hold, the deciding head of an eligible
+  program always forks.
+
+* **The dedup lemma.** `Steady` bundles the three invariants,
+  `eff_steady_goto`/`eff_steady_fork` carry it across a move, and
+  `eff_ctrl_congr` says what they were for — at a steady configuration
+  the mirror's next move is a function of the pc and the position alone,
+  so two threads meeting at the same pc with different register files
+  cannot be told apart by the control flow. `run_dedup` runs that out
+  over a whole search, pending stacks travelling entry for entry, and
+  `resumes_drop` is the form the thread list wants: an entry whose search
+  has already come back empty is one the list can do without.
+  `compile_runs_dedup` states it with every side condition about the
+  program discharged.
+
+* **The bumpalong, on this side.** `pikeSeed_skip_spec`: the position loop
+  declines a starting position exactly where `Spec.scan` skips an attempt.
+
 * **The guards.** `pikeRun_badInput` locates the two refusals in the call
   itself, and `pikeRun_badInput_agrees` matches them against the
   specification's own BadInput under the documented subject cap. That is
   S-8's third clause for this matcher, proved.
 -/
+
+open private rootSt from Pcrevera.Proofs.Refine
 
 namespace Pcrevera.Refine
 
@@ -484,6 +556,10 @@ theorem EpsReach.trans {code : Array Inst} {reps : Array RepInfo} :
   | refl => exact h₂
   | step hmid _ ih => exact .step hmid (ih h₂)
 
+/-- A single epsilon step is a walk. -/
+theorem EpsReach.one {code : Array Inst} {reps : Array RepInfo} {x y : Nat}
+    (h : y ∈ epsTargets code reps x) : EpsReach code reps x y := .step h .refl
+
 /-- One more epsilon step onto the end of a walk. -/
 theorem EpsReach.snoc {code : Array Inst} {reps : Array RepInfo}
     {a b t : Nat} (h : EpsReach code reps a b)
@@ -499,13 +575,17 @@ theorem HollowReach.trans {code : Array Inst} {reps : Array RepInfo} :
   | step hmid _ ih => exact .step hmid (ih h₂)
 
 /-- What a compiled repetition row says about the block it was emitted
-for: the deciding head is that block's own `repLoop`, the body entry is
-the cell right after it, the exit sits one past the block's own `repNext`,
-and there is room between the two for the `repEnter` the head forks into.
--/
+for: the deciding head is that block's own `repLoop`, the cell in front of
+it zeroes the count, the body entry is the cell right after it and records
+the round's starting position, the exit sits one past the block's own
+`repNext`, and there is room between the head and the exit for the
+`repEnter` the head forks into. -/
 structure RowOk (code : Array Inst) (reps : Array RepInfo) (r : Nat) :
     Prop where
+  low : 0 < (reps[r]!).head
+  zero : code[(reps[r]!).head - 1]! = ⟨.repZero, r, 0⟩
   head : code[(reps[r]!).head]! = ⟨.repLoop, r, 0⟩
+  enter : code[(reps[r]!).body]! = ⟨.repEnter, r, 0⟩
   body : (reps[r]!).body = (reps[r]!).head + 1
   next : code[(reps[r]!).after - 1]! = ⟨.repNext, r, 0⟩
   room : (reps[r]!).head + 2 < (reps[r]!).after
@@ -565,7 +645,7 @@ theorem FragAt.rows {code : Array Inst} {classes : Array UInt8}
       intro r hge hlt
       rw [repCount] at hlt
       exact ihbody r hge hlt
-  | @repGen lo' hi' greedy body r0 pc j _ hloop _ hnext _ hinfo
+  | @repGen lo' hi' greedy body r0 pc j hzero hloop henter hnext _ hinfo
       _ hnot0 hnot1 hbody ihbody =>
       intro r hge hlt
       have hcount : repCount (.rep lo' hi' greedy body) = 1 + repCount body := by
@@ -579,8 +659,16 @@ theorem FragAt.rows {code : Array Inst} {classes : Array UInt8}
       rw [hcount] at hlt
       rcases Nat.eq_or_lt_of_le hge with rfl | h1
       · have hb := hbody.le
-        refine ⟨?_, ?_, ?_, ?_⟩
+        refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+        · rw [hinfo]
+          show 0 < pc + 1
+          omega
+        · rw [hinfo]
+          show code[pc + 1 - 1]! = _
+          rw [show pc + 1 - 1 = pc from by omega]
+          exact hzero
         · rw [hinfo]; exact hloop
+        · rw [hinfo]; exact henter
         · rw [hinfo]
         · rw [hinfo]
           show code[j + 1 - 1]! = _
@@ -598,6 +686,583 @@ theorem compile_rows {p : Pat} (hc : Covered p.root) {r : Nat}
   obtain ⟨hfrag, hrsz, _, _⟩ := compile_shape hc
   rw [hrsz] at hr
   exact hfrag.rows r (Nat.zero_le _) (by omega)
+
+/-! ## No way into the middle of a block
+
+The count a `repLoop` reads is the one `repZero` left, and the reason is
+an address one: nothing outside a repetition's block defers into it
+except the `repZero` standing in front of it. Three inductions say so,
+and all three are the accounting of `FragAt.rows` again.
+
+`FragAt.targets` is the containment — a construct's compiled form never
+spells an address outside its own range, one past the end included.
+`FragAt.blockIn` nests every row's block inside the fragment that claimed
+it, with room in front of the head for the `repZero`. `FragAt.noMidEntry`
+reads the two together: inside a fragment, an edge that lands in a row's
+block starts in that block, or at the `repZero` in front of it. -/
+
+/-- A fragment defers only inside itself, or to the cell just past its
+end. -/
+theorem FragAt.targets {code : Array Inst} {classes : Array UInt8}
+    {reps : Array RepInfo} {r0 : Nat} {a : Ast} {lo hi : Nat}
+    (h : FragAt code classes reps r0 a lo hi) :
+    ∀ pc, lo ≤ pc → pc < hi → ∀ t ∈ hollowTargets code reps pc,
+      lo ≤ t ∧ t ≤ hi := by
+  induction h with
+  | nul | catNil | repNone => intro pc h1 h2 _ _; omega
+  | @chr b r0 lo hcell =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      simp [hollowTargets, hcell] at ht
+  | @chrCI folded r0 lo hcell =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      simp [hollowTargets, hcell] at ht
+  | @cls bits r0 idx lo hcell hblob hsem =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      simp [hollowTargets, hcell] at ht
+  | @any r0 lo hcell =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      simp [hollowTargets, hcell] at ht
+  | @anyNoNL r0 lo hcell =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      simp [hollowTargets, hcell] at ht
+  | @bsr r0 lo hcell =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      simp [hollowTargets, hcell] at ht
+  | @assn a' op r0 lo ha hcell =>
+      intro pc h1 h2 t ht
+      rw [show pc = lo from by omega] at ht
+      have hop : (code[lo]!).op = op := by rw [hcell]
+      cases a' <;> simp only [assnOp] at ha <;> try cases ha
+      all_goals
+        (simp only [hollowTargets, hop, List.mem_singleton] at ht
+         omega)
+  | @catCons k kids r0 lo mid hi hk hkids ihk ihkids =>
+      intro pc h1 h2 t ht
+      have hle1 := hk.le
+      have hle2 := hkids.le
+      rcases Nat.lt_or_ge pc mid with hm | hm
+      · have := ihk pc h1 hm t ht
+        omega
+      · have := ihkids pc hm h2 t ht
+        omega
+  | @altOne a' r0 lo hi ha iha => exact iha
+  | @altCons a' b rest r0 lo j hi hsplit ha hjump hrest iha ihrest =>
+      intro pc h1 h2 t ht
+      have hle1 := ha.le
+      have hle2 := hrest.le
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · rw [show pc = lo from by omega] at ht
+        simp only [hollowTargets, hsplit, List.mem_cons, List.not_mem_nil,
+          or_false] at ht
+        omega
+      · rcases Nat.lt_or_ge pc j with hp2 | hp2
+        · have := iha pc hp hp2 t ht
+          omega
+        · rcases Nat.eq_or_lt_of_le hp2 with hj | hj
+          · rw [show pc = j from by omega] at ht
+            simp only [hollowTargets, hjump, List.mem_singleton] at ht
+            omega
+          · have := ihrest pc (by omega) h2 t ht
+            omega
+  | @grpZero body r0 lo hi hbody ihbody => exact ihbody
+  | @grpCap cap body r0 lo j hcap hopen hbody hclose ihbody =>
+      intro pc h1 h2 t ht
+      have hle := hbody.le
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · rw [show pc = lo from by omega] at ht
+        simp only [hollowTargets, hopen, List.mem_singleton] at ht
+        omega
+      · rcases Nat.lt_or_ge pc j with hp2 | hp2
+        · have := ihbody pc hp hp2 t ht
+          omega
+        · rw [show pc = j from by omega] at ht
+          simp only [hollowTargets, hclose, List.mem_singleton] at ht
+          omega
+  | @repOne greedy body r0 lo hi hbody ihbody => exact ihbody
+  | @repOpt lo' greedy body r0 sp j hlo hsplit hbody ihbody =>
+      intro pc h1 h2 t ht
+      have hle := hbody.le
+      rcases Nat.lt_or_ge pc (sp + 1) with hp | hp
+      · rw [show pc = sp from by omega] at ht
+        cases greedy <;>
+          (simp only [hollowTargets, hsplit, if_true, Bool.false_eq_true,
+             if_false, List.mem_cons, List.not_mem_nil, or_false] at ht
+           omega)
+      · have := ihbody pc hp h2 t ht
+        omega
+  | @repGen lo' hi' greedy body r0 lo j hzero hloop henter hnext hrow hinfo
+      hbound hnot0 hnot1 hbody ihbody =>
+      intro pc h1 h2 t ht
+      have hle := hbody.le
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · rw [show pc = lo from by omega] at ht
+        simp only [hollowTargets, hzero, List.mem_singleton] at ht
+        omega
+      · rcases Nat.lt_or_ge pc (lo + 2) with hp2 | hp2
+        · rw [show pc = lo + 1 from by omega] at ht
+          simp only [hollowTargets, hloop, hinfo, List.mem_cons,
+            List.not_mem_nil, or_false] at ht
+          omega
+        · rcases Nat.lt_or_ge pc (lo + 3) with hp3 | hp3
+          · rw [show pc = lo + 2 from by omega] at ht
+            simp only [hollowTargets, henter, List.mem_singleton] at ht
+            omega
+          · rcases Nat.lt_or_ge pc j with hp4 | hp4
+            · have := ihbody pc hp3 hp4 t ht
+              omega
+            · rw [show pc = j from by omega] at ht
+              simp only [hollowTargets, hnext, hinfo, List.mem_cons,
+                List.not_mem_nil, or_false] at ht
+              omega
+
+/-- Every row a fragment claims sits inside it, `repZero` included. -/
+theorem FragAt.blockIn {code : Array Inst} {classes : Array UInt8}
+    {reps : Array RepInfo} {r0 : Nat} {a : Ast} {lo hi : Nat}
+    (h : FragAt code classes reps r0 a lo hi) :
+    ∀ r, r0 ≤ r → r < r0 + repCount a →
+      lo + 1 ≤ (reps[r]!).head ∧ (reps[r]!).after ≤ hi := by
+  induction h with
+  | nul | chr _ | chrCI _ | cls _ _ _ | any _ | anyNoNL _ | bsr _ =>
+      intro r _ hlt
+      exfalso
+      rw [repCount] at hlt <;> first | omega | simp
+  | assn ha _ =>
+      intro r _ hlt
+      exact absurd (repCount_assn ha ▸ hlt) (by omega)
+  | catNil =>
+      intro r _ hlt
+      exact absurd (repCount_cat_nil ▸ hlt) (by omega)
+  | @catCons k kids r0 lo mid hi hk hkids ihk ihkids =>
+      intro r hge hlt
+      have hle1 := hk.le
+      have hle2 := hkids.le
+      rw [repCount_cat_cons] at hlt
+      rcases Nat.lt_or_ge r (r0 + repCount k) with h1 | h1
+      · have := ihk r hge h1
+        omega
+      · have := ihkids r h1 (by omega)
+        omega
+  | @altOne a' r0 lo hi ha iha =>
+      intro r hge hlt
+      rw [repCount_alt_cons, repCount_alt_nil] at hlt
+      exact iha r hge (by omega)
+  | @altCons a' b rest r0 lo j hi hsplit ha hjump hrest iha ihrest =>
+      intro r hge hlt
+      have hle1 := ha.le
+      have hle2 := hrest.le
+      rw [repCount_alt_cons] at hlt
+      rcases Nat.lt_or_ge r (r0 + repCount a') with h1 | h1
+      · have := iha r hge h1
+        omega
+      · have := ihrest r h1 (by omega)
+        omega
+  | @grpZero body r0 lo hi hbody ihbody =>
+      intro r hge hlt
+      rw [repCount] at hlt
+      exact ihbody r hge hlt
+  | @grpCap cap body r0 lo j hcap hopen hbody hclose ihbody =>
+      intro r hge hlt
+      have hle := hbody.le
+      rw [repCount] at hlt
+      have := ihbody r hge hlt
+      omega
+  | repNone =>
+      intro r _ hlt
+      exfalso
+      rw [repCount] at hlt
+      omega
+  | @repOne greedy body r0 lo hi hbody ihbody =>
+      intro r hge hlt
+      rw [repCount] at hlt
+      exact ihbody r hge hlt
+  | @repOpt lo' greedy body r0 sp j hlo hsplit hbody ihbody =>
+      intro r hge hlt
+      have hle := hbody.le
+      rw [repCount] at hlt
+      have := ihbody r hge hlt
+      omega
+  | @repGen lo' hi' greedy body r0 lo j hzero hloop henter hnext hrow hinfo
+      hbound hnot0 hnot1 hbody ihbody =>
+      intro r hge hlt
+      have hle := hbody.le
+      have hcount : repCount (.rep lo' hi' greedy body) = 1 + repCount body := by
+        cases hi' with
+        | none => rw [repCount] <;> simp
+        | some v =>
+            match v, hnot0, hnot1 with
+            | 0, h, _ => exact absurd rfl h
+            | 1, _, h => exact absurd rfl h
+            | (_ + 2), _, _ => rw [repCount] <;> simp
+      rw [hcount] at hlt
+      rcases Nat.eq_or_lt_of_le hge with rfl | h1
+      · rw [hinfo]
+        exact ⟨Nat.le_refl _, Nat.le_refl _⟩
+      · have := ihbody r h1 (by omega)
+        omega
+
+/-- No edge into the middle of a block. Inside a fragment, a cell that
+defers into one of the fragment's blocks is a cell of that block, or the
+`repZero` that opens it. -/
+theorem FragAt.noMidEntry {code : Array Inst} {classes : Array UInt8}
+    {reps : Array RepInfo} {r0 : Nat} {a : Ast} {lo hi : Nat}
+    (h : FragAt code classes reps r0 a lo hi) :
+    ∀ r, r0 ≤ r → r < r0 + repCount a → ∀ pc, lo ≤ pc → pc < hi →
+      ∀ t ∈ hollowTargets code reps pc,
+        (reps[r]!).head ≤ t → t < (reps[r]!).after →
+        (reps[r]!).head - 1 ≤ pc ∧ pc < (reps[r]!).after := by
+  induction h with
+  | nul | chr _ | chrCI _ | cls _ _ _ | any _ | anyNoNL _ | bsr _ =>
+      intro r _ hlt
+      exfalso
+      rw [repCount] at hlt <;> first | omega | simp
+  | assn ha _ =>
+      intro r _ hlt
+      exact absurd (repCount_assn ha ▸ hlt) (by omega)
+  | catNil =>
+      intro r _ hlt
+      exact absurd (repCount_cat_nil ▸ hlt) (by omega)
+  | @catCons k kids r0 lo mid hi hk hkids ihk ihkids =>
+      intro r hge hlt pc h1 h2 t ht hh1 hh2
+      rw [repCount_cat_cons] at hlt
+      rcases Nat.lt_or_ge r (r0 + repCount k) with hr | hr
+      · rcases Nat.lt_or_ge pc mid with hp | hp
+        · exact ihk r hge hr pc h1 hp t ht hh1 hh2
+        · exfalso
+          have hb := hk.blockIn r hge hr
+          have hc := hkids.targets pc hp h2 t ht
+          omega
+      · rcases Nat.lt_or_ge pc mid with hp | hp
+        · exfalso
+          have hb := hkids.blockIn r hr (by omega)
+          have hc := hk.targets pc h1 hp t ht
+          omega
+        · exact ihkids r hr (by omega) pc hp h2 t ht hh1 hh2
+  | @altOne a' r0 lo hi ha iha =>
+      intro r hge hlt
+      rw [repCount_alt_cons, repCount_alt_nil] at hlt
+      exact iha r hge (by omega)
+  | @altCons a' b rest r0 lo j hi hsplit ha hjump hrest iha ihrest =>
+      intro r hge hlt pc h1 h2 t ht hh1 hh2
+      have hle1 := ha.le
+      have hle2 := hrest.le
+      rw [repCount_alt_cons] at hlt
+      have hsp : lo ≤ pc → pc < lo + 1 → t = j + 1 ∨ t = lo + 1 := by
+        intro _ hb
+        rw [show pc = lo from by omega] at ht
+        simpa only [hollowTargets, hsplit, List.mem_cons, List.not_mem_nil,
+          or_false] using ht
+      have hjp : j ≤ pc → pc < j + 1 → t = hi := by
+        intro ha' hb
+        rw [show pc = j from by omega] at ht
+        simpa only [hollowTargets, hjump, List.mem_singleton] using ht
+      rcases Nat.lt_or_ge r (r0 + repCount a') with hr | hr
+      · have hb := ha.blockIn r hge hr
+        rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+        · exact absurd (hsp h1 hp) (by omega)
+        · rcases Nat.lt_or_ge pc j with hp2 | hp2
+          · exact iha r hge hr pc hp hp2 t ht hh1 hh2
+          · rcases Nat.lt_or_ge pc (j + 1) with hp3 | hp3
+            · exact absurd (hjp hp2 hp3) (by omega)
+            · exfalso
+              have hc := hrest.targets pc hp3 h2 t ht
+              omega
+      · have hb := hrest.blockIn r hr (by omega)
+        rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+        · exact absurd (hsp h1 hp) (by omega)
+        · rcases Nat.lt_or_ge pc j with hp2 | hp2
+          · exfalso
+            have hc := ha.targets pc hp hp2 t ht
+            omega
+          · rcases Nat.lt_or_ge pc (j + 1) with hp3 | hp3
+            · exact absurd (hjp hp2 hp3) (by omega)
+            · exact ihrest r hr (by omega) pc hp3 h2 t ht hh1 hh2
+  | @grpZero body r0 lo hi hbody ihbody =>
+      intro r hge hlt
+      rw [repCount] at hlt
+      exact ihbody r hge hlt
+  | @grpCap cap body r0 lo j hcap hopen hbody hclose ihbody =>
+      intro r hge hlt pc h1 h2 t ht hh1 hh2
+      have hle := hbody.le
+      rw [repCount] at hlt
+      have hb := hbody.blockIn r hge hlt
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · exfalso
+        rw [show pc = lo from by omega] at ht
+        simp only [hollowTargets, hopen, List.mem_singleton] at ht
+        omega
+      · rcases Nat.lt_or_ge pc j with hp2 | hp2
+        · exact ihbody r hge hlt pc hp hp2 t ht hh1 hh2
+        · exfalso
+          rw [show pc = j from by omega] at ht
+          simp only [hollowTargets, hclose, List.mem_singleton] at ht
+          omega
+  | repNone =>
+      intro r _ hlt
+      exfalso
+      rw [repCount] at hlt
+      omega
+  | @repOne greedy body r0 lo hi hbody ihbody =>
+      intro r hge hlt
+      rw [repCount] at hlt
+      exact ihbody r hge hlt
+  | @repOpt lo' greedy body r0 sp j hlo hsplit hbody ihbody =>
+      intro r hge hlt pc h1 h2 t ht hh1 hh2
+      have hle := hbody.le
+      rw [repCount] at hlt
+      have hb := hbody.blockIn r hge hlt
+      rcases Nat.lt_or_ge pc (sp + 1) with hp | hp
+      · exfalso
+        rw [show pc = sp from by omega] at ht
+        cases greedy <;>
+          (simp only [hollowTargets, hsplit, if_true, Bool.false_eq_true,
+             if_false, List.mem_cons, List.not_mem_nil, or_false] at ht
+           omega)
+      · exact ihbody r hge hlt pc hp h2 t ht hh1 hh2
+  | @repGen lo' hi' greedy body r0 lo j hzero hloop henter hnext hrow hinfo
+      hbound hnot0 hnot1 hbody ihbody =>
+      intro r hge hlt pc h1 h2 t ht hh1 hh2
+      have hle := hbody.le
+      have hcount : repCount (.rep lo' hi' greedy body) = 1 + repCount body := by
+        cases hi' with
+        | none => rw [repCount] <;> simp
+        | some v =>
+            match v, hnot0, hnot1 with
+            | 0, h, _ => exact absurd rfl h
+            | 1, _, h => exact absurd rfl h
+            | (_ + 2), _, _ => rw [repCount] <;> simp
+      rw [hcount] at hlt
+      rcases Nat.eq_or_lt_of_le hge with rfl | h3
+      · rw [hinfo]
+        exact ⟨by show lo + 1 - 1 ≤ pc; omega, by show pc < j + 1; omega⟩
+      · have hb := hbody.blockIn r h3 (by omega)
+        rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+        · exfalso
+          rw [show pc = lo from by omega] at ht
+          simp only [hollowTargets, hzero, List.mem_singleton] at ht
+          omega
+        · rcases Nat.lt_or_ge pc (lo + 2) with hp2 | hp2
+          · exfalso
+            rw [show pc = lo + 1 from by omega] at ht
+            simp only [hollowTargets, hloop, hinfo, List.mem_cons,
+              List.not_mem_nil, or_false] at ht
+            omega
+          · rcases Nat.lt_or_ge pc (lo + 3) with hp3 | hp3
+            · exfalso
+              rw [show pc = lo + 2 from by omega] at ht
+              simp only [hollowTargets, henter, List.mem_singleton] at ht
+              omega
+            · rcases Nat.lt_or_ge pc j with hp4 | hp4
+              · exact ihbody r h3 (by omega) pc hp3 hp4 t ht hh1 hh2
+              · exfalso
+                rw [show pc = j from by omega] at ht
+                simp only [hollowTargets, hnext, hinfo, List.mem_cons,
+                  List.not_mem_nil, or_false] at ht
+                omega
+
+/-- The address fact read at a whole program: nothing defers into a
+repetition's block but the block itself and the `repZero` that opens
+it. -/
+def NoMidEntry (re : Re) : Prop :=
+  ∀ pc t, t ∈ hollowTargets re.code re.reps pc → ∀ r, r < re.reps.size →
+    (re.reps[r]!).head ≤ t → t < (re.reps[r]!).after →
+      (re.reps[r]!).head - 1 ≤ pc ∧ pc < (re.reps[r]!).after
+
+/-- Reading the fragment induction at the program the root compiled to.
+Past the root's own code sit the ENDANCHORED assertion and the accept,
+which defer forward or nowhere; every block is behind them, so they
+cannot be the way in. -/
+theorem noMidEntry_of_root {re : Re} {root : Ast} {M : Nat}
+    (hroot : FragAt re.code re.classes re.reps 0 root 0 M)
+    (hsize : re.reps.size ≤ repCount root)
+    (htail : ∀ pc, M ≤ pc → ∀ t ∈ hollowTargets re.code re.reps pc, M ≤ t) :
+    NoMidEntry re := by
+  intro pc t ht r hr hh1 hh2
+  have hb := hroot.blockIn r (Nat.zero_le _) (by omega)
+  rcases Nat.lt_or_ge pc M with hp | hp
+  · exact hroot.noMidEntry r (Nat.zero_le _) (by omega) pc (Nat.zero_le _) hp
+      t ht hh1 hh2
+  · exact absurd (htail pc hp t ht) (by omega)
+
+/-- Past the end of the program every cell reads as the default, which
+defers nowhere. -/
+private theorem hollowTargets_past {code : Array Inst} {reps : Array RepInfo}
+    {pc : Nat} (h : code.size ≤ pc) : hollowTargets code reps pc = [] := by
+  rw [hollowTargets, getElem!_neg code pc (by omega)]
+  rfl
+
+/-- What `compile` leaves behind the root's own code: the ENDANCHORED
+assertion when the option is on, then the accept. -/
+private theorem compile_code_eq (p : Pat) :
+    (compile p).code =
+      if p.opts.endanchored then
+        ((compileNode p.root 0 rootSt).code.push ⟨.eod, 0, 0⟩).push
+          ⟨.accept, 0, 0⟩
+      else (compileNode p.root 0 rootSt).code.push ⟨.accept, 0, 0⟩ := by
+  by_cases hend : p.opts.endanchored = true
+  · rw [if_pos hend]
+    simp only [compile, hend]
+    rfl
+  · rw [if_neg (by simpa using hend)]
+    simp only [compile, eq_false_of_ne_true hend]
+    rfl
+
+private theorem compile_code_size (p : Pat) :
+    (compile p).code.size =
+      if p.opts.endanchored then (compileNode p.root 0 rootSt).code.size + 2
+      else (compileNode p.root 0 rootSt).code.size + 1 := by
+  rw [compile_code_eq]
+  split <;> simp
+
+/-- And so the address fact holds of a whole compiled pattern. -/
+theorem compile_noMidEntry {p : Pat} (hc : Covered p.root) :
+    NoMidEntry (compile p) := by
+  obtain ⟨hfrag, hrsz, hopen, hanch⟩ := compile_shape hc
+  refine noMidEntry_of_root hfrag (by omega) ?_
+  intro pc hp t ht
+  have hsize := compile_code_size p
+  rcases Nat.lt_or_ge pc (compile p).code.size with hlt | hge
+  · by_cases hend : p.opts.endanchored = true
+    · rw [if_pos hend] at hsize
+      rcases Nat.lt_or_ge pc ((compileNode p.root 0 rootSt).code.size + 1)
+        with h1 | h1
+      · rw [show pc = (compileNode p.root 0 rootSt).code.size from by omega,
+          hollowTargets, (hanch hend).1] at ht
+        simp only [List.mem_singleton] at ht
+        omega
+      · rw [show pc = (compileNode p.root 0 rootSt).code.size + 1 from by omega,
+          hollowTargets, (hanch hend).2] at ht
+        simp at ht
+    · rw [if_neg (by simpa using hend)] at hsize
+      rw [show pc = (compileNode p.root 0 rootSt).code.size from by omega,
+        hollowTargets, hopen (eq_false_of_ne_true hend)] at ht
+      simp at ht
+  · rw [hollowTargets_past hge] at ht
+    simp at ht
+
+/-- Every cell of a fragment stands where the compiler put it: each of
+the four repetition opcodes at the address its own row names, and every
+save inside the ovector. The induction is the edge one again, read down
+the other side — this time what each construct pins is its own cells
+rather than its own targets. -/
+theorem FragAt.cells {code : Array Inst} {classes : Array UInt8}
+    {reps : Array RepInfo} {r0 : Nat} {a : Ast} {lo hi novec : Nat}
+    (h : FragAt code classes reps r0 a lo hi) :
+    CapsBelow novec a → ∀ pc, lo ≤ pc → pc < hi →
+      ((code[pc]!).op = Op.repZero → (code[pc]!).arg < reps.size ∧
+        pc + 1 = (reps[(code[pc]!).arg]!).head) ∧
+      ((code[pc]!).op = Op.repLoop → (code[pc]!).arg < reps.size ∧
+        pc = (reps[(code[pc]!).arg]!).head) ∧
+      ((code[pc]!).op = Op.repEnter → (code[pc]!).arg < reps.size ∧
+        pc = (reps[(code[pc]!).arg]!).body) ∧
+      ((code[pc]!).op = Op.repNext → (code[pc]!).arg < reps.size ∧
+        pc = (reps[(code[pc]!).arg]!).after - 1) ∧
+      ((code[pc]!).op = Op.save → (code[pc]!).arg < novec) := by
+  induction h with
+  | nul | catNil | repNone => intro _ pc h1 h2; exact absurd h2 (by omega)
+  | @chr b r0 lo hcell | @chrCI b r0 lo hcell | @any r0 lo hcell
+  | @anyNoNL r0 lo hcell | @bsr r0 lo hcell =>
+      intro _ pc h1 h2
+      rw [show pc = lo from by omega, hcell]
+      refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> exact fun hq => by simp at hq
+  | @cls bits r0 idx lo hcell hblob hsem =>
+      intro _ pc h1 h2
+      rw [show pc = lo from by omega, hcell]
+      refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> exact fun hq => by simp at hq
+  | @assn a' op r0 lo ha hcell =>
+      intro _ pc h1 h2
+      rw [show pc = lo from by omega, hcell]
+      cases a' <;> simp only [assnOp] at ha <;> try cases ha
+      all_goals
+        (refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> exact fun hq => by simp at hq)
+  | @catCons k kids r0 lo mid hi hk hkids ihk ihkids =>
+      intro hcaps pc h1 h2
+      obtain ⟨hck, hcr⟩ := capsBelow_cat_cons.mp hcaps
+      rcases Nat.lt_or_ge pc mid with hm | hm
+      · exact ihk hck pc h1 hm
+      · exact ihkids hcr pc hm h2
+  | @altOne a' r0 lo hi ha iha =>
+      intro hcaps
+      exact iha (capsBelow_alt_cons.mp hcaps).1
+  | @altCons a' b rest r0 lo j hi hsplit ha hjump hrest iha ihrest =>
+      intro hcaps pc h1 h2
+      obtain ⟨hca, hcr⟩ := capsBelow_alt_cons.mp hcaps
+      have hle1 := ha.le
+      have hle2 := hrest.le
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · rw [show pc = lo from by omega, hsplit]
+        refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> exact fun hq => by simp at hq
+      · rcases Nat.lt_or_ge pc j with hp2 | hp2
+        · exact iha hca pc hp hp2
+        · rcases Nat.lt_or_ge pc (j + 1) with hp3 | hp3
+          · rw [show pc = j from by omega, hjump]
+            refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> exact fun hq => by simp at hq
+          · exact ihrest hcr pc hp3 h2
+  | @grpZero body r0 lo hi hbody ihbody =>
+      intro hcaps
+      rw [CapsBelow] at hcaps
+      exact ihbody hcaps.2
+  | @grpCap cap body r0 lo j hcap hopen hbody hclose ihbody =>
+      intro hcaps pc h1 h2
+      rw [CapsBelow] at hcaps
+      have hnov := hcaps.1 hcap
+      have hle := hbody.le
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · rw [show pc = lo from by omega, hopen]
+        exact ⟨fun hq => by simp at hq, fun hq => by simp at hq,
+          fun hq => by simp at hq, fun hq => by simp at hq,
+          fun _ => by show 2 * cap < novec; omega⟩
+      · rcases Nat.lt_or_ge pc j with hp2 | hp2
+        · exact ihbody hcaps.2 pc hp hp2
+        · rw [show pc = j from by omega, hclose]
+          exact ⟨fun hq => by simp at hq, fun hq => by simp at hq,
+            fun hq => by simp at hq, fun hq => by simp at hq,
+            fun _ => by show 2 * cap + 1 < novec; omega⟩
+  | @repOne greedy body r0 lo hi hbody ihbody =>
+      intro hcaps
+      rw [CapsBelow] at hcaps
+      exact ihbody hcaps
+  | @repOpt lo' greedy body r0 sp j hlo hsplit hbody ihbody =>
+      intro hcaps pc h1 h2
+      rw [CapsBelow] at hcaps
+      rcases Nat.lt_or_ge pc (sp + 1) with hp | hp
+      · rw [show pc = sp from by omega]
+        cases greedy <;>
+          (rw [hsplit]
+           simp only [if_true, Bool.false_eq_true, if_false]
+           refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> exact fun hq => by simp at hq)
+      · exact ihbody hcaps pc hp h2
+  | @repGen lo' hi' greedy body r0 lo j hzero hloop henter hnext hrow hinfo
+      hbound hnot0 hnot1 hbody ihbody =>
+      intro hcaps pc h1 h2
+      rw [CapsBelow] at hcaps
+      have hle := hbody.le
+      rcases Nat.lt_or_ge pc (lo + 1) with hp | hp
+      · rw [show pc = lo from by omega, hzero]
+        exact ⟨fun _ => ⟨hrow, by simp [hinfo]⟩, fun hq => by simp at hq,
+          fun hq => by simp at hq, fun hq => by simp at hq,
+          fun hq => by simp at hq⟩
+      · rcases Nat.lt_or_ge pc (lo + 2) with hp2 | hp2
+        · rw [show pc = lo + 1 from by omega, hloop]
+          exact ⟨fun hq => by simp at hq, fun _ => ⟨hrow, by simp [hinfo]⟩,
+            fun hq => by simp at hq, fun hq => by simp at hq,
+            fun hq => by simp at hq⟩
+        · rcases Nat.lt_or_ge pc (lo + 3) with hp3 | hp3
+          · rw [show pc = lo + 2 from by omega, henter]
+            exact ⟨fun hq => by simp at hq,
+              fun hq => by simp at hq, fun _ => ⟨hrow, by simp [hinfo]⟩,
+              fun hq => by simp at hq, fun hq => by simp at hq⟩
+          · rcases Nat.lt_or_ge pc j with hp4 | hp4
+            · exact ihbody hcaps pc hp3 hp4
+            · rw [show pc = j from by omega, hnext]
+              exact ⟨fun hq => by simp at hq,
+                fun hq => by simp at hq, fun hq => by simp at hq,
+                fun _ => ⟨hrow, by simp [hinfo]⟩, fun hq => by simp at hq⟩
 
 /-- Greediness orders a repetition's two arms; it does not change which
 two they are. -/
@@ -681,9 +1346,6 @@ one epsilon step per instruction the machine would have walked through.
 `pikeOk_body_consumes` reads the consequence off it — on an eligible
 program a star's body cannot match empty, because the path that would
 witness it is the one `pike_ok` refused. -/
-
-theorem EpsReach.one {code : Array Inst} {reps : Array RepInfo} {x y : Nat}
-    (h : y ∈ epsTargets code reps x) : EpsReach code reps x y := .step h .refl
 
 private theorem search_cat_eq {c : Spec.SCtx} (fuel : Nat) (kids : List Ast)
     (pos : Nat) (regs : Spec.Regs) :
@@ -1173,6 +1835,1408 @@ theorem pikeAdd_no_reentry {re : Re} {s : ByteArray} {mo : MOpts}
       exact absurd h1 (by simp)
     · exact (pikeOk_no_eps_loop hok hrows hr h1).2 rfl
 
+/-! ## The mirror's non-consuming moves
+
+`pike_hollow` walks a relation the backtracking mirror walks too: every
+move `eff` makes without advancing the position is a step of
+`hollowTargets`, `repNext`'s return to its deciding head included — which
+is why the walk was written to go through the head rather than straight
+at the body, and why the two agree here where `epsTargets` and the walk
+had to be reconciled. That correspondence is the bridge the machine-level
+reading of eligibility needs.
+
+What it buys is the invariant below. `EntryPast` says a recorded entry
+position is one already reached, or still the sentinel nothing has
+written; `EntryFresh` says that where a repetition's own `repNext` is
+still in reach without consuming, the iteration under way did not start
+here. Together they are preserved by every move the mirror makes: a
+consuming step re-establishes the second from the first outright, a
+non-consuming one carries the guard back one step, and `repEnter` — the
+one move that writes an entry position — establishes it from eligibility,
+since from a star's body its own `repNext` is not reachable at all.
+
+The consequence is the machine-level twin of `frag_rep_body_consumes`:
+on an eligible program the mirror's `repNext` always returns to its head,
+so the empty-match rule the backtracking matcher runs there is dead code
+and a matcher without one loses nothing. -/
+
+/-- Below the wrap a count survives the round trip through the register
+file. -/
+private theorem toNat_ofNat32 {n : Nat} (h : n < 2 ^ 32) :
+    (n.toUInt32).toNat = n := by
+  simp [Nat.toUInt32, Nat.mod_eq_of_lt h]
+
+set_option maxHeartbeats 1000000 in
+/-- Every move the mirror makes without advancing the position is a step
+of `pike_hollow`'s walk. -/
+theorem eff_hollow_goto {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' : Nat} {regs regs' : Spec.Regs}
+    (h : eff re s mo start attempt pc pos regs = .goto pc' pos regs') :
+    pc' ∈ hollowTargets re.code re.reps pc := by
+  cases hop : (re.code[pc]!).op <;>
+    simp only [eff, hop] at h <;>
+    simp only [hollowTargets, hop] <;>
+    (repeat' split at h) <;> simp_all
+
+set_option maxHeartbeats 1000000 in
+/-- And so is either arm of a fork, which never advances one. -/
+theorem eff_hollow_fork {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' alt : Nat} {regs : Spec.Regs}
+    (h : eff re s mo start attempt pc pos regs = .fork pc' alt) :
+    pc' ∈ hollowTargets re.code re.reps pc ∧
+      alt ∈ hollowTargets re.code re.reps pc := by
+  cases hop : (re.code[pc]!).op <;>
+    simp only [eff, hop] at h <;>
+    simp only [hollowTargets, hop] <;>
+    (repeat' split at h) <;> simp_all
+
+/-- Where the four repetition opcodes may stand, and how far a save may
+reach: each repetition cell sits at the address its own row names, and no
+capture slot climbs into the counters above the ovector. The compiler
+lays the program out that way; the invariants below only read it back. -/
+structure CellsOk (re : Re) : Prop where
+  zero : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repZero →
+    (re.code[q]! : Inst).arg < re.reps.size ∧
+      q + 1 = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).head
+  head : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repLoop →
+    (re.code[q]! : Inst).arg < re.reps.size ∧
+      q = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).head
+  enter : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repEnter →
+    (re.code[q]! : Inst).arg < re.reps.size ∧
+      q = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).body
+  next : ∀ q : Nat, (re.code[q]! : Inst).op = Op.repNext →
+    (re.code[q]! : Inst).arg < re.reps.size ∧
+      q = (re.reps[(re.code[q]! : Inst).arg]! : RepInfo).after - 1
+  save : ∀ q : Nat, (re.code[q]! : Inst).op = Op.save →
+    (re.code[q]! : Inst).arg < re.novec
+
+/-- And the cell fact for a whole compiled pattern. Past the root's own
+code sit the ENDANCHORED assertion and the accept, and past the end of
+the program every read hands back the default `chr`; none of the three is
+a repetition cell or a save. -/
+theorem compile_cellsOk {p : Pat} (hc : Covered p.root)
+    (hcaps : CapsBelow (2 * (p.ncap + 1)) p.root) : CellsOk (compile p) := by
+  obtain ⟨hfrag, hrsz, hopen, hanch⟩ := compile_shape hc
+  have hnovec : (compile p).novec = 2 * (p.ncap + 1) := rfl
+  have hall : ∀ q : Nat,
+      (((compile p).code[q]!).op = Op.repZero →
+        ((compile p).code[q]!).arg < (compile p).reps.size ∧
+          q + 1 = ((compile p).reps[((compile p).code[q]!).arg]!).head) ∧
+      (((compile p).code[q]!).op = Op.repLoop →
+        ((compile p).code[q]!).arg < (compile p).reps.size ∧
+          q = ((compile p).reps[((compile p).code[q]!).arg]!).head) ∧
+      (((compile p).code[q]!).op = Op.repEnter →
+        ((compile p).code[q]!).arg < (compile p).reps.size ∧
+          q = ((compile p).reps[((compile p).code[q]!).arg]!).body) ∧
+      (((compile p).code[q]!).op = Op.repNext →
+        ((compile p).code[q]!).arg < (compile p).reps.size ∧
+          q = ((compile p).reps[((compile p).code[q]!).arg]!).after - 1) ∧
+      (((compile p).code[q]!).op = Op.save →
+        ((compile p).code[q]!).arg < (compile p).novec) := by
+    intro q
+    rcases Nat.lt_or_ge q (compileNode p.root 0 rootSt).code.size with hq | hq
+    · exact hfrag.cells (by rw [hnovec]; exact hcaps) q (Nat.zero_le _) hq
+    · have hsize := compile_code_size p
+      have hcellop : ((compile p).code[q]!).op = Op.accept ∨
+          ((compile p).code[q]!).op = Op.eod ∨
+          ((compile p).code[q]!).op = Op.chr := by
+        rcases Nat.lt_or_ge q (compile p).code.size with hlt | hge
+        · by_cases hend : p.opts.endanchored = true
+          · rw [if_pos hend] at hsize
+            rcases Nat.lt_or_ge q ((compileNode p.root 0 rootSt).code.size + 1)
+              with h1 | h1
+            · rw [show q = (compileNode p.root 0 rootSt).code.size from by omega,
+                (hanch hend).1]
+              exact Or.inr (Or.inl rfl)
+            · rw [show q = (compileNode p.root 0 rootSt).code.size + 1 from by
+                  omega, (hanch hend).2]
+              exact Or.inl rfl
+          · rw [if_neg (by simpa using hend)] at hsize
+            rw [show q = (compileNode p.root 0 rootSt).code.size from by omega,
+              hopen (eq_false_of_ne_true hend)]
+            exact Or.inl rfl
+        · rw [getElem!_neg (compile p).code q (by omega)]
+          exact Or.inr (Or.inr rfl)
+      refine ⟨fun hq' => ?_, fun hq' => ?_, fun hq' => ?_, fun hq' => ?_,
+        fun hq' => ?_⟩ <;>
+        (rcases hcellop with h' | h' | h' <;> rw [hq'] at h' <;>
+          exact absurd h' (by decide))
+  exact ⟨fun q hq => (hall q).1 hq, fun q hq => (hall q).2.1 hq,
+    fun q hq => (hall q).2.2.1 hq, fun q hq => (hall q).2.2.2.1 hq,
+    fun q hq => (hall q).2.2.2.2 hq⟩
+
+/-- A recorded entry position is one the run has already reached, or the
+sentinel nothing has written yet. -/
+def EntryPast (re : Re) (pos : Nat) (regs : Spec.Regs) : Prop :=
+  ∀ r, r < re.reps.size →
+    (regs[re.novec + r * 2 + 1]!).toNat ≤ pos ∨
+      regs[re.novec + r * 2 + 1]! = unset32
+
+/-- And where a repetition's own `repNext` is still in reach without
+consuming, the iteration under way did not start here. -/
+def EntryFresh (re : Re) (pc pos : Nat) (regs : Spec.Regs) : Prop :=
+  ∀ r, r < re.reps.size →
+    HollowReach re.code re.reps pc ((re.reps[r]!).after - 1) →
+      regs[re.novec + r * 2 + 1]! ≠ pos.toUInt32
+
+theorem unset32_toNat : (unset32).toNat = 2 ^ 32 - 1 := by decide
+
+private theorem absurd_fail {P : Prop} {pc' pos' : Nat} {regs' : Spec.Regs}
+    (h : (Eff.fail) = .goto pc' pos' regs') : P := by cases h
+
+private theorem absurd_fork {P : Prop} {a b pc' pos' : Nat}
+    {regs' : Spec.Regs} (h : (Eff.fork a b) = .goto pc' pos' regs') : P := by
+  cases h
+
+private theorem absurd_give {P : Prop} {t : Spec.Thread} {pc' pos' : Nat}
+    {regs' : Spec.Regs} (h : (Eff.give t) = .goto pc' pos' regs') : P := by
+  cases h
+
+private theorem absurd_goto' {P : Prop} {a b x y : Nat} {rg : Spec.Regs}
+    (h : (Eff.goto a b rg) = .fork x y) : P := by cases h
+
+private theorem absurd_fail' {P : Prop} {x y : Nat}
+    (h : (Eff.fail) = .fork x y) : P := by cases h
+
+private theorem absurd_give' {P : Prop} {t : Spec.Thread} {x y : Nat}
+    (h : (Eff.give t) = .fork x y) : P := by cases h
+
+set_option maxHeartbeats 1000000 in
+/-- The mirror never resizes a register file. -/
+theorem eff_size {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' pos' : Nat} {regs regs' : Spec.Regs}
+    (h : eff re s mo start attempt pc pos regs = .goto pc' pos' regs') :
+    regs'.size = regs.size := by
+  cases hop : (re.code[pc]!).op <;> simp only [eff, hop] at h <;>
+    (repeat' split at h) <;>
+    first
+      | exact absurd_fail h
+      | exact absurd_fork h
+      | exact absurd_give h
+      | (injection h with _ _ h5
+         subst h5
+         simp)
+
+/-- Nothing an eligible program can stand at is a `\R`, past the end of
+the code included: the cell a read off the end hands back is a `chr`. -/
+private theorem op_ne_bsr {re : Re} (hok : pikeOk re.code re.reps = true)
+    (pc : Nat) : (re.code[pc]! : Inst).op ≠ Op.bsr := by
+  rcases Nat.lt_or_ge pc re.code.size with h | h
+  · exact pikeOk_no_bsr hok h
+  · rw [getElem!_neg re.code pc (by omega)]
+    decide
+
+set_option maxHeartbeats 2000000 in
+/-- The invariant, preserved by one move. A consuming step re-establishes
+`EntryFresh` from `EntryPast` outright, since the position it arrives at
+is one no entry has recorded; a non-consuming one carries the guard back
+a step; and `repEnter`, the one move that records an entry position,
+kills the guard outright, because from a star's body its own `repNext` is
+not reachable without consuming. -/
+theorem eff_entry_goto {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' pos' : Nat} {regs regs' : Spec.Regs}
+    (hok : pikeOk re.code re.reps = true) (hcells : CellsOk re)
+    (hpos : pos < 2 ^ 31)
+    (hsz : re.novec + 2 * re.reps.size ≤ regs.size)
+    (h1 : EntryPast re pos regs) (h2 : EntryFresh re pc pos regs)
+    (heff : eff re s mo start attempt pc pos regs = .goto pc' pos' regs') :
+    EntryPast re pos' regs' ∧ EntryFresh re pc' pos' regs' := by
+  have hreach : pos' = pos → pc' ∈ hollowTargets re.code re.reps pc := by
+    intro hp
+    subst hp
+    exact eff_hollow_goto heff
+  have hstill : pos' = pos →
+      (∀ r, r < re.reps.size →
+        regs'[re.novec + r * 2 + 1]! = regs[re.novec + r * 2 + 1]!) →
+      EntryPast re pos' regs' ∧ EntryFresh re pc' pos' regs' := by
+    intro hp hu
+    subst hp
+    exact ⟨fun r hr => by rw [hu r hr]; exact h1 r hr,
+      fun r hr hR => by rw [hu r hr]; exact h2 r hr (.step (hreach rfl) hR)⟩
+  have hate : pos' = pos + 1 → regs' = regs →
+      EntryPast re pos' regs' ∧ EntryFresh re pc' pos' regs' := by
+    intro hp hr
+    subst hp
+    subst hr
+    refine ⟨fun r hr => ?_, fun r hr _ => ?_⟩
+    · rcases h1 r hr with hle | hun
+      · exact Or.inl (by omega)
+      · exact Or.inr hun
+    · intro heq
+      have hv := congrArg UInt32.toNat heq
+      rw [toNat_ofNat32 (by omega)] at hv
+      rcases h1 r hr with hle | hun
+      · omega
+      · rw [hun, unset32_toNat] at hv
+        omega
+  cases hop : (re.code[pc]!).op <;> simp only [eff, hop] at heff
+  case bsr => exact absurd hop (op_ne_bsr hok pc)
+  case chr | chrCI | cls | any | anyNoNL =>
+      split at heff
+      · injection heff with _ h4 h5
+        exact hate h4.symm h5.symm
+      · exact absurd_fail heff
+  case split => exact absurd_fork heff
+  case accept =>
+      split at heff
+      · exact absurd_fail heff
+      · exact absurd_give heff
+  case save =>
+      injection heff with _ h4 h5
+      refine hstill h4.symm (fun r hr => ?_)
+      rw [← h5]
+      exact getBang_set_other regs _ (by have := hcells.save pc hop; omega)
+  case repZero =>
+      injection heff with _ h4 h5
+      refine hstill h4.symm (fun r hr => ?_)
+      rw [← h5]
+      exact getBang_set_other regs _ (by omega)
+  case repNext =>
+      split at heff <;>
+        (injection heff with _ h4 h5
+         refine hstill h4.symm (fun r hr => ?_)
+         rw [← h5]
+         exact getBang_set_other regs _ (by omega))
+  case repEnter =>
+      obtain ⟨harg, hbody⟩ := hcells.enter pc hop
+      injection heff with h3 h4 h5
+      subst h4
+      refine ⟨fun r hr => ?_, fun r hr hR => ?_⟩
+      · by_cases hra : r = (re.code[pc]!).arg
+        · subst hra
+          rw [← h5, getBang_set_self _ (by omega)]
+          exact Or.inl (by rw [toNat_ofNat32 (by omega)]; omega)
+        · rw [← h5, getBang_set_other regs _ (by omega)]
+          exact h1 r hr
+      · by_cases hra : r = (re.code[pc]!).arg
+        · exfalso
+          subst hra
+          exact (pikeOk_star hok harg).2.2 _
+            (hbody ▸ HollowReach.step (hreach rfl) hR) |>.2 rfl
+        · rw [← h5, getBang_set_other regs _ (by omega)]
+          exact h2 r hr (.step (hreach rfl) hR)
+  case jump | repLoop | circ | circM | doll | dollE | dollM | sod | eod
+     | eodn | wordB | notWordB =>
+      repeat' split at heff
+      all_goals first
+        | exact absurd_fail heff
+        | exact absurd_fork heff
+        | (injection heff with _ h4 h5
+           exact hstill h4.symm (fun r _ => by rw [← h5]))
+
+/-- The same for a fork, which never advances the position and never
+writes. -/
+theorem eff_entry_fork {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' alt : Nat} {regs : Spec.Regs}
+    (h2 : EntryFresh re pc pos regs)
+    (heff : eff re s mo start attempt pc pos regs = .fork pc' alt) :
+    EntryFresh re pc' pos regs ∧ EntryFresh re alt pos regs := by
+  obtain ⟨hp, ha⟩ := eff_hollow_fork heff
+  exact ⟨fun r hr hR => h2 r hr (.step hp hR),
+    fun r hr hR => h2 r hr (.step ha hR)⟩
+
+/-- The payoff, and the machine-level twin of `frag_rep_body_consumes`:
+on an eligible program the mirror at a repetition's own `repNext` always
+returns to the deciding head. The empty-match rule the backtracking
+matcher runs there is dead code, which is exactly what lets a matcher
+without one agree with it. -/
+theorem eff_repNext_loops {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos : Nat} {regs : Spec.Regs}
+    (hop : (re.code[pc]! : Inst).op = Op.repNext)
+    (harg : (re.code[pc]! : Inst).arg < re.reps.size)
+    (hgoal : pc = (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).after - 1)
+    (h2 : EntryFresh re pc pos regs) :
+    eff re s mo start attempt pc pos regs =
+      .goto (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).head pos
+        (regs.set! (re.novec + (re.code[pc]! : Inst).arg * 2)
+          (regs[re.novec + (re.code[pc]! : Inst).arg * 2]! + 1)) := by
+  have hne : ¬ (pos.toUInt32 =
+      regs[re.novec + (re.code[pc]! : Inst).arg * 2 + 1]!) := by
+    intro he
+    exact h2 _ harg (hgoal ▸ HollowReach.refl) he.symm
+  simp only [eff, hop]
+  rw [if_neg (by simp [hne])]
+
+/-! ## The count at the deciding head
+
+The last register the mirror reads to decide anything is a repetition's
+counter, and `repLoop` asks it two questions: whether the count is still
+below the minimum — vacuous on a pure star — and whether it has reached
+the high bound, which on a pure star is the `none32` sentinel, so what is
+really being asked is whether the count was ever written. It was.
+`repZero` writes it in the cell in front of the block, and `NoMidEntry`
+says nothing else defers into a block, so a configuration standing inside
+one stands downstream of that write.
+
+`CountPast` carries the fact, and claims a little more than the test
+needs, because the bump at `repNext` has to stay clear of the sentinel
+too. Before the round's `repEnter` it holds a count no larger than the
+position stood at; after it, a count no larger than the position the
+round began at, which `EntryPast` reads back as the same bound.
+`EntryFresh` then makes that second one strict — the round did not start
+here — so the bump lands below the position and the sentinel stays out of
+reach. -/
+
+/-- Below the wrap a bump on the register file is a bump on the count. -/
+private theorem toNat_succ32 {x : UInt32} (h : x.toNat + 1 < 2 ^ 32) :
+    (x + 1).toNat = x.toNat + 1 := by
+  rw [UInt32.toNat_add, show (1 : UInt32).toNat = 1 from rfl,
+    Nat.mod_eq_of_lt h]
+
+/-- What one row asks of a configuration: before the round's `repEnter`,
+a count no larger than the position stood at; after it, a count no larger
+than the position the round began at, with that position on record. -/
+def CountAt (re : Re) (r pc pos : Nat) (regs : Spec.Regs) : Prop :=
+  (pc ≤ (re.reps[r]!).body → (regs[re.novec + r * 2]!).toNat ≤ pos) ∧
+  ((re.reps[r]!).body < pc →
+    regs[re.novec + r * 2 + 1]! ≠ unset32 ∧
+      (regs[re.novec + r * 2]!).toNat ≤ (regs[re.novec + r * 2 + 1]!).toNat)
+
+/-- The count every live row carries. -/
+def CountPast (re : Re) (pc pos : Nat) (regs : Spec.Regs) : Prop :=
+  ∀ r, r < re.reps.size → (re.reps[r]!).head ≤ pc → pc < (re.reps[r]!).after →
+    CountAt re r pc pos regs
+
+/-- Either way round, a live count is one the run has already reached: the
+entry position a round recorded is itself behind the position. -/
+theorem CountPast.le {re : Re} {pc pos : Nat} {regs : Spec.Regs}
+    (h : CountPast re pc pos regs) (h1 : EntryPast re pos regs) {r : Nat}
+    (hr : r < re.reps.size) (hge : (re.reps[r]!).head ≤ pc)
+    (hlt : pc < (re.reps[r]!).after) :
+    (regs[re.novec + r * 2]!).toNat ≤ pos := by
+  rcases Nat.lt_or_ge (re.reps[r]!).body pc with hb | hb
+  · obtain ⟨hne, hle⟩ := (h r hr hge hlt).2 hb
+    rcases h1 r hr with h' | h'
+    · omega
+    · exact absurd h' hne
+  · exact (h r hr hge hlt).1 hb
+
+/-- A cell that is none of a row's three writing cells stands inside that
+row's block already, and past the round's own `repEnter`. -/
+private theorem count_stay {re : Re} {pc r : Nat}
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hr : r < re.reps.size) (hz : re.code[pc]! ≠ ⟨.repZero, r, 0⟩)
+    (hl : re.code[pc]! ≠ ⟨.repLoop, r, 0⟩)
+    (he : re.code[pc]! ≠ ⟨.repEnter, r, 0⟩)
+    (hge : (re.reps[r]!).head - 1 ≤ pc) :
+    (re.reps[r]!).head ≤ pc ∧ (re.reps[r]!).body < pc := by
+  have hrow := hrows r hr
+  have hq1 : pc ≠ (re.reps[r]!).head - 1 :=
+    fun hq => hz (by rw [hq]; exact hrow.zero)
+  have hq2 : pc ≠ (re.reps[r]!).head :=
+    fun hq => hl (by rw [hq]; exact hrow.head)
+  have hq3 : pc ≠ (re.reps[r]!).body :=
+    fun hq => he (by rw [hq]; exact hrow.enter)
+  have := hrow.low
+  have := hrow.body
+  omega
+
+/-- Where a move can have come from: an edge of the walk, or the cell in
+front of the one it lands on. -/
+private theorem count_back {re : Re} {pc q r : Nat} (hmid : NoMidEntry re)
+    (hq : q ∈ hollowTargets re.code re.reps pc ∨ q = pc + 1)
+    (hr : r < re.reps.size) (ha : (re.reps[r]!).head ≤ q)
+    (hb : q < (re.reps[r]!).after) :
+    (re.reps[r]!).head - 1 ≤ pc ∧ pc < (re.reps[r]!).after := by
+  rcases hq with hq | rfl
+  · exact hmid pc q hq r hr ha hb
+  · exact ⟨by omega, by omega⟩
+
+/-- One row carried across a move that neither enters its block nor writes
+either of its slots. -/
+private theorem count_carry {re : Re} {pc pos pcT posT r : Nat}
+    {regs regsT : Spec.Regs}
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (h1 : EntryPast re pos regs)
+    (h3 : CountPast re pc pos regs)
+    (hedge : pcT ∈ hollowTargets re.code re.reps pc ∨ pcT = pc + 1)
+    (hr : r < re.reps.size) (hge : (re.reps[r]!).head ≤ pcT)
+    (hlt : pcT < (re.reps[r]!).after)
+    (hz : re.code[pc]! ≠ ⟨.repZero, r, 0⟩)
+    (hl : re.code[pc]! ≠ ⟨.repLoop, r, 0⟩)
+    (he : re.code[pc]! ≠ ⟨.repEnter, r, 0⟩)
+    (hk1 : regsT[re.novec + r * 2]! = regs[re.novec + r * 2]!)
+    (hk2 : regsT[re.novec + r * 2 + 1]! = regs[re.novec + r * 2 + 1]!)
+    (hle : pos ≤ posT) : CountAt re r pcT posT regsT := by
+  obtain ⟨hb1, hb2⟩ := count_back hmid hedge hr hge hlt
+  obtain ⟨hin, hbody⟩ := count_stay hrows hr hz hl he hb1
+  refine ⟨fun _ => ?_, fun _ => ?_⟩
+  · rw [hk1]
+    exact Nat.le_trans (h3.le h1 hr hin hb2) hle
+  · rw [hk1, hk2]
+    exact (h3 r hr hin hb2).2 hbody
+
+/-- And a whole configuration carried across such a move. -/
+private theorem count_frame {re : Re} {pc pos pcT posT : Nat}
+    {regs regsT : Spec.Regs}
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (h1 : EntryPast re pos regs)
+    (h3 : CountPast re pc pos regs)
+    (hedge : pcT ∈ hollowTargets re.code re.reps pc ∨ pcT = pc + 1)
+    (hne : ∀ r, r < re.reps.size → re.code[pc]! ≠ ⟨.repZero, r, 0⟩ ∧
+      re.code[pc]! ≠ ⟨.repLoop, r, 0⟩ ∧ re.code[pc]! ≠ ⟨.repEnter, r, 0⟩)
+    (hkeep : ∀ r, r < re.reps.size →
+      regsT[re.novec + r * 2]! = regs[re.novec + r * 2]! ∧
+        regsT[re.novec + r * 2 + 1]! = regs[re.novec + r * 2 + 1]!)
+    (hle : pos ≤ posT) : CountPast re pcT posT regsT := by
+  intro r hr hge hlt
+  obtain ⟨hz, hl, he⟩ := hne r hr
+  obtain ⟨hk1, hk2⟩ := hkeep r hr
+  exact count_carry hrows hmid h1 h3 hedge hr hge hlt hz hl he hk1 hk2 hle
+
+/-- An opcode that is none of the three settles all three refusals at
+once. -/
+private theorem count_notRep {re : Re} {pc : Nat} {o : Op}
+    (ho : (re.code[pc]!).op = o) (hz : o ≠ .repZero) (hl : o ≠ .repLoop)
+    (he : o ≠ .repEnter) : ∀ r, r < re.reps.size →
+    re.code[pc]! ≠ ⟨.repZero, r, 0⟩ ∧ re.code[pc]! ≠ ⟨.repLoop, r, 0⟩ ∧
+      re.code[pc]! ≠ ⟨.repEnter, r, 0⟩ := by
+  intro r _
+  exact ⟨fun hq => hz (by rw [hq] at ho; exact ho.symm),
+    fun hq => hl (by rw [hq] at ho; exact ho.symm),
+    fun hq => he (by rw [hq] at ho; exact ho.symm)⟩
+
+/-- The deciding head's own two arms. The exit leaves the block, and the
+body entry is reached with the count still the one the head just read. -/
+private theorem count_head {re : Re} {pc pos q : Nat} {regs : Spec.Regs}
+    (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (h1 : EntryPast re pos regs)
+    (h3 : CountPast re pc pos regs)
+    (hop : (re.code[pc]! : Inst).op = Op.repLoop)
+    (hq : q = (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).after ∨
+      q = (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).body) :
+    CountPast re q pos regs := by
+  obtain ⟨harg, hheadq⟩ := hcells.head pc hop
+  have hrow := hrows _ harg
+  have hroom := hrow.room
+  have hbd := hrow.body
+  intro r hr hge hlt
+  by_cases hra : r = (re.code[pc]!).arg
+  · subst hra
+    rcases hq with rfl | rfl
+    · exact absurd hlt (by omega)
+    · exact ⟨fun _ => h3.le h1 hr (by omega) (by omega),
+        fun hq' => absurd hq' (by omega)⟩
+  · refine count_carry hrows hmid h1 h3 (Or.inl ?_) hr hge hlt
+      (fun hz => hra (by rw [hz])) (fun hz => hra (by rw [hz]))
+      (fun hz => hra (by rw [hz])) rfl rfl (Nat.le_refl _)
+    simp only [hollowTargets, hop, List.mem_cons, List.not_mem_nil, or_false]
+    exact hq
+
+set_option maxHeartbeats 4000000 in
+/-- The count invariant, preserved by one move. Away from the three cells
+a block writes through, the move can only be carrying a count that was
+already live, because it cannot have entered a block anywhere but at its
+`repZero` nor crossed a round's `repEnter`. At those three cells the row
+is the one the instruction names: `repZero` plants a zero, `repEnter`
+records the position the round begins at, and `repNext` bumps the count
+past a position the round has already left behind. -/
+theorem eff_count_goto {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' pos' : Nat} {regs regs' : Spec.Regs}
+    (hok : pikeOk re.code re.reps = true) (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (hpos : pos < 2 ^ 31)
+    (hsz : re.novec + 2 * re.reps.size ≤ regs.size)
+    (h1 : EntryPast re pos regs) (h2 : EntryFresh re pc pos regs)
+    (h3 : CountPast re pc pos regs)
+    (heff : eff re s mo start attempt pc pos regs = .goto pc' pos' regs') :
+    CountPast re pc' pos' regs' := by
+  cases hop : (re.code[pc]!).op <;> simp only [eff, hop] at heff
+  case bsr => exact absurd hop (op_ne_bsr hok pc)
+  case split => exact absurd_fork heff
+  case accept =>
+      split at heff
+      · exact absurd_fail heff
+      · exact absurd_give heff
+  case chr | chrCI | cls | any | anyNoNL =>
+      split at heff
+      · injection heff with h4 h5 h6
+        subst h4
+        subst h5
+        subst h6
+        exact count_frame hrows hmid h1 h3 (Or.inr rfl)
+          (count_notRep hop (by decide) (by decide) (by decide))
+          (fun _ _ => ⟨rfl, rfl⟩) (by omega)
+      · exact absurd_fail heff
+  case jump =>
+      injection heff with h4 h5 h6
+      subst h4
+      subst h5
+      subst h6
+      refine count_frame hrows hmid h1 h3 (Or.inl ?_)
+        (count_notRep hop (by decide) (by decide) (by decide))
+        (fun _ _ => ⟨rfl, rfl⟩) (Nat.le_refl _)
+      simp [hollowTargets, hop]
+  case save =>
+      injection heff with h4 h5 h6
+      subst h4
+      subst h5
+      subst h6
+      have hlow := hcells.save pc hop
+      exact count_frame hrows hmid h1 h3 (Or.inr rfl)
+        (count_notRep hop (by decide) (by decide) (by decide))
+        (fun r _ => ⟨getBang_set_other regs _ (by omega),
+          getBang_set_other regs _ (by omega)⟩) (Nat.le_refl _)
+  case circ | circM | doll | dollE | dollM | sod | eod | eodn | wordB
+     | notWordB =>
+      repeat' split at heff
+      all_goals first
+        | exact absurd_fail heff
+        | (injection heff with h4 h5 h6
+           subst h4
+           subst h5
+           subst h6
+           exact count_frame hrows hmid h1 h3 (Or.inr rfl)
+             (count_notRep hop (by decide) (by decide) (by decide))
+             (fun _ _ => ⟨rfl, rfl⟩) (Nat.le_refl _))
+  case repZero =>
+      obtain ⟨harg, hhead⟩ := hcells.zero pc hop
+      have hbd := (hrows _ harg).body
+      injection heff with h4 h5 h6
+      subst h4
+      subst h5
+      subst h6
+      intro r hr hge hlt
+      by_cases hra : r = (re.code[pc]!).arg
+      · subst hra
+        refine ⟨fun _ => ?_, fun hq => absurd hq (by omega)⟩
+        rw [getBang_set_self regs (by omega)]
+        simp
+      · exact count_carry hrows hmid h1 h3 (Or.inr rfl) hr hge hlt
+          (fun hq => hra (by rw [hq])) (fun hq => hra (by rw [hq]))
+          (fun hq => hra (by rw [hq]))
+          (getBang_set_other regs _ (by omega))
+          (getBang_set_other regs _ (by omega)) (Nat.le_refl _)
+  case repEnter =>
+      obtain ⟨harg, hbodyq⟩ := hcells.enter pc hop
+      have hrow := hrows _ harg
+      have hbd := hrow.body
+      have hroom := hrow.room
+      injection heff with h4 h5 h6
+      subst h4
+      subst h5
+      subst h6
+      intro r hr hge hlt
+      by_cases hra : r = (re.code[pc]!).arg
+      · subst hra
+        have hcnt := h3.le h1 hr (by omega) (by omega)
+        refine ⟨fun hq => absurd hq (by omega), fun _ => ⟨?_, ?_⟩⟩
+        · rw [getBang_set_self regs (by omega)]
+          intro hq
+          have hv := congrArg UInt32.toNat hq
+          rw [toNat_ofNat32 (by omega), unset32_toNat] at hv
+          omega
+        · rw [getBang_set_self regs (by omega),
+            getBang_set_other regs _ (by omega), toNat_ofNat32 (by omega)]
+          exact hcnt
+      · exact count_carry hrows hmid h1 h3 (Or.inr rfl) hr hge hlt
+          (fun hq => hra (by rw [hq])) (fun hq => hra (by rw [hq]))
+          (fun hq => hra (by rw [hq]))
+          (getBang_set_other regs _ (by omega))
+          (getBang_set_other regs _ (by omega)) (Nat.le_refl _)
+  case repLoop =>
+      repeat' split at heff
+      all_goals first
+        | exact absurd_fork heff
+        | (injection heff with h4 h5 h6
+           subst h4
+           subst h5
+           subst h6
+           exact count_head hcells hrows hmid h1 h3 hop
+             (by first | exact Or.inl rfl | exact Or.inr rfl))
+  case repNext =>
+      obtain ⟨harg, hnextq⟩ := hcells.next pc hop
+      have hrow := hrows _ harg
+      have hbd := hrow.body
+      have hroom := hrow.room
+      obtain ⟨hentne, hentle⟩ := (h3 _ harg (by omega) (by omega)).2 (by omega)
+      have hentpos : (regs[re.novec + (re.code[pc]!).arg * 2 + 1]!).toNat
+          ≤ pos := by
+        rcases h1 _ harg with h' | h'
+        · exact h'
+        · exact absurd h' hentne
+      have hstrict : (regs[re.novec + (re.code[pc]!).arg * 2 + 1]!).toNat
+          < pos := by
+        rcases Nat.lt_or_ge (regs[re.novec + (re.code[pc]!).arg * 2 + 1]!).toNat
+          pos with h' | h'
+        · exact h'
+        · exact absurd (UInt32.toNat_inj.mp
+            (by rw [toNat_ofNat32 (show pos < 2 ^ 32 by omega)]; omega))
+            (h2 _ harg (hnextq ▸ HollowReach.refl))
+      have hbump : ((regs.set! (re.novec + (re.code[pc]!).arg * 2)
+            (regs[re.novec + (re.code[pc]!).arg * 2]! + 1))[
+              re.novec + (re.code[pc]!).arg * 2]!).toNat
+          = (regs[re.novec + (re.code[pc]!).arg * 2]!).toNat + 1 := by
+        rw [getBang_set_self regs (by omega)]
+        exact toNat_succ32 (by omega)
+      have hedge : ∀ q, q = (re.reps[(re.code[pc]!).arg]!).after ∨
+          q = (re.reps[(re.code[pc]!).arg]!).head →
+          q ∈ hollowTargets re.code re.reps pc := by
+        intro q hq
+        simp only [hollowTargets, hop, List.mem_cons, List.not_mem_nil,
+          or_false]
+        exact hq
+      have hcase : ∀ q, q = (re.reps[(re.code[pc]!).arg]!).after ∨
+          q = (re.reps[(re.code[pc]!).arg]!).head →
+          CountPast re q pos (regs.set! (re.novec + (re.code[pc]!).arg * 2)
+            (regs[re.novec + (re.code[pc]!).arg * 2]! + 1)) := by
+        intro q hq r hr hge hlt
+        by_cases hra : r = (re.code[pc]!).arg
+        · subst hra
+          rcases hq with rfl | rfl
+          · exact absurd hlt (by omega)
+          · exact ⟨fun _ => by rw [hbump]; omega,
+              fun hq' => absurd hq' (by omega)⟩
+        · exact count_carry hrows hmid h1 h3 (Or.inl (hedge q hq)) hr hge hlt
+            (fun hz => hra (by rw [hz])) (fun hz => hra (by rw [hz]))
+            (fun hz => hra (by rw [hz]))
+            (getBang_set_other regs _ (by omega))
+            (getBang_set_other regs _ (by omega)) (Nat.le_refl _)
+      split at heff <;>
+        (injection heff with h4 h5 h6
+         subst h4
+         subst h5
+         subst h6
+         first
+           | exact hcase _ (Or.inl rfl)
+           | exact hcase _ (Or.inr rfl))
+
+/-- The same across a fork, which neither advances the position nor
+writes. Both arms are edges of the walk, and the only fork that names a
+row is the deciding head's own. -/
+theorem eff_count_fork {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' alt : Nat} {regs : Spec.Regs}
+    (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (h1 : EntryPast re pos regs)
+    (h3 : CountPast re pc pos regs)
+    (heff : eff re s mo start attempt pc pos regs = .fork pc' alt) :
+    CountPast re pc' pos regs ∧ CountPast re alt pos regs := by
+  cases hop : (re.code[pc]!).op <;> simp only [eff, hop] at heff
+  case split =>
+      injection heff with h4 h5
+      subst h4
+      subst h5
+      constructor <;>
+        (refine count_frame hrows hmid h1 h3 (Or.inl ?_)
+           (count_notRep hop (by decide) (by decide) (by decide))
+           (fun _ _ => ⟨rfl, rfl⟩) (Nat.le_refl _)
+         simp [hollowTargets, hop])
+  case repLoop =>
+      repeat' split at heff
+      all_goals first
+        | exact absurd_goto' heff
+        | (injection heff with h4 h5
+           subst h4
+           subst h5
+           exact ⟨count_head hcells hrows hmid h1 h3 hop
+               (by first | exact Or.inl rfl | exact Or.inr rfl),
+             count_head hcells hrows hmid h1 h3 hop
+               (by first | exact Or.inl rfl | exact Or.inr rfl)⟩)
+  all_goals (repeat' split at heff)
+  all_goals first
+    | exact absurd_goto' heff
+    | exact absurd_fail' heff
+    | exact absurd_give' heff
+
+/-- The counter clause, and the twin of `eff_repNext_loops`: where the
+invariants hold, the mirror at an eligible program's deciding head always
+forks. `cnt < lo`
+is `cnt < 0` on a pure star, and `cnt ≥ hi` asks whether the count has
+reached the `none32` sentinel, which `CountPast` puts a whole subject's
+length out of reach of. So neither test the head runs can tell two
+threads standing there apart. -/
+theorem eff_repLoop_forks {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos : Nat} {regs : Spec.Regs}
+    (hok : pikeOk re.code re.reps = true) (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hop : (re.code[pc]! : Inst).op = Op.repLoop) (hpos : pos < 2 ^ 31)
+    (h1 : EntryPast re pos regs) (h3 : CountPast re pc pos regs) :
+    eff re s mo start attempt pc pos regs =
+      (if (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).greedy then
+        .fork (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).body
+          (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).after
+      else
+        .fork (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).after
+          (re.reps[(re.code[pc]! : Inst).arg]! : RepInfo).body) := by
+  obtain ⟨harg, hhead⟩ := hcells.head pc hop
+  obtain ⟨hlo, hhi, _⟩ := pikeOk_star hok harg
+  have hroom := (hrows _ harg).room
+  have hcnt := h3.le h1 harg (by omega) (by omega)
+  simp only [eff, hop]
+  rw [if_neg (by omega), if_neg (by rw [hhi]; simp only [none32]; omega)]
+
+/-! ## The dedup lemma, one move at a time
+
+Two threads that meet at the same pc and the same position differ only in
+the register file they carry, and the point of everything above is that
+the mirror's control flow cannot tell them apart. `Steady` bundles the
+three invariants that make it so — a recorded entry position already
+reached, no round started here where its own `repNext` is still in reach,
+and a count that never reaches the sentinel — and `eff_ctrl_congr` reads
+off the consequence: at a steady configuration the move the mirror makes
+is a function of the pc and the position alone. Every other test in `eff`
+reads the subject, the options or the position, never a register. -/
+
+/-- Everything the mirror's control flow reads out of a register file,
+held in check. -/
+def Steady (re : Re) (pc pos : Nat) (regs : Spec.Regs) : Prop :=
+  EntryPast re pos regs ∧ EntryFresh re pc pos regs ∧ CountPast re pc pos regs
+
+/-- Steadiness survives a move. -/
+theorem eff_steady_goto {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' pos' : Nat} {regs regs' : Spec.Regs}
+    (hok : pikeOk re.code re.reps = true) (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (hpos : pos < 2 ^ 31)
+    (hsz : re.novec + 2 * re.reps.size ≤ regs.size)
+    (hs : Steady re pc pos regs)
+    (heff : eff re s mo start attempt pc pos regs = .goto pc' pos' regs') :
+    Steady re pc' pos' regs' :=
+  ⟨(eff_entry_goto hok hcells hpos hsz hs.1 hs.2.1 heff).1,
+    (eff_entry_goto hok hcells hpos hsz hs.1 hs.2.1 heff).2,
+    eff_count_goto hok hcells hrows hmid hpos hsz hs.1 hs.2.1 hs.2.2 heff⟩
+
+/-- And a fork, which hands it to both arms. -/
+theorem eff_steady_fork {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' alt : Nat} {regs : Spec.Regs}
+    (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (hs : Steady re pc pos regs)
+    (heff : eff re s mo start attempt pc pos regs = .fork pc' alt) :
+    Steady re pc' pos regs ∧ Steady re alt pos regs :=
+  ⟨⟨hs.1, (eff_entry_fork hs.2.1 heff).1,
+      (eff_count_fork hcells hrows hmid hs.1 hs.2.2 heff).1⟩,
+    ⟨hs.1, (eff_entry_fork hs.2.1 heff).2,
+      (eff_count_fork hcells hrows hmid hs.1 hs.2.2 heff).2⟩⟩
+
+/-- What one move does to the control state alone: where it goes, and how
+far along the subject, with the register file it carries left out. -/
+inductive Ctrl where
+  | goto (pc pos : Nat)
+  | fork (pc alt : Nat)
+  | fail
+  | give (pos : Nat)
+  | stuck
+deriving DecidableEq
+
+def Eff.ctrl : Eff → Ctrl
+  | .goto pc pos _ => .goto pc pos
+  | .fork pc alt => .fork pc alt
+  | .fail => .fail
+  | .give t => .give t.pos
+  | .stuck => .stuck
+
+/-- The dedup lemma, one move at a time: at a steady configuration the
+control half of the mirror's next move — where it goes and how far along
+the subject — is the same whatever register file it carries, though the
+file it hands on of course is not. The two repetition cells are the only
+ones that read a register to decide anything, and eligibility has
+answered both: the deciding head always forks, and a `repNext` always
+returns to it. -/
+theorem eff_ctrl_congr {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos : Nat} {regs u : Spec.Regs}
+    (hok : pikeOk re.code re.reps = true) (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hpos : pos < 2 ^ 31) (hs : Steady re pc pos regs)
+    (hu : Steady re pc pos u) :
+    (eff re s mo start attempt pc pos regs).ctrl =
+      (eff re s mo start attempt pc pos u).ctrl := by
+  cases hop : (re.code[pc]!).op
+  case repLoop =>
+      rw [eff_repLoop_forks hok hcells hrows hop hpos hs.1 hs.2.2,
+        eff_repLoop_forks hok hcells hrows hop hpos hu.1 hu.2.2]
+  case repNext =>
+      obtain ⟨harg, hnextq⟩ := hcells.next pc hop
+      rw [eff_repNext_loops hop harg hnextq hs.2.1,
+        eff_repNext_loops hop harg hnextq hu.2.1]
+      rfl
+  all_goals
+    (simp only [eff, hop]
+     repeat' split
+     all_goals rfl)
+
+/-- A move never leaves the subject: the leaves that advance the position
+are guarded by the very test that keeps them inside it, and `\R`, the one
+leaf that advances by more than a byte, an eligible program does not
+spell. -/
+theorem eff_pos_le {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' pos' : Nat} {regs regs' : Spec.Regs}
+    (hok : pikeOk re.code re.reps = true) (hp : pos ≤ s.size)
+    (heff : eff re s mo start attempt pc pos regs = .goto pc' pos' regs') :
+    pos' ≤ s.size := by
+  cases hop : (re.code[pc]!).op <;> simp only [eff, hop] at heff
+  case bsr => exact absurd hop (op_ne_bsr hok pc)
+  case chr | chrCI | cls | any | anyNoNL =>
+      split at heff
+      · rename_i hcond
+        injection heff with _ h5 _
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at hcond
+        omega
+      · exact absurd_fail heff
+  all_goals (repeat' split at heff)
+  all_goals first
+    | exact absurd_fail heff
+    | exact absurd_fork heff
+    | exact absurd_give heff
+    | (injection heff with _ h5 _
+       omega)
+
+/-- What a configuration has to satisfy for the dedup argument to reach
+it: a position inside the subject, a register file long enough to hold
+the counters, and the three invariants. -/
+def Fit (re : Re) (s : ByteArray) (pc pos : Nat) (regs : Spec.Regs) : Prop :=
+  pos ≤ s.size ∧ re.novec + 2 * re.reps.size ≤ regs.size ∧
+    Steady re pc pos regs
+
+/-- Two pending threads the closure would deduplicate: same pc, same
+position, both fit. -/
+def Twin (re : Re) (s : ByteArray) (e f : Entry) : Prop :=
+  e.1 = f.1 ∧ e.2.pos = f.2.pos ∧ Fit re s e.1 e.2.pos e.2.regs ∧
+    Fit re s f.1 f.2.pos f.2.regs
+
+theorem Fit.lt {re : Re} {s : ByteArray} {pc pos : Nat} {regs : Spec.Regs}
+    (h : Fit re s pc pos regs) (hs : s.size ≤ ceiling) : pos < 2 ^ 31 := by
+  have := h.1
+  simp only [ceiling] at hs
+  omega
+
+/-- Fitness survives a move. -/
+theorem eff_fit_goto {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' pos' : Nat} {regs regs' : Spec.Regs}
+    (hok : pikeOk re.code re.reps = true) (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (hs : s.size ≤ ceiling)
+    (hfit : Fit re s pc pos regs)
+    (heff : eff re s mo start attempt pc pos regs = .goto pc' pos' regs') :
+    Fit re s pc' pos' regs' :=
+  ⟨eff_pos_le hok hfit.1 heff, by rw [eff_size heff]; exact hfit.2.1,
+    eff_steady_goto hok hcells hrows hmid (hfit.lt hs) hfit.2.1 hfit.2.2 heff⟩
+
+/-- And a fork hands it to both arms. -/
+theorem eff_fit_fork {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos pc' alt : Nat} {regs : Spec.Regs}
+    (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (hfit : Fit re s pc pos regs)
+    (heff : eff re s mo start attempt pc pos regs = .fork pc' alt) :
+    Fit re s pc' pos regs ∧ Fit re s alt pos regs :=
+  ⟨⟨hfit.1, hfit.2.1, (eff_steady_fork hcells hrows hmid hfit.2.2 heff).1⟩,
+    ⟨hfit.1, hfit.2.1, (eff_steady_fork hcells hrows hmid hfit.2.2 heff).2⟩⟩
+
+private theorem ctrl_goto {e : Eff} {a b : Nat} (h : e.ctrl = .goto a b) :
+    ∃ rg, e = .goto a b rg := by
+  cases e <;> simp only [Eff.ctrl] at h
+  case goto p q rg =>
+      injection h with h1 h2
+      exact ⟨rg, by rw [h1, h2]⟩
+  all_goals exact absurd h (by simp)
+
+private theorem ctrl_fork {e : Eff} {a b : Nat} (h : e.ctrl = .fork a b) :
+    e = .fork a b := by
+  cases e <;> simp only [Eff.ctrl] at h
+  case fork p q =>
+      injection h with h1 h2
+      rw [h1, h2]
+  all_goals exact absurd h (by simp)
+
+private theorem ctrl_fail {e : Eff} (h : e.ctrl = .fail) : e = .fail := by
+  cases e <;> simp only [Eff.ctrl] at h
+  all_goals first | rfl | exact absurd h (by simp)
+
+set_option maxHeartbeats 1000000 in
+/-- The dedup lemma. Two threads that meet at the same pc and the same
+position search the same tree: every move they make is the same move, so
+where one comes back empty the other does too, whatever register file it
+was carrying. The pending stacks travel with them, entry for entry.
+That is what makes the closure's visited set sound — the later thread's
+search was already run by the earlier one. -/
+theorem run_dedup {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt : Nat} (hok : pikeOk re.code re.reps = true)
+    (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (hs : s.size ≤ ceiling) :
+    ∀ (fuel pc pos : Nat) (regs u : Spec.Regs) (stk stk' : List Entry),
+      Fit re s pc pos regs → Fit re s pc pos u →
+      List.Forall₂ (Twin re s) stk stk' →
+      run re s mo start attempt fuel pc pos regs stk = some .nomatch →
+      run re s mo start attempt fuel pc pos u stk' = some .nomatch := by
+  intro fuel
+  induction fuel with
+  | zero => intro _ _ _ _ _ _ _ _ _ h; simp [run] at h
+  | succ fuel ih =>
+      intro pc pos regs u stk stk' hfit hufit hstk h
+      have hctrl := eff_ctrl_congr (s := s) (mo := mo) (start := start)
+        (attempt := attempt) hok hcells hrows (hfit.lt hs) hfit.2.2 hufit.2.2
+      rw [run] at h ⊢
+      cases heff : eff re s mo start attempt pc pos regs
+      case goto a b rg =>
+          simp only [heff] at h
+          obtain ⟨u', heffu⟩ : ∃ w, eff re s mo start attempt pc pos u
+              = .goto a b w := ctrl_goto (by rw [← hctrl, heff]; rfl)
+          simp only [heffu]
+          exact ih a b rg u' stk stk'
+            (eff_fit_goto hok hcells hrows hmid hs hfit heff)
+            (eff_fit_goto hok hcells hrows hmid hs hufit heffu) hstk h
+      case fork a alt =>
+          simp only [heff] at h
+          have heffu : eff re s mo start attempt pc pos u = .fork a alt :=
+            ctrl_fork (by rw [← hctrl, heff]; rfl)
+          simp only [heffu]
+          obtain ⟨hf1, hf2⟩ := eff_fit_fork hcells hrows hmid hfit heff
+          obtain ⟨hg1, hg2⟩ := eff_fit_fork hcells hrows hmid hufit heffu
+          exact ih a pos regs u ((alt, ⟨pos, regs⟩) :: stk)
+            ((alt, ⟨pos, u⟩) :: stk') hf1 hg1
+            (.cons ⟨rfl, rfl, hf2, hg2⟩ hstk) h
+      case fail =>
+          simp only [heff] at h
+          have heffu : eff re s mo start attempt pc pos u = .fail :=
+            ctrl_fail (by rw [← hctrl, heff]; rfl)
+          simp only [heffu]
+          cases hstk with
+          | nil => rw [dispatch]
+          | cons hpair hrest =>
+              rename_i e f estk fstk
+              obtain ⟨q, t⟩ := e
+              obtain ⟨q', t'⟩ := f
+              obtain ⟨hq, hpp, hfe, hff⟩ := hpair
+              simp only [dispatch] at h ⊢
+              simp only [] at hq hpp
+              subst hq
+              rw [← hpp]
+              exact ih q t.pos t.regs t'.regs estk fstk hfe
+                (by rw [hpp]; exact hff) hrest h
+      case give t => simp only [heff] at h; exact absurd h (by simp)
+      case stuck => simp only [heff] at h; exact absurd h (by simp)
+
+/-- The dedup lemma at the judgment level. -/
+theorem runs_dedup {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos : Nat} {regs u : Spec.Regs}
+    {stk stk' : List Entry} (hok : pikeOk re.code re.reps = true)
+    (hcells : CellsOk re)
+    (hrows : ∀ i, i < re.reps.size → RowOk re.code re.reps i)
+    (hmid : NoMidEntry re) (hs : s.size ≤ ceiling)
+    (hfit : Fit re s pc pos regs) (hufit : Fit re s pc pos u)
+    (hstk : List.Forall₂ (Twin re s) stk stk')
+    (h : Runs re s mo start attempt pc pos regs stk .nomatch) :
+    Runs re s mo start attempt pc pos u stk' .nomatch := by
+  obtain ⟨fuel, hf⟩ := h
+  exact ⟨fuel, run_dedup hok hcells hrows hmid hs fuel pc pos regs u stk stk'
+    hfit hufit hstk hf⟩
+
+/-- What the dedup lemma is for: an entry whose search has already been
+run, and came back empty, is one the pending list can do without. It
+neither finds anything of its own nor keeps the list from going on. -/
+theorem resumes_drop {re : Re} {s : ByteArray} {mo : MOpts}
+    {start attempt pc : Nat} {t : Spec.Thread} {L : List Entry} {r : Out}
+    (hdead : Runs re s mo start attempt pc t.pos t.regs [] .nomatch) :
+    Resumes re s mo start attempt ((pc, t) :: L) r ↔
+      Resumes re s mo start attempt L r := by
+  rw [resumes_cons]
+  constructor
+  · intro hrun
+    rcases (runs_append (stk := []) (stk₂ := L)).mp (by simpa using hrun)
+      with ⟨t', hr, hr2⟩ | ⟨_, hres⟩
+    · exact absurd (runs_det hr2 hdead) (by rw [hr]; simp)
+    · exact hres
+  · intro hres
+    simpa using (runs_append (stk := []) (stk₂ := L) (r := r)).mpr
+      (Or.inr ⟨hdead, hres⟩)
+
+/-- The eligibility flag is the verdict on the program it was computed
+from. -/
+theorem compile_pikeOk {p : Pat} (h : (compile p).pike = true) :
+    pikeOk (compile p).code (compile p).reps = true := h
+
+/-- The dedup lemma at a compiled pattern, with every side condition
+about the program discharged: the rows describe their blocks, nothing
+defers into the middle of one, and the repetition cells stand where their
+rows name. What is left to the caller is about the two configurations
+alone. -/
+theorem compile_runs_dedup {p : Pat} {s : ByteArray} {mo : MOpts}
+    {start attempt pc pos : Nat} {regs u : Spec.Regs} {stk stk' : List Entry}
+    (hw : Wf p) (hpike : (compile p).pike = true) (hs : s.size ≤ ceiling)
+    (hfit : Fit (compile p) s pc pos regs)
+    (hufit : Fit (compile p) s pc pos u)
+    (hstk : List.Forall₂ (Twin (compile p) s) stk stk')
+    (h : Runs (compile p) s mo start attempt pc pos regs stk .nomatch) :
+    Runs (compile p) s mo start attempt pc pos u stk' .nomatch :=
+  runs_dedup (compile_pikeOk hpike) (compile_cellsOk hw.1.covered hw.2)
+    (fun _ hi => compile_rows hw.1.covered hi)
+    (compile_noMidEntry hw.1.covered) hs hfit hufit hstk h
+
+/-! ## The capture pool, read as a register file
+
+A lockstep thread carries an integer handle into a flat pool of
+`novec`-slot blocks where the specification's threads carry the block
+itself, so the correspondence needs a decoding. `blockAt` is it, and it is
+literally the slice `pike_run` delivers for the handle a match recorded.
+
+What the rest will ask of it is small: blocks at different handles do not
+overlap, a write lands in one block and leaves the others alone, and the
+copy-on-write of `pike_write` really copies. -/
+
+/-- The register file a handle points at: its block of the flat pool. -/
+def blockAt (pool : Array UInt32) (novec h : Nat) : Spec.Regs :=
+  (Array.range novec).map (fun k => pool[h * novec + k]!)
+
+theorem blockAt_size (pool : Array UInt32) (novec h : Nat) :
+    (blockAt pool novec h).size = novec := by simp [blockAt]
+
+theorem blockAt_get {pool : Array UInt32} {novec h k : Nat} (hk : k < novec) :
+    (blockAt pool novec h)[k]! = pool[h * novec + k]! := by
+  rw [blockAt, getElem!_pos _ k (by simpa using hk)]
+  simp
+
+/-- Two blocks that agree slot for slot are the same register file, even
+at different handles in different pools. -/
+theorem blockAt_congr {p q : Array UInt32} {novec a b : Nat}
+    (hag : ∀ k, k < novec → p[a * novec + k]! = q[b * novec + k]!) :
+    blockAt p novec a = blockAt q novec b := by
+  apply Array.ext
+  · simp [blockAt_size]
+  intro i h1 _
+  have hlt : i < novec := by rwa [blockAt_size] at h1
+  rw [← getElem!_pos _ i (by rw [blockAt_size]; exact hlt),
+    ← getElem!_pos _ i (by rw [blockAt_size]; exact hlt),
+    blockAt_get hlt, blockAt_get hlt]
+  exact hag i hlt
+
+/-- And it is the delivery: what a match hands back is the block its
+handle names. -/
+theorem deliver_eq_blockAt (pool : Array UInt32) (novec mh : Nat) :
+    (Array.range novec).map (fun k => pool[mh * novec + k]!) =
+      blockAt pool novec mh := rfl
+
+/-- Blocks at different handles never overlap. -/
+theorem block_disjoint {a b m k n : Nat} (hab : a ≠ b) (hm : m < n)
+    (hk : k < n) : a * n + m ≠ b * n + k := by
+  rcases Nat.lt_or_ge a b with hlt | hge
+  · have h1 : (a + 1) * n ≤ b * n := Nat.mul_le_mul_right n hlt
+    rw [Nat.succ_mul] at h1
+    omega
+  · have hba : b < a := by omega
+    have h1 : (b + 1) * n ≤ a * n := Nat.mul_le_mul_right n hba
+    rw [Nat.succ_mul] at h1
+    omega
+
+/-- A write inside a block is a register write on that block. -/
+theorem blockAt_set_self {pool : Array UInt32} {novec h slot : Nat}
+    {v : UInt32} (hslot : slot < novec)
+    (hroom : h * novec + novec ≤ pool.size) :
+    blockAt (pool.set! (h * novec + slot) v) novec h =
+      (blockAt pool novec h).set! slot v := by
+  apply Array.ext
+  · simp [blockAt_size]
+  intro i h1 _
+  have hlt : i < novec := by rwa [blockAt_size] at h1
+  rw [← getElem!_pos _ i (by rw [blockAt_size]; exact hlt),
+    ← getElem!_pos _ i (by simpa [blockAt_size] using hlt),
+    blockAt_get hlt]
+  by_cases hi : i = slot
+  · rw [hi, getBang_set_self _ (by omega),
+      getBang_set_self _ (by rw [blockAt_size]; omega)]
+  · rw [getBang_set_other _ _ (by omega : h * novec + i ≠ h * novec + slot),
+      getBang_set_other _ _ hi, blockAt_get hlt]
+
+/-- A write outside a block leaves it alone. -/
+theorem blockAt_set_other {pool : Array UInt32} {novec h i : Nat} {v : UInt32}
+    (hout : ∀ k, k < novec → i ≠ h * novec + k) :
+    blockAt (pool.set! i v) novec h = blockAt pool novec h := by
+  refine blockAt_congr (fun k hk => ?_)
+  exact getBang_set_other pool i (Ne.symm (hout k hk))
+
+/-- Growth appends, so a block the pool already had room for reads the
+same afterwards. -/
+theorem blockAt_push {pool : Array UInt32} {novec h : Nat} {x : UInt32}
+    (hroom : h * novec + novec ≤ pool.size) :
+    blockAt (pool.push x) novec h = blockAt pool novec h := by
+  refine blockAt_congr (fun k hk => ?_)
+  rw [getElem!_pos _ _ (by simp; omega), getElem!_pos _ _ (by omega)]
+  simp [Array.getElem_push, show h * novec + k < pool.size from by omega]
+
+/-- The copy `pike_write` makes before writing through a shared handle:
+`novec` slots from the held block into the taken one. It reads back
+correctly whether or not the two handles happen to be the same — with the
+same handle every write is the identity, and with different ones the two
+blocks do not overlap. -/
+private theorem copy_size (pool : Array UInt32) (novec src dst : Nat) :
+    ∀ m, ((List.range m).foldl (fun (p : Array UInt32) i =>
+        p.set! (dst * novec + i) p[src * novec + i]!) pool).size =
+      pool.size := by
+  intro m
+  induction m with
+  | zero => rfl
+  | succ m ih =>
+      rw [List.range_succ, List.foldl_append]
+      simp only [List.foldl_cons, List.foldl_nil, Array.size_set!]
+      exact ih
+
+private theorem copy_block (pool : Array UInt32) (novec src dst : Nat)
+    (hdst : dst * novec + novec ≤ pool.size) :
+    ∀ m, m ≤ novec →
+      (∀ k, k < m →
+        ((List.range m).foldl (fun (p : Array UInt32) i =>
+            p.set! (dst * novec + i) p[src * novec + i]!)
+          pool)[dst * novec + k]! = pool[src * novec + k]!) ∧
+      (∀ i, (∀ k, k < m → i ≠ dst * novec + k) →
+        ((List.range m).foldl (fun (p : Array UInt32) i =>
+            p.set! (dst * novec + i) p[src * novec + i]!) pool)[i]! =
+          pool[i]!) := by
+  intro m
+  induction m with
+  | zero => intro _; exact ⟨by simp, fun _ _ => rfl⟩
+  | succ m ih =>
+      intro hle
+      obtain ⟨ih1, ih2⟩ := ih (by omega)
+      have ihs := copy_size pool novec src dst m
+      have hne : ∀ k, k < m → src * novec + m ≠ dst * novec + k := by
+        intro k hk
+        by_cases hsd : src = dst
+        · subst hsd
+          intro heq
+          exact absurd (Nat.add_left_cancel heq) (by omega)
+        · exact block_disjoint hsd (by omega) (by omega)
+      rw [List.range_succ, List.foldl_append]
+      simp only [List.foldl_cons, List.foldl_nil]
+      refine ⟨?_, ?_⟩
+      · intro k hk
+        by_cases hkm : k = m
+        · subst hkm
+          rw [getBang_set_self _ (by rw [ihs]; omega)]
+          exact ih2 _ hne
+        · rw [getBang_set_other _ _ (by omega : dst * novec + k ≠ dst * novec + m)]
+          exact ih1 k (by omega)
+      · intro i hi
+        rw [getBang_set_other _ _ (hi m (by omega))]
+        exact ih2 i (fun k hk => hi k (by omega))
+
+private theorem blank_size (pool : Array UInt32) (novec h : Nat) :
+    ∀ m, ((List.range m).foldl (fun (p : Array UInt32) i =>
+        p.set! (h * novec + i) unset32) pool).size = pool.size := by
+  intro m
+  induction m with
+  | zero => rfl
+  | succ m ih =>
+      rw [List.range_succ, List.foldl_append]
+      simp only [List.foldl_cons, List.foldl_nil, Array.size_set!]
+      exact ih
+
+/-- The block `pike_seed` blanks before it plants the attempt: `novec`
+slots of `unset32`, which is the register file the specification starts an
+attempt with. -/
+private theorem blank_block (pool : Array UInt32) (novec h : Nat)
+    (hroom : h * novec + novec ≤ pool.size) :
+    ∀ m, m ≤ novec →
+      ∀ k, k < m →
+        ((List.range m).foldl (fun (p : Array UInt32) i =>
+          p.set! (h * novec + i) unset32) pool)[h * novec + k]! = unset32 := by
+  intro m
+  induction m with
+  | zero => intro _ k hk; exact absurd hk (by omega)
+  | succ m ih =>
+      intro hle k hk
+      have ihs := blank_size pool novec h m
+      rw [List.range_succ, List.foldl_append]
+      simp only [List.foldl_cons, List.foldl_nil]
+      by_cases hkm : k = m
+      · subst hkm
+        rw [getBang_set_self _ (by rw [ihs]; omega)]
+      · rw [getBang_set_other _ _
+          (by omega : h * novec + k ≠ h * novec + m)]
+        exact ih (by omega) k (by omega)
+
+/-- And so the seed thread starts on a blank register file. -/
+theorem blockAt_blank (pool : Array UInt32) (novec h : Nat)
+    (hroom : h * novec + novec ≤ pool.size) :
+    blockAt ((List.range novec).foldl
+        (fun (p : Array UInt32) k => p.set! (h * novec + k) unset32) pool)
+      novec h = Array.replicate novec unset32 := by
+  apply Array.ext
+  · simp [blockAt_size]
+  intro i h1 _
+  have hlt : i < novec := by rwa [blockAt_size] at h1
+  rw [← getElem!_pos _ i (by rw [blockAt_size]; exact hlt),
+    ← getElem!_pos _ i (by simpa using hlt), blockAt_get hlt,
+    blank_block pool novec h hroom novec (Nat.le_refl _) i hlt,
+    getElem!_pos _ i (by simpa using hlt)]
+  simp
+
+/-- Zeroing a fresh block only appends to the pool. -/
+private theorem fill_pool {lim : Limits} : ∀ (k : Nat) (st st' : PikeSt),
+    pikeTake.fill lim k st = .ok st' →
+    st.pool.size ≤ st'.pool.size ∧
+      ∀ i, i < st.pool.size → st'.pool[i]! = st.pool[i]! := by
+  intro k
+  induction k with
+  | zero =>
+      intro st st' hok
+      rw [pikeTake.fill] at hok
+      injection hok with hok
+      subst hok
+      exact ⟨Nat.le_refl _, fun _ _ => rfl⟩
+  | succ n ih =>
+      intro st st' hok
+      rw [pikeTake.fill] at hok
+      split at hok
+      · exact absurd_error hok
+      · obtain ⟨h1, h2⟩ := ih _ _ hok
+        simp only [Array.size_push] at h1
+        refine ⟨by omega, fun i hi => ?_⟩
+        rw [h2 i (by simp; omega), getElem!_pos _ i (by simp; omega),
+          getElem!_pos _ i hi]
+        simp [Array.getElem_push, hi]
+
+/-- And so does `pike_take`: a block the pool already had reads the same
+after one. -/
+theorem pikeTake_pool {st st' : PikeSt} {novec hOut : Nat} {lim : Limits}
+    (hok : pikeTake st novec lim = .ok (st', hOut)) :
+    st.pool.size ≤ st'.pool.size ∧
+      ∀ i, i < st.pool.size → st'.pool[i]! = st.pool[i]! := by
+  unfold pikeTake at hok
+  simp only [] at hok
+  split at hok
+  · injection hok with hok
+    injection hok with hok _
+    subst hok
+    exact ⟨Nat.le_refl _, fun _ _ => rfl⟩
+  · split at hok
+    · exact absurd_error hok
+    · split at hok
+      · exact absurd_error hok
+      · split at hok
+        · exact absurd_error hok
+        · rename_i hfill
+          injection hok with hok
+          injection hok with hok _
+          subst hok
+          obtain ⟨h1, h2⟩ := fill_pool _ _ _ hfill
+          exact ⟨h1, h2⟩
+
+/-- `pike_write` is a register write on the block its handle names: in
+place through an unshared handle, on a fresh copy through a shared one.
+The room hypothesis is about the block the answer names, which is where
+the write landed. -/
+theorem pikeWrite_block {st st' : PikeSt} {novec h slot hOut : Nat}
+    {v : UInt32} {lim : Limits} (hslot : slot < novec)
+    (hroom : h * novec + novec ≤ st.pool.size)
+    (hroom' : hOut * novec + novec ≤ st'.pool.size)
+    (hok : pikeWrite st novec h slot v lim = .ok (st', hOut)) :
+    blockAt st'.pool novec hOut = (blockAt st.pool novec h).set! slot v := by
+  unfold pikeWrite at hok
+  simp only [] at hok
+  split at hok
+  · split at hok
+    · exact absurd_error hok
+    · split at hok
+      · exact absurd_error hok
+      · rename_i stT fresh hTake
+        injection hok with hok
+        injection hok with hok hfresh
+        subst hfresh
+        subst hok
+        obtain ⟨_, hkeep0⟩ := pikeTake_pool hTake
+        -- The charge before the take moved the meter, not the pool.
+        have hkeep : ∀ i, i < st.pool.size → stT.pool[i]! = st.pool[i]! :=
+          hkeep0
+        simp only [Array.size_set!, copy_size] at hroom'
+        have hcopy := copy_block stT.pool novec h fresh hroom' novec
+          (Nat.le_refl _)
+        rw [blockAt_set_self hslot (by simp only [copy_size]; exact hroom'),
+          blockAt_congr (novec := novec) (a := fresh) (b := h)
+            (fun k hk => hcopy.1 k hk),
+          blockAt_congr (fun k hk => hkeep (h * novec + k) (by omega))]
+  · injection hok with hok
+    injection hok with hok hfresh
+    subst hfresh
+    subst hok
+    exact blockAt_set_self hslot hroom
+
+/-- The same at slot zero, where the index is the block's own base. -/
+theorem blockAt_set_zero {pool : Array UInt32} {novec h : Nat} {v : UInt32}
+    (hnov : 0 < novec) (hroom : h * novec + novec ≤ pool.size) :
+    blockAt (pool.set! (h * novec) v) novec h =
+      (blockAt pool novec h).set! 0 v := by
+  simpa using blockAt_set_self (pool := pool) (novec := novec) (h := h)
+    (slot := 0) (v := v) hnov hroom
+
+/-- The block a seed starts on: blank but for the attempt in slot 0, which
+is the register file the specification hands an attempt with the machine's
+one pre-write already in it. -/
+theorem blockAt_seed (pool : Array UInt32) (novec sh pos : Nat)
+    (hnov : 0 < novec) (hroom : sh * novec + novec ≤ pool.size) :
+    blockAt (((List.range novec).foldl
+        (fun (p : Array UInt32) k => p.set! (sh * novec + k) unset32)
+        pool).set! (sh * novec) pos.toUInt32) novec sh =
+      (Array.replicate novec unset32).set! 0 pos.toUInt32 := by
+  rw [blockAt_set_zero hnov (by rw [blank_size]; omega),
+    blockAt_blank _ _ _ hroom]
+
+/-! ## The pool's room
+
+`Owned`, the ownership reading of `PikeBounds`, says a handle someone
+holds is a block the refcount table names and that the pool is exactly the
+table's blocks laid end to end. Between them that is the one fact the
+register-file reading was missing. -/
+
+/-- A handle someone holds names a block the pool has room for, which is
+what every lemma above asks of a handle. -/
+theorem room_of_owned {novec : Nat} {rc free : Array Nat}
+    {pool : Array UInt32} {live : List Nat} {h : Nat}
+    (how : Owned novec rc free pool live) (hh : h ∈ live) :
+    h * novec + novec ≤ pool.size := by
+  have hlt : h < rc.size := how.reach h hh
+  have hmul : (h + 1) * novec ≤ rc.size * novec :=
+    Nat.mul_le_mul_right novec (by omega)
+  rw [Nat.succ_mul] at hmul
+  rw [how.blocks]
+  omega
+
+/-- `pike_write` as a register write, its room hypotheses discharged by
+the pool's own bookkeeping: the handle written through and the handle
+answered are both blocks someone holds. -/
+theorem pikeWrite_block_owned {st st' : PikeSt} {novec h slot hOut : Nat}
+    {v : UInt32} {rest : List Nat} {lim : Limits} (hslot : slot < novec)
+    (how : Owned novec st.rc st.free st.pool (h :: rest))
+    (hok : pikeWrite st novec h slot v lim = .ok (st', hOut)) :
+    blockAt st'.pool novec hOut = (blockAt st.pool novec h).set! slot v :=
+  pikeWrite_block hslot (room_of_owned how List.mem_cons_self)
+    (room_of_owned (pikeWrite_owned hok how).1 List.mem_cons_self) hok
+
+/-! ## The bumpalong rule, on the lockstep side
+
+The position loop's one piece of arithmetic that does not wait on the
+thread correspondence: which starting positions it offers at all.
+`pike_seed` declines under exactly the test `scan_first` computes, and
+`crFirst_agrees` says that bit is the specification's own, so the two
+layers attempt the same positions. -/
+
+/-- `pike_seed`'s refusal is the compiled pattern's own bumpalong test,
+asked of every position after the first. -/
+theorem pikeSeed_skip {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start pos : Nat} {st : PikeSt} (hgt : start < pos)
+    (hskip : Re.skipsAttempt re s pos = true) :
+    pikeSeed re s mo lim start pos st = .ok st := by
+  rw [pikeSeed]
+  split
+  · rfl
+  · rename_i hno
+    exfalso
+    apply hno
+    rw [Re.skipsAttempt] at hskip
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at hskip ⊢
+    refine ⟨⟨⟨⟨⟨⟨hgt, ?_⟩, ?_⟩, ?_⟩, ?_⟩, ?_⟩, ?_⟩ <;> simp_all
+
+/-- The same refusal read against the specification: on a well-formed
+pattern the lockstep loop declines exactly the attempts `Spec.scan`
+skips. -/
+theorem pikeSeed_skip_spec {p : Pat} {s : ByteArray} {mo : MOpts}
+    {lim : Limits} {start pos : Nat} {st : PikeSt} (hw : WfAst p.root)
+    (hgt : start < pos) (hskip : Spec.skipsAttempt p s pos = true) :
+    pikeSeed (compile p) s mo lim start pos st = .ok st :=
+  pikeSeed_skip hgt (by rw [skipsAttempt_agrees hw]; exact hskip)
+
 /-! ## The two guards
 
 `pikeRun` refuses two kinds of call before it allocates anything: a
@@ -1258,16 +3322,13 @@ bookkeeping itself:
 
 * the closure at one position builds the deduplicated, preference-ordered
   list of the surviving threads the backtracking enumeration would have
-  there. The dedup is sound because on a `PikeShape` tree no compiled
-  repetition has a counter worth reading, so `repZero` and `repEnter` are
-  plain epsilon steps and `repLoop` and `repNext` plain epsilon forks and
-  a thread's future is its pc alone; because `frag_rep_body_consumes`
-  rules the empty iteration out, so the two matchers read a star the same
-  way; and because `pikeAdd_no_reentry` closes off the one backward edge,
-  so first arrival wins exactly. What is missing is the correspondence
-  itself — the invariant relating the built list to the pending
-  continuations of `frag_runs`, order-preserving and dropping only
-  duplicates;
+  there. Dropping a later duplicate of a pc is sound, and that is
+  `compile_runs_dedup` with `resumes_drop` on top of it. What the
+  correspondence still owes is the invariant itself: the built list, read
+  through `blockAt`, against `frag_runs`' pending continuations,
+  order-preserving and dropping only duplicates. `pikeAdd_go_marks`
+  already reads a build against `epsTargets`, which is where that
+  induction starts;
 * one position step, then the loop, seeding at lowest priority for the
   leftmost rule and letting an accepting thread kill everything below it
   while higher-priority threads may still overwrite it;

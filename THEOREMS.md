@@ -6,10 +6,11 @@ target one fixed thing while M8 goes on landing features. This document is that
 freeze and the inventory that goes with it: what will be proved, in what order,
 against which bytes, and — just as important — what will not be.
 
-Nothing here is proved yet. The inventory exists before the Lean, deliberately.
-Writing the statements down first is what turns "prove the engine correct" into
-a list somebody can argue with, and it is cheaper to find out now that a
-theorem is unstatable than after a month of tactic work.
+The inventory was written before the Lean, deliberately. Writing the statements
+down first is what turns "prove the engine correct" into a list somebody can
+argue with, and it is cheaper to find out now that a theorem is unstatable than
+after a month of tactic work. Section 5 records what has since been proved
+against it, item by item; nothing there rounds up.
 
 ## 1. What is frozen
 
@@ -164,9 +165,12 @@ is a bug in BOUNDS.md first.
 
 R-10 is the one that runs rather than proves, and it comes early on purpose.
 The moment `R.compile` and `R.run` exist they get pointed at
-`conformance/corpus.json` and `conformance/sweep.json` through `#eval`, so
-executability and pcre2 agreement are exercised the whole way through M6
-instead of being discovered at the end. A reference engine that cannot be run
+`conformance/corpus.json` and `conformance/sweep.json`, so executability and
+pcre2 agreement are exercised the whole way through M6 instead of being
+discovered at the end. It ended up as a compiled executable rather than
+`#eval`, because the sweep shard's resource half wants the observed cost,
+stack and memory of every trial compared to the unit and `make lean` should
+be able to say so in one line. A reference engine that cannot be run
 is a reference engine nobody has checked against the arbiter, and the corpora
 are already the form every other implementation is held to.
 
@@ -197,3 +201,97 @@ Wave 2 and wave 3 constructs are outside the frozen artifact entirely. They
 land in M8 and M10, each with its own artifact and its own inventory, and the
 gating rule of DESIGN.md section 6 keeps an unproved feature behind
 `allowUnproved` rather than in the default surface.
+
+## 5. What is proved
+
+The Lean lives in `lean/Pcrevera`: `Spec/` is layer S, `Ref/` is layer R,
+`Corpus/` is the replay of section 3's R-10, and `Proofs/` is everything
+below. `lake build` checks all of it and `make lean` runs the replay after
+it. No statement here uses `sorry`, no definition is `partial`, and every
+theorem named below depends on nothing beyond Lean's own three axioms.
+
+    +------+------------------------+--------------------------------------+
+    | S-1  | proved                 | Spec/Ast.lean                        |
+    | S-2  | proved                 | Spec/Match.lean, matchesF            |
+    | S-3  | proved                 | Spec/Total.lean, matches_stable      |
+    | S-4  | proved                 | Spec/Total.lean, Matches             |
+    | S-5  | proved                 | Ref/Exec.lean, Config and Exec       |
+    | S-6  | proved                 | Ref/Exec.lean, createCtx             |
+    | S-7  | proved                 | Proofs/BadInput.lean                 |
+    | S-8  | proved for the         | Proofs/Refine.lean,                  |
+    |      | backtracking           | btRun_refines_matches; the Exec      |
+    |      | configuration          | wrapper in Proofs/ExecBacktrack.lean |
+    | S-9  | proved                 | Proofs/Monotone.lean, exec_monotone  |
+    | S-10 | proved for one class   | Proofs/BtBounds.lean,                |
+    |      | of programs            | btRun_inBudget_nest                  |
+    | S-11 | proved from the        | Proofs/CtxSufficient.lean            |
+    |      | plain-call premise     |                                      |
+    | S-12 | proved as the          | Proofs/ExecRefine.lean,              |
+    |      | corollary it is        | matchers_agree                       |
+    +------+------------------------+--------------------------------------+
+
+    +------+------------------------+--------------------------------------+
+    | R-1  | proved                 | Ref/Compile.lean                     |
+    | R-2  | proved                 | Ref/VM.lean, Ref/Pike.lean           |
+    | R-3  | proved                 | Ref/Context.lean                     |
+    | R-4  | proved                 | Ref/Exec.lean                        |
+    | R-5  | proved                 | Proofs/BtTermination.lean,           |
+    |      |                        | Proofs/PikeTermination.lean          |
+    | R-6  | proved for one class   | Proofs/BtBounds.lean, cost;          |
+    | R-7  | proved                 | Proofs/PikeBounds.lean, stack        |
+    | R-8  | proved for one class   | Proofs/BtBounds.lean, memory         |
+    | R-9  | proved                 | Proofs/CtxReserve.lean and           |
+    |      |                        | Proofs/BtBounds.lean                 |
+    | R-10 | proved by running      | lean/CorpusCheck.lean                |
+    +------+------------------------+--------------------------------------+
+
+Four of those entries are narrower than the inventory reads, and the
+narrowing is the point of writing this section at all.
+
+S-8 is proved for the backtracking configuration over every wave 1 construct
+— literals, classes, the dot, `\R`, every anchor, groups, alternation and
+every quantifier — and for every start offset and combination of match
+options. The Pike configuration's half is not finished: the eligibility
+consequences, the acyclicity of its non-consuming transitions, the
+unreachability of the empty-match rule on eligible programs, and the
+BadInput clause are proved (`Proofs/PikeRefine.lean`), and what remains is
+the lockstep bookkeeping that relates a built thread list to the
+enumeration it deduplicates. S-12 is proved as the corollary DESIGN.md
+section 6 says it is — two runs refining the same specification and both
+completing answer the same thing — so it becomes unconditional the moment
+the Pike half lands, and until then it is a theorem whose second premise is
+supplied by the corpora rather than by a proof.
+
+R-6, R-8 and S-10 are proved outright for programs whose region tree is
+groups inside groups at any depth, which is every pattern with capturing and
+non-capturing groups and no alternation or repetition. For the rest they are
+proved conditional on one hypothesis, `AttemptsWithin`, which is BOUNDS.md
+section 4's composition read against the VM's own pushes. Everything around
+it is done: the section 5 whole-call arithmetic, the growth schedule, the
+checker's tree facts, the per-region dominance, and the charge sites priced
+against a claim. What is missing is a run-side account of a fork — that a
+fork's second arm is entered at most once per entry into its region, which
+is what `outs` prices. The Pike configuration's cost and memory bounds are
+at the same stage: the closed form, the checker transfer, the enforcement
+invariant, the list dedup and the pool ownership are proved, and the
+per-position accounting that joins them is not.
+
+One thing found while proving R-6 is worth recording, because it is about
+the engine rather than about the Lean. `cert_shape` never asks whether a
+program contains an `Accept`, and a straight-line region of tests without
+one walks off the end of its own code. The two layers part company there:
+TIR's checked indexing traps (TIR-SPEC.md T-01) while the Lean reference
+reads a default instruction, so the per-attempt bound is false in the model
+for such a program. No pattern can produce one — `generate` always emits the
+trailing `Accept` — and the bound theorems carry its existence as an
+explicit hypothesis rather than assume it away. Whether the checker should
+refuse a program without an `Accept` is a BOUNDS.md question, and moving it
+would move the frozen artifact, so it is written down here instead.
+
+The refinement theorems quantify over patterns satisfying `Wf`, which names
+the three shapes a parse never emits: an alternation with no branches, a
+quantifier bound sitting on the u32 sentinel, and a capture slot outside the
+ovector window. Until M10 proves the parser that is a claim to be tested
+rather than assumed, so `Proofs/WfDecide.lean` decides it and the corpus
+replay asks it of every tree the engine's own parser produced. All 248
+replayed patterns satisfy it.

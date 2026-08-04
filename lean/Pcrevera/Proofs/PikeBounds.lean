@@ -11,7 +11,7 @@ success path every `satAdd` and `satMul` was exact, so the certificate the
 analyzer hands out is one explicit polynomial, and `Poly.val` reads it as the
 number BOUNDS.md writes down.
 
-Seven things live here.
+Eight things live here.
 
 The stack line is the easy one and it is R-7 for this configuration: no
 backtrack entry exists on the lockstep path, the field is only ever written
@@ -44,9 +44,12 @@ either on the free list or held by one of the handles the caller is
 carrying, and its refcount says exactly how many carry it. `pike_take`
 lengthens the refcount table only when the free list has nothing on it, and
 at that moment the ownership says every block is one of those handles —
-which is how `4*C + 2` will be read off the lists rather than off the number
-of allocations. Naming the handles a running state carries is left for the
-per-position accounting, so what is here is the reading and its algebra.
+which is how `4*C + 2` is read off the lists rather than off the number of
+allocations. The reading is carried through a whole scan: a closure build's
+own handles are its worklist and the list it is parking into, a list step's
+are the snapshot it has still to consume and the match it is carrying, and
+one measure — the worklist, the parked list, and twice the marks not yet
+made — never rises and bounds them all. `pikeRun_pool_le` is the payoff.
 
 Seventh is the growth schedule, weighed. `charge_grow` clamps at a declared
 maximum, and the section 9 accounting only reads as `3R` and `2R` if the
@@ -55,15 +58,24 @@ has an entry bound read off the program and the four maxima of `Pike.lean`
 sit above twice the largest such bound. That is what `ReWf.coded` and
 `ReWf.slots` are in the predicate for.
 
-What is not here yet is the step that joins the closed form to the run: that
-the charges a run actually makes stay under it. Its three ingredients — the
-dedup, the ownership, the growth schedule — are all below, but the
-per-position accounting that composes them is not, and neither is the
-closure stack's own `C + 1` bound, which both the pool count and the stack's
-growth arm want. Until that lands, R-6 and R-8 hold against the caller's
-limits rather than against the certificate, and S-10's Pike half is out of
-reach. `ReWf` itself is a hypothesis: it is a fact about compiler output,
-and no proof that `Ref.compile` supplies it is in this file.
+Eighth is the per-position account, which is what joins the closed form to
+the run, and the closure build's half of it is here. The account is kept
+against the visited set: `closureLeft` weighs what a set still admits — a
+unit per unmarked pc, and a block more at a `Save`, that being the one
+instruction whose arm can copy — and marking a pc releases exactly what the
+arm that follows then spends. `Spent` is that reading, `pikeAdd_go_spent`
+carries it through a whole build, and both are stated over the state either
+arm of a helper hands back, since a refusal keeps its partial charges and
+does not end a build the way it ends the loop.
+
+What is not here yet is the rest of that account: the list step, which pays
+a unit per suspended thread and a block for the accept, and the position
+loop, which clears the visited set once per position and hands the fresh
+budget to the step and to the next seed. Until those land, R-6 and R-8 hold
+against the caller's limits rather than against the certificate, and S-10's
+Pike half is out of reach. `ReWf` itself is a hypothesis: it is a fact about
+compiler output, and no proof that `Ref.compile` supplies it is in this
+file.
 -/
 
 namespace Pcrevera.Ref
@@ -1608,6 +1620,16 @@ private theorem getBang_push_eq {α : Type _} [Inhabited α] (a : Array α)
   rw [getElem!_pos (a.push v) a.size (by simp)]
   simp
 
+private theorem foldl_size {α : Type _} (f : Array α → Nat → Array α)
+    (hf : ∀ a k, (f a k).size = a.size) : ∀ (l : List Nat) (p : Array α),
+    (l.foldl f p).size = p.size := by
+  intro l
+  induction l with
+  | nil => intro p; rfl
+  | cons a l ih =>
+      intro p
+      rw [List.foldl_cons, ih, hf]
+
 private theorem count_cons_self {a : Nat} {l : List Nat} :
     (a :: l).count a = l.count a + 1 := by
   rw [List.count_cons]
@@ -1629,31 +1651,55 @@ private theorem count_singleton {a b : Nat} :
 /-- The pool read as ownership, against the handles `live` names: every
 block ever allocated is on the free list or held, its refcount is exactly
 how many holders it has, and the free list carries no block twice and none
-that anyone still holds. The two arrays travel on their own because that is
-all of a state the reading looks at. -/
-structure Owned (rc free : Array Nat) (live : List Nat) : Prop where
+that anyone still holds. The pool travels with them for its layout alone:
+one block of `novec` slots per refcount entry, which is what says a handle
+someone holds names a block the pool has room for. The arrays travel on
+their own because that is all of a state the reading looks at. -/
+structure Owned (novec : Nat) (rc free : Array Nat) (pool : Array UInt32)
+    (live : List Nat) : Prop where
   capped : rc.size ≤ maxBlocks
   reach : ∀ h ∈ live, h < rc.size
   count : ∀ h, h < rc.size → rc[h]! = live.count h
   onFree : ∀ h, h < rc.size → (rc[h]! = 0 ↔ 0 < free.toList.count h)
   freeRange : ∀ h ∈ free.toList, h < rc.size
   freeOnce : ∀ h, free.toList.count h ≤ 1
+  blocks : pool.size = rc.size * novec
 
 /-- Which order the caller lists its handles in is not the pool's business. -/
-theorem Owned.perm {rc free : Array Nat} {l₁ l₂ : List Nat}
-    (h : Owned rc free l₁) (hp : l₂.Perm l₁) : Owned rc free l₂ where
+theorem Owned.perm {novec : Nat} {rc free : Array Nat} {pool : Array UInt32}
+    {l₁ l₂ : List Nat} (h : Owned novec rc free pool l₁) (hp : l₂.Perm l₁) :
+    Owned novec rc free pool l₂ where
   capped := h.capped
   reach := fun x hx => h.reach x (hp.mem_iff.mp hx)
   count := fun x hx => by rw [h.count x hx, hp.count_eq]
   onFree := h.onFree
   freeRange := h.freeRange
   freeOnce := h.freeOnce
+  blocks := h.blocks
+
+/-- Nor is which slots the pool holds, as long as it holds as many. -/
+theorem Owned.ofPool {novec : Nat} {rc free : Array Nat}
+    {pool pool' : Array UInt32} {live : List Nat}
+    (h : Owned novec rc free pool live) (hsize : pool'.size = pool.size) :
+    Owned novec rc free pool' live :=
+  { h with blocks := by rw [hsize]; exact h.blocks }
+
+/-- What the pool has room for: a handle anyone holds names a block whose
+slots all sit inside the pool. That is the layout read against the handles
+in reach, and it is what a decoder needs before it may read a block out. -/
+theorem Owned.blockFits {novec : Nat} {rc free : Array Nat}
+    {pool : Array UInt32} {live : List Nat} (h : Owned novec rc free pool live)
+    {x : Nat} (hx : x ∈ live) : (x + 1) * novec ≤ pool.size := by
+  rw [h.blocks]
+  exact Nat.mul_le_mul_right novec (h.reach x hx)
 
 /-- The payoff: a block is on the free list or someone holds it, so there
 are no more blocks than the free list and the live handles together have
 room for. -/
-theorem Owned.size_le {rc free : Array Nat} {live : List Nat}
-    (h : Owned rc free live) : rc.size ≤ free.size + live.length := by
+theorem Owned.size_le {novec : Nat} {rc free : Array Nat}
+    {pool : Array UInt32} {live : List Nat}
+    (h : Owned novec rc free pool live) :
+    rc.size ≤ free.size + live.length := by
   have key : ∀ n, n ≤ rc.size →
       n ≤ countBelow free.toList n + countBelow live n := by
     intro n
@@ -1682,9 +1728,10 @@ theorem Owned.size_le {rc free : Array Nat} {live : List Nat}
 /-- One reference let go of a block someone else still holds: the count
 falls by one and nothing joins the free list, because a block with a holder
 left is not free. -/
-theorem owned_release {rc free : Array Nat} {h : Nat} {rest : List Nat}
-    (how : Owned rc free (h :: rest)) (hpos : 0 < rest.count h) :
-    Owned (rc.set! h (rc[h]! - 1)) free rest := by
+theorem owned_release {novec : Nat} {rc free : Array Nat}
+    {pool : Array UInt32} {h : Nat} {rest : List Nat}
+    (how : Owned novec rc free pool (h :: rest)) (hpos : 0 < rest.count h) :
+    Owned novec (rc.set! h (rc[h]! - 1)) free pool rest := by
   have hlt : h < rc.size := how.reach h List.mem_cons_self
   have hch : rc[h]! = rest.count h + 1 := by
     rw [how.count h hlt, count_cons_self]
@@ -1699,7 +1746,8 @@ theorem owned_release {rc free : Array Nat} {h : Nat} {rest : List Nat}
       omega
     · rw [Array.getElem!_set!_ne _ _ _ _ (fun he => hxh he.symm),
         how.count x hx, count_cons_ne (fun he => hxh he.symm)]
-  refine ⟨by rw [hsize]; exact how.capped, ?_, ?_, ?_, ?_, how.freeOnce⟩
+  refine ⟨by rw [hsize]; exact how.capped, ?_, ?_, ?_, ?_, how.freeOnce,
+    by rw [hsize]; exact how.blocks⟩
   · intro x hx
     rw [hsize]
     exact how.reach x (List.mem_cons_of_mem _ hx)
@@ -1722,9 +1770,10 @@ theorem owned_release {rc free : Array Nat} {h : Nat} {rest : List Nat}
 
 /-- The last holder let go, so the block joins the free list — where
 nothing else can be holding it, which is what keeps the free list clean. -/
-theorem owned_free {rc free : Array Nat} {h : Nat} {rest : List Nat}
-    (how : Owned rc free (h :: rest)) (hz : rest.count h = 0) :
-    Owned (rc.set! h (rc[h]! - 1)) (free.push h) rest := by
+theorem owned_free {novec : Nat} {rc free : Array Nat} {pool : Array UInt32}
+    {h : Nat} {rest : List Nat}
+    (how : Owned novec rc free pool (h :: rest)) (hz : rest.count h = 0) :
+    Owned novec (rc.set! h (rc[h]! - 1)) (free.push h) pool rest := by
   have hlt : h < rc.size := how.reach h List.mem_cons_self
   have hch : rc[h]! = rest.count h + 1 := by
     rw [how.count h hlt, count_cons_self]
@@ -1743,7 +1792,8 @@ theorem owned_free {rc free : Array Nat} {h : Nat} {rest : List Nat}
       free.toList.count x + (if x = h then 1 else 0) := by
     intro x
     rw [Array.toList_push, List.count_append, count_singleton]
-  refine ⟨by rw [hsize]; exact how.capped, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by rw [hsize]; exact how.capped, ?_, ?_, ?_, ?_, ?_,
+    by rw [hsize]; exact how.blocks⟩
   · intro x hx
     rw [hsize]
     exact how.reach x (List.mem_cons_of_mem _ hx)
@@ -1780,9 +1830,9 @@ theorem owned_free {rc free : Array Nat} {h : Nat} {rest : List Nat}
 
 /-- And one reference more, which is what a fork hands out: the block now
 has two holders where it had one. -/
-theorem owned_share {rc free : Array Nat} {h : Nat} {rest : List Nat}
-    (how : Owned rc free (h :: rest)) :
-    Owned (rc.set! h (rc[h]! + 1)) free (h :: h :: rest) := by
+theorem owned_share {novec : Nat} {rc free : Array Nat} {pool : Array UInt32}
+    {h : Nat} {rest : List Nat} (how : Owned novec rc free pool (h :: rest)) :
+    Owned novec (rc.set! h (rc[h]! + 1)) free pool (h :: h :: rest) := by
   have hlt : h < rc.size := how.reach h List.mem_cons_self
   have hch : rc[h]! = rest.count h + 1 := by
     rw [how.count h hlt, count_cons_self]
@@ -1802,7 +1852,8 @@ theorem owned_share {rc free : Array Nat} {h : Nat} {rest : List Nat}
         how.count x hx, count_cons_ne (fun he => hxh he.symm),
         count_cons_ne (fun he => hxh he.symm),
         count_cons_ne (fun he => hxh he.symm)]
-  refine ⟨by rw [hsize]; exact how.capped, ?_, ?_, ?_, ?_, how.freeOnce⟩
+  refine ⟨by rw [hsize]; exact how.capped, ?_, ?_, ?_, ?_, how.freeOnce,
+    by rw [hsize]; exact how.blocks⟩
   · intro x hx
     rw [hsize]
     rcases List.mem_cons.mp hx with he | hx'
@@ -1829,9 +1880,11 @@ theorem owned_share {rc free : Array Nat} {h : Nat} {rest : List Nat}
 
 /-- A block off the free list. Its refcount was zero and nobody held it, so
 handing it out makes the caller its only holder. -/
-theorem owned_reuse {rc free : Array Nat} {live : List Nat}
-    (how : Owned rc free live) (hpos : 0 < free.size) :
-    Owned (rc.set! free.back! 1) free.pop (free.back! :: live) := by
+theorem owned_reuse {novec : Nat} {rc free : Array Nat} {pool : Array UInt32}
+    {live : List Nat} (how : Owned novec rc free pool live)
+    (hpos : 0 < free.size) :
+    Owned novec (rc.set! free.back! 1) free.pop pool
+      (free.back! :: live) := by
   have hsplit := toList_pop_back (a := free) hpos
   have hcount : ∀ x, free.toList.count x =
       free.pop.toList.count x + (if x = free.back! then 1 else 0) := by
@@ -1861,7 +1914,8 @@ theorem owned_reuse {rc free : Array Nat} {live : List Nat}
     · rw [hxh, Array.getElem!_set!_self _ _ _ hlt, count_cons_self, hlive]
     · rw [Array.getElem!_set!_ne _ _ _ _ (fun he => hxh he.symm),
         how.count x hx, count_cons_ne (fun he => hxh he.symm)]
-  refine ⟨by rw [hsize]; exact how.capped, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by rw [hsize]; exact how.capped, ?_, ?_, ?_, ?_, ?_,
+    by rw [hsize]; exact how.blocks⟩
   · intro x hx
     rw [hsize]
     rcases List.mem_cons.mp hx with he | hx'
@@ -1893,9 +1947,11 @@ theorem owned_reuse {rc free : Array Nat} {live : List Nat}
 /-- A fresh block, taken because the free list had nothing on it. Its handle
 is the first index the refcount table did not have, so nobody could have
 been holding it. -/
-theorem owned_fresh {rc free : Array Nat} {live : List Nat}
-    (how : Owned rc free live) (hnil : free.size = 0) (hcap : rc.size < maxBlocks) :
-    Owned (rc.push 1) free (rc.size :: live) := by
+theorem owned_fresh {novec : Nat} {rc free : Array Nat}
+    {pool pool' : Array UInt32} {live : List Nat}
+    (how : Owned novec rc free pool live) (hnil : free.size = 0)
+    (hcap : rc.size < maxBlocks) (hfill : pool'.size = pool.size + novec) :
+    Owned novec (rc.push 1) free pool' (rc.size :: live) := by
   have hlist : free.toList = [] := by
     have : free.toList.length = 0 := by rw [Array.length_toList, hnil]
     exact List.eq_nil_of_length_eq_zero this
@@ -1910,7 +1966,8 @@ theorem owned_fresh {rc free : Array Nat} {live : List Nat}
       rw [hxs, getBang_push_eq, count_cons_self, hz]
     · rw [getBang_push_lt _ _ (by omega), how.count x (by omega),
         count_cons_ne (fun he => hxs he.symm)]
-  refine ⟨by rw [hsz]; omega, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by rw [hsz]; omega, ?_, ?_, ?_, ?_, ?_,
+    by rw [hfill, how.blocks, hsz, Nat.succ_mul]⟩
   · intro x hx
     rw [hsz]
     rcases List.mem_cons.mp hx with he | hx'
@@ -1941,30 +1998,32 @@ theorem owned_fresh {rc free : Array Nat} {live : List Nat}
 
 theorem pikeDefer_pool {st st' : PikeSt} {pc h : Nat} {lim : Limits}
     (hok : pikeDefer st pc h lim = .ok st') :
-    st'.rc = st.rc ∧ st'.free = st.free := by
+    st'.rc = st.rc ∧ st'.free = st.free ∧ st'.pool = st.pool := by
   unfold pikeDefer at hok
   split at hok
   · simp at hok
   · injection hok with hok
     subst hok
-    exact ⟨rfl, rfl⟩
+    exact ⟨rfl, rfl, rfl⟩
 
 theorem pikePark_pool {st st' : PikeSt} {intoNext : Bool} {pc h : Nat}
     {lim : Limits} (hok : pikePark st intoNext pc h lim = .ok st') :
-    st'.rc = st.rc ∧ st'.free = st.free := by
+    st'.rc = st.rc ∧ st'.free = st.free ∧ st'.pool = st.pool := by
   unfold pikePark at hok
   split at hok <;> split at hok
   · simp at hok
   · injection hok with hok
     subst hok
-    exact ⟨rfl, rfl⟩
+    exact ⟨rfl, rfl, rfl⟩
   · simp at hok
   · injection hok with hok
     subst hok
-    exact ⟨rfl, rfl⟩
+    exact ⟨rfl, rfl, rfl⟩
 
 theorem pikeTake_fill_pool {lim : Limits} : ∀ {k : Nat} {st st' : PikeSt},
-    pikeTake.fill lim k st = .ok st' → st'.rc = st.rc ∧ st'.free = st.free := by
+    pikeTake.fill lim k st = .ok st' →
+    st'.rc = st.rc ∧ st'.free = st.free ∧
+      st'.pool.size = st.pool.size + k := by
   intro k
   induction k with
   | zero =>
@@ -1972,22 +2031,25 @@ theorem pikeTake_fill_pool {lim : Limits} : ∀ {k : Nat} {st st' : PikeSt},
       rw [pikeTake.fill] at hok
       injection hok with hok
       subst hok
-      exact ⟨rfl, rfl⟩
+      exact ⟨rfl, rfl, rfl⟩
   | succ n ih =>
       intro st st' hok
       rw [pikeTake.fill] at hok
       split at hok
       · simp at hok
-      · obtain ⟨h1, h2⟩ := ih hok
-        exact ⟨h1, h2⟩
+      · obtain ⟨h1, h2, h3⟩ := ih hok
+        refine ⟨h1, h2, ?_⟩
+        simp only [Array.size_push] at h3
+        omega
 
 /-! ### The helpers, read against the state -/
 
 /-- Letting a handle go. The block returns to the free list exactly when its
 last holder let it go. -/
-theorem pikeDrop_owned {st st' : PikeSt} {h : Nat} {rest : List Nat}
-    {lim : Limits} (hok : pikeDrop st h lim = .ok st')
-    (how : Owned st.rc st.free (h :: rest)) : Owned st'.rc st'.free rest := by
+theorem pikeDrop_owned {novec : Nat} {st st' : PikeSt} {h : Nat}
+    {rest : List Nat} {lim : Limits} (hok : pikeDrop st h lim = .ok st')
+    (how : Owned novec st.rc st.free st.pool (h :: rest)) :
+    Owned novec st'.rc st'.free st'.pool rest := by
   have hlt : h < st.rc.size := how.reach h List.mem_cons_self
   have hne : ¬ ((h == none32) = true) := by
     have hb := how.capped
@@ -2027,9 +2089,10 @@ theorem pikeDrop_owned {st st' : PikeSt} {h : Nat} {rest : List Nat}
 to let go of. Nothing moves, so the reading carries over untouched — and it
 has to be a lemma of its own, because the sentinel is no block and the
 handle list `Owned` is stated against never holds it. -/
-theorem pikeDrop_none_owned {st st' : PikeSt} {live : List Nat} {lim : Limits}
-    (hok : pikeDrop st none32 lim = .ok st')
-    (how : Owned st.rc st.free live) : Owned st'.rc st'.free live := by
+theorem pikeDrop_none_owned {novec : Nat} {st st' : PikeSt} {live : List Nat}
+    {lim : Limits} (hok : pikeDrop st none32 lim = .ok st')
+    (how : Owned novec st.rc st.free st.pool live) :
+    Owned novec st'.rc st'.free st'.pool live := by
   unfold pikeDrop at hok
   rw [if_pos (by simp)] at hok
   injection hok with hok
@@ -2043,8 +2106,8 @@ the table can grow, every block in it is one of the caller's handles, so the
 handle count is what limits it. -/
 theorem pikeTake_owned {st st' : PikeSt} {novec hOut : Nat} {live : List Nat}
     {lim : Limits} (hok : pikeTake st novec lim = .ok (st', hOut))
-    (how : Owned st.rc st.free live) :
-    Owned st'.rc st'.free (hOut :: live) ∧
+    (how : Owned novec st.rc st.free st.pool live) :
+    Owned novec st'.rc st'.free st'.pool (hOut :: live) ∧
       st'.rc.size ≤ max st.rc.size (live.length + 1) := by
   unfold pikeTake at hok
   simp only [] at hok
@@ -2077,11 +2140,11 @@ theorem pikeTake_owned {st st' : PikeSt} {novec hOut : Nat} {live : List Nat}
           injection hok with hok hh
           subst hok
           subst hh
-          obtain ⟨hrcF, hfreeF⟩ := pikeTake_fill_pool hfill
+          obtain ⟨hrcF, hfreeF, hpoolF⟩ := pikeTake_fill_pool hfill
           have hcount := how.size_le
           rw [hzero] at hcount
-          refine ⟨by rw [hrcF, hfreeF]; exact owned_fresh how hzero (by omega),
-            ?_⟩
+          refine ⟨by rw [hrcF, hfreeF]
+                     exact owned_fresh how hzero (by omega) hpoolF, ?_⟩
           rw [hrcF]
           simp only [Array.size_push]
           omega
@@ -2091,8 +2154,9 @@ one, which someone else still holds — that is why the write had to copy. -/
 theorem pikeWrite_owned {st st' : PikeSt} {novec h slot hOut : Nat}
     {value : UInt32} {rest : List Nat} {lim : Limits}
     (hok : pikeWrite st novec h slot value lim = .ok (st', hOut))
-    (how : Owned st.rc st.free (h :: rest)) :
-    Owned st'.rc st'.free (hOut :: rest) := by
+    (how : Owned novec st.rc st.free st.pool (h :: rest)) :
+    Owned novec st'.rc st'.free st'.pool (hOut :: rest) ∧
+      st'.rc.size ≤ max st.rc.size (rest.length + 2) := by
   have hlt : h < st.rc.size := how.reach h List.mem_cons_self
   unfold pikeWrite at hok
   simp only [] at hok
@@ -2111,15 +2175,1071 @@ theorem pikeWrite_owned {st st' : PikeSt} {novec h slot hOut : Nat}
         injection hok with hok hh
         subst hok
         subst hh
-        have htake := (pikeTake_owned hTake how).1
-        exact owned_release (htake.perm (List.Perm.swap _ _ _))
-          (by rw [List.count_cons]; split <;> omega)
+        obtain ⟨htake, hsize⟩ := pikeTake_owned hTake how
+        refine ⟨Owned.ofPool (owned_release (htake.perm (List.Perm.swap _ _ _))
+          (by rw [List.count_cons]; split <;> omega)) ?_, ?_⟩
+        · rw [Array.size_set!]
+          exact foldl_size _ (fun a k => Array.size_set! _ _ _) _ _
+        · simp only [Array.size_set!]
+          simpa using hsize
   · injection hok with hok
     injection hok with hok hh
     subst hok
     subst hh
-    exact how
+    exact ⟨Owned.ofPool how (by rw [Array.size_set!]), Nat.le_max_left _ _⟩
 
+/-! ### What a closure build reaches
+
+A build's own handles are on its worklist and in the list it is parking
+into; the rest of what it holds is its caller's. The list it is *not*
+writing stays out of the reckoning on purpose: during a list step the
+current list is a snapshot the step is consuming, and an entry it has
+consumed is not held any more. -/
+
+/-- The handles a thread array carries. -/
+def handles (a : Array Th) : List Nat := a.toList.map Th.h
+
+theorem handles_length (a : Array Th) : (handles a).length = a.size := by
+  simp [handles]
+
+theorem handles_push (a : Array Th) (pc hh : Nat) :
+    handles (a.push ⟨pc, hh⟩) = handles a ++ [hh] := by
+  simp [handles]
+
+theorem handles_pop_back {a : Array Th} (h : 0 < a.size) :
+    handles a = handles a.pop ++ [a.back!.h] := by
+  rw [handles, handles, toList_pop_back h]
+  simp
+
+/-- The thread list a build parks into. -/
+def parkList (intoNext : Bool) (st : PikeSt) : Array Th :=
+  if intoNext then st.nlist else st.clist
+
+theorem parkList_eq {intoNext : Bool} {stA stB : PikeSt}
+    (hc : stB.clist = stA.clist) (hn : stB.nlist = stA.nlist) :
+    parkList intoNext stB = parkList intoNext stA := by
+  unfold parkList
+  split <;> simp [hc, hn]
+
+theorem parkList_push {intoNext : Bool} {stA stB : PikeSt} {pc hh : Nat}
+    (hT : intoNext = true →
+      stB.clist = stA.clist ∧ stB.nlist = stA.nlist.push ⟨pc, hh⟩)
+    (hF : intoNext = false →
+      stB.nlist = stA.nlist ∧ stB.clist = stA.clist.push ⟨pc, hh⟩) :
+    parkList intoNext stB = (parkList intoNext stA).push ⟨pc, hh⟩ := by
+  unfold parkList
+  by_cases hin : intoNext = true
+  · rw [if_pos hin, if_pos hin, (hT hin).2]
+  · have hin' : intoNext = false := by simpa using hin
+    rw [if_neg hin, if_neg hin, (hF hin').2]
+
+/-- What a build and its caller hold between them. -/
+def buildLive (intoNext : Bool) (st : PikeSt) (ext : List Nat) : List Nat :=
+  handles st.stk ++ handles (parkList intoNext st) ++ ext
+
+/-- What a build has left to spend: what is on the worklist, what it has
+parked, and twice the marks it has not made — a mark buys at most two
+deferrals. No iteration raises it, and it is what bounds the handles in
+reach. -/
+def addMeasure (intoNext : Bool) (st : PikeSt) : Nat :=
+  st.stk.size + (parkList intoNext st).size + 2 * unmarked st.seen
+
+theorem buildLive_length (intoNext : Bool) (st : PikeSt) (ext : List Nat) :
+    (buildLive intoNext st ext).length ≤
+      addMeasure intoNext st + ext.length := by
+  simp only [buildLive, addMeasure, List.length_append, handles_length]
+  omega
+
+/-! ### The handle in flight -/
+
+private theorem perm_head (A B C : List Nat) (x : Nat) :
+    (A ++ [x] ++ B ++ C).Perm (x :: (A ++ B ++ C)) := by
+  have h1 : A ++ [x] ++ B ++ C = A ++ x :: (B ++ C) := by simp
+  have h2 : x :: (A ++ B ++ C) = x :: (A ++ (B ++ C)) := by simp
+  rw [h1, h2]
+  exact List.perm_middle
+
+private theorem perm_mid (A B C : List Nat) (x : Nat) :
+    ((A ++ (B ++ [x])) ++ C).Perm (x :: (A ++ B ++ C)) := by
+  have h1 : (A ++ (B ++ [x])) ++ C = (A ++ B) ++ x :: C := by simp
+  have h2 : x :: (A ++ B ++ C) = x :: ((A ++ B) ++ C) := by simp
+  rw [h1, h2]
+  exact List.perm_middle
+
+/-- Popping the worklist takes its top handle into flight. -/
+theorem owned_pop {novec : Nat} {intoNext : Bool} {ext : List Nat}
+    {st : PikeSt} (hne : 0 < st.stk.size)
+    (how : Owned novec st.rc st.free st.pool (buildLive intoNext st ext)) :
+    Owned novec st.rc st.free st.pool
+      (st.stk.back!.h ::
+        (handles st.stk.pop ++ handles (parkList intoNext st) ++ ext)) := by
+  refine how.perm ?_
+  simp only [buildLive]
+  rw [handles_pop_back hne]
+  exact (perm_head _ _ _ _).symm
+
+/-- A deferral lands the handle on the worklist. -/
+theorem defer_owned {novec : Nat} {intoNext : Bool} {ext : List Nat}
+    {stA stB : PikeSt} {pc hh : Nat} {lim : Limits}
+    (hok : pikeDefer stA pc hh lim = .ok stB)
+    (how : Owned novec stA.rc stA.free stA.pool
+      (hh :: buildLive intoNext stA ext)) :
+    Owned novec stB.rc stB.free stB.pool (buildLive intoNext stB ext) := by
+  obtain ⟨hstk, -⟩ := pikeDefer_ok hok
+  obtain ⟨hcl, hnl⟩ := pikeDefer_lists hok
+  obtain ⟨hrc, hfree, hpl⟩ := pikeDefer_pool hok
+  rw [hrc, hfree, hpl]
+  refine how.perm ?_
+  simp only [buildLive, hstk, handles_push, parkList_eq hcl hnl]
+  exact perm_head _ _ _ _
+
+/-- The second of a fork's two deferrals, with the first still in flight. -/
+theorem defer_owned_two {novec : Nat} {intoNext : Bool} {ext : List Nat}
+    {stA stB : PikeSt} {pc hh : Nat} {lim : Limits}
+    (hok : pikeDefer stA pc hh lim = .ok stB)
+    (how : Owned novec stA.rc stA.free stA.pool
+      (hh :: hh :: buildLive intoNext stA ext)) :
+    Owned novec stB.rc stB.free stB.pool
+      (hh :: buildLive intoNext stB ext) := by
+  obtain ⟨hstk, -⟩ := pikeDefer_ok hok
+  obtain ⟨hcl, hnl⟩ := pikeDefer_lists hok
+  obtain ⟨hrc, hfree, hpl⟩ := pikeDefer_pool hok
+  rw [hrc, hfree, hpl]
+  refine how.perm ?_
+  simp only [buildLive, hstk, handles_push, parkList_eq hcl hnl]
+  exact (perm_head _ _ _ _).cons hh
+
+/-- A park lands it on the list the build is writing. -/
+theorem park_owned {novec : Nat} {intoNext : Bool} {ext : List Nat}
+    {stA stB : PikeSt} {pc hh : Nat} {lim : Limits}
+    (hok : pikePark stA intoNext pc hh lim = .ok stB)
+    (how : Owned novec stA.rc stA.free stA.pool
+      (hh :: buildLive intoNext stA ext)) :
+    Owned novec stB.rc stB.free stB.pool (buildLive intoNext stB ext) := by
+  obtain ⟨hstk, -⟩ := pikePark_ok hok
+  obtain ⟨hT, hF⟩ := pikePark_lists hok
+  obtain ⟨hrc, hfree, hpl⟩ := pikePark_pool hok
+  rw [hrc, hfree, hpl]
+  refine how.perm ?_
+  simp only [buildLive, hstk, parkList_push hT hF, handles_push]
+  exact perm_mid _ _ _ _
+
+/-- And a drop lets it go. -/
+theorem drop_owned {novec : Nat} {intoNext : Bool} {ext : List Nat}
+    {stA stB : PikeSt} {hh : Nat} {lim : Limits}
+    (hok : pikeDrop stA hh lim = .ok stB)
+    (how : Owned novec stA.rc stA.free stA.pool
+      (hh :: buildLive intoNext stA ext)) :
+    Owned novec stB.rc stB.free stB.pool (buildLive intoNext stB ext) := by
+  obtain ⟨hstk, -⟩ := pikeDrop_ok hok
+  obtain ⟨hcl, hnl⟩ := pikeDrop_lists hok
+  have hres := pikeDrop_owned hok how
+  rwa [buildLive, hstk, parkList_eq hcl hnl, ← buildLive]
+
+/-- The Save's copy-on-write swaps the handle in flight for a private
+block, and what it takes is bounded by the handles already in reach. -/
+theorem write_owned {intoNext : Bool} {ext : List Nat} {stA stB : PikeSt}
+    {novec hh slot hOut : Nat} {value : UInt32} {lim : Limits}
+    (hok : pikeWrite stA novec hh slot value lim = .ok (stB, hOut))
+    (how : Owned novec stA.rc stA.free stA.pool
+      (hh :: buildLive intoNext stA ext)) :
+    Owned novec stB.rc stB.free stB.pool
+      (hOut :: buildLive intoNext stB ext) ∧
+      stB.rc.size ≤
+        max stA.rc.size ((buildLive intoNext stA ext).length + 2) := by
+  obtain ⟨hstk, -⟩ := pikeWrite_ok hok
+  obtain ⟨hcl, hnl⟩ := pikeWrite_lists hok
+  obtain ⟨h1, h2⟩ := pikeWrite_owned hok how
+  refine ⟨?_, h2⟩
+  rwa [buildLive, hstk, parkList_eq hcl hnl, ← buildLive]
+
+theorem pikeDrop_rcSize {st st' : PikeSt} {h : Nat} {lim : Limits}
+    (hok : pikeDrop st h lim = .ok st') :
+    st'.rc.size = st.rc.size ∧ st'.pool = st.pool := by
+  unfold pikeDrop at hok
+  simp only [] at hok
+  split at hok
+  · injection hok with hok
+    subst hok
+    exact ⟨rfl, rfl⟩
+  · split at hok
+    · split at hok
+      · simp at hok
+      · injection hok with hok
+        subst hok
+        exact ⟨by simp, rfl⟩
+    · injection hok with hok
+      subst hok
+      exact ⟨by simp, rfl⟩
+
+/-! ### The closure loop, read against the pool -/
+
+set_option maxHeartbeats 1000000 in
+/-- One closure build, weighed and owned. The measure never rises — an
+iteration pops one entry, and a fresh pc pays two off the unvisited count
+against at most two deferrals — and the pool's reading survives every arm,
+since each of them either moves the popped handle somewhere the live list
+can see it or lets it go. The one arm that allocates is the Save's
+copy-on-write, and what it takes is bounded by the handles in reach.
+
+None of this needs the pcs to be real instructions. A pc outside the
+program reads as the default `chr`, which parks and pushes nothing, so the
+arms that push are exactly the ones whose mark is known to land. -/
+theorem pikeAdd_go_owned (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (intoNext : Bool) (pos : Nat) (ext : List Nat) :
+    ∀ (fuel : Nat) (st st' : PikeSt),
+      pikeAdd.go re s mo lim intoNext pos fuel st = .ok st' →
+      st.seen.size = re.code.size →
+      Owned re.novec st.rc st.free st.pool (buildLive intoNext st ext) →
+      Owned re.novec st'.rc st'.free st'.pool (buildLive intoNext st' ext) ∧
+        addMeasure intoNext st' ≤ addMeasure intoNext st ∧
+        st'.seen.size = re.code.size ∧ st'.stk.size = 0 ∧
+        st'.rc.size ≤
+          max st.rc.size (addMeasure intoNext st + ext.length + 1) := by
+  intro fuel
+  induction fuel with
+  | zero =>
+      intro st st' h _ _
+      rw [pikeAdd.go] at h
+      cases h
+  | succ f ih =>
+      intro st st' h hsz how
+      simp only [pikeAdd.go] at h
+      -- Whatever an arm hands the loop is weighed against the state this
+      -- iteration began with.
+      have hstep : ∀ stB : PikeSt,
+          pikeAdd.go re s mo lim intoNext pos f stB = .ok st' →
+          stB.seen.size = re.code.size →
+          Owned re.novec stB.rc stB.free stB.pool (buildLive intoNext stB ext) →
+          addMeasure intoNext stB ≤ addMeasure intoNext st →
+          stB.rc.size ≤
+            max st.rc.size (addMeasure intoNext st + ext.length + 1) →
+          Owned re.novec st'.rc st'.free st'.pool (buildLive intoNext st' ext) ∧
+            addMeasure intoNext st' ≤ addMeasure intoNext st ∧
+            st'.seen.size = re.code.size ∧ st'.stk.size = 0 ∧
+            st'.rc.size ≤
+              max st.rc.size (addMeasure intoNext st + ext.length + 1) := by
+        intro stB hgo hszB howB hmB hrcB
+        obtain ⟨o1, o2, o3, o4, o5⟩ := ih stB st' hgo hszB howB
+        exact ⟨o1, Nat.le_trans o2 hmB, o3, o4, by omega⟩
+      split at h
+      · rename_i hemp
+        injection h with h
+        subst h
+        refine ⟨how, Nat.le_refl _, hsz, ?_, by omega⟩
+        simp only [beq_iff_eq] at hemp
+        exact hemp
+      · rename_i hne
+        have hpos : 0 < st.stk.size :=
+          Nat.pos_of_ne_zero (fun hz => hne (by simp [hz]))
+        have hflight := owned_pop (intoNext := intoNext) (ext := ext) hpos how
+        split at h
+        · -- Already visited: the pop pays for the iteration.
+          split at h
+          · exact absurd h (by simp)
+          · rename_i stD hdr
+            obtain ⟨hkD, heD⟩ := pikeDrop_ok hdr
+            obtain ⟨hclD, hnlD⟩ := pikeDrop_lists hdr
+            have hstkD : stD.stk = st.stk.pop := by rw [hkD]
+            have hseenD : stD.seen = st.seen := by rw [heD]
+            have hpkD : parkList intoNext stD = parkList intoNext st := by
+              rw [parkList_eq hclD hnlD]
+              rfl
+            refine hstep stD h (by rw [hseenD]; exact hsz) (drop_owned hdr hflight)
+              ?_ ?_
+            · simp only [addMeasure, hstkD, hseenD, hpkD, Array.size_pop]
+              omega
+            · rw [(pikeDrop_rcSize hdr).1]
+              exact Nat.le_max_left _ _
+        · -- A fresh pc: the mark pays for what the arm pushes.
+          rename_i hseenF
+          have hfalse : st.seen[st.stk.back!.pc]! = false := by simpa using hseenF
+          have hweak := unmarked_set_le st.seen st.stk.back!.pc
+          have hstrict : re.code[st.stk.back!.pc]!.op ≠ Op.chr →
+              unmarked (st.seen.set! st.stk.back!.pc true) + 1 =
+                unmarked st.seen := by
+            intro hno
+            rcases Nat.lt_or_ge st.stk.back!.pc re.code.size with hlt | hge
+            · exact unmarked_set_lt (by omega) hfalse
+            · exact absurd
+                (by rw [getElem!_neg re.code st.stk.back!.pc (by omega)]; rfl :
+                  re.code[st.stk.back!.pc]!.op = Op.chr) hno
+          -- The five shapes an arm can take, each read off the marked state
+          -- through the fields the reckoning looks at.
+          have harmDrop : ∀ (stA stB : PikeSt),
+              pikeDrop stA st.stk.back!.h lim = .ok stB →
+              pikeAdd.go re s mo lim intoNext pos f stB = .ok st' →
+              stA.stk = st.stk.pop →
+              stA.seen = st.seen.set! st.stk.back!.pc true →
+              stA.rc = st.rc → stA.free = st.free → stA.pool = st.pool →
+              parkList intoNext stA = parkList intoNext st →
+              Owned re.novec st'.rc st'.free st'.pool (buildLive intoNext st' ext) ∧
+                addMeasure intoNext st' ≤ addMeasure intoNext st ∧
+                st'.seen.size = re.code.size ∧ st'.stk.size = 0 ∧
+                st'.rc.size ≤
+                  max st.rc.size (addMeasure intoNext st + ext.length + 1) := by
+            intro stA stB hdr hgo hstkA hseenA hrcA hfreeA hpoolA hparkA
+            have hstA : Owned re.novec stA.rc stA.free stA.pool
+                (st.stk.back!.h :: buildLive intoNext stA ext) := by
+              rw [hrcA, hfreeA, hpoolA, buildLive, hstkA, hparkA]
+              exact hflight
+            obtain ⟨hkD, heD⟩ := pikeDrop_ok hdr
+            obtain ⟨hclD, hnlD⟩ := pikeDrop_lists hdr
+            refine hstep stB hgo
+              (by rw [heD, hseenA, Array.size_set!]; exact hsz)
+              (drop_owned hdr hstA) ?_ ?_
+            · simp only [addMeasure, hkD, heD, parkList_eq hclD hnlD, hparkA,
+                hstkA, hseenA, Array.size_pop]
+              omega
+            · rw [(pikeDrop_rcSize hdr).1, hrcA]
+              exact Nat.le_max_left _ _
+          have harmPark : ∀ (stA stB : PikeSt) (pcT : Nat),
+              pikePark stA intoNext pcT st.stk.back!.h lim = .ok stB →
+              pikeAdd.go re s mo lim intoNext pos f stB = .ok st' →
+              stA.stk = st.stk.pop →
+              stA.seen = st.seen.set! st.stk.back!.pc true →
+              stA.rc = st.rc → stA.free = st.free → stA.pool = st.pool →
+              parkList intoNext stA = parkList intoNext st →
+              Owned re.novec st'.rc st'.free st'.pool (buildLive intoNext st' ext) ∧
+                addMeasure intoNext st' ≤ addMeasure intoNext st ∧
+                st'.seen.size = re.code.size ∧ st'.stk.size = 0 ∧
+                st'.rc.size ≤
+                  max st.rc.size (addMeasure intoNext st + ext.length + 1) := by
+            intro stA stB pcT hpk hgo hstkA hseenA hrcA hfreeA hpoolA hparkA
+            have hstA : Owned re.novec stA.rc stA.free stA.pool
+                (st.stk.back!.h :: buildLive intoNext stA ext) := by
+              rw [hrcA, hfreeA, hpoolA, buildLive, hstkA, hparkA]
+              exact hflight
+            obtain ⟨hkD, heD⟩ := pikePark_ok hpk
+            obtain ⟨hT, hF⟩ := pikePark_lists hpk
+            obtain ⟨hrcD, hfreeD, hplD⟩ := pikePark_pool hpk
+            refine hstep stB hgo
+              (by rw [heD, hseenA, Array.size_set!]; exact hsz)
+              (park_owned hpk hstA) ?_ ?_
+            · simp only [addMeasure, hkD, heD, parkList_push hT hF, hparkA,
+                hstkA, hseenA, Array.size_push, Array.size_pop]
+              omega
+            · rw [hrcD, hrcA]
+              exact Nat.le_max_left _ _
+          have harmDefer : ∀ (stA stB : PikeSt) (pcT : Nat),
+              pikeDefer stA pcT st.stk.back!.h lim = .ok stB →
+              pikeAdd.go re s mo lim intoNext pos f stB = .ok st' →
+              stA.stk = st.stk.pop →
+              stA.seen = st.seen.set! st.stk.back!.pc true →
+              stA.rc = st.rc → stA.free = st.free → stA.pool = st.pool →
+              parkList intoNext stA = parkList intoNext st →
+              Owned re.novec st'.rc st'.free st'.pool (buildLive intoNext st' ext) ∧
+                addMeasure intoNext st' ≤ addMeasure intoNext st ∧
+                st'.seen.size = re.code.size ∧ st'.stk.size = 0 ∧
+                st'.rc.size ≤
+                  max st.rc.size (addMeasure intoNext st + ext.length + 1) := by
+            intro stA stB pcT hdf hgo hstkA hseenA hrcA hfreeA hpoolA hparkA
+            have hstA : Owned re.novec stA.rc stA.free stA.pool
+                (st.stk.back!.h :: buildLive intoNext stA ext) := by
+              rw [hrcA, hfreeA, hpoolA, buildLive, hstkA, hparkA]
+              exact hflight
+            obtain ⟨hkD, heD⟩ := pikeDefer_ok hdf
+            obtain ⟨hclD, hnlD⟩ := pikeDefer_lists hdf
+            obtain ⟨hrcD, hfreeD, hplD⟩ := pikeDefer_pool hdf
+            refine hstep stB hgo
+              (by rw [heD, hseenA, Array.size_set!]; exact hsz)
+              (defer_owned hdf hstA) ?_ ?_
+            · simp only [addMeasure, hkD, heD, parkList_eq hclD hnlD, hparkA,
+                hstkA, hseenA, Array.size_push, Array.size_pop]
+              omega
+            · rw [hrcD, hrcA]
+              exact Nat.le_max_left _ _
+          have harmFork : ∀ (stR stB stC : PikeSt) (p q : Nat),
+              pikeDefer stR p st.stk.back!.h lim = .ok stB →
+              pikeDefer stB q st.stk.back!.h lim = .ok stC →
+              pikeAdd.go re s mo lim intoNext pos f stC = .ok st' →
+              stR.stk = st.stk.pop →
+              stR.seen = st.seen.set! st.stk.back!.pc true →
+              stR.rc = st.rc.set! st.stk.back!.h
+                (st.rc[st.stk.back!.h]! + 1) →
+              stR.free = st.free → stR.pool = st.pool →
+              parkList intoNext stR = parkList intoNext st →
+              unmarked (st.seen.set! st.stk.back!.pc true) + 1 =
+                unmarked st.seen →
+              Owned re.novec st'.rc st'.free st'.pool (buildLive intoNext st' ext) ∧
+                addMeasure intoNext st' ≤ addMeasure intoNext st ∧
+                st'.seen.size = re.code.size ∧ st'.stk.size = 0 ∧
+                st'.rc.size ≤
+                  max st.rc.size (addMeasure intoNext st + ext.length + 1) := by
+            intro stR stB stC p q hd1 hd2 hgo hstkR hseenR hrcR hfreeR hpoolR
+              hparkR hu
+            have hstR : Owned re.novec stR.rc stR.free stR.pool
+                (st.stk.back!.h :: st.stk.back!.h ::
+                  buildLive intoNext stR ext) := by
+              rw [hrcR, hfreeR, hpoolR, buildLive, hstkR, hparkR]
+              exact owned_share hflight
+            obtain ⟨hk1, he1⟩ := pikeDefer_ok hd1
+            obtain ⟨hcl1, hnl1⟩ := pikeDefer_lists hd1
+            obtain ⟨hrc1, hfree1, hpl1⟩ := pikeDefer_pool hd1
+            obtain ⟨hk2, he2⟩ := pikeDefer_ok hd2
+            obtain ⟨hcl2, hnl2⟩ := pikeDefer_lists hd2
+            obtain ⟨hrc2, hfree2, hpl2⟩ := pikeDefer_pool hd2
+            refine hstep stC hgo
+              (by rw [he2, he1, hseenR, Array.size_set!]; exact hsz)
+              (defer_owned hd2 (defer_owned_two hd1 hstR)) ?_ ?_
+            · simp only [addMeasure, hk2, he2, hk1, he1,
+                parkList_eq hcl2 hnl2, parkList_eq hcl1 hnl1, hparkR, hstkR,
+                hseenR, Array.size_push, Array.size_pop]
+              omega
+            · rw [hrc2, hrc1, hrcR, Array.size_set!]
+              exact Nat.le_max_left _ _
+          have harmSave : ∀ (stA stW stB : PikeSt) (slotT hOut pcT : Nat)
+              (value : UInt32),
+              pikeWrite stA re.novec st.stk.back!.h slotT value lim
+                = .ok (stW, hOut) →
+              pikeDefer stW pcT hOut lim = .ok stB →
+              pikeAdd.go re s mo lim intoNext pos f stB = .ok st' →
+              stA.stk = st.stk.pop →
+              stA.seen = st.seen.set! st.stk.back!.pc true →
+              stA.rc = st.rc → stA.free = st.free → stA.pool = st.pool →
+              parkList intoNext stA = parkList intoNext st →
+              Owned re.novec st'.rc st'.free st'.pool (buildLive intoNext st' ext) ∧
+                addMeasure intoNext st' ≤ addMeasure intoNext st ∧
+                st'.seen.size = re.code.size ∧ st'.stk.size = 0 ∧
+                st'.rc.size ≤
+                  max st.rc.size (addMeasure intoNext st + ext.length + 1) := by
+            intro stA stW stB slotT hOut pcT value hw hdf hgo hstkA hseenA
+              hrcA hfreeA hpoolA hparkA
+            have hstA : Owned re.novec stA.rc stA.free stA.pool
+                (st.stk.back!.h :: buildLive intoNext stA ext) := by
+              rw [hrcA, hfreeA, hpoolA, buildLive, hstkA, hparkA]
+              exact hflight
+            obtain ⟨hwo, hws⟩ := write_owned hw hstA
+            obtain ⟨hkW, heW⟩ := pikeWrite_ok hw
+            obtain ⟨hclW, hnlW⟩ := pikeWrite_lists hw
+            obtain ⟨hkD, heD⟩ := pikeDefer_ok hdf
+            obtain ⟨hclD, hnlD⟩ := pikeDefer_lists hdf
+            obtain ⟨hrcD, hfreeD, hplD⟩ := pikeDefer_pool hdf
+            have hlen := buildLive_length intoNext stA ext
+            have hmA : addMeasure intoNext stA + 1 ≤ addMeasure intoNext st := by
+              simp only [addMeasure, hstkA, hseenA, hparkA, Array.size_pop]
+              omega
+            rw [hrcA] at hws
+            refine hstep stB hgo
+              (by rw [heD, heW, hseenA, Array.size_set!]; exact hsz)
+              (defer_owned hdf hwo) ?_ ?_
+            · simp only [addMeasure, hkD, heD, hkW, heW, parkList_eq hclD hnlD,
+                parkList_eq hclW hnlW, hparkA, hstkA, hseenA, Array.size_push,
+                Array.size_pop]
+              omega
+            · rw [hrcD]
+              omega
+          split at h
+          · exact absurd h (by simp)
+          · repeat' split at h
+            all_goals first
+              | (rename_i _stA hA _x _stB hB
+                 exact harmFork _ _ _ _ _ hA hB h rfl rfl rfl rfl rfl rfl
+                   (hstrict (by rw [‹re.code[st.stk.back!.pc]!.op = _›]; decide)))
+              | (rename_i _stW _hOut hW _x _stD hD
+                 exact harmSave _ _ _ _ _ _ _ hW hD h rfl rfl rfl rfl rfl rfl)
+              | (rename_i _stD hD
+                 exact harmDefer _ _ _ hD h rfl rfl rfl rfl rfl rfl)
+              | (rename_i _stD hD
+                 exact harmDrop _ _ hD h rfl rfl rfl rfl rfl rfl)
+              | (rename_i _stD hD
+                 exact harmPark _ _ _ hD h rfl rfl rfl rfl rfl rfl)
+              -- what is left is a refusal, which never reaches the loop again
+              | cases h
+
+
+/-- `pikeAdd` itself: the entry it seeds the worklist with is the handle its
+caller was holding, so the build's reckoning covers the whole call. -/
+theorem pikeAdd_owned (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (intoNext : Bool) (pos pc0 h0 : Nat) (ext : List Nat) {st st' : PikeSt}
+    (hok : pikeAdd re s mo lim intoNext pos pc0 h0 st = .ok st')
+    (hsz : st.seen.size = re.code.size)
+    (how : Owned re.novec st.rc st.free st.pool
+      (h0 :: buildLive intoNext st ext)) :
+    Owned re.novec st'.rc st'.free st'.pool (buildLive intoNext st' ext) ∧
+      addMeasure intoNext st' ≤ addMeasure intoNext st + 1 ∧
+      st'.seen.size = re.code.size ∧ st'.stk.size = 0 ∧
+      st'.rc.size ≤
+        max st.rc.size (addMeasure intoNext st + ext.length + 2) := by
+  rw [pikeAdd] at hok
+  split at hok
+  · exact absurd hok (by simp)
+  · rename_i stD hdf
+    obtain ⟨hkD, heD⟩ := pikeDefer_ok hdf
+    obtain ⟨hclD, hnlD⟩ := pikeDefer_lists hdf
+    obtain ⟨hrcD, hfreeD, hplD⟩ := pikeDefer_pool hdf
+    have hmD : addMeasure intoNext stD = addMeasure intoNext st + 1 := by
+      simp only [addMeasure, hkD, heD, parkList_eq hclD hnlD, Array.size_push]
+      omega
+    obtain ⟨o1, o2, o3, o4, o5⟩ :=
+      pikeAdd_go_owned re s mo lim intoNext pos ext _ _ _ hok
+        (by rw [heD]; exact hsz) (defer_owned hdf how)
+    rw [hmD] at o2 o5
+    rw [hrcD] at o5
+    exact ⟨o1, o2, o3, o4, by omega⟩
+
+/-- Seeding a position, owned. The block it takes is one the pool had room
+for — either off the free list or fresh, and a fresh one only when nothing
+was free, where the handles in reach are what bound the table. -/
+theorem pikeSeed_owned (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (start pos : Nat) (ext : List Nat) {st st' : PikeSt}
+    (hok : pikeSeed re s mo lim start pos st = .ok st')
+    (hsz : st.seen.size = re.code.size)
+    (hstk : st.stk.size = 0)
+    (how : Owned re.novec st.rc st.free st.pool (buildLive false st ext)) :
+    Owned re.novec st'.rc st'.free st'.pool (buildLive false st' ext) ∧
+      addMeasure false st' ≤ addMeasure false st + 1 ∧
+      st'.seen.size = re.code.size ∧ st'.stk.size = 0 ∧
+      st'.rc.size ≤ max st.rc.size (addMeasure false st + ext.length + 2) := by
+  simp only [pikeSeed] at hok
+  split at hok
+  · injection hok with hok
+    subst hok
+    exact ⟨how, by omega, hsz, hstk, Nat.le_max_left _ _⟩
+  · split at hok
+    · exact absurd hok (by simp)
+    · rename_i stT sh ht
+      obtain ⟨hkT, heT⟩ := pikeTake_ok ht
+      obtain ⟨hclT, hnlT⟩ := pikeTake_lists ht
+      obtain ⟨htake, hsize⟩ := pikeTake_owned ht how
+      have hlen := buildLive_length false st ext
+      have hmT : addMeasure false stT = addMeasure false st := by
+        simp only [addMeasure, hkT, heT, parkList_eq hclT hnlT]
+      have hbl : buildLive false stT ext = buildLive false st ext := by
+        simp only [buildLive, hkT, parkList_eq hclT hnlT]
+      have hlive : Owned re.novec stT.rc stT.free stT.pool
+          (sh :: buildLive false stT ext) := by
+        rw [hbl]
+        exact htake
+      split at hok
+      · exact absurd hok (by simp)
+      · obtain ⟨o1, o2, o3, o4, o5⟩ :=
+          pikeAdd_owned re s mo lim false pos 0 sh ext hok
+            (by rw [heT]; exact hsz)
+            (Owned.ofPool hlive (by
+              rw [Array.size_set!]
+              exact foldl_size _ (fun a k => Array.size_set! _ _ _) _ _))
+        refine ⟨o1, ?_, o3, o4, ?_⟩
+        · rw [← hmT]
+          exact o2
+        · have o5' : st'.rc.size ≤
+              max stT.rc.size (addMeasure false st + ext.length + 2) := by
+            rw [← hmT]
+            exact o5
+          omega
+
+/-- The measure at the shape a position loop hands a build: the worklist is
+empty and the current list has already been paid for by the marks that put
+it there, so a build starts inside `2*C` and — since no iteration raises the
+measure — never leaves it. That is the worklist half of the `4*C + 2` count,
+the two thread lists being the other. -/
+theorem LoopOk.addMeasure_le {re : Re} {st : PikeSt} (h : LoopOk re st)
+    (hstk : st.stk.size = 0) : addMeasure false st ≤ re.code.size * 2 := by
+  have hb := h.bounded
+  have hu := unmarked_le_size st.seen
+  rw [h.build.seenSize] at hu
+  have hpk : parkList false st = st.clist := rfl
+  simp only [addMeasure, hpk, hstk]
+  omega
+
+/-! ### The list step, read against the pool
+
+A step consumes the current list as a snapshot: what it has already stepped
+is not held any more, what it has still to step is, and so is the match it
+is carrying. The closures it opens write into the next list, so that is the
+list the reckoning follows. -/
+
+/-- The recorded match handle as a list of what it holds: the sentinel is no
+block, which is why the drop a step makes before it has a match is a no-op
+the ownership does not have to explain. -/
+def mhList (mh : Nat) : List Nat := if mh = none32 then [] else [mh]
+
+private theorem perm_last (A : List Nat) (x : Nat) :
+    (A ++ [x]).Perm (x :: A) := by
+  have h := List.perm_middle (l₁ := A) (a := x) (l₂ := [])
+  rwa [List.append_nil] at h
+
+/-- Dropping the threads a recorded match outranks: each of them lets its
+handle go, and nothing else moves. -/
+theorem dropRest_owned {novec : Nat} {lim : Limits} :
+    ∀ (rest : List Th) (st st' : PikeSt) (L : List Nat),
+      dropRest lim rest st = .ok st' →
+      Owned novec st.rc st.free st.pool (rest.map Th.h ++ L) →
+      Owned novec st'.rc st'.free st'.pool L ∧
+        st'.stk = st.stk ∧ st'.seen = st.seen ∧ st'.clist = st.clist ∧
+        st'.nlist = st.nlist ∧ st'.rc.size = st.rc.size := by
+  intro rest
+  induction rest with
+  | nil =>
+      intro st st' L hok how
+      rw [dropRest] at hok
+      injection hok with hok
+      subst hok
+      exact ⟨by simpa using how, rfl, rfl, rfl, rfl, rfl⟩
+  | cons th rest ih =>
+      intro st st' L hok how
+      rw [dropRest] at hok
+      split at hok
+      · exact absurd hok (by simp)
+      · rename_i stD hdr
+        obtain ⟨hkD, heD⟩ := pikeDrop_ok hdr
+        obtain ⟨hclD, hnlD⟩ := pikeDrop_lists hdr
+        obtain ⟨hrcD, hplD⟩ := pikeDrop_rcSize hdr
+        have hmid : Owned novec st.rc st.free st.pool
+            (th.h :: (rest.map Th.h ++ L)) := by simpa using how
+        obtain ⟨o1, o2, o3, o4, o5, o6⟩ :=
+          ih stD st' L hok (pikeDrop_owned hdr hmid)
+        exact ⟨o1, o2.trans hkD, o3.trans heD, o4.trans hclD, o5.trans hnlD,
+          o6.trans hrcD⟩
+
+theorem mhList_length (mh : Nat) : (mhList mh).length ≤ 1 := by
+  rw [mhList]
+  split <;> simp
+
+/-- A handle the pool has is not the sentinel, so a recorded match really
+does hold a block. -/
+theorem Owned.mhList_head {novec : Nat} {rc free : Array Nat}
+    {pool : Array UInt32} {L : List Nat} {x : Nat}
+    (h : Owned novec rc free pool (x :: L)) : mhList x = [x] := by
+  have hne : x ≠ none32 := by
+    have h1 := h.reach x List.mem_cons_self
+    have h2 := h.capped
+    simp only [maxBlocks, liveBlocks, maxCode, maxNodes, growMin,
+      growFactor] at h2
+    simp only [none32]
+    omega
+  rw [mhList, if_neg hne]
+
+set_option maxHeartbeats 1000000 in
+/-- Stepping the built list, owned. Each thread's handle comes off the
+snapshot into flight and lands in the closure it opens, or is let go. The
+one arm that allocates is the accept's copy-on-write; it then lets the old
+match go — a no-op while the match is still the sentinel — and drops every
+thread it outranks, so the step ends holding just the match it recorded.
+
+The reckoning follows the next list, since that is what the closures write
+into; the current list is the snapshot being consumed and is not in it. -/
+theorem stepThreads_owned (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (start pos B : Nat) :
+    ∀ (threads : List Th) (st : PikeSt) (mh : Nat) (seeding matched : Bool)
+      (out : StepOut),
+      stepThreads re s mo lim start pos threads st mh seeding matched = .ok out →
+      st.seen.size = re.code.size → st.stk.size = 0 →
+      addMeasure true st + threads.length + 1 ≤ B →
+      Owned re.novec st.rc st.free st.pool
+        (buildLive true st (threads.map Th.h ++ mhList mh)) →
+      Owned re.novec out.st.rc out.st.free out.st.pool
+        (buildLive true out.st (mhList out.mh)) ∧
+        addMeasure true out.st + 1 ≤ B ∧
+        out.st.seen.size = re.code.size ∧ out.st.stk.size = 0 ∧
+        out.st.rc.size ≤ max st.rc.size (B + 2) := by
+  intro threads
+  induction threads with
+  | nil =>
+      intro st mh seeding matched out h hsz hstk hm how
+      rw [stepThreads] at h
+      injection h with h
+      subst h
+      refine ⟨by simpa using how, by simpa using hm, hsz, hstk,
+        Nat.le_max_left _ _⟩
+  | cons th rest ih =>
+      intro st mh seeding matched out h hsz hstk hm how
+      have hext : (mhList mh).length ≤ 1 := mhList_length mh
+      -- The thread's own handle, taken into flight off the snapshot.
+      have hmid : Owned re.novec st.rc st.free st.pool
+          (th.h :: buildLive true st (rest.map Th.h ++ mhList mh)) := by
+        refine how.perm ?_
+        have he : (th :: rest).map Th.h ++ mhList mh =
+            th.h :: (rest.map Th.h ++ mhList mh) := by simp
+        rw [he, buildLive, buildLive]
+        exact List.perm_middle.symm
+      have hstep : ∀ stB : PikeSt,
+          stepThreads re s mo lim start pos rest stB mh seeding matched = .ok out →
+          stB.seen.size = re.code.size → stB.stk.size = 0 →
+          addMeasure true stB + rest.length + 1 ≤ B →
+          Owned re.novec stB.rc stB.free stB.pool
+            (buildLive true stB (rest.map Th.h ++ mhList mh)) →
+          stB.rc.size ≤ max st.rc.size (B + 2) →
+          Owned re.novec out.st.rc out.st.free out.st.pool
+            (buildLive true out.st (mhList out.mh)) ∧
+            addMeasure true out.st + 1 ≤ B ∧
+            out.st.seen.size = re.code.size ∧ out.st.stk.size = 0 ∧
+            out.st.rc.size ≤ max st.rc.size (B + 2) := by
+        intro stB hgo hszB hstkB hmB howB hrcB
+        obtain ⟨o1, o2, o3, o4, o5⟩ :=
+          ih stB mh seeding matched out hgo hszB hstkB hmB howB
+        exact ⟨o1, o2, o3, o4, by omega⟩
+      -- The three shapes an arm can take, read off the charged state.
+      have harmAdd : ∀ (stA stB : PikeSt),
+          pikeAdd re s mo lim true (pos + 1) (th.pc + 1) th.h stA = .ok stB →
+          stepThreads re s mo lim start pos rest stB mh seeding matched = .ok out →
+          stA.rc = st.rc → stA.free = st.free → stA.pool = st.pool →
+          stA.seen = st.seen → stA.stk = st.stk →
+          parkList true stA = parkList true st →
+          Owned re.novec out.st.rc out.st.free out.st.pool
+            (buildLive true out.st (mhList out.mh)) ∧
+            addMeasure true out.st + 1 ≤ B ∧
+            out.st.seen.size = re.code.size ∧ out.st.stk.size = 0 ∧
+            out.st.rc.size ≤ max st.rc.size (B + 2) := by
+        intro stA stB hadd hgo hrcA hfreeA hpoolA hseenA hstkA hparkA
+        have hmA : addMeasure true stA = addMeasure true st := by
+          simp only [addMeasure, hstkA, hseenA, hparkA]
+        have howA : Owned re.novec stA.rc stA.free stA.pool
+            (th.h :: buildLive true stA (rest.map Th.h ++ mhList mh)) := by
+          rw [hrcA, hfreeA, hpoolA, buildLive, hstkA, hparkA]
+          exact hmid
+        obtain ⟨o1, o2, o3, o4, o5⟩ :=
+          pikeAdd_owned re s mo lim true (pos + 1) (th.pc + 1) th.h
+            (rest.map Th.h ++ mhList mh) hadd (by rw [hseenA]; exact hsz) howA
+        rw [hmA] at o2 o5
+        rw [hrcA] at o5
+        have hlen : (rest.map Th.h ++ mhList mh).length ≤ rest.length + 1 := by
+          simp only [List.length_append, List.length_map]
+          omega
+        refine hstep stB hgo o3 o4 (by simp only [List.length_cons] at hm; omega)
+          o1 (by simp only [List.length_cons] at hm; omega)
+      have harmDrop : ∀ (stA stB : PikeSt),
+          pikeDrop stA th.h lim = .ok stB →
+          stepThreads re s mo lim start pos rest stB mh seeding matched = .ok out →
+          stA.rc = st.rc → stA.free = st.free → stA.pool = st.pool →
+          stA.seen = st.seen → stA.stk = st.stk →
+          parkList true stA = parkList true st →
+          Owned re.novec out.st.rc out.st.free out.st.pool
+            (buildLive true out.st (mhList out.mh)) ∧
+            addMeasure true out.st + 1 ≤ B ∧
+            out.st.seen.size = re.code.size ∧ out.st.stk.size = 0 ∧
+            out.st.rc.size ≤ max st.rc.size (B + 2) := by
+        intro stA stB hdr hgo hrcA hfreeA hpoolA hseenA hstkA hparkA
+        have howA : Owned re.novec stA.rc stA.free stA.pool
+            (th.h :: buildLive true stA (rest.map Th.h ++ mhList mh)) := by
+          rw [hrcA, hfreeA, hpoolA, buildLive, hstkA, hparkA]
+          exact hmid
+        obtain ⟨hkD, heD⟩ := pikeDrop_ok hdr
+        obtain ⟨hclD, hnlD⟩ := pikeDrop_lists hdr
+        obtain ⟨hrcD, hplD⟩ := pikeDrop_rcSize hdr
+        have hmB : addMeasure true stB = addMeasure true st := by
+          simp only [addMeasure, hkD, heD, parkList_eq hclD hnlD, hparkA,
+            hstkA, hseenA]
+        refine hstep stB hgo (by rw [heD, hseenA]; exact hsz)
+          (by rw [hkD, hstkA]; exact hstk) ?_ (drop_owned hdr howA) ?_
+        · rw [hmB]
+          simp only [List.length_cons] at hm
+          omega
+        · rw [hrcD, hrcA]
+          exact Nat.le_max_left _ _
+      have harmAccept : ∀ (stA stW stD stF : PikeSt) (hv : Nat),
+          pikeWrite stA re.novec th.h 1 pos.toUInt32 lim = .ok (stW, hv) →
+          pikeDrop stW mh lim = .ok stD →
+          dropRest lim rest stD = .ok stF →
+          (Except.ok ⟨stF, hv, false, true⟩ : POut StepOut) = .ok out →
+          stA.rc = st.rc → stA.free = st.free → stA.pool = st.pool →
+          stA.seen = st.seen → stA.stk = st.stk →
+          parkList true stA = parkList true st →
+          Owned re.novec out.st.rc out.st.free out.st.pool
+            (buildLive true out.st (mhList out.mh)) ∧
+            addMeasure true out.st + 1 ≤ B ∧
+            out.st.seen.size = re.code.size ∧ out.st.stk.size = 0 ∧
+            out.st.rc.size ≤ max st.rc.size (B + 2) := by
+        intro stA stW stD stF hv hw hdr hrest hout hrcA hfreeA hpoolA hseenA
+          hstkA hparkA
+        injection hout with hout
+        subst hout
+        have howA : Owned re.novec stA.rc stA.free stA.pool
+            (th.h :: buildLive true stA (rest.map Th.h ++ mhList mh)) := by
+          rw [hrcA, hfreeA, hpoolA, buildLive, hstkA, hparkA]
+          exact hmid
+        obtain ⟨hwo, hws⟩ := write_owned hw howA
+        obtain ⟨hkW, heW⟩ := pikeWrite_ok hw
+        obtain ⟨hclW, hnlW⟩ := pikeWrite_lists hw
+        have hlenA := buildLive_length true stA (rest.map Th.h ++ mhList mh)
+        have hmA : addMeasure true stA = addMeasure true st := by
+          simp only [addMeasure, hstkA, hseenA, hparkA]
+        have hlen : (rest.map Th.h ++ mhList mh).length ≤ rest.length + 1 := by
+          simp only [List.length_append, List.length_map]
+          omega
+        -- The old match let go of: a no-op while it is still the sentinel.
+        have hdrop : Owned re.novec stD.rc stD.free stD.pool
+            (hv :: buildLive true stW (rest.map Th.h)) := by
+          by_cases hmh : mh = none32
+          · subst hmh
+            have hnil : mhList none32 = [] := by rw [mhList, if_pos rfl]
+            have hres := pikeDrop_none_owned hdr hwo
+            rw [hnil, List.append_nil] at hres
+            exact hres
+          · have hmhl : mhList mh = [mh] := by rw [mhList, if_neg hmh]
+            refine pikeDrop_owned hdr (how := ?_)
+            refine hwo.perm ?_
+            rw [hmhl]
+            simp only [buildLive]
+            have he : handles stW.stk ++ handles (parkList true stW) ++
+                (rest.map Th.h ++ [mh]) =
+                (handles stW.stk ++ handles (parkList true stW) ++
+                  rest.map Th.h) ++ [mh] := by simp
+            rw [he]
+            exact (((perm_last _ mh).cons hv).trans
+              (List.Perm.swap mh hv _)).symm
+        obtain ⟨hkD, heD⟩ := pikeDrop_ok hdr
+        obtain ⟨hclD, hnlD⟩ := pikeDrop_lists hdr
+        obtain ⟨hrcD, hplD⟩ := pikeDrop_rcSize hdr
+        have hblD : buildLive true stD (rest.map Th.h) =
+            buildLive true stW (rest.map Th.h) := by
+          simp only [buildLive, hkD, parkList_eq hclD hnlD]
+        -- And the threads the match outranks.
+        have hrestL : Owned re.novec stD.rc stD.free stD.pool
+            (rest.map Th.h ++
+              (hv :: (handles stD.stk ++ handles (parkList true stD)))) := by
+          refine hdrop.perm ?_
+          rw [← hblD, buildLive]
+          exact List.perm_middle.trans ((List.perm_append_comm).cons hv)
+        obtain ⟨r1, r2, r3, r4, r5, r6⟩ := dropRest_owned rest stD stF _ hrest hrestL
+        have hone := r1.mhList_head
+        refine ⟨?_, ?_, ?_, ?_, ?_⟩
+        · show Owned re.novec stF.rc stF.free stF.pool
+            (buildLive true stF (mhList hv))
+          refine r1.perm ?_
+          rw [hone, buildLive, r2, parkList_eq r4 r5]
+          exact perm_last _ hv
+        · have hmF : addMeasure true stF = addMeasure true st := by
+            simp only [addMeasure, r2, r3, parkList_eq r4 r5, hkD, heD,
+              parkList_eq hclD hnlD, hkW, heW, parkList_eq hclW hnlW, hstkA,
+              hseenA, hparkA]
+          show addMeasure true stF + 1 ≤ B
+          rw [hmF]
+          simp only [List.length_cons] at hm
+          omega
+        · show stF.seen.size = re.code.size
+          rw [r3, heD, heW, hseenA]
+          exact hsz
+        · show stF.stk.size = 0
+          rw [r2, hkD, hkW, hstkA]
+          exact hstk
+        · show stF.rc.size ≤ max st.rc.size (B + 2)
+          rw [r6, hrcD]
+          rw [hrcA] at hws
+          rw [hmA] at hlenA
+          simp only [List.length_cons] at hm
+          omega
+      simp only [stepThreads] at h
+      split at h
+      · cases h
+      · cases hop : (re.code[th.pc]!).op <;> simp only [hop] at h
+        case chr | chrCI | cls | any | anyNoNL =>
+          split at h
+          · split at h
+            · cases h
+            · rename_i stA hadd
+              exact harmAdd _ _ hadd h rfl rfl rfl rfl rfl rfl
+          · split at h
+            · cases h
+            · rename_i stA hdr
+              exact harmDrop _ _ hdr h rfl rfl rfl rfl rfl rfl
+        case accept =>
+          split at h
+          · split at h
+            · cases h
+            · rename_i stA hdr
+              exact harmDrop _ _ hdr h rfl rfl rfl rfl rfl rfl
+          · split at h
+            · cases h
+            · rename_i stW hv hw
+              split at h
+              · cases h
+              · rename_i stD hdr
+                split at h
+                · cases h
+                · rename_i stF hrest
+                  exact harmAccept _ _ _ _ _ hw hdr hrest h rfl rfl rfl rfl rfl
+                    rfl
+        case bsr | split | jump | save | circ | circM | doll | dollE | dollM
+            | sod | eod | eodn | wordB | notWordB | repZero | repLoop
+            | repEnter | repNext =>
+          all_goals
+            split at h
+            · cases h
+            · rename_i stA hdr
+              exact harmDrop _ _ hdr h rfl rfl rfl rfl rfl rfl
+
+theorem handles_empty {a : Array Th} (h : a.size = 0) : handles a = [] := by
+  have : a.toList = [] := List.eq_nil_of_length_eq_zero (by rwa [Array.length_toList])
+  rw [handles, this, List.map_nil]
+
+/-! ### The position loop, read against the pool -/
+
+/-- What a position loop iteration starts inside: the dedup invariant, an
+emptied worklist, the pool's reading against the current list and the match
+in hand, and a block table inside BOUNDS.md section 9's `4*C + 2`. -/
+structure PosOk (re : Re) (st : PikeSt) (mh : Nat) : Prop where
+  loop : LoopOk re st
+  stk : st.stk.size = 0
+  owned : Owned re.novec st.rc st.free st.pool (buildLive false st (mhList mh))
+  pool : st.rc.size ≤ re.code.size * 4 + 2
+
+set_option maxHeartbeats 1000000 in
+/-- `PosOk` is inductive, and the pool clause is where BOUNDS.md section 9's
+`4*C + 2` comes out. A position seeds one block on top of what its current
+list and its match already hold, and its step takes at most one more per
+copy-on-write; the dedup bounds both lists by `C` and the worklist measure
+bounds the closure, so the handles in reach never pass `4*C + 1` and the
+block table never passes one more than that. -/
+theorem pikeLoop_owned (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (start : Nat) (anchored : Bool) (words : Nat) (hwf : ReWf re) :
+    ∀ (steps pos : Nat) (st : PikeSt) (mh : Nat) (seeding matched : Bool),
+      PosOk re st mh →
+      PosOk re (pikeLoop re s mo lim start anchored words steps pos st mh
+          seeding matched).1
+        (pikeLoop re s mo lim start anchored words steps pos st mh seeding
+          matched).2.1 ∨
+        (pikeLoop re s mo lim start anchored words steps pos st mh seeding
+          matched).2.2 = .exceeded := by
+  intro steps
+  induction steps with
+  | zero =>
+      intro pos st mh seeding matched _
+      rw [pikeLoop]
+      exact Or.inr rfl
+  | succ k ih =>
+      intro pos st mh seeding matched hok
+      have hC := hwf.sized
+      have hseeded : ∀ stS : PikeSt,
+          (if seeding && (!anchored || pos == start) then
+            pikeSeed re s mo lim start pos st
+            else (Except.ok st : POut PikeSt)) = .ok stS →
+          BuildOk re stS ∧
+            stS.clist.size + stS.nlist.size + unmarked stS.seen ≤ re.code.size ∧
+            stS.nlist.size = 0 ∧ stS.stk.size = 0 ∧
+            Owned re.novec stS.rc stS.free stS.pool
+              (buildLive false stS (mhList mh)) ∧
+            stS.rc.size ≤ re.code.size * 4 + 2 := by
+        intro stS hs
+        have hbd := hok.loop.bounded
+        have hem := hok.loop.empty
+        have hmeas := LoopOk.addMeasure_le hok.loop hok.stk
+        have hp := hok.pool
+        have hml := mhList_length mh
+        split at hs
+        · obtain ⟨h1, h2, h3⟩ :=
+            pikeSeed_build re s mo lim hwf start pos hs hok.loop.build
+          obtain ⟨p1, p2, p3, p4, p5⟩ :=
+            pikeSeed_owned re s mo lim start pos (mhList mh) hs
+              hok.loop.build.seenSize hok.stk hok.owned
+          simp only [buildMeasure] at h2
+          have h3' := congrArg Array.size h3
+          exact ⟨h1, by omega, by omega, p4, p1, by omega⟩
+        · injection hs with hs
+          subst hs
+          exact ⟨hok.loop.build, by omega, hem, hok.stk, hok.owned, hok.pool⟩
+      simp only [pikeLoop]
+      split
+      · exact Or.inr rfl
+      · rename_i stS hs
+        obtain ⟨hb, hbd, hemp, hstk0, hown, hpool⟩ := hseeded stS hs
+        split
+        · exact Or.inr rfl
+        · have hokc : BuildOk re { stS with
+              m := { stS.m with cost := stS.m.cost + words }
+              seen := Array.replicate re.code.size false } :=
+            ⟨by simp, hb.stk, hb.clist, hb.nlist⟩
+          have hfull : unmarked (Array.replicate re.code.size false) ≤
+              re.code.size := by
+            have := unmarked_le_size (Array.replicate re.code.size false)
+            simpa using this
+          have hnl : handles stS.nlist = [] := handles_empty hemp
+          have hlists : buildLive true { stS with
+              m := { stS.m with cost := stS.m.cost + words }
+              seen := Array.replicate re.code.size false }
+              (stS.clist.toList.map Th.h ++ mhList mh) =
+              buildLive false stS (mhList mh) := by
+            show handles stS.stk ++ handles stS.nlist ++
+                (stS.clist.toList.map Th.h ++ mhList mh) =
+              handles stS.stk ++ handles stS.clist ++ mhList mh
+            rw [hnl]
+            simp [handles]
+          have hmC : addMeasure true { stS with
+              m := { stS.m with cost := stS.m.cost + words }
+              seen := Array.replicate re.code.size false } +
+              stS.clist.toList.length + 1 ≤ re.code.size * 3 + 1 := by
+            show stS.stk.size + stS.nlist.size +
+              2 * unmarked (Array.replicate re.code.size false) +
+              stS.clist.toList.length + 1 ≤ re.code.size * 3 + 1
+            rw [Array.length_toList]
+            omega
+          split
+          · exact Or.inr rfl
+          · rename_i out hx
+            obtain ⟨o1, o2, o3⟩ := stepThreads_build re s mo lim hwf start pos
+              _ _ mh seeding matched out hx hb.clist hokc
+            obtain ⟨q1, q2, q3, q4, q5⟩ :=
+              stepThreads_owned re s mo lim start pos (re.code.size * 3 + 1)
+                stS.clist.toList _ mh seeding matched out hx (by simp) hstk0
+                hmC (by rw [hlists]; exact hown)
+            have hrec : buildMeasure { stS with
+                m := { stS.m with cost := stS.m.cost + words }
+                seen := Array.replicate re.code.size false } =
+                stS.clist.size + stS.nlist.size +
+                  unmarked (Array.replicate re.code.size false) := rfl
+            rw [hrec] at o2
+            simp only [buildMeasure] at o2
+            have o3' : out.st.clist.size = stS.clist.size := by rw [o3]
+            have hfin : PosOk re { out.st with
+                clist := out.st.nlist, clistCap := out.st.nlistCap
+                nlist := #[], nlistCap := out.st.clistCap } out.mh := by
+              refine ⟨⟨⟨o1.seenSize, o1.stk, o1.nlist, ?_⟩, rfl, ?_⟩, ?_, q1,
+                ?_⟩
+              · intro y hy
+                simp at hy
+              · simp only []
+                omega
+              · show out.st.stk.size = 0
+                exact q4
+              · show out.st.rc.size ≤ re.code.size * 4 + 2
+                have hq : out.st.rc.size ≤
+                    max stS.rc.size (re.code.size * 3 + 1 + 2) := q5
+                omega
+            split
+            · exact Or.inl hfin
+            · split
+              · exact Or.inl hfin
+              · exact ih _ _ _ _ _ hfin
+
+/-- A run enters the position loop inside `PosOk`: it clears both lists and
+the pool, sizes the visited set to the program, and carries no match yet. So
+the block table of a whole lockstep run stays inside `4*C + 2`, which is the
+count BOUNDS.md section 9 reserves the pool against. -/
+theorem pikeRun_posOk (re : Re) (init : PikeSt) (setup : Nat) :
+    PosOk re { init with
+      clist := #[], nlist := #[], stk := #[]
+      pool := #[], rc := #[], free := #[]
+      seen := Array.replicate re.code.size false
+      m := ⟨setup, setup, setup⟩ } none32 := by
+  refine ⟨pikeRun_loopOk re init setup, rfl, ?_, by simp⟩
+  refine ⟨by simp, ?_, ?_, ?_, ?_, ?_, by simp⟩ <;>
+    simp [buildLive, handles, parkList, mhList]
+
+/-- BOUNDS.md section 9's `4*C + 2`, at a run's own call shape: the block
+pool of a lockstep scan never holds more than four blocks per instruction
+and two besides — one for the recorded match, one for the seed in flight. A
+run that blows its budget stops the loop where it stands, which is the other
+arm. -/
+theorem pikeRun_pool_le (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (start : Nat) (anchored : Bool) (words steps : Nat) (hwf : ReWf re)
+    (init : PikeSt) (setup : Nat) :
+    (pikeLoop re s mo lim start anchored words steps start
+        { init with
+          clist := #[], nlist := #[], stk := #[]
+          pool := #[], rc := #[], free := #[]
+          seen := Array.replicate re.code.size false
+          m := ⟨setup, setup, setup⟩ } none32 true false).1.rc.size ≤
+        re.code.size * 4 + 2 ∨
+      (pikeLoop re s mo lim start anchored words steps start
+        { init with
+          clist := #[], nlist := #[], stk := #[]
+          pool := #[], rc := #[], free := #[]
+          seen := Array.replicate re.code.size false
+          m := ⟨setup, setup, setup⟩ } none32 true false).2.2 = .exceeded := by
+  rcases pikeLoop_owned re s mo lim start anchored words hwf steps start _
+    none32 true false (pikeRun_posOk re init setup) with h | h
+  · exact Or.inl h.pool
+  · exact Or.inr h
 
 /-! ## What the growth schedule costs
 
@@ -2370,129 +3490,445 @@ theorem charged_of_grow {re : Re} {setup rest old new esize : Nat}
   have hstep : old * esize ≤ new * esize := Nat.mul_le_mul_right esize hold
   exact ⟨by omega, hrooms, by omega, by omega⟩
 
-/-! ### What each helper's growth costs -/
+/-! ## What one position costs
 
-theorem pikeDefer_charged {re : Re} {st st' : PikeSt} {pc h setup : Nat}
+BOUNDS.md section 9 prices a position at `2*C + (S + 2)*B + W`, and the way
+a position spends it is a sum of five things: one visited set's worth of
+marks, the seed's own block, a unit per thread stepped, the accept's block,
+and the visited set cleared. Only the first of those is hard, because it is
+the one the closure builds draw on and a build draws on it a mark at a time.
+
+So the account is kept against the visited set. `closureLeft` weighs what a
+set still admits: a unit for every pc it has not marked, and one block more
+at a `Save`, since a `Save` is the one instruction whose arm can force a
+copy-on-write. Marking a pc releases exactly its weight, and the arm that
+follows the mark spends exactly that much — a unit everywhere, a unit and a
+block at a `Save`. `Spent` is that reading with room for the charges a run
+makes outside the closure, and it is what composes.
+
+It has to hold of a refusal too. A helper that is turned away keeps what it
+had already charged, and the build stops there rather than going round
+again, so every lemma below is stated over `outSt` — the state either arm
+hands back — the way `Meter.within` already is in this file.
+
+The growth charges are the other half, and they are the `Charged` reading
+from the section above: a helper is weighed at `Charged`, since none of them
+marks anything, and the account only appears where the marks do. -/
+
+/-! ### The free list, counted -/
+
+theorem countBelow_eq_length {l : List Nat} {n : Nat} (h : ∀ x ∈ l, x < n) :
+    countBelow l n = l.length := by
+  induction l with
+  | nil => rw [countBelow_nil]; rfl
+  | cons a l ih =>
+      rw [countBelow_cons, if_pos (h a List.mem_cons_self),
+        ih (fun x hx => h x (List.mem_cons_of_mem _ hx))]
+      simp
+
+theorem countBelow_le_of_once {l : List Nat} (h : ∀ x, l.count x ≤ 1) :
+    ∀ n, countBelow l n ≤ n
+  | 0 => Nat.le_refl 0
+  | n + 1 => by
+      have h1 := countBelow_le_of_once h n
+      have h2 := h n
+      rw [countBelow]
+      omega
+
+theorem countBelow_lt {l : List Nat} (h : ∀ x, l.count x ≤ 1) {y : Nat}
+    (hy0 : l.count y = 0) : ∀ n, y < n → countBelow l n < n := by
+  intro n
+  induction n with
+  | zero => omega
+  | succ k ih =>
+      intro _
+      by_cases hy : y = k
+      · have h1 := countBelow_le_of_once h k
+        have h2 : l.count k = 0 := by rw [← hy]; exact hy0
+        rw [countBelow, h2]
+        omega
+      · have h1 := ih (by omega)
+        have h2 := h k
+        rw [countBelow]
+        omega
+
+/-- The free list holds no block twice, so it is no longer than the refcount
+table — and strictly shorter as soon as one block is not on it. -/
+theorem Owned.free_lt {novec : Nat} {rc free : Array Nat} {pool : Array UInt32}
+    {live : List Nat} (h : Owned novec rc free pool live) {y : Nat}
+    (hy : y < rc.size) (hy0 : free.toList.count y = 0) : free.size < rc.size := by
+  have h1 := countBelow_eq_length (l := free.toList) (n := rc.size) h.freeRange
+  have h2 := countBelow_lt h.freeOnce hy0 rc.size hy
+  rw [Array.length_toList] at h1
+  omega
+
+/-! ### What a mark buys -/
+
+/-- What marking one pc pays for: the unit the closure charges for it, and —
+at a `Save` — the copy-on-write that instruction can force. -/
+def markWeight (re : Re) (pc : Nat) : Nat :=
+  1 + if (re.code[pc]!).op = .save then pikeBlock re else 0
+
+/-- The weight of every pc below `k` a visited set has not marked yet. -/
+def closureLeftGo (re : Re) (seen : Array Bool) : Nat → Nat
+  | 0 => 0
+  | k + 1 => closureLeftGo re seen k + (if seen[k]! then 0 else markWeight re k)
+
+/-- What the builds a visited set still admits may spend. -/
+def closureLeft (re : Re) (seen : Array Bool) : Nat :=
+  closureLeftGo re seen seen.size
+
+/-- Marking outside the range already counted moves nothing. -/
+theorem closureLeftGo_set_ge (re : Re) {seen : Array Bool} {pc : Nat} :
+    ∀ k, k ≤ pc → closureLeftGo re (seen.set! pc true) k = closureLeftGo re seen k := by
+  intro k
+  induction k with
+  | zero => intro _; rfl
+  | succ j ih =>
+      intro hk
+      rw [closureLeftGo, closureLeftGo, ih (by omega),
+        Array.getElem!_set!_ne _ _ _ _ (by omega)]
+
+/-- And marking inside it pays exactly that pc's weight. -/
+theorem closureLeftGo_set_lt (re : Re) {seen : Array Bool} {pc : Nat}
+    (hpc : pc < seen.size) (hf : seen[pc]! = false) :
+    ∀ k, pc < k →
+      closureLeftGo re (seen.set! pc true) k + markWeight re pc =
+        closureLeftGo re seen k := by
+  intro k
+  induction k with
+  | zero => intro h; omega
+  | succ j ih =>
+      intro _
+      rcases Nat.lt_or_ge pc j with hlt | hge
+      · have hrec := ih hlt
+        rw [closureLeftGo, closureLeftGo,
+          Array.getElem!_set!_ne _ _ _ _ (by omega)]
+        omega
+      · have hk : pc = j := by omega
+        subst hk
+        rw [closureLeftGo, closureLeftGo,
+          closureLeftGo_set_ge re pc (Nat.le_refl _),
+          Array.getElem!_set!_self _ _ _ hpc, hf]
+        simp
+
+theorem closureLeft_set {re : Re} {seen : Array Bool} {pc : Nat}
+    (hpc : pc < seen.size) (hf : seen[pc]! = false) :
+    closureLeft re (seen.set! pc true) + markWeight re pc =
+      closureLeft re seen := by
+  rw [closureLeft, closureLeft, Array.size_set!]
+  exact closureLeftGo_set_lt re hpc hf seen.size hpc
+
+
+/-! ### A full visited set's worth -/
+
+/-- The `Save` instructions below `k`, the count `pike_price` folds over the
+whole program. -/
+private def savesTake (re : Re) (k : Nat) : Nat :=
+  (re.code.toList.take k).foldl
+    (fun n inst => if inst.op = .save then n + 1 else n) 0
+
+private theorem savesTake_succ {re : Re} {k : Nat} (hk : k < re.code.size) :
+    savesTake re (k + 1) =
+      savesTake re k + (if (re.code[k]!).op = .save then 1 else 0) := by
+  have hlen : k < re.code.toList.length := by
+    rw [Array.length_toList]; exact hk
+  have hget : re.code.toList[k]? = some (re.code[k]!) := by
+    rw [getElem!_pos re.code k hk, List.getElem?_eq_getElem hlen,
+      Array.getElem_toList]
+  rw [savesTake, savesTake, List.take_add_one, hget]
+  simp only [Option.toList_some, List.foldl_append, List.foldl_cons,
+    List.foldl_nil]
+  split <;> rfl
+
+private theorem savesTake_all (re : Re) :
+    savesTake re re.code.size = pikeSaves re := by
+  rw [savesTake, ← Array.length_toList, List.take_length, Array.foldl_toList]
+  rfl
+
+private theorem closureLeftGo_replicate (re : Re) : ∀ k, k ≤ re.code.size →
+    closureLeftGo re (Array.replicate re.code.size false) k =
+      k + savesTake re k * pikeBlock re := by
+  intro k
+  induction k with
+  | zero => intro _; simp [closureLeftGo, savesTake]
+  | succ j ih =>
+      intro hj
+      have hjs : j < re.code.size := by omega
+      have hrep : (Array.replicate re.code.size false)[j]! = false := by
+        rw [getElem!_pos _ j (by simp; omega)]
+        simp
+      rw [closureLeftGo, ih (by omega), hrep, savesTake_succ hjs, markWeight]
+      simp only [Bool.false_eq_true, if_false]
+      by_cases hsv : (re.code[j]!).op = .save
+      · rw [if_pos hsv, if_pos hsv, Nat.add_mul, Nat.one_mul]
+        omega
+      · rw [if_neg hsv, if_neg hsv]
+        simp only [Nat.add_zero]
+        omega
+
+/-- The most one visited set's worth of builds can spend: a unit per
+instruction marked, and a copy-on-write per `Save` among them. -/
+def closureLeftFull (re : Re) : Nat := re.code.size + pikeSaves re * pikeBlock re
+
+theorem closureLeft_replicate (re : Re) :
+    closureLeft re (Array.replicate re.code.size false) = closureLeftFull re := by
+  rw [closureLeft, Array.size_replicate,
+    closureLeftGo_replicate re _ (Nat.le_refl _), savesTake_all, closureLeftFull]
+
+/-- BOUNDS.md section 9's per-position price, split the way a position spends
+it: one visited set's worth of marks, the seed's block, a unit per thread
+stepped, the accept's block, and the visited set cleared. -/
+theorem position_split (re : Re) :
+    closureLeftFull re + pikeBlock re + re.code.size + pikeBlock re +
+        pikeWords re = pikePosition re := by
+  rw [closureLeftFull, pikePosition, Nat.add_mul]
+  omega
+
+/-! ### The charge account -/
+
+/-- What a stretch of a run spent, weighed against the marks its visited set
+had left to make. `extra` is what it spends outside that account: the unit a
+list step pays per thread, the block a seed fills, the visited set cleared. -/
+def Spent (re : Re) (setup extra : Nat) (st out : PikeSt) : Prop :=
+  ∃ spent, Charged re setup spent st out ∧
+    closureLeft re out.seen + spent ≤ closureLeft re st.seen + extra
+
+theorem Spent.rooms {re : Re} {setup extra : Nat} {st out : PikeSt}
+    (h : Spent re setup extra st out) : Rooms re out := by
+  obtain ⟨spent, hc, hle⟩ := h
+  exact hc.rooms
+
+theorem Spent.held {re : Re} {setup extra : Nat} {st out : PikeSt}
+    (h : Spent re setup extra st out) : out.m.mem = setup + out.reserved := by
+  obtain ⟨spent, hc, hle⟩ := h
+  exact hc.held
+
+/-- Cashing the account out: a stretch whose visited set had at most `k` to
+give spends at most that and its extras. -/
+theorem Spent.charged {re : Re} {setup extra k : Nat} {st out : PikeSt}
+    (h : Spent re setup extra st out) (hleft : closureLeft re st.seen ≤ k) :
+    Charged re setup (k + extra) st out := by
+  obtain ⟨spent, hc, hle⟩ := h
+  exact hc.mono (by omega)
+
+theorem Spent.refl {re : Re} {setup : Nat} {st : PikeSt} (hrooms : Rooms re st)
+    (hmem : st.m.mem = setup + st.reserved) : Spent re setup 0 st st :=
+  ⟨0, Charged.idle hrooms rfl rfl hmem, by omega⟩
+
+theorem Spent.trans {re : Re} {setup a b : Nat} {st mid out : PikeSt}
+    (h₁ : Spent re setup a st mid) (h₂ : Spent re setup b mid out) :
+    Spent re setup (a + b) st out := by
+  obtain ⟨s₁, c₁, l₁⟩ := h₁
+  obtain ⟨s₂, c₂, l₂⟩ := h₂
+  exact ⟨s₁ + s₂, (c₁.trans c₂), by omega⟩
+
+theorem Spent.mono {re : Re} {setup a b : Nat} {st out : PikeSt}
+    (h : Spent re setup a st out) (hle : a ≤ b) : Spent re setup b st out := by
+  obtain ⟨s, c, l⟩ := h
+  exact ⟨s, c, by omega⟩
+
+/-- A charge a helper made without touching the visited set. -/
+theorem Spent.ofCharged {re : Re} {setup c : Nat} {st out : PikeSt}
+    (h : Charged re setup c st out) (hseen : out.seen = st.seen) :
+    Spent re setup c st out :=
+  ⟨c, h, by rw [hseen]; omega⟩
+
+
+/-! ### Reading the account off either arm -/
+
+/-- Reading a stretch off a refusal. -/
+theorem charged_of_error {α : Type} {get : α → PikeSt} {x : POut α}
+    {stE : PikeSt} {re : Re} {setup c : Nat} {st : PikeSt} (he : x = .error stE)
+    (h : Charged re setup c st (outSt get x)) : Charged re setup c st stE := by
+  rw [he] at h
+  exact h
+
+/-- And off a success, for a step that answers a state. -/
+theorem charged_ok_id {x : POut PikeSt} {a : PikeSt} {re : Re} {setup c : Nat}
+    {st : PikeSt} (he : x = .ok a) (h : Charged re setup c st (outSt id x)) :
+    Charged re setup c st a := by
+  rw [he] at h
+  exact h
+
+/-- For one that answers a state and a handle. -/
+theorem charged_ok_fst {x : POut (PikeSt × Nat)} {a : PikeSt × Nat} {re : Re}
+    {setup c : Nat} {st : PikeSt} (he : x = .ok a)
+    (h : Charged re setup c st (outSt Prod.fst x)) :
+    Charged re setup c st a.1 := by
+  rw [he] at h
+  exact h
+
+/-- The reading only looks at the meter and the capacities, so a state that
+agrees on both is the same starting point. -/
+theorem Charged.ofState {re : Re} {setup c : Nat} {st st' out : PikeSt}
+    (h : Charged re setup c st' out) (hm : st'.m = st.m)
+    (hres : st'.reserved = st.reserved) : Charged re setup c st out :=
+  ⟨by rw [← hm, ← hres]; exact h.charge, h.rooms, h.held,
+    by rw [← hm]; exact h.resident⟩
+
+/-- A helper that answered, at the shape a `split` leaves behind, so that
+what follows never has to see through `outSt`. -/
+theorem Charged.ofOk {re : Re} {setup c : Nat} {st out : PikeSt}
+    (h : Charged re setup c st out) :
+    Charged re setup c st (outSt id (Except.ok out)) := h
+
+theorem spent_of_error {α : Type} {get : α → PikeSt} {x : POut α}
+    {stE : PikeSt} {re : Re} {setup c : Nat} {st : PikeSt} (he : x = .error stE)
+    (h : Spent re setup c st (outSt get x)) : Spent re setup c st stE := by
+  rw [he] at h
+  exact h
+
+theorem spent_ok_id {x : POut PikeSt} {a : PikeSt} {re : Re} {setup c : Nat}
+    {st : PikeSt} (he : x = .ok a) (h : Spent re setup c st (outSt id x)) :
+    Spent re setup c st a := by
+  rw [he] at h
+  exact h
+
+theorem spent_ok_step {x : POut StepOut} {a : StepOut} {re : Re} {setup c : Nat}
+    {st : PikeSt} (he : x = .ok a)
+    (h : Spent re setup c st (outSt StepOut.st x)) :
+    Spent re setup c st a.st := by
+  rw [he] at h
+  exact h
+
+/-- One iteration of a closure build, weighed against the pc it marked: the
+mark pays for the unit the loop charges and, at a `Save`, for the copy the
+arm makes, so all the rest of the build spends is what the visited set still
+had. -/
+theorem spent_of_mark {re : Re} {setup c : Nat} {st mid out : PikeSt} {pc : Nat}
+    (hpc : pc < st.seen.size) (hf : st.seen[pc]! = false)
+    (hseen : mid.seen = st.seen.set! pc true)
+    (h : Charged re setup c st mid) (hc : c ≤ markWeight re pc)
+    (htail : Spent re setup 0 mid out) : Spent re setup 0 st out := by
+  obtain ⟨s', hc', hle⟩ := htail
+  refine ⟨c + s', h.trans hc', ?_⟩
+  rw [hseen] at hle
+  have hset := closureLeft_set (re := re) hpc hf
+  omega
+
+/-- And an iteration that marked nothing: the pop it made is what paid for
+it, and the account is untouched. -/
+theorem spent_of_idle {re : Re} {setup : Nat} {st mid out : PikeSt}
+    (h : Charged re setup 0 st mid) (hseen : mid.seen = st.seen)
+    (htail : Spent re setup 0 mid out) : Spent re setup 0 st out :=
+  Spent.mono ((Spent.ofCharged h hseen).trans htail) (by omega)
+
+/-! ### What each helper's growth costs
+
+A refused helper keeps whatever it had already charged, so the reading has to
+hold of the state it hands back as well as of the one it answers. `outSt` is
+that state either way, which is the shape `Meter.within` already uses here.
+None of these touches the visited set, so they are read at the `Charged`
+level and the account only enters at the loops. -/
+
+theorem pikeDefer_charged {re : Re} {st : PikeSt} {pc h setup : Nat}
     {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
     (hmem : st.m.mem = setup + st.reserved)
-    (hsize : st.stk.size < re.code.size * 2)
-    (hok : pikeDefer st pc h lim = .ok st') : Charged re setup 0 st st' := by
-  unfold pikeDefer at hok
-  split at hok
-  · simp at hok
+    (hsize : st.stk.size < re.code.size * 2) :
+    Charged re setup 0 st (outSt id (pikeDefer st pc h lim)) := by
+  obtain ⟨-, ⟨hgm, hcl⟩, -, -⟩ := pikeSchedule hwf
+  simp only [pikeDefer]
+  split
+  · exact Charged.idle hrooms rfl rfl hmem
   · rename_i mm cap hg
-    injection hok with hok
-    subst hok
-    obtain ⟨-, ⟨hgm, hcl⟩, -, -⟩ := pikeSchedule hwf
     obtain ⟨hcap, hold, hcost, hmem', hpeak⟩ :=
       chargeGrow_capFor hgm hcl hsize hrooms.stk hg
-    exact charged_of_grow (esize := thSize)
+    refine Charged.ofOk (charged_of_grow (esize := thSize)
       (rest := (st.clistCap + st.nlistCap) * thSize +
         (st.rcCap + st.freeCap + st.poolCap) * regSize)
       ⟨hrooms.clist, hrooms.nlist, hcap, hrooms.rc, hrooms.free, hrooms.pool⟩
       hold (by simp only [PikeSt.reserved, thSize, regSize]; omega)
       (by simp only [PikeSt.reserved, thSize, regSize]; omega) hmem hcost hmem'
-      hpeak
+      hpeak)
 
-theorem pikePark_charged {re : Re} {st st' : PikeSt} {intoNext : Bool}
+theorem pikePark_charged {re : Re} {st : PikeSt} {intoNext : Bool}
     {pc h setup : Nat} {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
     (hmem : st.m.mem = setup + st.reserved)
-    (hsize : (if intoNext then st.nlist else st.clist).size < re.code.size)
-    (hok : pikePark st intoNext pc h lim = .ok st') :
-    Charged re setup 0 st st' := by
+    (hsize : (parkList intoNext st).size < re.code.size) :
+    Charged re setup 0 st (outSt id (pikePark st intoNext pc h lim)) := by
   obtain ⟨⟨hgm, hcl⟩, -, -, -⟩ := pikeSchedule hwf
-  unfold pikePark at hok
-  split at hok
+  simp only [parkList] at hsize
+  simp only [pikePark]
+  split
   · rename_i hin
     rw [if_pos hin] at hsize
-    split at hok
-    · simp at hok
+    split
+    · exact Charged.idle hrooms rfl rfl hmem
     · rename_i mm cap hg
-      injection hok with hok
-      subst hok
       obtain ⟨hcap, hold, hcost, hmem', hpeak⟩ :=
         chargeGrow_capFor hgm hcl hsize hrooms.nlist hg
-      exact charged_of_grow (esize := thSize)
+      refine Charged.ofOk (charged_of_grow (esize := thSize)
         (rest := (st.clistCap + st.stkCap) * thSize +
           (st.rcCap + st.freeCap + st.poolCap) * regSize)
         ⟨hrooms.clist, hcap, hrooms.stk, hrooms.rc, hrooms.free, hrooms.pool⟩
         hold (by simp only [PikeSt.reserved, thSize, regSize]; omega)
         (by simp only [PikeSt.reserved, thSize, regSize]; omega) hmem hcost
-        hmem' hpeak
+        hmem' hpeak)
   · rename_i hin
     rw [if_neg hin] at hsize
-    split at hok
-    · simp at hok
+    split
+    · exact Charged.idle hrooms rfl rfl hmem
     · rename_i mm cap hg
-      injection hok with hok
-      subst hok
       obtain ⟨hcap, hold, hcost, hmem', hpeak⟩ :=
         chargeGrow_capFor hgm hcl hsize hrooms.clist hg
-      exact charged_of_grow (esize := thSize)
+      refine Charged.ofOk (charged_of_grow (esize := thSize)
         (rest := (st.nlistCap + st.stkCap) * thSize +
           (st.rcCap + st.freeCap + st.poolCap) * regSize)
         ⟨hcap, hrooms.nlist, hrooms.stk, hrooms.rc, hrooms.free, hrooms.pool⟩
         hold (by simp only [PikeSt.reserved, thSize, regSize]; omega)
         (by simp only [PikeSt.reserved, thSize, regSize]; omega) hmem hcost
-        hmem' hpeak
+        hmem' hpeak)
 
-theorem pikeDrop_charged {re : Re} {st st' : PikeSt} {h setup : Nat}
-    {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
+theorem pikeDrop_charged {re : Re} {st : PikeSt} {h setup : Nat} {lim : Limits}
+    (hwf : ReWf re) (hrooms : Rooms re st)
     (hmem : st.m.mem = setup + st.reserved)
-    (hsize : st.rc[h]! ≤ 1 → st.free.size < re.code.size * 4 + 2)
-    (hok : pikeDrop st h lim = .ok st') : Charged re setup 0 st st' := by
+    (hsize : st.rc[h]! ≤ 1 → st.free.size < re.code.size * 4 + 2) :
+    Charged re setup 0 st (outSt id (pikeDrop st h lim)) := by
   obtain ⟨-, -, ⟨hgm, hcl⟩, -⟩ := pikeSchedule hwf
-  unfold pikeDrop at hok
-  simp only [] at hok
-  split at hok
-  · injection hok with hok
-    subst hok
-    exact Charged.idle hrooms rfl rfl hmem
-  · split at hok
-    · split at hok
-      · simp at hok
+  simp only [pikeDrop]
+  split
+  · exact Charged.idle hrooms rfl rfl hmem
+  · split
+    · rename_i hzero
+      split
+      · exact Charged.idle ⟨hrooms.clist, hrooms.nlist, hrooms.stk, hrooms.rc,
+          hrooms.free, hrooms.pool⟩ rfl rfl hmem
       · rename_i mm cap hg
-        rename_i hzero _
-        injection hok with hok
-        subst hok
         obtain ⟨hcap, hold, hcost, hmem', hpeak⟩ :=
-          chargeGrow_capFor hgm hcl (hsize (by simp only [beq_iff_eq] at hzero; omega))
-            hrooms.free hg
-        exact charged_of_grow (esize := regSize)
+          chargeGrow_capFor hgm hcl
+            (hsize (by simp only [beq_iff_eq] at hzero; omega)) hrooms.free hg
+        refine Charged.ofOk (charged_of_grow (esize := regSize)
           (rest := (st.clistCap + st.nlistCap + st.stkCap) * thSize +
             (st.rcCap + st.poolCap) * regSize)
           ⟨hrooms.clist, hrooms.nlist, hrooms.stk, hrooms.rc, hcap,
             hrooms.pool⟩
           hold (by simp only [PikeSt.reserved, thSize, regSize]; omega)
           (by simp only [PikeSt.reserved, thSize, regSize]; omega) hmem hcost
-          hmem' hpeak
-    · injection hok with hok
-      subst hok
-      exact Charged.idle ⟨hrooms.clist, hrooms.nlist, hrooms.stk, hrooms.rc,
+          hmem' hpeak)
+    · exact Charged.idle ⟨hrooms.clist, hrooms.nlist, hrooms.stk, hrooms.rc,
         hrooms.free, hrooms.pool⟩ rfl rfl hmem
 
 /-- The block fill of `pike_take`: one pool push per slot, each inside the
 pool's own entry bound because the block it is filling is one the pool has
 room for. -/
 theorem pikeTake_fill_charged {re : Re} {setup : Nat} {lim : Limits}
-    (hwf : ReWf re) : ∀ (k : Nat) {st st' : PikeSt}, Rooms re st →
+    (hwf : ReWf re) : ∀ (k : Nat) (st : PikeSt), Rooms re st →
       st.m.mem = setup + st.reserved →
       st.pool.size + k ≤ (re.code.size * 4 + 2) * re.novec →
-      pikeTake.fill lim k st = .ok st' → Charged re setup 0 st st' := by
+      Charged re setup 0 st (outSt id (pikeTake.fill lim k st)) := by
   obtain ⟨-, -, -, ⟨hgm, hcl⟩⟩ := pikeSchedule hwf
   intro k
   induction k with
   | zero =>
-      intro st st' hrooms hmem _ hok
-      rw [pikeTake.fill] at hok
-      injection hok with hok
-      subst hok
+      intro st hrooms hmem _
+      rw [pikeTake.fill]
       exact Charged.idle hrooms rfl rfl hmem
   | succ n ih =>
-      intro st st' hrooms hmem hpool hok
-      rw [pikeTake.fill] at hok
-      split at hok
-      · simp at hok
+      intro st hrooms hmem hpool
+      rw [pikeTake.fill]
+      split
+      · exact Charged.idle hrooms rfl rfl hmem
       · rename_i mm cap hg
         obtain ⟨hcap, hold, hcost, hmem', hpeak⟩ :=
           chargeGrow_capFor hgm hcl (by omega) hrooms.pool hg
@@ -2507,35 +3943,32 @@ theorem pikeTake_fill_charged {re : Re} {setup : Nat} {lim : Limits}
             hold (by simp only [PikeSt.reserved, thSize, regSize]; omega)
             (by simp only [PikeSt.reserved, thSize, regSize]; omega) hmem hcost
             hmem' hpeak
-        exact (hstep.trans (ih hstep.rooms hstep.held (by simp; omega) hok)).mono
+        exact Charged.mono
+          (hstep.trans (ih _ hstep.rooms hstep.held (by simp; omega)))
           (by omega)
 
-theorem pikeTake_charged {re : Re} {st st' : PikeSt} {novec hOut setup : Nat}
+theorem pikeTake_charged {re : Re} {st : PikeSt} {novec setup : Nat}
     {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
     (hmem : st.m.mem = setup + st.reserved)
     (hrc : st.free.size = 0 → st.rc.size < re.code.size * 4 + 2)
     (hpool : st.free.size = 0 →
-      st.pool.size + novec ≤ (re.code.size * 4 + 2) * re.novec)
-    (hok : pikeTake st novec lim = .ok (st', hOut)) :
-    Charged re setup 0 st st' := by
+      st.pool.size + novec ≤ (re.code.size * 4 + 2) * re.novec) :
+    Charged re setup 0 st (outSt Prod.fst (pikeTake st novec lim)) := by
   obtain ⟨-, -, ⟨hgm, hcl⟩, -⟩ := pikeSchedule hwf
-  unfold pikeTake at hok
-  simp only [] at hok
-  split at hok
-  · injection hok with hok
-    injection hok with hok _
-    subst hok
-    exact Charged.idle ⟨hrooms.clist, hrooms.nlist, hrooms.stk, hrooms.rc,
-      hrooms.free, hrooms.pool⟩ rfl rfl hmem
+  simp only [pikeTake]
+  split
+  · refine Charged.idle ?_ rfl rfl hmem
+    exact ⟨hrooms.clist, hrooms.nlist, hrooms.stk, hrooms.rc, hrooms.free,
+      hrooms.pool⟩
   · rename_i hempty
     have hzero : st.free.size = 0 := by
       rcases Nat.eq_zero_or_pos st.free.size with hz | hp
       · exact hz
       · exact absurd (by simpa using hp) hempty
-    split at hok
-    · simp at hok
-    · split at hok
-      · simp at hok
+    split
+    · exact Charged.idle hrooms rfl rfl hmem
+    · split
+      · exact Charged.idle hrooms rfl rfl hmem
       · rename_i mm cap hg
         obtain ⟨hcap, hold, hcost, hmem', hpeak⟩ :=
           chargeGrow_capFor hgm hcl (hrc hzero) hrooms.rc hg
@@ -2549,50 +3982,780 @@ theorem pikeTake_charged {re : Re} {st st' : PikeSt} {novec hOut setup : Nat}
             hold (by simp only [PikeSt.reserved, thSize, regSize]; omega)
             (by simp only [PikeSt.reserved, thSize, regSize]; omega) hmem hcost
             hmem' hpeak
-        split at hok
-        · simp at hok
-        · rename_i stF hfill
-          injection hok with hok
-          injection hok with hok _
-          subst hok
-          exact (hstep.trans (pikeTake_fill_charged hwf novec hstep.rooms
-            hstep.held (by simpa using hpool hzero) hfill)).mono (by omega)
+        have hfill := pikeTake_fill_charged (setup := setup) (lim := lim) hwf
+          novec _ hstep.rooms hstep.held (by simpa using hpool hzero)
+        split
+        · rename_i he
+          exact Charged.mono (hstep.trans (charged_of_error he hfill)) (by omega)
+        · rename_i he
+          exact Charged.mono (hstep.trans (charged_ok_id he hfill)) (by omega)
 
 /-- The copy-on-write of `pike_write`: one block copied out at a cost unit
 per byte, and the fresh block it copies into. -/
-theorem pikeWrite_charged {re : Re} {st st' : PikeSt}
-    {novec h slot hOut setup : Nat} {value : UInt32} {lim : Limits}
-    (hwf : ReWf re) (hrooms : Rooms re st)
+theorem pikeWrite_charged {re : Re} {st : PikeSt} {novec h slot setup : Nat}
+    {value : UInt32} {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
     (hmem : st.m.mem = setup + st.reserved)
     (hrc : st.free.size = 0 → st.rc.size < re.code.size * 4 + 2)
     (hpool : st.free.size = 0 →
-      st.pool.size + novec ≤ (re.code.size * 4 + 2) * re.novec)
-    (hok : pikeWrite st novec h slot value lim = .ok (st', hOut)) :
-    Charged re setup (novec * regSize) st st' := by
-  unfold pikeWrite at hok
-  simp only [] at hok
-  split at hok
-  · split at hok
-    · simp at hok
-    · rename_i hcopy
-      split at hok
-      · simp at hok
-      · rename_i hTake
-        injection hok with hok
-        injection hok with hok _
-        subst hok
-        have hpaid := Charged.pay (re := re) (setup := setup)
-          (novec * regSize) hrooms hmem
-        have htake := pikeTake_charged hwf hpaid.rooms hpaid.held hrc hpool hTake
-        refine Charged.mono ((hpaid.trans htake).trans
-          (Charged.idle ?_ rfl rfl htake.held)) (by omega)
-        exact ⟨htake.rooms.clist, htake.rooms.nlist, htake.rooms.stk,
-          htake.rooms.rc, htake.rooms.free, htake.rooms.pool⟩
-  · injection hok with hok
-    injection hok with hok _
-    subst hok
-    refine Charged.mono (Charged.idle ?_ rfl rfl hmem) (by omega)
+      st.pool.size + novec ≤ (re.code.size * 4 + 2) * re.novec) :
+    Charged re setup (novec * regSize) st
+      (outSt Prod.fst (pikeWrite st novec h slot value lim)) := by
+  simp only [pikeWrite]
+  split
+  · split
+    · exact Charged.mono (Charged.idle hrooms rfl rfl hmem) (Nat.zero_le _)
+    · have hpaid := Charged.pay (re := re) (setup := setup) (novec * regSize)
+        hrooms hmem
+      have htake := pikeTake_charged (novec := novec) (lim := lim) hwf
+        hpaid.rooms hpaid.held hrc hpool
+      split
+      · rename_i he
+        exact Charged.mono (hpaid.trans (charged_of_error he htake)) (by omega)
+      · rename_i he
+        refine Charged.mono ((hpaid.trans (charged_ok_fst he htake)).trans
+          (Charged.idle ?_ rfl rfl (charged_ok_fst he htake).held)) ?_
+        · have hr := (charged_ok_fst he htake).rooms
+          exact ⟨hr.clist, hr.nlist, hr.stk, hr.rc, hr.free, hr.pool⟩
+        · omega
+  · refine Charged.mono (Charged.idle ?_ rfl rfl hmem) (by omega)
     exact ⟨hrooms.clist, hrooms.nlist, hrooms.stk, hrooms.rc, hrooms.free,
       hrooms.pool⟩
+
+
+/-! ### The visited set the helpers leave alone
+
+None of the charging helpers marks anything, on either arm, which is what
+lets the account be read off the closure's own marks. -/
+
+theorem seen_of_error {α : Type} {get : α → PikeSt} {x : POut α}
+    {stE st : PikeSt} (he : x = .error stE)
+    (h : (outSt get x).seen = st.seen) : stE.seen = st.seen := by
+  rw [he] at h
+  exact h
+
+theorem seen_ok_id {x : POut PikeSt} {a st : PikeSt} (he : x = .ok a)
+    (h : (outSt id x).seen = st.seen) : a.seen = st.seen := by
+  rw [he] at h
+  exact h
+
+theorem seen_ok_fst {x : POut (PikeSt × Nat)} {a : PikeSt × Nat} {st : PikeSt}
+    (he : x = .ok a) (h : (outSt Prod.fst x).seen = st.seen) :
+    a.1.seen = st.seen := by
+  rw [he] at h
+  exact h
+
+theorem pikeDefer_seen {st : PikeSt} {pc h : Nat} {lim : Limits} :
+    (outSt id (pikeDefer st pc h lim)).seen = st.seen := by
+  simp only [pikeDefer]
+  split <;> rfl
+
+theorem pikePark_seen {st : PikeSt} {intoNext : Bool} {pc h : Nat}
+    {lim : Limits} : (outSt id (pikePark st intoNext pc h lim)).seen = st.seen := by
+  simp only [pikePark]
+  split <;> split <;> rfl
+
+theorem pikeDrop_seen {st : PikeSt} {h : Nat} {lim : Limits} :
+    (outSt id (pikeDrop st h lim)).seen = st.seen := by
+  simp only [pikeDrop]
+  repeat' split
+  all_goals rfl
+
+theorem pikeTake_fill_seen {lim : Limits} : ∀ (k : Nat) (st : PikeSt),
+    (outSt id (pikeTake.fill lim k st)).seen = st.seen := by
+  intro k
+  induction k with
+  | zero =>
+      intro st
+      rw [pikeTake.fill]
+      rfl
+  | succ n ih =>
+      intro st
+      rw [pikeTake.fill]
+      split
+      · rfl
+      · exact ih _
+
+theorem pikeTake_seen {st : PikeSt} {novec : Nat} {lim : Limits} :
+    (outSt Prod.fst (pikeTake st novec lim)).seen = st.seen := by
+  simp only [pikeTake]
+  split
+  · rfl
+  · split
+    · rfl
+    · split
+      · rfl
+      · split
+        · rename_i he
+          exact seen_of_error he (pikeTake_fill_seen (lim := lim) novec _)
+        · rename_i he
+          exact seen_ok_id he (pikeTake_fill_seen (lim := lim) novec _)
+
+theorem pikeWrite_seen {st : PikeSt} {novec h slot : Nat} {value : UInt32}
+    {lim : Limits} :
+    (outSt Prod.fst (pikeWrite st novec h slot value lim)).seen = st.seen := by
+  simp only [pikeWrite]
+  split
+  · split
+    · rfl
+    · split
+      · rename_i he
+        have h1 := seen_of_error he (pikeTake_seen (novec := novec) (lim := lim))
+        exact h1
+      · rename_i he
+        have h1 := seen_ok_fst he (pikeTake_seen (novec := novec) (lim := lim))
+        exact h1
+  · rfl
+
+
+/-! ### What a closure build spends -/
+
+/-- A block whose last holder is letting it go is not on the free list, so
+the free list has room for it. -/
+theorem free_room {novec : Nat} {rc free : Array Nat} {pool : Array UInt32}
+    {h bound : Nat} {rest : List Nat}
+    (how : Owned novec rc free pool (h :: rest)) (hb : rc.size ≤ bound)
+    (h1 : rc[h]! ≤ 1) : free.size < bound := by
+  have hlt : h < rc.size := how.reach h List.mem_cons_self
+  have hc := how.count h hlt
+  have hcnt : 1 ≤ (h :: rest).count h := by
+    rw [List.count_cons]
+    simp
+  have hne : rc[h]! ≠ 0 := by omega
+  have hz : free.toList.count h = 0 := by
+    rcases Nat.eq_zero_or_pos (free.toList.count h) with hz | hp
+    · exact hz
+    · exact absurd ((how.onFree h hlt).mpr hp) hne
+  have hfl := how.free_lt hlt hz
+  omega
+
+/-- And the pool has room for one more block, when the handles in reach are
+what the table is bounded by: the table's length is the pool's layout. -/
+theorem take_room {novec : Nat} {rc free : Array Nat} {pool : Array UInt32}
+    {live : List Nat} {bound : Nat} (how : Owned novec rc free pool live)
+    (hlen : live.length ≤ bound) (hz : free.size = 0) :
+    rc.size ≤ bound ∧ pool.size + novec ≤ (bound + 1) * novec := by
+  have h1 := how.size_le
+  rw [hz] at h1
+  refine ⟨by omega, ?_⟩
+  rw [how.blocks, ← Nat.succ_mul]
+  exact Nat.mul_le_mul_right novec (by omega)
+
+/-- What a closure build must know about the state it stands on for its
+charges to sit inside BOUNDS.md section 9's per-position price. The dedup
+facts are there so the mark lands, the ownership so a growth is weighed
+against the handles in reach, and the three counts so no array is ever asked
+for more than the schedule's answer at its own entry bound. -/
+structure AddOk (re : Re) (intoNext : Bool) (ext : List Nat) (setup : Nat)
+    (st : PikeSt) : Prop where
+  seenSize : st.seen.size = re.code.size
+  inRange : listInRange re st.stk
+  rooms : Rooms re st
+  held : st.m.mem = setup + st.reserved
+  owned : Owned re.novec st.rc st.free st.pool (buildLive intoNext st ext)
+  stack : st.stk.size + 2 * unmarked st.seen ≤ re.code.size * 2 + 1
+  parked : (parkList intoNext st).size + unmarked st.seen ≤ re.code.size
+  reach : addMeasure intoNext st + ext.length ≤ re.code.size * 4
+  table : st.rc.size ≤ re.code.size * 4 + 2
+
+
+set_option maxHeartbeats 4000000 in
+/-- One closure build, weighed. Every iteration either pops a pc the visited
+set has already admitted — which charges nothing — or marks a fresh one, and
+the weight of that mark is exactly what the iteration then spends: the unit
+the loop charges for the instruction, and at a `Save` the copy-on-write it
+can force. So a build never spends more than the pcs it marked were worth,
+and a refusal spends less. -/
+theorem pikeAdd_go_spent (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (hwf : ReWf re) (intoNext : Bool) (pos setup : Nat) (ext : List Nat) :
+    ∀ (fuel : Nat) (st : PikeSt), AddOk re intoNext ext setup st →
+      Spent re setup 0 st
+        (outSt id (pikeAdd.go re s mo lim intoNext pos fuel st)) := by
+  intro fuel
+  induction fuel with
+  | zero =>
+      intro st hok
+      rw [pikeAdd.go]
+      exact Spent.refl hok.rooms hok.held
+  | succ f ih =>
+      intro st hok
+      have hC := hwf.sized
+      have hstep : ∀ stB : PikeSt, AddOk re intoNext ext setup stB →
+          Spent re setup 0 st stB →
+          Spent re setup 0 st
+            (outSt id (pikeAdd.go re s mo lim intoNext pos f stB)) :=
+        fun stB hokB hsp => Spent.mono (hsp.trans (ih stB hokB)) (by omega)
+      simp only [pikeAdd.go]
+      split
+      · exact Spent.refl hok.rooms hok.held
+      · rename_i hne
+        have hpos : 0 < st.stk.size :=
+          Nat.pos_of_ne_zero (fun hz => hne (by simp [hz]))
+        have hpcv : st.stk.back!.pc < re.code.size :=
+          listInRange_back hok.inRange (by omega)
+        have hpop : listInRange re st.stk.pop := listInRange_pop hok.inRange
+        have htgt := hwf.targets _ hpcv
+        have hflight := owned_pop (intoNext := intoNext) (ext := ext) hpos hok.owned
+        have hroomsP : Rooms re { st with stk := st.stk.pop } :=
+          ⟨hok.rooms.clist, hok.rooms.nlist, hok.rooms.stk, hok.rooms.rc,
+            hok.rooms.free, hok.rooms.pool⟩
+        split
+        · -- Already visited: the pop pays for the iteration and nothing is
+          -- charged, so the account does not move.
+          have hownP : Owned re.novec ({ st with stk := st.stk.pop } : PikeSt).rc
+              ({ st with stk := st.stk.pop } : PikeSt).free
+              ({ st with stk := st.stk.pop } : PikeSt).pool
+              (st.stk.back!.h ::
+                buildLive intoNext { st with stk := st.stk.pop } ext) := hflight
+          have hdropP : Charged re setup 0 st
+              (outSt id (pikeDrop { st with stk := st.stk.pop }
+                st.stk.back!.h lim)) :=
+            Charged.ofState (pikeDrop_charged (setup := setup)
+              (h := st.stk.back!.h) (lim := lim) hwf hroomsP hok.held
+              (fun h1 => free_room hownP hok.table h1)) rfl rfl
+          have hsnP := pikeDrop_seen (st := { st with stk := st.stk.pop })
+            (h := st.stk.back!.h) (lim := lim)
+          split
+          · rename_i stE he
+            have hchE : Charged re setup 0 st stE := charged_of_error he hdropP
+            exact spent_of_idle hchE (seen_of_error he hsnP)
+              (Spent.refl hchE.rooms hchE.held)
+          · rename_i stB hb
+            have hchB : Charged re setup 0 st stB := charged_ok_id hb hdropP
+            have hsnB : stB.seen = st.seen := seen_ok_id hb hsnP
+            obtain ⟨hstkB, -⟩ := pikeDrop_ok hb
+            obtain ⟨hclB, hnlB⟩ := pikeDrop_lists hb
+            obtain ⟨hrcB, -⟩ := pikeDrop_rcSize hb
+            have hparkB : parkList intoNext stB = parkList intoNext st := by
+              rw [parkList_eq hclB hnlB]
+              rfl
+            have hstkB' : stB.stk = st.stk.pop := hstkB
+            refine hstep stB ⟨?_, ?_, hchB.rooms, hchB.held, ?_, ?_, ?_, ?_, ?_⟩
+              (spent_of_idle hchB hsnB (Spent.refl hchB.rooms hchB.held))
+            · rw [hsnB]; exact hok.seenSize
+            · rw [hstkB']; exact hpop
+            · exact drop_owned hb hownP
+            · rw [hstkB', hsnB, Array.size_pop]
+              have h1 := hok.stack
+              omega
+            · rw [hparkB, hsnB]
+              exact hok.parked
+            · simp only [addMeasure]
+              rw [hstkB', hsnB, hparkB, Array.size_pop]
+              have h1 := hok.reach
+              simp only [addMeasure] at h1
+              omega
+            · rw [hrcB]; exact hok.table
+        · -- A fresh pc: the mark pays for what the arm charges.
+          rename_i hseenF
+          have hfalse : st.seen[st.stk.back!.pc]! = false := by simpa using hseenF
+          have hpcs : st.stk.back!.pc < st.seen.size := by
+            rw [hok.seenSize]; exact hpcv
+          have hu1 : unmarked (st.seen.set! st.stk.back!.pc true) + 1 =
+              unmarked st.seen := unmarked_set_lt hpcs hfalse
+          have hw1 : 1 ≤ markWeight re st.stk.back!.pc := by
+            simp only [markWeight]; omega
+          have hstop : ∀ (stE : PikeSt) (c : Nat),
+              stE.seen = st.seen.set! st.stk.back!.pc true →
+              Charged re setup c st stE → c ≤ markWeight re st.stk.back!.pc →
+              Spent re setup 0 st stE :=
+            fun stE c hse hce hcw =>
+              spent_of_mark hpcs hfalse hse hce hcw
+                (Spent.refl hce.rooms hce.held)
+          have hfinish : ∀ (stB : PikeSt) (c : Nat),
+              AddOk re intoNext ext setup stB →
+              stB.seen = st.seen.set! st.stk.back!.pc true →
+              Charged re setup c st stB → c ≤ markWeight re st.stk.back!.pc →
+              Spent re setup 0 st
+                (outSt id (pikeAdd.go re s mo lim intoNext pos f stB)) :=
+            fun stB c hokB hse hce hcw =>
+              hstep stB hokB (spent_of_mark hpcs hfalse hse hce hcw
+                (Spent.refl hce.rooms hce.held))
+          split
+          · -- The mark landed, and then the unit it costs was refused.
+            refine hstop _ 0 rfl (Charged.idle ?_ rfl rfl hok.held) (Nat.zero_le _)
+            exact ⟨hok.rooms.clist, hok.rooms.nlist, hok.rooms.stk,
+              hok.rooms.rc, hok.rooms.free, hok.rooms.pool⟩
+          · -- The mark's own unit, charged against the weight the mark has
+            -- just released.
+            have hmarkC : Charged re setup 1 st
+                { st with
+                  stk := st.stk.pop
+                  seen := st.seen.set! st.stk.back!.pc true
+                  m := { st.m with cost := st.m.cost + 1 } } := by
+              refine ⟨?_, ⟨hok.rooms.clist, hok.rooms.nlist, hok.rooms.stk,
+                hok.rooms.rc, hok.rooms.free, hok.rooms.pool⟩, hok.held,
+                Nat.le_max_left _ _⟩
+              show st.m.cost + 1 + 3 * st.reserved ≤
+                st.m.cost + 3 * st.reserved + 1
+              omega
+            have hmarkR : Charged re setup 1 st
+                { st with
+                  stk := st.stk.pop
+                  seen := st.seen.set! st.stk.back!.pc true
+                  m := { st.m with cost := st.m.cost + 1 }
+                  rc := st.rc.set! st.stk.back!.h
+                    (st.rc[st.stk.back!.h]! + 1) } := by
+              refine ⟨?_, ⟨hok.rooms.clist, hok.rooms.nlist, hok.rooms.stk,
+                hok.rooms.rc, hok.rooms.free, hok.rooms.pool⟩, hok.held,
+                Nat.le_max_left _ _⟩
+              show st.m.cost + 1 + 3 * st.reserved ≤
+                st.m.cost + 3 * st.reserved + 1
+              omega
+            -- The five shapes an arm can take, each read off the marked state
+            -- through the fields the reckoning looks at.
+            have harmDrop : ∀ (stA : PikeSt) (hh c : Nat),
+                Charged re setup c st stA →
+                c ≤ markWeight re st.stk.back!.pc →
+                stA.stk.size ≤ st.stk.size → listInRange re stA.stk →
+                stA.seen = st.seen.set! st.stk.back!.pc true →
+                parkList intoNext stA = parkList intoNext st →
+                Owned re.novec stA.rc stA.free stA.pool
+                  (hh :: buildLive intoNext stA ext) →
+                stA.rc.size ≤ re.code.size * 4 + 2 →
+                (∀ stE, pikeDrop stA hh lim = .error stE →
+                  Spent re setup 0 st stE) ∧
+                (∀ stB, pikeDrop stA hh lim = .ok stB →
+                  Spent re setup 0 st
+                    (outSt id (pikeAdd.go re s mo lim intoNext pos f stB))) := by
+              intro stA hh c hchA hcw hstkA hrangeA hseenA hparkA hownA htabA
+              have hch := pikeDrop_charged (setup := setup) (h := hh) (lim := lim)
+                hwf hchA.rooms hchA.held (fun h1 => free_room hownA htabA h1)
+              have hsn := pikeDrop_seen (st := stA) (h := hh) (lim := lim)
+              refine ⟨?_, ?_⟩
+              · intro stE he
+                refine hstop stE (c + 0) ?_
+                  (hchA.trans (charged_of_error he hch)) (by omega)
+                rw [seen_of_error he hsn]
+                exact hseenA
+              · intro stB hb
+                have hchB : Charged re setup (c + 0) st stB :=
+                  hchA.trans (charged_ok_id hb hch)
+                have hsnB : stB.seen = stA.seen := seen_ok_id hb hsn
+                obtain ⟨hstkB, -⟩ := pikeDrop_ok hb
+                obtain ⟨hclB, hnlB⟩ := pikeDrop_lists hb
+                obtain ⟨hrcB, -⟩ := pikeDrop_rcSize hb
+                have hparkB : parkList intoNext stB = parkList intoNext st := by
+                  rw [parkList_eq hclB hnlB]; exact hparkA
+                refine hfinish stB (c + 0)
+                  ⟨?_, ?_, hchB.rooms, hchB.held, ?_, ?_, ?_, ?_, ?_⟩
+                  (by rw [hsnB]; exact hseenA) hchB (by omega)
+                · rw [hsnB, hseenA, Array.size_set!]; exact hok.seenSize
+                · rw [hstkB]; exact hrangeA
+                · exact drop_owned hb hownA
+                · rw [hstkB, hsnB, hseenA]
+                  have h1 := hok.stack
+                  omega
+                · rw [hparkB, hsnB, hseenA]
+                  have h1 := hok.parked
+                  omega
+                · simp only [addMeasure]
+                  rw [hstkB, hsnB, hseenA, hparkB]
+                  have h1 := hok.reach
+                  simp only [addMeasure] at h1
+                  omega
+                · rw [hrcB]; exact htabA
+            have harmPark : ∀ (stA : PikeSt) (pcT hh c : Nat),
+                Charged re setup c st stA →
+                c ≤ markWeight re st.stk.back!.pc →
+                stA.stk.size ≤ st.stk.size → listInRange re stA.stk →
+                stA.seen = st.seen.set! st.stk.back!.pc true →
+                parkList intoNext stA = parkList intoNext st →
+                Owned re.novec stA.rc stA.free stA.pool
+                  (hh :: buildLive intoNext stA ext) →
+                stA.rc.size ≤ re.code.size * 4 + 2 →
+                pcT < re.code.size →
+                (∀ stE, pikePark stA intoNext pcT hh lim = .error stE →
+                  Spent re setup 0 st stE) ∧
+                (∀ stB, pikePark stA intoNext pcT hh lim = .ok stB →
+                  Spent re setup 0 st
+                    (outSt id (pikeAdd.go re s mo lim intoNext pos f stB))) := by
+              intro stA pcT hh c hchA hcw hstkA hrangeA hseenA hparkA hownA htabA
+                hpcT
+              have hsz : (parkList intoNext stA).size < re.code.size := by
+                have h1 := hok.parked
+                rw [hparkA]
+                omega
+              have hch := pikePark_charged (setup := setup) (pc := pcT)
+                (h := hh) (lim := lim) hwf hchA.rooms hchA.held hsz
+              have hsn := pikePark_seen (st := stA) (intoNext := intoNext)
+                (pc := pcT) (h := hh) (lim := lim)
+              refine ⟨?_, ?_⟩
+              · intro stE he
+                refine hstop stE (c + 0) ?_
+                  (hchA.trans (charged_of_error he hch)) (by omega)
+                rw [seen_of_error he hsn]
+                exact hseenA
+              · intro stB hb
+                have hchB : Charged re setup (c + 0) st stB :=
+                  hchA.trans (charged_ok_id hb hch)
+                have hsnB : stB.seen = stA.seen := seen_ok_id hb hsn
+                obtain ⟨hstkB, -⟩ := pikePark_ok hb
+                obtain ⟨hT, hF⟩ := pikePark_lists hb
+                obtain ⟨hrcB, -, -⟩ := pikePark_pool hb
+                have hparkB : parkList intoNext stB =
+                    (parkList intoNext stA).push ⟨pcT, hh⟩ := parkList_push hT hF
+                refine hfinish stB (c + 0)
+                  ⟨?_, ?_, hchB.rooms, hchB.held, ?_, ?_, ?_, ?_, ?_⟩
+                  (by rw [hsnB]; exact hseenA) hchB (by omega)
+                · rw [hsnB, hseenA, Array.size_set!]; exact hok.seenSize
+                · rw [hstkB]; exact hrangeA
+                · exact park_owned hb hownA
+                · rw [hstkB, hsnB, hseenA]
+                  have h1 := hok.stack
+                  omega
+                · rw [hparkB, hsnB, hseenA, Array.size_push, hparkA]
+                  have h1 := hok.parked
+                  omega
+                · simp only [addMeasure]
+                  rw [hstkB, hsnB, hseenA, hparkB, Array.size_push, hparkA]
+                  have h1 := hok.reach
+                  simp only [addMeasure] at h1
+                  omega
+                · rw [hrcB]; exact htabA
+            have harmDefer : ∀ (stA : PikeSt) (pcT hh c : Nat),
+                Charged re setup c st stA →
+                c ≤ markWeight re st.stk.back!.pc →
+                stA.stk.size ≤ st.stk.size → listInRange re stA.stk →
+                stA.seen = st.seen.set! st.stk.back!.pc true →
+                parkList intoNext stA = parkList intoNext st →
+                Owned re.novec stA.rc stA.free stA.pool
+                  (hh :: buildLive intoNext stA ext) →
+                stA.rc.size ≤ re.code.size * 4 + 2 →
+                pcT < re.code.size →
+                (∀ stE, pikeDefer stA pcT hh lim = .error stE →
+                  Spent re setup 0 st stE) ∧
+                (∀ stB, pikeDefer stA pcT hh lim = .ok stB →
+                  Spent re setup 0 st
+                    (outSt id (pikeAdd.go re s mo lim intoNext pos f stB))) := by
+              intro stA pcT hh c hchA hcw hstkA hrangeA hseenA hparkA hownA htabA
+                hpcT
+              have hsz : stA.stk.size < re.code.size * 2 := by
+                have h1 := hok.stack
+                omega
+              have hch := pikeDefer_charged (setup := setup) (pc := pcT)
+                (h := hh) (lim := lim) hwf hchA.rooms hchA.held hsz
+              have hsn := pikeDefer_seen (st := stA) (pc := pcT) (h := hh)
+                (lim := lim)
+              refine ⟨?_, ?_⟩
+              · intro stE he
+                refine hstop stE (c + 0) ?_
+                  (hchA.trans (charged_of_error he hch)) (by omega)
+                rw [seen_of_error he hsn]
+                exact hseenA
+              · intro stB hb
+                have hchB : Charged re setup (c + 0) st stB :=
+                  hchA.trans (charged_ok_id hb hch)
+                have hsnB : stB.seen = stA.seen := seen_ok_id hb hsn
+                obtain ⟨hstkB, -⟩ := pikeDefer_ok hb
+                obtain ⟨hclB, hnlB⟩ := pikeDefer_lists hb
+                obtain ⟨hrcB, -, -⟩ := pikeDefer_pool hb
+                have hparkB : parkList intoNext stB = parkList intoNext st := by
+                  rw [parkList_eq hclB hnlB]; exact hparkA
+                refine hfinish stB (c + 0)
+                  ⟨?_, ?_, hchB.rooms, hchB.held, ?_, ?_, ?_, ?_, ?_⟩
+                  (by rw [hsnB]; exact hseenA) hchB (by omega)
+                · rw [hsnB, hseenA, Array.size_set!]; exact hok.seenSize
+                · rw [hstkB]; exact listInRange_push hrangeA hpcT
+                · exact defer_owned hb hownA
+                · rw [hstkB, hsnB, hseenA, Array.size_push]
+                  have h1 := hok.stack
+                  omega
+                · rw [hparkB, hsnB, hseenA]
+                  have h1 := hok.parked
+                  omega
+                · simp only [addMeasure]
+                  rw [hstkB, hsnB, hseenA, hparkB, Array.size_push]
+                  have h1 := hok.reach
+                  simp only [addMeasure] at h1
+                  omega
+                · rw [hrcB]; exact htabA
+            have harmFork : ∀ (stR : PikeSt) (q hh c : Nat),
+                Charged re setup c st stR →
+                c ≤ markWeight re st.stk.back!.pc →
+                stR.stk.size + 1 ≤ st.stk.size → listInRange re stR.stk →
+                stR.seen = st.seen.set! st.stk.back!.pc true →
+                parkList intoNext stR = parkList intoNext st →
+                Owned re.novec stR.rc stR.free stR.pool
+                  (hh :: hh :: buildLive intoNext stR ext) →
+                stR.rc.size ≤ re.code.size * 4 + 2 →
+                q < re.code.size →
+                (∀ stE, pikeDefer stR q hh lim = .error stE →
+                  Spent re setup 0 st stE) ∧
+                (∀ stB, pikeDefer stR q hh lim = .ok stB → ∀ p, p < re.code.size →
+                  (∀ stE, pikeDefer stB p hh lim = .error stE →
+                    Spent re setup 0 st stE) ∧
+                  (∀ stD, pikeDefer stB p hh lim = .ok stD →
+                    Spent re setup 0 st
+                      (outSt id (pikeAdd.go re s mo lim intoNext pos f stD)))) := by
+              intro stR q hh c hchR hcw hstkR hrangeR hseenR hparkR hownR htabR
+                hq
+              have hsz : stR.stk.size < re.code.size * 2 := by
+                have h1 := hok.stack
+                omega
+              have hch := pikeDefer_charged (setup := setup) (pc := q) (h := hh)
+                (lim := lim) hwf hchR.rooms hchR.held hsz
+              have hsn := pikeDefer_seen (st := stR) (pc := q) (h := hh)
+                (lim := lim)
+              refine ⟨?_, ?_⟩
+              · intro stE he
+                refine hstop stE (c + 0) ?_
+                  (hchR.trans (charged_of_error he hch)) (by omega)
+                rw [seen_of_error he hsn]
+                exact hseenR
+              · intro stB hb p hp
+                have hchB : Charged re setup (c + 0) st stB :=
+                  hchR.trans (charged_ok_id hb hch)
+                have hsnB : stB.seen = stR.seen := seen_ok_id hb hsn
+                obtain ⟨hstkB, -⟩ := pikeDefer_ok hb
+                obtain ⟨hclB, hnlB⟩ := pikeDefer_lists hb
+                obtain ⟨hrcB, -, -⟩ := pikeDefer_pool hb
+                refine harmDefer stB p hh (c + 0) hchB (by omega) ?_ ?_ ?_ ?_
+                  (defer_owned_two hb hownR) ?_ hp
+                · rw [hstkB, Array.size_push]; omega
+                · rw [hstkB]; exact listInRange_push hrangeR hq
+                · rw [hsnB]; exact hseenR
+                · rw [parkList_eq hclB hnlB]; exact hparkR
+                · rw [hrcB]; exact htabR
+            have harmSave : ∀ (stA : PikeSt) (slotT hh : Nat) (value : UInt32),
+                (re.code[st.stk.back!.pc]!).op = .save →
+                Charged re setup 1 st stA →
+                stA.stk.size ≤ st.stk.size → listInRange re stA.stk →
+                stA.seen = st.seen.set! st.stk.back!.pc true →
+                parkList intoNext stA = parkList intoNext st →
+                Owned re.novec stA.rc stA.free stA.pool
+                  (hh :: buildLive intoNext stA ext) →
+                stA.rc.size ≤ re.code.size * 4 + 2 →
+                (∀ stE, pikeWrite stA re.novec hh slotT value lim = .error stE →
+                  Spent re setup 0 st stE) ∧
+                (∀ stW hOut, pikeWrite stA re.novec hh slotT value lim
+                    = .ok (stW, hOut) →
+                  (∀ stE, pikeDefer stW (st.stk.back!.pc + 1) hOut lim
+                      = .error stE → Spent re setup 0 st stE) ∧
+                  (∀ stD, pikeDefer stW (st.stk.back!.pc + 1) hOut lim = .ok stD →
+                    Spent re setup 0 st
+                      (outSt id (pikeAdd.go re s mo lim intoNext pos f stD)))) := by
+              intro stA slotT hh value hsave hchA hstkA hrangeA hseenA hparkA hownA
+                htabA
+              have hmeas : addMeasure intoNext stA + ext.length ≤
+                  re.code.size * 4 := by
+                have h1 := hok.reach
+                simp only [addMeasure] at h1 ⊢
+                rw [hparkA, hseenA]
+                omega
+              have hlenA := buildLive_length intoNext stA ext
+              have hlen : (hh :: buildLive intoNext stA ext).length ≤
+                  re.code.size * 4 + 1 := by
+                simp only [List.length_cons]
+                omega
+              have hrc : stA.free.size = 0 →
+                  stA.rc.size < re.code.size * 4 + 2 := fun hz => by
+                have h2 := (take_room hownA hlen hz).1
+                omega
+              have hpool : stA.free.size = 0 →
+                  stA.pool.size + re.novec ≤
+                    (re.code.size * 4 + 2) * re.novec := fun hz => by
+                have h2 := (take_room hownA hlen hz).2
+                have hb : re.code.size * 4 + 1 + 1 = re.code.size * 4 + 2 := by
+                  omega
+                rwa [hb] at h2
+              have hcw : 1 + re.novec * regSize ≤
+                  markWeight re st.stk.back!.pc := by
+                rw [markWeight, if_pos hsave, pikeBlock]
+                omega
+              have hch := pikeWrite_charged (setup := setup) (novec := re.novec)
+                (h := hh) (slot := slotT) (value := value) (lim := lim) hwf
+                hchA.rooms hchA.held hrc hpool
+              have hsn := pikeWrite_seen (st := stA) (novec := re.novec) (h := hh)
+                (slot := slotT) (value := value) (lim := lim)
+              refine ⟨?_, ?_⟩
+              · intro stE he
+                refine hstop stE (1 + re.novec * regSize) ?_
+                  (hchA.trans (charged_of_error he hch)) hcw
+                rw [seen_of_error he hsn]
+                exact hseenA
+              · intro stW hOut hb
+                have hchW : Charged re setup (1 + re.novec * regSize) st stW :=
+                  hchA.trans (charged_ok_fst hb hch)
+                have hsnW : stW.seen = stA.seen := seen_ok_fst hb hsn
+                obtain ⟨hstkW, -⟩ := pikeWrite_ok hb
+                obtain ⟨hclW, hnlW⟩ := pikeWrite_lists hb
+                obtain ⟨hownW, hszW⟩ := pikeWrite_owned hb hownA
+                refine harmDefer stW (st.stk.back!.pc + 1) hOut
+                  (1 + re.novec * regSize) hchW hcw ?_ ?_ ?_ ?_ ?_ ?_
+                  (htgt _ (by simp [pikeTargets, hsave]))
+                · rw [hstkW]; exact hstkA
+                · rw [hstkW]; exact hrangeA
+                · rw [hsnW]; exact hseenA
+                · rw [parkList_eq hclW hnlW]; exact hparkA
+                · have hbl : buildLive intoNext stW ext =
+                      buildLive intoNext stA ext := by
+                    simp only [buildLive, hstkW, parkList_eq hclW hnlW]
+                  rw [hbl]
+                  exact hownW
+                · omega
+            -- Every arm starts from the marked state, whose reading the mark
+            -- itself paid for.
+            cases hop : (re.code[(st.stk.back!).pc]!).op <;> dsimp only
+            case chr | chrCI | cls | any | anyNoNL | accept =>
+              split
+              · rename_i he
+                exact (harmPark _ _ _ 1 hmarkC hw1 (by simp only [Array.size_pop]; omega)
+                  hpop rfl rfl hflight hok.table hpcv).1 _ he
+              · rename_i he
+                exact (harmPark _ _ _ 1 hmarkC hw1 (by simp only [Array.size_pop]; omega)
+                  hpop rfl rfl hflight hok.table hpcv).2 _ he
+            case bsr =>
+              split
+              · rename_i he
+                exact (harmDrop _ _ 1 hmarkC hw1 (by simp only [Array.size_pop]; omega)
+                  hpop rfl rfl hflight hok.table).1 _ he
+              · rename_i he
+                exact (harmDrop _ _ 1 hmarkC hw1 (by simp only [Array.size_pop]; omega)
+                  hpop rfl rfl hflight hok.table).2 _ he
+            case jump | repZero | repEnter =>
+              split
+              · rename_i he
+                exact (harmDefer _ _ _ 1 hmarkC hw1 (by simp only [Array.size_pop]; omega)
+                  hpop rfl rfl hflight hok.table
+                  (htgt _ (by simp [pikeTargets, hop]))).1 _ he
+              · rename_i he
+                exact (harmDefer _ _ _ 1 hmarkC hw1 (by simp only [Array.size_pop]; omega)
+                  hpop rfl rfl hflight hok.table
+                  (htgt _ (by simp [pikeTargets, hop]))).2 _ he
+            case circ | doll | dollE | sod | eod | eodn | wordB | notWordB
+                | circM | dollM =>
+              repeat' split
+              all_goals first
+                | (rename_i he
+                   exact (harmDefer _ _ _ 1 hmarkC hw1
+                     (by simp only [Array.size_pop]; omega) hpop rfl rfl hflight
+                     hok.table (htgt _ (by simp [pikeTargets, hop]))).1 _ he)
+                | (rename_i he
+                   exact (harmDefer _ _ _ 1 hmarkC hw1
+                     (by simp only [Array.size_pop]; omega) hpop rfl rfl hflight
+                     hok.table (htgt _ (by simp [pikeTargets, hop]))).2 _ he)
+                | (rename_i he
+                   exact (harmDrop _ _ 1 hmarkC hw1
+                     (by simp only [Array.size_pop]; omega) hpop rfl rfl hflight
+                     hok.table).1 _ he)
+                | (rename_i he
+                   exact (harmDrop _ _ 1 hmarkC hw1
+                     (by simp only [Array.size_pop]; omega) hpop rfl rfl hflight
+                     hok.table).2 _ he)
+            case save =>
+              split
+              · rename_i he
+                exact (harmSave _ _ _ _ hop hmarkC (by simp only [Array.size_pop]; omega)
+                  hpop rfl rfl hflight hok.table).1 _ he
+              · rename_i he
+                split
+                · rename_i hd
+                  exact ((harmSave _ _ _ _ hop hmarkC (by simp only [Array.size_pop]; omega)
+                    hpop rfl rfl hflight hok.table).2 _ _ he).1 _ hd
+                · rename_i hd
+                  exact ((harmSave _ _ _ _ hop hmarkC (by simp only [Array.size_pop]; omega)
+                    hpop rfl rfl hflight hok.table).2 _ _ he).2 _ hd
+            case split =>
+              split
+              · rename_i he
+                refine (harmFork _ _ _ 1 hmarkR hw1 ?_ hpop rfl rfl
+                  (owned_share hflight) ?_ ?_).1 _ he
+                · simp only [Array.size_pop]; omega
+                · simp only [Array.size_set!]; exact hok.table
+                · exact htgt _ (by simp [pikeTargets, hop])
+              · rename_i he
+                split
+                · rename_i hd
+                  refine ((harmFork _ _ _ 1 hmarkR hw1 ?_ hpop rfl rfl
+                    (owned_share hflight) ?_ ?_).2 _ he _ ?_).1 _ hd
+                  · simp only [Array.size_pop]; omega
+                  · simp only [Array.size_set!]; exact hok.table
+                  · exact htgt _ (by simp [pikeTargets, hop])
+                  · exact htgt _ (by simp [pikeTargets, hop])
+                · rename_i hd
+                  refine ((harmFork _ _ _ 1 hmarkR hw1 ?_ hpop rfl rfl
+                    (owned_share hflight) ?_ ?_).2 _ he _ ?_).2 _ hd
+                  · simp only [Array.size_pop]; omega
+                  · simp only [Array.size_set!]; exact hok.table
+                  · exact htgt _ (by simp [pikeTargets, hop])
+                  · exact htgt _ (by simp [pikeTargets, hop])
+            case repLoop | repNext =>
+              split
+              all_goals
+                split
+                · rename_i he
+                  refine (harmFork _ _ _ 1 hmarkR hw1 ?_ hpop rfl rfl
+                    (owned_share hflight) ?_ ?_).1 _ he
+                  · simp only [Array.size_pop]; omega
+                  · simp only [Array.size_set!]; exact hok.table
+                  · exact htgt _ (by simp [pikeTargets, hop])
+                · rename_i he
+                  split
+                  · rename_i hd
+                    refine ((harmFork _ _ _ 1 hmarkR hw1 ?_ hpop rfl rfl
+                      (owned_share hflight) ?_ ?_).2 _ he _ ?_).1 _ hd
+                    · simp only [Array.size_pop]; omega
+                    · simp only [Array.size_set!]; exact hok.table
+                    · exact htgt _ (by simp [pikeTargets, hop])
+                    · exact htgt _ (by simp [pikeTargets, hop])
+                  · rename_i hd
+                    refine ((harmFork _ _ _ 1 hmarkR hw1 ?_ hpop rfl rfl
+                      (owned_share hflight) ?_ ?_).2 _ he _ ?_).2 _ hd
+                    · simp only [Array.size_pop]; omega
+                    · simp only [Array.size_set!]; exact hok.table
+                    · exact htgt _ (by simp [pikeTargets, hop])
+                    · exact htgt _ (by simp [pikeTargets, hop])
+
+
+/-- `pikeAdd` itself: the entry it seeds the worklist with is the handle its
+caller was holding, and seeding it charges only growth, so the build's own
+account covers the whole call. -/
+theorem pikeAdd_spent (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
+    (hwf : ReWf re) (intoNext : Bool) (pos pc0 h0 setup : Nat) (ext : List Nat)
+    {st : PikeSt}
+    (hsz : st.seen.size = re.code.size) (hrange : listInRange re st.stk)
+    (hrooms : Rooms re st) (hmem : st.m.mem = setup + st.reserved)
+    (hown : Owned re.novec st.rc st.free st.pool
+      (h0 :: buildLive intoNext st ext))
+    (hstk0 : st.stk.size = 0)
+    (hparked : (parkList intoNext st).size + unmarked st.seen ≤ re.code.size)
+    (hreach : addMeasure intoNext st + 1 + ext.length ≤ re.code.size * 4)
+    (htable : st.rc.size ≤ re.code.size * 4 + 2) (hpc : pc0 < re.code.size) :
+    Spent re setup 0 st
+      (outSt id (pikeAdd re s mo lim intoNext pos pc0 h0 st)) := by
+  have hC := hwf.sized
+  have hum : unmarked st.seen ≤ re.code.size := by
+    have h1 := unmarked_le_size st.seen
+    rw [hsz] at h1
+    exact h1
+  have hch := pikeDefer_charged (setup := setup) (pc := pc0) (h := h0)
+    (lim := lim) hwf hrooms hmem (by omega)
+  have hsn := pikeDefer_seen (st := st) (pc := pc0) (h := h0) (lim := lim)
+  rw [pikeAdd]
+  split
+  · rename_i stE he
+    exact Spent.ofCharged (charged_of_error he hch) (seen_of_error he hsn)
+  · rename_i stD hd
+    have hchD : Charged re setup 0 st stD := charged_ok_id hd hch
+    have hsnD : stD.seen = st.seen := seen_ok_id hd hsn
+    obtain ⟨hstkD, -⟩ := pikeDefer_ok hd
+    obtain ⟨hclD, hnlD⟩ := pikeDefer_lists hd
+    obtain ⟨hrcD, -, -⟩ := pikeDefer_pool hd
+    have hparkD : parkList intoNext stD = parkList intoNext st :=
+      parkList_eq hclD hnlD
+    refine Spent.mono
+      ((Spent.ofCharged hchD hsnD).trans
+        (pikeAdd_go_spent re s mo lim hwf intoNext pos setup ext _ stD
+          ⟨?_, ?_, hchD.rooms, hchD.held, defer_owned hd hown, ?_, ?_, ?_, ?_⟩))
+      (by omega)
+    · rw [hsnD]; exact hsz
+    · rw [hstkD]; exact listInRange_push hrange hpc
+    · rw [hstkD, hsnD, Array.size_push]; omega
+    · rw [hparkD, hsnD]; exact hparked
+    · simp only [addMeasure]
+      rw [hstkD, hsnD, hparkD, Array.size_push]
+      simp only [addMeasure] at hreach
+      omega
+    · rw [hrcD]; exact htable
 
 end Pcrevera.Ref

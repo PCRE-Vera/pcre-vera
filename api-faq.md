@@ -230,3 +230,134 @@ error rather than failing the alternative, so `first` never moves on. Give
 the alternative a plain term — a tiny lemma such as `absurd_error` above a
 `first` chain — so that a branch it does not fit fails to elaborate
 instead of failing to close.
+
+## `Array.ext` wants `apply`, not `refine … _ _ …`
+
+`Array.ext` at this toolchain takes the two arrays implicitly and leaves a
+size goal and an elementwise goal, so `refine Array.ext _ _ h ?_` reports
+"function expected". `apply Array.ext` followed by the two goals is the
+shape that works, and the elementwise goal arrives as `i`, `h₁ : i < a.size`,
+`h₂ : i < b.size`.
+
+## `omega` atomizes definitionally equal terms separately
+
+A hypothesis about `st.pool.size` and a goal about `{ st with m := … }.pool.size`
+give omega two unrelated atoms even though the two are the same by `rfl`.
+Restate the hypothesis at the wanted type with a `have` — the coercion is
+free — before reaching for omega.
+
+## `first | (tac; by-term) | …` does not back out of a failed `by`
+
+An alternative like `exact absurd h (by simp)` is accepted by `first` as
+soon as the `exact` elaborates; the `by simp` hole is postponed and, when it
+fails, is reported as an unsolved goal rather than sending `first` to the
+next alternative. Any alternative meant to be tried and rejected has to fail
+*synchronously* — put the discriminating work in the tactic itself, or order
+the alternatives so the catch-all comes last.
+
+## Structure instance fields are parsed at the first field's column
+
+`{ st with a := x,` followed by a continuation line indented to the column of
+`st` rather than of `a` stops the parser at the comma with "unexpected
+identifier; expected '}'". Breaking the line straight after `with` and
+putting every field one indent in always works.
+
+## `conv_lhs` does not exist without Mathlib
+
+`conv_lhs => rw [h]` is reported as "unknown tactic" on a plain Lean 4.32
+toolchain with only Batteries: the `conv_lhs`/`conv_rhs` shorthands are
+Mathlib macros. `conv => lhs; rw [h]` is the core spelling and works.
+
+## A docstring goes below `set_option … in`, not above it
+
+`/-- … -/` followed by `set_option maxHeartbeats 1000000 in` followed by
+`theorem` does not parse; the error names the `set_option` token and looks
+like a problem with the previous declaration. The order Lean wants is
+`set_option … in`, then the docstring, then the declaration.
+
+## `split at h` does not always take the outermost `if`
+
+On a hypothesis whose type nests several `if`s, `split at h` may pick an
+inner one, so a chain of `split at h` / `rename_i` produces hypotheses about
+conditions other than the ones the source reads left to right. Unfolding
+with `by_cases` on each condition and `rw [if_pos h] / rw [if_neg h]` is
+deterministic and is worth the extra lines whenever the names matter.
+
+## `getElem!_pos` wants its array and index explicit
+
+`rw [getElem!_pos _ _ h]` fails to elaborate the `GetElem?` instance and
+reports a synthesis failure at `Nat`. Writing `rw [getElem!_pos a i h]` with
+both arguments given works.
+
+## `rw` with a definition's equation unfolds one instantiation, not all
+
+`rw [buildLive]` on a goal mentioning `buildLive true st ext₁` and
+`buildLive true st ext₂` instantiates the equation at whichever it meets
+first and leaves the other folded. `simp only [buildLive]` unfolds every
+instance, which is almost always what is wanted when both sides of a
+`Perm` goal are built from the same definition.
+
+## `simpa only [f, if_pos rfl]` can leave `if True then … else …`
+
+Unfolding a definition whose body is an `ite` and asking simp to take the
+positive branch in the same call sometimes normalises the *condition* to
+`True` without reducing the `ite`. Proving the reduced equation on its own
+first — `have : f a = [] := by rw [f, if_pos rfl]` — and rewriting with it
+is stable.
+
+## `rw` closing a goal by `rfl` leaves the next tactic with nothing
+
+A `rw` whose result is a syntactic identity closes the goal itself, so a
+following `simp` in the same alternative reports "no goals to be solved"
+and, inside a `first` chain, takes the whole alternative down. `subst`
+before the `simp` — or a `first | rfl | simp` — keeps the script honest
+across branches that differ in whether the rewrite lands on `rfl`.
+
+## `by_contra` does not exist without Mathlib
+
+Like `conv_lhs`, `by_contra` is a Mathlib tactic and is reported as "unknown
+tactic" on a plain Lean 4.32 toolchain. Case on the decidable proposition
+with `rcases Nat.lt_or_ge …` / `by_cases`, or derive the fact from a
+hypothesis already in scope.
+
+## `cases h : e` substitutes in the goal but not in hypotheses
+
+After `cases hk : (re.regions[i]!).kind`, the goal already mentions the
+constructor, so `rw [hk] at ⊢` fails with "did not find an occurrence of the
+pattern". Only `rw [hk] at h` is needed, and it is needed for every
+hypothesis that still mentions the scrutinee.
+
+## `omega` sees a structure projection of a literal as an atom
+
+After `rw [hinfo]` a goal reads `lo + 1 ≤ { lo := …, head := lo + 1, … }.head`,
+which is true by `rfl`, and omega still fails: it does not reduce the
+projection, so it takes the whole `{ … }.head` for an opaque natural and
+reports a counterexample. `show lo + 1 ≤ lo + 1` first — the projection of a
+literal is defeq to the field — or close the goal with `Nat.le_refl _` and
+skip omega. The same applies to `Inst.arg` and `Inst.op` after rewriting a
+cell to `⟨.repZero, r, 0⟩`.
+
+## `decide` refuses a proposition that mentions a free variable
+
+`absurd hq (by decide)` on `¬ ((⟨.cls, idx, 0⟩ : Inst).op = Op.repZero)` fails
+with "Expected type must not contain free variables", even though `.op`
+reduces to `Op.cls` whatever `idx` is: `decide` looks at the stated type
+before any reduction. `fun hq => by simp at hq` does the job — simp reduces
+the projection, turns the equation into `False`, and closes whatever goal was
+open.
+
+## `rw` does not match through a projection of a literal
+
+With `hinfo : reps[r0]! = ⟨…⟩` and a goal about
+`reps[(⟨.repNext, r0, 0⟩ : Inst).arg]!`, `rw [hinfo]` has nothing to match:
+keyed matching wants `reps[r0]!` syntactically and the index is still a
+projection. `simp [hinfo]` reduces the projection first and then rewrites,
+and it also normalises the `j + 1 - 1` a repetition row's `after - 1` leaves
+behind.
+
+## `open private … from` takes a module name, not a namespace
+
+`open private rootSt from Pcrevera.Refine` does not resolve; the argument is
+the module the declaration lives in, so it is
+`open private rootSt from Pcrevera.Proofs.Refine`. It has to sit at the top
+level, before the `namespace` that will use the name.

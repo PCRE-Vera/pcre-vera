@@ -1110,3 +1110,126 @@ about *where* a fact lives rather than whether it is true.
 - Wrote the empty-iteration path out of a `repNext` as a step to the
   repetition's *body* rather than to its *exit*. The path being built is
   the one that leaves the loop, not the one that goes round again.
+
+## Reading the capture pool (M6)
+
+- Stated the copy-loop lemma without a room hypothesis on the destination
+  block. A write past the end of an array is a no-op here and reads back
+  as the default, so the clause was simply false; the fold needs to know
+  the pool has room for the block it is filling.
+- Bundled the copy loop's size clause with its content clauses. The
+  content clauses need the room hypothesis, the room hypothesis is stated
+  in terms of the size, and the knot only comes undone if the size is its
+  own lemma.
+- Fed `omega` a bound stated over `st.pool.size` while the goal spoke of
+  the same field of a record that differed from `st` only in the meter.
+  They are definitionally equal and omega atomizes each separately; a
+  restating `have` at the wanted type is the fix, and this is the second
+  time the same shape has cost a debugging round.
+- Reached for `pikeAdd_go_build` as the template for a second walk over the
+  closure's dispatch. `pikeAdd_go_congr` is the better one: a `repeat'
+  split` with one alternative per arm *shape* rather than a case per opcode,
+  and its out-of-range argument — a pc the program does not have reads as
+  the default `chr`, which parks and pushes nothing — means the walk needs
+  no pc-range hypothesis at all, so `BuildOk` never has to be re-derived.
+- Discriminated the refusal arms of that dispatch with `exact absurd h (by
+  simp)` at the head of a `first`. A `by` block inside a term is elaborated
+  after the alternative has already been accepted, so `first` never backs
+  out and every real arm was reported as an unsolved `¬ … = .ok …`. The
+  refusal arm belongs last, where `cases h` fires only once the shape-matched
+  alternatives have each failed on `h`'s type.
+- Read `Owned.size_le` as the pool's bound a second time, in the shape of a
+  measure. It only ever says `rc.size ≤ free.size + live.length`; what the
+  bound needs is that the table grows solely when the free list is empty,
+  which is why the `max` clause sits on `pikeTake` and is threaded from
+  there.
+- Cut a block out of a file with `s[s.index(start):s.index(end)]` where the
+  end marker was a docstring opening that also occurs earlier in the file.
+  The slice came back empty and every replacement inside it silently found
+  nothing. Searching for the end marker *from* the start index is the fix,
+  and asserting the expected occurrence count is what caught it.
+
+## Rebuilding what a neighbour had already built (M6)
+
+Started a pool-size invariant and its closure-loop induction in
+`PikeRefine.lean` while `PikeBounds.lean` was growing the same clause into
+`Owned`. The neighbouring file was mid-edit and red at the time, which is
+exactly when it is tempting to work around it rather than read it. Reading
+it first would have saved the round: the answer was one field on a
+structure that already travels through every helper.
+
+## The fork account (BtBounds round seven)
+
+- Put the docstring above `set_option maxHeartbeats … in` rather than below
+  it, twice in the same session. Lean wants the attribute first and the
+  docstring immediately before the declaration; the parse error names the
+  `set_option` token and reads as if the previous declaration were
+  unfinished.
+- Scripted a docstring pass that keyed on an existing doc comment, so the
+  new one landed above the old one and left two in a row. Keying on the
+  declaration line is the only safe anchor.
+- Assumed `split at h` takes the outermost `if` and named the resulting
+  hypotheses positionally with a chain of `rename_i`. On `shape_alt`'s
+  nested chain it took an inner one first, so every name in the chain was
+  about the wrong condition and the failure surfaced several tactics later
+  as a `decide` complaining about free variables. Driving the unfolding with
+  `by_cases` and `rw [if_pos …] / rw [if_neg …]` is deterministic, and
+  pulling it out as `shapeAltGo_step` turned out to be worth having on its
+  own — the code layout a shape walk settled is a fact worth stating once.
+- Reached for `Array` push/pop reasoning by hand before looking:
+  `Array.eq_push_pop_back!_of_size_ne_zero` is already there and is all the
+  `owed` bookkeeping needs.
+- Unfolded `addMeasure` in a goal with `simp only [addMeasure, …]` while the
+  hypothesis bounding it kept `addMeasure` folded. omega then had two
+  unrelated atoms and no way between them. Proving `addMeasure … = addMeasure
+  …` as a `have` and rewriting keeps one atom throughout, and reads better.
+- Wrote `rw [h₁, h₂] at hyp ⊢` where one of the rewrites only applies to the
+  goal. `rw … at` fails outright when a pattern is missing from *any* of its
+  targets, so the two have to be separate.
+
+## Alternation and the optional item (BtBounds round eight)
+
+- Put the docstring above `set_option … in` for the third session running,
+  and had to write the same scripted swap twice more. It is now in
+  api-faq.md with the error message it produces, which is what I should
+  have looked for the first time.
+- Trusted `split at h` to take the outermost `if` again, this time on
+  `shape_alt`'s nested chain and on `cert_shape`'s dispatch. It does not,
+  and the failure surfaces several tactics later as a `decide` complaining
+  about free variables. Both places are now driven by `by_cases` and
+  `rw [if_pos …] / rw [if_neg …]`, or by `cases hk : …` on the scrutinee.
+- Wrote `cases hk : (re.regions[i]!).kind` and then `rw [hk] at h ⊢`. The
+  `cases` has already substituted in the goal; only the hypothesis needs
+  rewriting, and the goal's rewrite fails with "did not find an occurrence".
+- Specialised `certCheckRegions_step` to an incoming flag of `false` and
+  left the old closing tactic `rw [← hv, ← hover]` in place. With the flag a
+  literal rather than a variable, `← hover` rewrote the *incoming* `false`
+  instead of the outgoing one. A tiny `triple_eq` lemma — a triple read back
+  off its own components — closes it without depending on rewrite order.
+- Reached for `by_contra`, which this toolchain does not have. `rcases
+  Nat.lt_or_ge …` or deriving the positivity from a hypothesis already in
+  scope is the local idiom.
+
+## The Pike counter invariant (PikeRefine, dedup round)
+
+- Took the previous round's own note at its word — that the guard for the
+  counter should be the one `EntryFresh` uses, "this row's `repNext` is still
+  reachable without consuming" — and started building the invariant around
+  it. It is vacuous exactly where the counter is read: from a deciding head
+  the only non-consuming way back to that row's `repNext` runs through the
+  body, and eligibility is precisely the fact that it does not. The guard has
+  to be structural containment, `head ≤ pc < after`, which is what turned the
+  reachability question into an address one and produced `FragAt.noMidEntry`.
+- Wrote the invariant as "the count is not the unset sentinel" before
+  noticing that `repNext` bumps it, so a count one below the sentinel would
+  walk into it. Only a bound relating the count to the position survives the
+  bump, and getting the bump strict is what pulls `EntryPast` and
+  `EntryFresh` into a lemma that looks like it should only need the count.
+- Assumed a fragment's edges were the whole story and would also settle where
+  the repetition cells stand. They are two different inductions over the same
+  relation — `FragAt.targets` reads what a construct defers to,
+  `FragAt.cells` reads what it pins — and only the second discharges
+  `CellsOk`.
+- Left `hlt` in `count_stay`'s signature out of symmetry with its neighbour;
+  the containment conclusion never uses it, and the unused-variable linter
+  said so.
