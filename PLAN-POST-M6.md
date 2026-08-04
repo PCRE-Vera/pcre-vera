@@ -3,17 +3,18 @@
 This plan exists because of one pattern. `(?<user>\w+)@(?<host>[\w.]+)` is an
 ordinary wave 1 pattern, and DESIGN.md promises that essentially all of wave 1
 runs on the Pike VM and classifies linear. Today it does not: the compiler
-emits counter-based Rep opcodes for every quantifier, `pike_ok` admits pure
-stars only, and the pattern lands on the backtracking path with a certified
-cost bound of
+emits counter-based Rep opcodes for every counted repetition that is not an
+optional, a singleton or a pure star, `pike_ok` admits pure stars only, and
+the pattern lands on the backtracking path with a certified cost bound of
 
     3448 + 2898*(n+1) + 764*(n+1)^2 + 48*(n+1)^3
 
-which is 48.9 billion cost units at n = 1000, against a measured worst case of
-9.13 million and a memory reservation of 354 MB against a measured peak of
-36 KB. The certificate is sound — the arithmetic is exact and the engine stays
-under it — but the number is unusable, and the linear classification is the
-project's main selling point.
+which is 48.9 billion cost units at n = 1000, against 9.13 million measured
+on the most hostile subject the investigation found, and a memory reservation
+of 354 MB against a 36 KB measured peak on that subject. The certificate is
+sound — the polynomial is exact as stored, deliberately an upper bound in
+what it claims, and every observed run stays under it — but the number is
+unusable, and the linear classification is the project's main selling point.
 
 The root of it is a design/implementation discrepancy inside a milestone
 declared complete. DESIGN.md section 4.3 says counted repetitions are compiled
@@ -29,13 +30,18 @@ patterns by them says what the fix reaches and what it deliberately leaves:
     | category                     | examples                 | after the lowering             |
     +------------------------------+--------------------------+--------------------------------+
     | counter-based quantifiers    | a+  a+?  a{2}  a{1,}     | Pike-eligible when the lowered |
-    |                              | [A-Z]{2,8}               | form fits the cap              |
+    |                              | [A-Z]{2,8}               | form fits the caps             |
     | nullable unbounded bodies    | (?:a?)*  (?:a|)*         | still backtracking             |
     |                              | (?:a*)*  (?:^)*          |                                |
     | \R anywhere                  | \R  a\Rb  (?:\R)*        | still backtracking, until \R   |
     |                              |                          | compiles as an alternation     |
-    | lowered form over the cap    | a large enough {m,n}     | backtracking, by design        |
+    | lowered form over a cap      | a large enough {m,n}     | backtracking, by design        |
     +------------------------------+--------------------------+--------------------------------+
+
+These rows are routing categories and nothing else. Classification is a
+different axis — bare `\R` routes to backtracking and still classifies
+Linear, `(?:^)*` is certified superlinear while `(?:a?)*` has no accepted
+certificate at all — and the census in step 3 keeps the two apart.
 
 For scale: `a?`, `a??`, `a{0,1}`, `a{1}`, `a*` and `a{0,}` are eligible
 today, alternations of unequal widths like `(?:a|bc)*` are fine, and
@@ -61,9 +67,9 @@ accessors and the context machinery today, and answers class Linear, cost
 201,330, stack 0, memory 12,115 at n = 1000. So the intended lowered
 representation has been exercised successfully through the entire downstream
 pipeline, and no matcher or analyzer redesign is needed. That is not a proof
-of the automatic lowering — capture identity reuse, cap-aware fallback, the
-sizing invariants and priority order are all still open work, and they are
-the substance of this plan.
+of the automatic lowering — capture identity, recursive lowering of nested
+repetitions, cap-aware fallback, the sizing invariants and priority order
+are all still open work, and they are the substance of this plan.
 
 ## Sequencing
 
@@ -74,14 +80,18 @@ then start M7. Replaying M6 once is the cost of doing this now; doing it
 after M7 would mean replaying both, and doing it never would mean proving
 theorems about behavior we have already decided is wrong.
 
-The replay is expected to be mechanical where the Layer S and R proofs speak
-about the reference semantics, which the lowering does not change — but
-"expected" is not a plan, an inventory is. Before the implementation
-starts, list every M6 theorem and mark whether it mentions compilation
-layout, bytecode shape, or artifact bytes; the unmarked ones replay
-mechanically by construction, and the marked ones are the cost input to
-the decision below, priced before the work rather than discovered after
-it.
+How much of the replay is mechanical is a question the theorem inventory
+answers, not one this plan prejudges. THEOREMS.md is an inventory of
+obligations, and some of them depend on this change semantically rather
+than textually: `R.compile` is a restatement of the real compiler, so the
+lowering changes the theorem's subject directly; the compile/run
+equivalence goes with it; and `S-12`, the cross-matcher agreement, is
+quantified over Pike-eligible patterns, so every pattern this plan makes
+eligible widens what that theorem covers — new proof coverage, not a
+rehash. Before the implementation starts, classify every M6 obligation by
+semantic dependence on compilation — not by whether its text mentions
+bytecode bytes — and price the dependent ones as an input to this plan's
+go decision rather than a discovery at the end.
 
 ## Step 1: settle the rules before the code
 
@@ -90,16 +100,17 @@ no exception. Before touching the compiler:
 
 - Amend DESIGN.md section 4.3 to describe the mechanism actually built and
   kept: both matchers read one bytecode; the Pike VM treats the four Rep
-  opcodes of a pure star as epsilon forks; and quantifiers that are not pure
-  stars are lowered to star form at compilation when the lowered size fits
-  the cap. The current text describes an unrolled second compilation that
-  never existed.
+  opcodes of a pure star as epsilon forks; and counted repetitions that are
+  not already optionals, singletons or pure stars are lowered to star form
+  at compilation when the lowered size fits the caps. The current text
+  describes an unrolled second compilation that never existed.
 - Amend section 2.1's carve-out sentence. There are three carve-outs, not
-  one: a quantifier whose lowered form exceeds the cap, a star whose body
+  one: a quantifier whose lowered form exceeds a cap, a star whose body
   can complete emptily (the `(a?)*` capture-preference problem — semantic,
   and no amount of unrolling removes it), and `\R` until it compiles as an
-  alternation. All three route to the backtracking matcher, and the
-  classifier remains the per-pattern statement of the guarantee.
+  alternation. All three are routing statements — they say which matcher
+  runs, and nothing about the class — and the classifier remains the
+  per-pattern statement of the guarantee.
 - Fix section 4.3's claim that a non-Pike pattern "is then classified
   notProvenLinear, since the linear class is defined as Pike-eligible."
   That is not what is built, and what is built is better. BOUNDS.md
@@ -114,8 +125,15 @@ no exception. Before touching the compiler:
   no longer the same set as the Linear-classified ones.
 - Fix the section 4.2 instruction table: RepInit/RepChk is stale; the engine
   and BOUNDS.md have RepZero, RepLoop, RepEnter, RepNext.
+- Sweep the rest of the prose for the same stale equivalence, because it
+  was written when Pike and Linear were meant to be one set: DESIGN.md
+  section 5's classification passage describes the Pike bound as the only
+  linear claim; layout.py carries comments that encode the older
+  equivalence; README makes broad status statements beyond the paragraph
+  step 4 updates; and any corpus or schema documentation that assumes one
+  certificate form per routing split.
 - BOUNDS.md needs no rule changes. The counted-repetition rule of its
-  section 4.4 stays, because the over-cap fallback still produces counter
+  section 4.4 stays, because the fallback path still produces counter
   bytecode and still needs pricing.
 
 ## Step 2: the lowering
@@ -123,98 +141,176 @@ no exception. Before touching the compiler:
 One rewrite, at compilation, from counted form to star form:
 
     x+       ->  x x*
-    x{m,}    ->  x .. x x*          (m copies)
+    x{m,}    ->  x .. x x*           (m copies)
     x{m,n}   ->  x .. x (x (.. )?)?  (m copies, then n-m nested optionals)
+
+The boundary spellings are enumerated rather than implied, lazy variants
+included, and the compiler's existing special forms are kept, not
+re-derived: `x{0,0}` emits nothing, `x{1,1}` is the body alone, `x{0,1}` is
+the one-Split optional, and `x{0,}` normalizes to the native pure-star Rep
+— no mandatory copy, no separate counter entry. `x{m,m}` is m copies with
+no optional tail. Only what is left — a nonzero minimum or a finite bound
+above one — is lowering's to do.
+
+Lowering is recursive, bottom-up, and all-or-nothing. A copied body that
+itself contains a counted repetition contains a counter, and `pike_ok`
+refuses any retained counter, so lowering only the outer quantifier of
+`(?:a{2})+` buys nothing. The candidate that matters is the fully
+recursively lowered program, and fitting is necessary, never sufficient: a
+pattern is a Pike candidate when the pre-check finds no semantic blocker
+and the candidate constructs within every cap of the fit vector below, and
+`pike_ok`'s verdict on the emitted program remains the authority even then
+— a pattern can fit every cap and stay ineligible, which is what `\R`
+does. If the candidate does not construct — any part of it — the whole
+pattern compiles in counter form as today. All-or-nothing is not a semantic necessity, and the plan says so:
+one retained counter already makes the program ineligible, which makes
+partial lowering pointless for routing, and whole-program fallback keeps
+the cap accounting one decision instead of a search. The witness test:
+two independently lowerable repetitions whose combined lowered form
+overshoots a cap must compile whole in counter form — not partially
+lowered, and not PatternTooLarge.
 
 Each generated optional is one Split whose arm order follows the
 quantifier's greediness — body first when greedy, skip first when lazy — and
 the optionals nest so the k-th copy's presence is decided before the
 (k+1)-th's. That nesting direction is what makes the count preference match
-pcre2; `a{1,3}?` followed by a literal that forces backtracking is the case
-that tells a wrong nesting apart, and it belongs in the sweep. The star that
-remains is still the four Rep opcodes, which is what `pike_ok` already
-admits; the eligibility predicate is untouched — what changes is the
-programs presented to it.
+pcre2, and `a{1,3}?` followed by a literal that forces backtracking is the
+seed case that tells a wrong nesting apart — a seed, not the property. The
+prose above is a preference order, not yet a construction, so the
+implementation writes the lowering down as a recursive definition over the
+AST (or an exact bytecode construction with its patch targets), and the
+sweep generates its oracle over a defined body grammar — bodies with
+groups, alternations, inner repetitions — rather than trusting any single
+spelled-out case. The star that remains is still the four Rep opcodes,
+which is what `pike_ok` already admits; the eligibility predicate is
+untouched — what changes is the programs presented to it.
 
 The constraints that make this more than a syntax rewrite:
 
-- Capture identity. Every copy of a body emits its `Save`s against the
-  original group's slot indices — a group repeated three times is one
-  group, reported once — and the lowering allocates no new group, no new
-  slot, and leaves source-order group numbering and names exactly as the
-  parser assigned them. That is the requirement; the differential sweep is
-  a check on it, not a substitute for stating it.
+- Capture identity, and capture lifetime. Every copy of a body emits its
+  `Save`s against the original group's slot indices — a group repeated
+  three times is one group, reported once — and the lowering allocates no
+  new group, no new slot, and leaves source-order numbering and names
+  exactly as the parser assigned them. Slot identity alone is not the
+  whole contract, so the observable lifetime rules are part of the
+  specification too: a later participating copy overwrites the group's
+  previous capture; a skipped optional copy leaves the prior value
+  intact; the unselected arms of a copied alternation stay unset;
+  backtracking out of an abandoned copy restores what that copy wrote;
+  and on the Pike side the copy-on-write blocks must deliver the
+  preferred path's captures at every pc collision. The oracle cases that
+  pin this are concrete — `(?:(a)|(b)){1,2}`, `(?:(a)?){1,2}`,
+  `((a|aa)){1,3}b`, `(?<g>a?){1,3}b` — and the assertion is full ovector
+  equality with pcre2, unset slots included.
 - Empty iterations. pcre2 replicates a bounded `{m,n}` so every copy runs,
   and `(|a){1,3}` on "a" under NOTEMPTY is the case that tells replication
   from a repeating-ket break. The counter implementation already had to
   emulate replication; the lowered form is replication, which should make
   agreement easier, not harder — but that is a thing to demonstrate, not
-  assume.
-- The cap and the fallback. A lowered form that does not fit routes the
-  pattern to the backtracking VM in counter form. It must not become
-  PatternTooLarge: oversize is a documented carve-out, not a compile error.
-  So the compiler sizes the lowered program before emitting anything, and
-  the decision is per pattern — either the whole program lowers and fits,
-  or the whole program compiles in counter form as today. "Fits" has one
-  meaning: a dry-run pass prices every arena the emitter draws from, with
-  the same arithmetic the emitter then executes, and the pattern fits when
-  all of them are within their caps. That is more than code and regions:
-  a copied body that contains a repetition duplicates its Rep entry, so
-  MAX_REPS is consumed by the lowering, and MAX_REGS with it, since the
-  register file is sized as MAX_OVEC + 2 * MAX_REPS; and the walk's own
-  state is bounded by MAX_JOBS and MAX_PATCHES, either of which can bind
-  before MAX_CODE does depending on where the rewrite lives. Exactly at a
-  cap is a fit; one past any of them is the fallback; and the sweep
-  exercises both sides of that boundary. The dry run and the emitter are
-  two calculations of one number, so their equality is a checked
-  invariant rather than a shared intention: after emission the compiler
-  asserts that the counts actually emitted equal the prediction, in every
-  arena the dry run priced. Two independently maintained calculations
-  drift exactly at the cap boundary, which is exactly where the fallback
-  decision lives, and an assertion is cheaper than that bug.
+  assume, and the sweep matrix in step 3 is where it is demonstrated.
+- The fit vector, and a bounded dry run. A lowered form that does not fit
+  routes the pattern to the backtracking VM in counter form, never to
+  PatternTooLarge: oversize is a documented carve-out, not a compile
+  error. The dry run that decides it prices three distinct kinds of
+  limit, because they are not one kind:
+
+      final storage:  code length (MAX_CODE), region count (MAX_REGIONS),
+                      rep count (MAX_REPS), and the candidate's derived
+                      register count — its novec plus twice its own rep
+                      count — against MAX_REGS; the global ceiling
+                      MAX_OVEC + 2 * MAX_REPS is the type's bound, not
+                      the candidate's number
+      transient:      peak job depth (MAX_JOBS), peak patch count
+                      (MAX_PATCHES), and the walk's fuel — WALK_FUEL is
+                      8 * MAX_NODES on the strength of a bounded-revisit
+                      argument that job duplication breaks, so it is
+                      re-derived from the pre-sizing or the placement is
+                      chosen so revisits do not multiply; a candidate that
+                      fits every array and then dies of fuel exhaustion
+                      as an internal error is a bug of ours
+      unchanged:      the parser's node, group, name and class limits,
+                      which lowering happens after and never relaxes
+
+  The dry run itself must be bounded: a quantifier can name up to
+  MAX_QUANT = 65535, and a pre-sizing pass that expands or enqueues
+  candidate copies to discover the overflow has already done the damage
+  it exists to prevent. It computes with closed-form counts, detects an
+  excess before allocating or enqueuing anything, and only a candidate
+  that passed the whole vector is emitted at all. Exactly at a cap is a
+  fit; one past any cap is the fallback; the sweep exercises both sides,
+  and the boundary witnesses are generated from the dry run's own report
+  rather than guessed. One more rule keeps the fallback honest: it is
+  available only where today's counter compilation succeeds. A pattern
+  whose ordinary counter form already exceeds a limit keeps its
+  PatternTooLarge — lowering neither creates that outcome nor masks it.
+- Dry run against emitter. The two passes share their checked counting
+  primitives and their cap constants — one place for the arithmetic that
+  can overflow — and traverse independently: the dry run counts virtual
+  output and peak transient state, the emitter mutates real storage, and
+  after emission the compiler asserts the emitted vector equals the
+  predicted one, entry by entry. Shared primitives keep the numbers from
+  drifting; independent traversal is what makes the assertion mean
+  something. Two calculations of one number drift exactly at the cap
+  boundary, which is exactly where the fallback decision lives, and an
+  assertion is cheaper than that bug.
 - Lower only when it can pay. Lowering cannot make a nullable unbounded
   body eligible — `(?:a?)+` lowers to `(?:a?)(?:a?)*` and the trailing star
   still has a nullable body, which is the exact thing pc-keyed
   deduplication cannot honor — and it cannot help a pattern containing
   `\R`. An AST pre-check for either obstacle keeps such patterns in
   counter form, which is more compact and is what the section 4.4 pricing
-  rule already handles. The rule stays simple: the pre-check decides
-  whether to lower, and `pike_ok` alone decides eligibility afterward, so
-  nothing about routing is ever inferred from the lowering's own logic.
-  That safety comes at a price the census must collect on: the pre-check
-  is a second implementation of "can finish without consuming", and each
-  direction it can be wrong in costs something — a false negative leaves
-  a rescuable pattern on the backtracking path, a false positive lowers a
-  program `pike_ok` then refuses anyway. So the census provisionally
-  lowers every pattern the pre-check declined and asks `pike_ok` whether
-  it would have been admitted — a yes is a missed migration and fails the
-  census — and the migration report asserts that the lowered-but-refused
-  set is empty. The two checks hold the pre-check to `pike_hollow`'s
-  answer on the whole corpus, which is the only place the duplicated
-  judgment is allowed to live.
+  rule already handles. The `\R` half of that is deliberately coarse and
+  says so: Pike refuses `\R` because it consumes a variable number of
+  bytes, not because the opcode is inconvenient, and keeping the whole
+  pattern in counter form means the `a+` inside `a+\R` is not lowered
+  even though it could be — a whole-program routing policy, consistent
+  with all-or-nothing above, not a semantic requirement. The rule stays
+  simple: the pre-check decides whether to lower, and `pike_ok` alone
+  decides eligibility afterward, so nothing about routing is ever
+  inferred from the lowering's own logic. That safety comes at a price
+  the census must collect on, because the pre-check is a second
+  implementation of a judgment `pike_hollow` already makes — and makes at
+  the bytecode level, conservatively on assertions, so the two are held
+  together by an equivalence gate stated over the same object: for every
+  corpus pattern whose fully lowered candidate constructs within the fit
+  vector, the pre-check approves exactly when `pike_ok` approves that
+  candidate bytecode. An approval the pre-check missed is a missed
+  migration and fails the census; a lowering `pike_ok` then refused makes
+  the lowered-but-refused set nonempty and fails it too; and candidates
+  that do not construct within the caps are reported in their own
+  bucket, counted as fallback rather than as either failure.
 - The sizing invariants. MAX_CODE is 4 * MAX_NODES + 16 on the strength of
   "no AST node emits more than four instructions", and lowering breaks that
-  invariant by design. MAX_REGIONS = MAX_NODES breaks with it, since every
-  emitted copy carries its own regions. The pre-sizing pass replaces the
-  per-node invariant: the fit check against the caps is what makes the
-  arrays safe, and the invariant's comment should say so. Whether the caps
-  themselves grow is a choice to make deliberately — growing them buys more
-  patterns onto the Pike path at the price of larger worst-case programs
-  everywhere the caps size an array.
+  invariant by design; MAX_REGIONS = MAX_NODES breaks with it. The
+  pre-sizing pass replaces the per-node invariant: the fit check against
+  the caps is what makes the arrays safe, and the invariant's comment
+  should say so. Whether the caps themselves grow is a choice to make
+  deliberately — growing them buys more patterns onto the Pike path at the
+  price of larger worst-case programs everywhere the caps size an array.
 
 Where the rewrite lives — in the parser's arena before the walk, or in the
 compiler's walk emitting a child job several times — is left to whoever
-implements it, with one requirement on the region table, and "right" has a
-definition rather than a feeling: every copy of a body carries its own
-region records, nested under the correct parents, ranged over the copy's
-own instructions, in emission order, such that `cert_shape` accepts the
-tree and the analyzer prices it and the checker accepts the price. The
-shape rules of BOUNDS.md section 4 are the specification of correctness
-here, on purpose — a lowering whose bytecode is right but whose region
-tree is refused is a compiler bug, and compilation reports it as one
-rather than quietly shipping the pattern without a certificate.
+implements it, with one requirement on the region table, and "right" is
+defined per generated construct rather than by feeling. A copied leaf
+emits code and opens no region; a copied group or alternation opens the
+regions its original opened, nested under the correct parents and ranged
+over the copy's own instructions; a generated optional opens the
+one-Split region BOUNDS.md section 4.3 prices; the trailing star opens
+its repeat region; and a nested lowered repetition nests all of the
+above. The mechanical gate over the lowering corpus is: `cert_shape`
+answers CrOk, the checker accepts the analyzer's price, and no pattern
+compiles to an internal error. A lowering whose bytecode is right but
+whose region tree is refused is a compiler bug, and compilation reports
+it as one rather than quietly shipping the pattern without a certificate.
 
 ## Step 3: evidence
+
+Every numerical gate in this step is bound to a fixture, the way the
+certificate corpus already pins its bounds: pattern bytes, compile
+options, newline and BSR convention, the matchConfig asked about, the
+subject length, the artifact hash the numbers were produced against, and
+the expected statuses and values. A number in this plan's prose is a
+scale; a number in a fixture is a gate.
 
 In order, each gating the next:
 
@@ -222,82 +318,118 @@ In order, each gating the next:
   changes shape: patterns like the email one move from CfgBacktrack cubic
   certificates to CfgPike closed forms. Regenerate
   conformance/certificates.json together with a machine-checked migration
-  report — per pattern: the selected configuration before and after, the
-  certificate status, the class, the cap decision, and two reason fields
-  that are deliberately not one. The first is the lowering decision and
-  every AST-level blocker the pre-check found, all of them rather than the
+  report whose columns are orthogonal on purpose — one answer per
+  question, each naming the program and the analysis it describes, never
+  recombined:
+
+      original blockers        the pre-check's findings on the original
+                               AST: nullable unbounded body | \R, all of
+                               them
+      lowering decision        lowered | not needed (already canonical:
+                               a, a?, a*, ...) | declined (blockers) |
+                               declined (cap)
+      pike verdict             pike_ok on the emitted program, whichever
+                               form was emitted
+      backtracking analysis    accepted | ArAmbiguous | ArOverflow |
+                               ArShape — the analyzer's answer, recorded
+                               even when Pike is selected
+      selected certificate     which configuration's certificate the
+                               pattern carries, and its class
+      accessors at n           cost, stack and memory separately, each
+                               finite or refused — saturation and the
+                               ceilings are separate refusal paths
+
+  The backtracking-analysis column exists because the two analyses are
+  genuinely independent and can disagree without either being wrong:
+  `a*b*c*d*` is Pike-selected, carries an accepted Pike certificate and
+  classifies Linear, while the backtracking analyzer answers ArOverflow
+  for the same pattern — it is BOUNDS.md's own example of coefficients
+  running out. A schema with one certificate column would record that
+  pattern as a contradiction; two columns record it as what it is. The
+  blocker column records every blocker the pre-check found, not the
   first — a pattern can hold `\R` and a nullable star at once, and a
-  report that names one blocker per pattern would flap when the walk order
-  changes. The second is `pike_ok`'s verdict on the program as compiled.
-  The two describe different programs and must not be compared as if they
-  agreed: for `a+\R` the pre-check declines to lower because of `\R`, the
-  bytecode therefore keeps its counter, and `pike_ok` — a short-circuiting
-  boolean with no reason of its own — refuses that counter before it ever
-  reaches the `\R`. The blocker list must not be the report's own
-  invention, or the report becomes a rationalizer: a generator that
-  reconstructs blockers from the AST after the fact can explain an
-  incorrect compiler decision and pass its own assertions while doing so.
-  Either the compiler's pre-check exports its decision and blockers and
-  the report carries them verbatim, or the report derives them
-  independently and asserts equality with what the compiler recorded — a
-  decision the derivation cannot reproduce is a finding about the
-  compiler, never a formatting difference to smooth over. With that
-  anchored, the assertion is: every pattern that stays on the backtracking
-  matcher names at least one ineligibility reason or the cap. Matcher selection is the thing being
-  asserted here; classification has its own census below, because the two
-  are different questions. Reading the diff by hand is encouraged and is
-  not the gate.
-- The differential sweep, extended with the quantifier matrix: nullable
-  and non-nullable bodies, with and without captures, greedy and lazy, for
-  each of `{m}`, `{m,}` and `{m,n}`, crossed with NOTEMPTY,
-  NOTEMPTY_ATSTART and anchoring, each followed by a literal that forces
-  backtracking into the copies — `(|a){1,3}` under NOTEMPTY and `a{1,3}?b`
-  are the two seeds the matrix grows from. Add the cap boundary in both
-  directions, so the lowered and fallback compilations of near-identical
-  patterns are both exercised against pcre2, across matchers and across
-  backends.
+  one-blocker report would flap when the walk order changes. It is also
+  a statement about the original AST, deliberately: a lowerable `a+` has
+  a non-pure Rep before lowering and none after, so a blocker column
+  that read the emitted bytecode would say something different, and the
+  schema names which program each column reads so no one has to guess. It also must
+  not be the report's own invention, or the report becomes a
+  rationalizer that can explain an incorrect compiler decision and pass
+  its own assertions doing it: either the compiler exports its decision
+  and blockers and the report carries them verbatim, or the report
+  derives them independently and asserts equality with what the compiler
+  recorded — a decision the derivation cannot reproduce is a finding
+  about the compiler, never a formatting difference to smooth over. The
+  blocker column and `pike_ok`'s verdict describe different programs —
+  for `a+\R` the pre-check declines on the `\R`, the bytecode keeps its
+  counter, and `pike_ok` refuses that counter before ever reaching the
+  `\R` — so they are never compared to each other; the equivalence gate
+  of step 2 compares like with like instead. The assertions over the
+  report: every pattern on the backtracking matcher names at least one
+  blocker or the cap; the lowered-but-refused set is empty; and the
+  ArShape count is zero — ArShape is the two halves of BOUNDS.md
+  disagreeing, which no pattern can legitimately cause, and compilation
+  surfaces it as an internal error rather than an expected outcome.
+  Reading the diff by hand is encouraged and is not the gate.
+- The differential sweep, extended with the quantifier matrix, finitely
+  and reproducibly: bodies drawn from a defined grammar — literals,
+  classes, groups, alternations, optional and starred items, nullable and
+  not, with and without captures — crossed with greedy and lazy `{m}`,
+  `{m,}` and `{m,n}` for m and n in 0 through 3 plus the cap-adjacent
+  values the dry run's report names, crossed with NOTEMPTY,
+  NOTEMPTY_ATSTART, anchoring and nonzero start offsets, each followed by
+  a literal that forces backtracking into the copies. `(|a){1,3}` under
+  NOTEMPTY and `a{1,3}?b` are two cells of that matrix, not its extent.
+  The oracle is full result equality with pcre2 — ovector included, unset
+  slots included — and cross-matcher agreement wherever the pattern is
+  eligible, on every backend, under a recorded seed and manifest so the
+  run is the same run twice.
 - The bound assertions in fuzzing, unchanged in kind: no run may exceed its
   certificate, on either path.
 - A named regression for the motivating pattern: `(?<user>\w+)@(?<host>[\w.]+)`
-  classifies Linear, and once the implementation is frozen the test pins
-  the exact accessor answers at n = 1000, the way the certificate corpus
-  pins every other bound. Until those numbers exist, the pre-registered
-  sanity scale is the hand-lowered spelling's measurement — 201,330 cost
-  units, 0 stack entries, 12,115 bytes — and an automatic lowering that
-  lands an order of magnitude away from it owes an explanation before the
-  numbers are pinned.
-- A classification census. Over a corpus of representative wave 1 patterns,
-  count the classifier's answers before and after. Every migration to
-  Linear should be a first-row pattern from the table above. Every pattern
-  still notProvenLinear should name one of three reasons: a nullable
-  unbounded body, an over-cap quantifier, or a superlinear pattern kept on
-  the backtracking path by `\R` — `a+\R` sits at 16.3 million cost units
-  today while bare `\R` is Linear, and both facts must survive the fix.
-  ExceedsBudget gets its own column, in both flavors: no accepted
-  certificate at all (`(?:a*)*`) and a certified bound past counter
-  arithmetic at the asked length (`(?:a?)+`, whose class answers
-  notProvenLinear while every bound accessor refuses). And the gate for
-  already-Linear patterns is no classification regression plus an explicit
-  resource-tradeoff review, not Pareto improvement: migrating `a{2}` to
-  Pike form moves 63,887 cost / 3 stack / 560 memory to 25,392 / 0 / 1,585
-  — cost and stack fall, the conservative constant reservation rises — and
-  bare `\R` does not change at all. Both movements are correct; the census
-  records them rather than forbidding them.
+  classifies Linear, and once the implementation is frozen the fixture
+  pins the exact accessor answers at n = 1000. Until those numbers exist,
+  the gate is an explicit interval derived from the hand-lowered
+  measurement of 201,330 cost, 0 stack, 12,115 memory: cost below
+  1,000,000, stack exactly 0, memory below 100,000. Inside the interval,
+  proceed and pin; outside it, the lowering is wrong or the plan's
+  understanding is, and either way the discrepancy is written down before
+  the numbers move.
+- A classification census, read off the migration report's columns. Every
+  migration to Linear names `lowered` in its lowering column. Every
+  remaining notProvenLinear or ExceedsBudget names its blockers or its
+  cap decision — `a+\R` stays superlinear-certified at 16.3 million units
+  while bare `\R` stays Linear, `(?:a*)*` stays certificateless, and all
+  three facts must survive the fix. For patterns already Linear the gate
+  is exactly one thing, mechanically: the class does not regress. The
+  resource movements are recorded as an informational artifact of the
+  report, not gated, because they legitimately go both ways: `aa` — the
+  hand-lowered shape of `a{2}`, and the expected result of lowering it —
+  measures 25,392 cost / 0 stack / 1,585 memory today against counter-form
+  `a{2}` at 63,887 / 3 / 560, so cost and stack fall while the
+  conservative constant reservation rises; and bare `\R` does not move at
+  all. Both movements are correct; the report shows them; nothing
+  forbids them.
 - Regenerated Go and JavaScript backends, their suites green, and the
-  no-allocation context promise still holding under both instrumentations.
+  no-allocation context promise re-verified on lowered patterns
+  specifically — the email pattern among them — under the same two
+  instrumentations the M5 statement names: Go's allocation counter and
+  JavaScript constructor instrumentation.
 
 ## Step 4: refreeze and replay
 
-Regenerate the artifact, record the new hash in THEOREMS.md, replay the M6
-lake build against it, and update README's status paragraph to say what is
-now true: the wave 1 guarantee holds with the three named carve-outs. If any
-part of this plan is deliberately deferred instead, README says that instead
-— the one unacceptable outcome is documents that describe a mechanism the
-implementation does not have, which is the state this plan exists to end.
+Regenerate the artifact, record the new artifact and corpus hashes in
+THEOREMS.md, replay the M6 proofs against them at whatever cost the
+sequencing inventory priced, and update README's status paragraph to say
+what is now true: the wave 1 guarantee holds with the three named
+carve-outs. If any part of this plan is deliberately deferred instead,
+README says that instead — the one unacceptable outcome is documents that
+describe a mechanism the implementation does not have, which is the state
+this plan exists to end.
 
 ## Out of scope, on purpose
 
-Three refinements are adjacent and not part of this gate:
+Four refinements are adjacent and not part of this gate:
 
 - Live-versus-peak composition for the backtracking stack bound. Promising,
   but it only pays off if the undo trail gets the same treatment — the
@@ -310,6 +442,13 @@ Three refinements are adjacent and not part of this gate:
 - A mechanism for nullable-body stars on the Pike VM, and `\R` as an
   alternation. Each would remove a carve-out; neither blocks the guarantee
   being stated honestly with the carve-outs in place.
+- Partial lowering. Lowering the `a+` inside `a+\R` buys no Pike
+  eligibility while routing is whole-program — though it is not quite
+  nothing: the backtracking certificate of `aa*\R` prices marginally
+  under `a+\R`'s, 16,238,710 against 16,253,893 cost and 112,448 against
+  112,560 memory at n = 1000. A fraction of a percent is not worth a
+  second lowering mode; it becomes worth revisiting only if per-region
+  routing ever exists.
 
 None of these block the refreeze. All of them get cheaper to evaluate once
 the population of backtracking-only patterns is down to the carve-outs.

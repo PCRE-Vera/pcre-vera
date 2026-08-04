@@ -967,3 +967,33 @@ than in code:
   and answers ExceedsBudget on every accessor, class included. Two simple
   examples are evidence about simple examples; the category claim needed a
   probe over the category, and the probe took a minute.
+- Wrote that the compiler "emits counter-based Rep opcodes for every
+  quantifier" when optionals compile to one Split, x{1,1} to the body alone,
+  and pure stars are the form pike_ok accepts — the counter form is only what
+  is left. I had read the optional-items rule in BOUNDS.md 4.3 and the
+  compiler's special cases and generalized past both anyway.
+- Called the 9.13 million measurement "the measured worst case" when the log
+  it came from says "the worst subject found"; a hostile case a probe found
+  is not an established maximum. Same sentence claimed "the arithmetic is
+  exact" about a certificate whose cost and memory lines are deliberately
+  conservative upper bounds — exact as stored, not exact about the run.
+- Asserted that M6 theorems not textually mentioning bytecode "replay
+  mechanically by construction". THEOREMS.md's own inventory has R.compile
+  restating the real compiler and S-12 quantified over Pike-eligible
+  patterns, so the lowering changes what those theorems are about however
+  they are worded; the inventory has to classify by semantic dependence.
+- Presented aa's measured accessor numbers as what migrating a{2} moves to,
+  as if the automatic lowering existed; today they are the measurement of a
+  different pattern that happens to be the expected lowered shape. An
+  expectation labeled as a measurement is how a plan starts lying to itself.
+- Three exactness slips in the plan rewrite, all caught by the user's read:
+  defined Pike candidacy as "constructs within every cap" when fit is
+  necessary and not sufficient (\R fits and stays ineligible); wrote the
+  register fit check against the global ceiling MAX_OVEC + 2*MAX_REPS
+  instead of the candidate's own novec + 2*rep_count; and gave the report
+  one certificate-status column when the two analyses are independent —
+  a*b*c*d* carries an accepted Pike certificate and classifies Linear while
+  the backtracking analyzer answers ArOverflow, which one column would
+  record as a contradiction. Also wrote that partial lowering "buys
+  nothing" when it measurably shaves a backtracking certificate; the honest
+  statement is that it buys no Pike eligibility.
