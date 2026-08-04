@@ -913,3 +913,57 @@ offset, every convention crossed — plus a review aimed squarely at the parser.
   places after making it count every leaf, which includes the name of a
   compile outcome and the flag that marks an edged trial. A count is
   described by what it counts.
+
+## Assessing the email pattern's cost bound
+
+Mistakes made while answering why WorstCaseCost reports 48.9 billion for
+`(?<user>\w+)@(?<host>[\w.]+)` at length 1000, all in the assessment rather
+than in code:
+
+- Described the cost unit as instruction visits. The unit also charges byte
+  comparisons and every IR byte initialized, zeroed or copied by scratch
+  management, and it has no numeric relationship to pcre2's counters at all;
+  the section 5 cost model is DESIGN.md's, not pcre2's.
+- Reported the bound as "~48.9·(n+1)³" by dividing the evaluated value at one
+  length by (n+1)³. The certificate is the exact polynomial
+  3448 + 2898·(n+1) + 764·(n+1)² + 48·(n+1)³ — the leading coefficient is 48,
+  and 48.9 billion is the whole polynomial evaluated at 1000. A ratio at one
+  point is not a coefficient.
+- Claimed M9 memoization would improve the constants of backtracking-only
+  patterns. DESIGN.md restricts the memoized configuration to Pike-eligible
+  patterns and rejects it as BadInput elsewhere, so it offers nothing to a
+  pattern that stays on the backtracking path, and nothing extra to one that
+  becomes eligible — the default Pike path already fixes the asymptotics.
+- Framed the missing quantifier desugaring as future work the roadmap would
+  deliver. No milestone owns it: DESIGN.md 4.3 presents unrolling as how
+  counted repetitions already compile, compiler.py says it does not do that,
+  and README declares M5 done with the artifact frozen. That is a
+  design/implementation discrepancy inside a milestone claimed complete, not
+  a scheduled gap, and calling it "will be fixed later" understated it.
+- Estimated the Pike-path cost for this pattern at "tens of thousands"; the
+  eligible spelling measures 201,330 at length 1000 — low hundreds of
+  thousands.
+- Proposed sharpening the stack composition alone to fix the quadratic
+  memory reservation. WorstCaseMemory is priced from the stack and the undo
+  trail capacities together, so a live-versus-peak refinement would have to
+  cover the trail as well or the reservation stays quadratic.
+- Wrote into PLAN-POST-M6.md that all three Pike carve-outs "classify
+  notProvenLinear", repeating DESIGN.md's own error instead of checking the
+  implementation. BOUNDS.md classifies from the certified bound's shape, not
+  from matcher selection, and `a{2}` and `\R` classify Linear on the
+  backtracking path today. Having just catalogued a document's discrepancies
+  is no license to copy its sentences into a new one unverified.
+- Required, in the census gate, that already-Linear patterns "only cheapen"
+  when migrating to the Pike path, without measuring a single one. Measured,
+  `a{2}` at n=1000 goes from 63,887 cost, 3 stack, 560 memory in counter
+  form to 25,392, 0 and 1,585 in Pike shape: cost and stack fall and the
+  conservative constant reservation rises, and bare \R does not move at
+  all. Pareto improvement was an assumption dressed as an acceptance
+  criterion; the gate is no classification regression plus a recorded
+  tradeoff.
+- Wrote that "every bounded {m,n} today classifies Linear" after measuring
+  a{2} and a{2,8} and generalizing. A bounded repetition of an ambiguous
+  body — (?:a+){2}, (?:a+b){2}, (?:a+|b){2} — has no accepted certificate
+  and answers ExceedsBudget on every accessor, class included. Two simple
+  examples are evidence about simple examples; the category claim needed a
+  probe over the category, and the probe took a minute.
