@@ -55,8 +55,14 @@ SWEEP ?= --jobs 8
 sweep: setup
 	$(UV) run python -m pcrevera.sweep run $(SWEEP)
 
+# Build the library and the proofs, then replay the conformance corpora
+# through the Lean reference engine (DESIGN.md section 9, M6's R-10): the
+# committed AST bridge feeds it the parsed trees, and any disagreement in
+# outcome, ovector or usage fails the build.
 lean:
-	cd lean && lake build
+	cd lean && lake build && lake exe corpuscheck \
+	    ../conformance/corpus.json ../conformance/sweep.json \
+	    ../gen/lean/bridge.json
 
 go:
 	cd gen/go && go vet ./... && go test ./...

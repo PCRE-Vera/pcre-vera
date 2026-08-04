@@ -7,3 +7,12 @@ defaultTargets = ["Pcrevera"]
 
 [[lean_lib]]
 name = "Pcrevera"
+
+[[require]]
+name = "batteries"
+scope = "leanprover-community"
+version = "git#v4.32.2"
+
+[[lean_exe]]
+name = "corpuscheck"
+root = "CorpusCheck"

@@ -49,4 +49,31 @@ theorem counterAdd_exact {a b : Nat} (h : a + b ≤ counterMax) :
   unfold counterAdd
   simp [Nat.not_lt_of_le h]
 
+/-- Saturating counter subtraction: TIR-SPEC section 6.7's `sub`. -/
+def counterSub (a b : Nat) : Nat := a - b
+
+/-- Saturating counter multiplication, pre-checked like the addition. -/
+def counterMul (a b : Nat) : Nat :=
+  if a = 0 ∨ b = 0 then 0
+  else if a > counterMax / b then counterMax
+  else a * b
+
+theorem counterMul_le (a b : Nat) : counterMul a b ≤ counterMax := by
+  unfold counterMul
+  split
+  · exact Nat.zero_le _
+  · split
+    · exact Nat.le_refl counterMax
+    · next h =>
+      calc a * b ≤ counterMax / b * b :=
+            Nat.mul_le_mul_right b (Nat.le_of_not_lt h)
+        _ ≤ counterMax := Nat.div_mul_le_self _ _
+
+/-- The portable allocation ceiling of TIR-SPEC section 11.1: 2^31 - 1 IR
+bytes, inherited by subjects, memory limits, and array capacities. -/
+def ceiling : Nat := 2 ^ 31 - 1
+
+/-- What a register holds before anything writes it, reported as -1. -/
+def unset32 : UInt32 := 0xFFFFFFFF
+
 end Pcrevera

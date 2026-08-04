@@ -8,10 +8,12 @@ the same computation asked either to write the files or to compare them.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
 from .. import leanexport
+from ..leanexport import bridge
 from ..engine import certificate_corpus
 from ..engine.program import program
 from ..oracle import conformance
@@ -77,6 +79,16 @@ def generate() -> tuple[str, list[Output]]:
         Output(lowering.PATH, lowering.corpus_text()),
         Output(certificate_corpus.PATH, certificate_corpus.corpus_text()),
         Output(shard.PATH, shard.corpus_text()),
+        # The AST bridge is a function of the two corpora it feeds the Lean
+        # replay of, computed from the same fresh texts so that verifying it
+        # never depends on what happens to be on disk.
+        Output(
+            bridge.BRIDGE_PATH,
+            bridge.text(
+                json.loads(conformance.corpus_text()),
+                json.loads(shard.corpus_text()),
+            ),
+        ),
     ]
 
 

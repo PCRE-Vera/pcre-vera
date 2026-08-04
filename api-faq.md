@@ -39,3 +39,79 @@ default is the old permissive behavior that honours absolute paths, `..`
 components, and device entries. Saying `filter="data"` outright means the same
 policy on every supported version, which the oracle build does even though the
 tarball it unpacks is hash-pinned.
+
+## `set` is a Mathlib tactic, not core and not batteries
+
+Written `set stM := ... with hstM` out of habit; on a batteries-only
+project that is an unknown tactic. There is no drop-in replacement —
+`generalize ... at *` fights dependent occurrences — so the proofs in
+`RefineProto.lean` just spell the terms out. Same story for `conv_lhs`:
+core spells it `conv => lhs; ...`.
+
+## Structure-instance fields end at the line break
+
+`{ st with code := (x.modify i fun i => ...) }` split over two lines parses
+the continuation as a new field and dies with "unexpected token, expected
+'}'". Wrapping the whole field value in one extra pair of parentheses lets
+it span lines.
+
+## `(a.push x).size` is not defeq to `a.size + 1` on an abstract array
+
+`Array.size_push` is a theorem, not a reduction. A characterization lemma
+meant to be closed by `rfl` must spell `(a.push x).size`, not `a.size + 1`
+— the mismatch surfaced as an opaque `rfl` failure on a `compileAlt`
+unfolding.
+
+## Private defs from another file: nameable via batteries, defeq always
+
+`emit`/`patch`/`openRegion`/`closeRegion` are private to `Ref/Compile.lean`.
+Two facts made the compiler proofs possible without touching that file:
+`open private emit patch ... from Pcrevera.Ref.Compile` (batteries'
+`Batteries.Tactic.OpenPrivate`) makes the names resolvable, and even
+without it the kernel unfolds private plain defs, so `rfl` proves
+equations whose statement avoids the private names.
+
+## `omega` does not unfold plain defs
+
+`1 ≤ counterMax` fails outright: `counterMax` is an ordinary def and
+omega treats it as an opaque atom (it does handle `2 ^ 53` literals once
+they are visible). Either `unfold counterMax` first, or hand omega a
+`have hcm : counterMax = 2 ^ 53 - 1 := rfl` so the atom links up.
+
+## `by_contra` needs a batteries import
+
+On modules that only import project files (which bottom out in core),
+`by_contra` is an unknown tactic. `rcases Nat.lt_or_ge ... with h | h`
+plus `exfalso` covers the arithmetic uses without pulling anything in.
+
+## `split at h` refuses ifs hidden under `let`/`have` redexes
+
+An unfolded definition whose body began with `let` shows up as
+non-dependent `have` binders, and `split at h` reports "could not split"
+even though the if is right there. `simp only [] at h` beta-reduces the
+redexes first and costs nothing else.
+
+## Unifying a pair pattern against a pair-valued call goes badly
+
+`(?seen, ?pending) =?= markSeen ...` makes the elaborator whnf the call,
+which strands the goal on a stuck `Decidable.rec` and half-assigned
+metavariables. Restate the helper over one variable of the product type
+(`∀ mp : Array Bool × List Nat, ...` applied via `mp.1`/`mp.2` and
+structure eta) and unification stays first-order.
+
+## `split` cannot break an ite under a `let` from a WF equation
+
+Rewriting `btFail` with its equation lemma leaves the body's `let`s in
+place, and `split at h` refuses an `ite` whose condition mentions a
+let-bound variable. The workaround that held up: state a private
+equation whose right-hand side is the body with every let inlined by
+hand (records composed, the pair destructuring gone through structure
+eta) and prove it by `rw [f, dif_neg h]` — the trailing `rfl` check
+closes it by zeta/iota, and the ite is then split-able.
+
+## `cases h` on `some a = some x` substitutes and consumes `h`
+
+In a `cases a <;> simp only [f] at h <;> try cases h` pipeline the
+surviving hypotheses `h : some A = some x` are *eaten* by `cases h` —
+it unifies `x := A` and removes `h`. A following `subst h` then fails
+with "unknown identifier". Either drop the subst or don't `cases h`.
