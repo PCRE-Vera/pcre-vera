@@ -401,3 +401,203 @@ branch hypothesis with `rename_i` and unfold the constant there too, or use
 forces the middle term to whatever makes the `rfl`s typecheck, and `h` is
 then rejected. Introduce the middle term with a `have` carrying its full
 type, then compose.
+
+## `Array.set!` out of range, and `rw` under a structure instance
+
+Two Lean traps that look like one. A structure instance written `{ st with a
+:= x, b := y }` is column sensitive: the fields have to line up under the
+first one, so `{ st with a := x,` followed by a less-indented `b := y` stops
+the parser at the comma and reports `unexpected identifier; expected '}'` at
+the end of the previous line. Putting `{ st with` on its own line and the
+fields under it is the form that never surprises.
+
+The second is that `rw` sees the term, not its value. `{ st with stk := p
+}.seen` is definitionally `st.seen`, but a `rw [h]` whose left-hand side is
+`st.seen` will not find it, and neither will `omega` identify the two. `dsimp
+only` reduces the projection; for `parkList`, `buildLive` and other plain
+definitions applied to the instance it does not, and the way out is to
+quantify over the state and carry the field equations as hypotheses.
+
+## `injection … with h; subst h` can leave no goal for the next tactic
+
+Closing `Except.error a = Except.error b → P b` by `injection he with he;
+subst he; exact hb` fails with "no goals to be solved": on this shape the
+substitution already discharges the goal, so the `exact` has nothing to do.
+`simp only [Except.error.injEq] at he; subst he; exact hb` is the form that
+behaves the same whichever way the injection lands.
+
+## `decide` needs a closed proposition, projections and all
+
+`(⟨Outcome.noMatch, ovec, usage⟩ : RunResult).outcome ≠ .resourceExceeded` is
+decidable, and `decide` still refuses it with "Expected type must not contain
+free variables" as soon as `ovec` or `usage` mentions a local — the whole
+statement has to evaluate, not just the part that decides the answer. `simp`
+does the right thing, because it reduces the projection to a constructor first
+and then closes the disequality by `noConfusion`. The same applies to any goal
+whose head is a decidable relation over a record built from run-time data.
+
+## `Nat.strong_induction_on` and `List.Forall₂.length_eq` are not there
+
+Strong induction over a `Nat` is `induction n using Nat.strongRecOn`, whose
+single case takes `| _ n ih`; `Nat.strong_induction_on` is Mathlib's spelling
+and this toolchain does not have it. `List.Forall₂` likewise carries no
+`length_eq` — the two-line induction over the relation is the way.
+
+## `rw` finishes a goal only up to reducible unfolding
+
+After `rw [h]` leaves `stkOf a.pop = [] ++ stkOf a.pop`, the `rfl` that `rw`
+tries does not close it: `List.append` on a literal `[]` is not a reducible
+unfolding, so the two sides stay distinct at that transparency. The goal comes
+back as "unsolved goals" with both sides looking identical on screen. A bare
+`rfl` or a `simp` after the `rw` is what finishes it, and the same holds for
+`{ st with … }.field` against `st.field`.
+
+## `tauto` is not in this toolchain
+
+Batteries brings `omega`, `simp_all`, `open private` and the rest of what
+this development leans on, but not `tauto` — that one is Mathlib's. The
+failure is a flat `unknown tactic` at the column of the name, with nothing
+to suggest that a tactic by that name exists anywhere, so it reads like a
+syntax error rather than like a missing import. For a fan of small
+propositional goals coming out of one `<;>`, the form that works is
+`first | exact … | exact … | (rcases … )`, one alternative per shape the
+fan produces.
+
+## `List.map_append` takes no explicit arguments
+
+`List.map_append : map f (l₁ ++ l₂) = map f l₁ ++ map f l₂`, with all three
+implicit. `List.map_append _ _ _` fails with "function expected", and the
+message shows the statement rather than the arity, so it reads like a
+mismatch in the goal.
+
+## `Array.set!` is `setIfInBounds`, and writing a slot back is not a lemma
+
+`Array.set! xs i v` unfolds to `xs.setIfInBounds i v`, so an index past the
+end is a silent no-op rather than a panic — which is what makes
+`(a.set! i v).set! i a[i]! = a` true unconditionally, including out of range,
+where both writes do nothing and `a[i]!` is the default. Core does not have
+that lemma. In range it comes from `Array.setIfInBounds_setIfInBounds` plus
+`a.setIfInBounds i a[i] = a`, which itself wants `setIfInBounds_def`,
+`dif_pos` and `getElem!_pos`; out of range it is
+`Array.setIfInBounds_eq_of_size_le`. `exact?` finds neither half.
+
+## `omega` does not beta-reduce
+
+Instantiating a lemma stated over `W : Nat → Nat` at `fun pc _ _ => W pc`
+leaves goals mentioning `(fun pc x x_1 => R pc) q regs pos`, and omega treats
+that as an atom unrelated to `R q` — the counterexample it prints names both,
+which is the tell. `simpa using h` beta-reduces and closes it; `omega` alone
+never will, however trivial the arithmetic looks.
+
+## `rw` with a lemma whose implicit arguments are still open picks the first match
+
+`rw [replayTrail_id (by omega)]` on a goal whose left-hand side is
+`replayTrail (replayTrail t r m).1 (replayTrail t r m).2 m'` unifies the
+lemma's own `t`, `r` and `m` against the *outer* call, because `by omega`
+proves whatever hypothesis it is handed and pins nothing. The rewrite then
+succeeds and leaves a goal that looks like it should have closed. Naming the
+arguments — `replayTrail_id (t := t) (r := r) (m := m) (by omega)` — is what
+aims it, and is worth doing whenever the same function appears nested inside
+itself.
+
+## `subst` eliminates the right-hand side first
+
+`subst h` with `h : a = b` and both sides local variables removes `b`, not
+`a`. So `have htp : tp = pos := …; subst htp` keeps `tp` and deletes `pos`,
+which is exactly backwards when `tp` is the freshly destructured field and
+`pos` is the name the rest of the proof uses. Nothing complains at the
+`subst`; the failure surfaces much later as "unknown identifier `pos`".
+Write the equation the way round you want the substitution to go.
+
+## `cases` on an inductive family whose indices are applications
+
+An `inductive R : Eff → Eff → Prop` used as `R (eff … u) (eff … v)` cannot be
+taken apart by `cases`: dependent elimination has to abstract both indices out
+of the goal, and a function application is not a variable it can generalize.
+The message is "Dependent elimination failed: Failed to solve equation",
+printed with the whole unfolded `match` in it, which reads like a unifier
+problem rather than a shape problem. Defining the relation as a `def` by match
+on the pair and reading it off with per-constructor lemmas — each of which
+`revert`s the goal and `cases` the one concrete side — has none of that
+trouble, and the mismatched pairs collapse to `False` definitionally.
+
+## `le_trans` is not in core
+
+Core and Batteries give `Nat.le_trans`; the unqualified `le_trans` belongs to
+mathlib's order hierarchy. The error is a plain "unknown identifier", which in
+a file that already uses `Nat.le_refl` and `omega` freely is easy to read as a
+typo rather than as a missing dependency.
+
+## A structurally recursive definition's base case is not `rfl`
+
+`run … 0 pc pos u stk = run … 0 pc pos v stk'` looks like `none = none`, but
+`rfl` fails: the compiled recursor matches on the whole argument tuple, so the
+two sides are not definitionally equal until the equation lemma fires.
+`simp only [run]` closes it.
+
+## `intro -` is not a pattern; `rw [Nat.mul_add]` picks the first product
+
+Two small ones from the same proof. `intro -` parses as far as the `intro`
+and then reports `unexpected token '-'; expected command` on the *next* line,
+which reads like a syntax error in whatever follows. The anonymous binder
+`intro _` is what discards a hypothesis.
+
+And `rw [Nat.mul_add] at h` on `a * (b + c) ≤ d * (b + c)` rewrites the
+left-hand side, because that is the first match. The rewrite succeeds, the
+hypothesis stops lining up with the one it was meant to chain against, and
+omega then reports a counterexample over atoms that look like they should
+cancel. Spelling the arguments — `rw [Nat.mul_add d b c] at h` — is what aims
+it.
+
+## `simp only [f]` on a definition that destructures a well-founded call
+
+`scan_repeat`'s body binds `let (verdict, acc, over) := scan_span …`, which
+elaborates to a match on the call. `simp only [scanRepeat] at h` then sends
+simp into `whnf` on `scanSpan`, a well-founded recursion, and it does not come
+back: the failure is a deterministic timeout at `whnf` rather than anything
+naming the function that caused it. `rw` with the equation lemma is fine —
+it does not reduce the body — but it leaves the inner ifs under `let`
+redexes, so the way through is the hand-inlined equation lemma this file
+already uses for `charge_call` and `charge_grow`, with the pair destructuring
+gone through by hand.
+
+## `split at h` on a large unfolded body exceeds simp's step limit
+
+The same hypothesis after `dsimp only at h` has every `let` zeta-expanded, and
+the next `split at h` reports "simp failed: maximum number of steps exceeded"
+— at the `split`, with no mention of the size of the term. Resolving the ifs
+by `by_cases` plus `rw [if_pos …]` / `rw [if_neg …]` costs one line each and
+does not walk the whole term.
+
+## `split` on a `let (a, b, c) := e` is a projection, not a destructuring
+
+`let (st, mh, ended) := f x; body` elaborates to projections — `(f x).fst`,
+`(f x).snd.snd` — rather than to a match that `split` can take apart, so a
+predicate stated about the triple never reduces. Stating the predicate over
+the triple and reading it off with a lemma that destructures the *variable*
+(`obtain ⟨st, mh, e⟩ := tr; cases e`) is what makes it usable; `split` then
+only has to handle the `match` on the third projection.
+
+## `rfl` on a hand-inlined equation lemma, and what closes it instead
+
+Once `rw` has resolved the guards, an equation lemma's two sides are the same
+body written two ways and `rfl` looks like the closer. On a body the size of
+`scan_repeat`'s counted arm it is not: the elaborator reports a deterministic
+timeout at `whnf`, and a second one at `isDefEq` on the whole theorem, with
+nothing in either message naming the subterm that cost the time.
+
+`dsimp only [f, g]`, naming the definitions the right-hand side introduced,
+closes the same goal in milliseconds. It rewrites with their equation lemmas
+rather than reducing, so it never asks what the calls inside the body evaluate
+to. The rule of thumb for this file: resolve the guards with `rw`, generalize
+any well-founded call with `rcases`, and finish with `dsimp only` and the
+names — never with `rfl`.
+
+## `rcases h : e with ⟨a, b⟩` generalizes the goal, not the hypotheses
+
+The equation `h` is there so the *other* occurrences can be rewritten, and the
+goal is not one of them: `rcases` has already replaced `e` there. Following it
+with `rw [h]` therefore reports "did not find an occurrence of the pattern",
+naming a pattern that is plainly still visible in the sources. `rw [h] at hyp`
+is the right form, and when the thing being taken apart drives the goal there
+is nothing to rewrite at all.

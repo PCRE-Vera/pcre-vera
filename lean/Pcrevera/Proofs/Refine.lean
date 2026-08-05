@@ -4652,22 +4652,20 @@ theorem attemptThreads_eq {p : Pat} {s : ByteArray} {mo : MOpts}
   rw [Spec.attemptThreads, h]
   rfl
 
-/-- S-8, per attempt: on a well-formed pattern a completed `btStep`
-attempt answers exactly what `Spec.attemptThreads` filters out of the
-search — found on its head thread with the ovector slots written, or
-no-match when no thread survives. Resource questions never enter:
-`verdict … = some r` is precisely "the attempt completed". -/
-theorem attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
-    {lim : Limits} {start attempt fuel F : Nat} {st : BtSt} {r : Out}
-    {ts : List Spec.Thread}
+/-- S-8, per attempt, read at the mirror: a search that completes from the
+program's first cell on a blank register file answers exactly what
+`Spec.attemptThreads` filters out of the specification's own search. The
+metered matcher reaches this through `btStep_mirror`; the lockstep one
+reaches it through its thread lists, which is why the statement is about
+`Runs` rather than about either engine. -/
+theorem runs_attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
+    {start attempt F : Nat} {r : Out} {ts : List Spec.Thread}
     (hc : Covered p.root) (hcaps : CapsBelow (2 * (p.ncap + 1)) p.root)
-    (hs : s.size ≤ ceiling) (hbt : st.bt = #[])
-    (hregs : st.regs = Array.replicate (compile p).nregs unset32)
-    (hatt : attempt ≤ s.size) (hF : F < none32)
+    (hs : s.size ≤ ceiling) (hatt : attempt ≤ s.size) (hF : F < none32)
     (hden : denot F (mctx (compile p) s mo) (2 * (p.ncap + 1)) 0 p.root attempt
       (Array.replicate (compile p).nregs unset32) = some ts)
-    (h : verdict (btStep (compile p) s mo lim start attempt fuel 0 attempt
-      st) = some r) :
+    (hruns : Runs (compile p) s mo start attempt 0 attempt
+      (Array.replicate (compile p).nregs unset32) [] r) :
     ∃ tsO, Spec.attemptThreads F p s mo start attempt = some tsO ∧
       OutAgrees (2 * (p.ncap + 1)) attempt r tsO := by
   obtain ⟨hfrag, hrsz, hopen, hanch⟩ := compile_shape hc
@@ -4678,19 +4676,6 @@ theorem attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
     rw [hrsz]
     show (p.ncap + 1) * 2 + repCount p.root * 2 = _
     omega
-  have hsync : Sync st (Array.replicate (compile p).nregs unset32) [] := by
-    refine ⟨hregs, ?_, ?_, ?_⟩
-    · rw [hbt]
-      rfl
-    · intro e he
-      rw [hbt] at he
-      simp at he
-    · rw [hbt]
-      simp
-  have hruns : Runs (compile p) s mo start attempt 0 attempt
-      (Array.replicate (compile p).nregs unset32) [] r :=
-    ⟨fuel, btStep_mirror fuel 0 attempt st
-      (Array.replicate (compile p).nregs unset32) [] hsync r h⟩
   have hres := (frag_runs hs hfrag F attempt
     (Array.replicate (compile p).nregs unset32) ts (by rw [hnovec]; exact hden)
     hatt hF (by rw [hnovec]; exact hcaps)
@@ -4721,7 +4706,36 @@ theorem attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
   rw [hr]
   exact outAgrees_of_forall₂ hfil
 
-
+/-- S-8, per attempt: on a well-formed pattern a completed `btStep`
+attempt answers exactly what `Spec.attemptThreads` filters out of the
+search — found on its head thread with the ovector slots written, or
+no-match when no thread survives. Resource questions never enter:
+`verdict … = some r` is precisely "the attempt completed". -/
+theorem attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
+    {lim : Limits} {start attempt fuel F : Nat} {st : BtSt} {r : Out}
+    {ts : List Spec.Thread}
+    (hc : Covered p.root) (hcaps : CapsBelow (2 * (p.ncap + 1)) p.root)
+    (hs : s.size ≤ ceiling) (hbt : st.bt = #[])
+    (hregs : st.regs = Array.replicate (compile p).nregs unset32)
+    (hatt : attempt ≤ s.size) (hF : F < none32)
+    (hden : denot F (mctx (compile p) s mo) (2 * (p.ncap + 1)) 0 p.root attempt
+      (Array.replicate (compile p).nregs unset32) = some ts)
+    (h : verdict (btStep (compile p) s mo lim start attempt fuel 0 attempt
+      st) = some r) :
+    ∃ tsO, Spec.attemptThreads F p s mo start attempt = some tsO ∧
+      OutAgrees (2 * (p.ncap + 1)) attempt r tsO := by
+  have hsync : Sync st (Array.replicate (compile p).nregs unset32) [] := by
+    refine ⟨hregs, ?_, ?_, ?_⟩
+    · rw [hbt]
+      rfl
+    · intro e he
+      rw [hbt] at he
+      simp at he
+    · rw [hbt]
+      simp
+  exact runs_attempt_refines hc hcaps hs hatt hF hden
+    ⟨fuel, btStep_mirror fuel 0 attempt st
+      (Array.replicate (compile p).nregs unset32) [] hsync r h⟩
 
 /-- A concatenation is covered as soon as each of its children is:
 `catCons` peels one child at a time, down to the empty concatenation. -/

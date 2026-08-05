@@ -29,5 +29,7 @@ import Pcrevera.Proofs.ExecRefine
 import Pcrevera.Proofs.PikeBounds
 import Pcrevera.Proofs.BtBounds
 import Pcrevera.Proofs.ExecBacktrack
+import Pcrevera.Proofs.ExecPike
 import Pcrevera.Proofs.WfDecide
 import Pcrevera.Proofs.PikeRefine
+import Pcrevera.Proofs.ReWfCompile

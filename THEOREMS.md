@@ -218,16 +218,23 @@ below depends on nothing beyond Lean's own three axioms.
     | S-5  | proved                 | Ref/Exec.lean, Config and Exec       |
     | S-6  | proved                 | Ref/Exec.lean, createCtx             |
     | S-7  | proved                 | Proofs/BadInput.lean                 |
-    | S-8  | proved for the         | Proofs/Refine.lean,                  |
-    |      | backtracking           | btRun_refines_matches; the Exec      |
-    |      | configuration          | wrapper in Proofs/ExecBacktrack.lean |
+    | S-8  | proved for both        | Proofs/Refine.lean,                  |
+    |      | matchers               | btRun_refines_matches;               |
+    |      |                        | Proofs/PikeRefine.lean,              |
+    |      |                        | pikeRun_refines_matches; the Exec    |
+    |      |                        | wrappers in Proofs/ExecBacktrack.lean|
+    |      |                        | and Proofs/ExecPike.lean             |
     | S-9  | proved                 | Proofs/Monotone.lean, exec_monotone  |
-    | S-10 | proved for one class   | Proofs/BtBounds.lean,                |
-    |      | of programs            | btRun_inBudget_nest                  |
+    | S-10 | proved for the         | Proofs/BtBounds.lean,                |
+    |      | backtracking half on   | btRun_inBudget_forward;              |
+    |      | one class of programs; | Proofs/PikeBounds.lean,              |
+    |      | proved for the Pike    | pikeRun_inBudget                     |
+    |      | half                   |                                      |
     | S-11 | proved from the        | Proofs/CtxSufficient.lean            |
     |      | plain-call premise     |                                      |
-    | S-12 | proved as the          | Proofs/ExecRefine.lean,              |
-    |      | corollary it is        | matchers_agree                       |
+    | S-12 | proved; both S-8       | Proofs/ExecRefine.lean,              |
+    |      | premises now           | matchers_agree; Proofs/ExecPike.lean,|
+    |      | discharged             | matchers_agree_wf                    |
     +------+------------------------+--------------------------------------+
 
     +------+------------------------+--------------------------------------+
@@ -237,47 +244,97 @@ below depends on nothing beyond Lean's own three axioms.
     | R-4  | proved                 | Ref/Exec.lean                        |
     | R-5  | proved                 | Proofs/BtTermination.lean,           |
     |      |                        | Proofs/PikeTermination.lean          |
-    | R-6  | proved for one class   | Proofs/BtBounds.lean, cost;          |
-    | R-7  | proved                 | Proofs/PikeBounds.lean, stack        |
-    | R-8  | proved for one class   | Proofs/BtBounds.lean, memory         |
-    | R-9  | proved                 | Proofs/CtxReserve.lean and           |
-    |      |                        | Proofs/BtBounds.lean                 |
+    | R-6  | proved for one class   | Proofs/BtBounds.lean,                |
+    |      | backtracking; proved   | btRun_cost_le_forward;               |
+    |      | for the Pike half      | Proofs/PikeBounds.lean,              |
+    |      |                        | pikeRun_cost_le_check                |
+    | R-7  | proved                 | Proofs/PikeBounds.lean,              |
+    |      |                        | pikeRun_stack_le;                    |
+    |      |                        | Proofs/BtBounds.lean,                |
+    |      |                        | btRun_stack_le_forward               |
+    | R-8  | proved for one class   | Proofs/BtBounds.lean,                |
+    |      | backtracking; proved   | btRun_mem_le_forward;                |
+    |      | for the Pike half      | Proofs/PikeBounds.lean,              |
+    |      |                        | pikeRun_mem_le_check                 |
+    | R-9  | creation proved; the   | Proofs/CtxReserve.lean,              |
+    |      | no-allocation half     | ctx_resident_eq_reservation;         |
+    |      | for one class          | Proofs/BtBounds.lean,                |
+    |      |                        | btRun_no_growth_forward              |
     | R-10 | proved by running      | lean/CorpusCheck.lean                |
     +------+------------------------+--------------------------------------+
 
-Four of those entries are narrower than the inventory reads, and the
-narrowing is the point of writing this section at all.
+Five of those entries carry a qualifier the inventory does not — S-10,
+S-11, R-6, R-8 and R-9 — and the narrowing is the point of writing this
+section at all.
 
-S-8 is proved for the backtracking configuration over every wave 1 construct
-— literals, classes, the dot, `\R`, every anchor, groups, alternation and
-every quantifier — and for every start offset and combination of match
-options. The Pike configuration's half is not finished: the eligibility
-consequences, the acyclicity of its non-consuming transitions, the
-unreachability of the empty-match rule on eligible programs, and the
-BadInput clause are proved (`Proofs/PikeRefine.lean`), and what remains is
-the lockstep bookkeeping that relates a built thread list to the
-enumeration it deduplicates. S-12 is proved as the corollary DESIGN.md
-section 6 says it is — two runs refining the same specification and both
-completing answer the same thing — so it becomes unconditional the moment
-the Pike half lands, and until then it is a theorem whose second premise is
-supplied by the corpora rather than by a proof.
+S-8 is proved for both matchers, at every start offset and under every
+combination of match options. The backtracking half covers every wave 1
+construct — literals, classes, the dot, `\R`, every anchor, groups,
+alternation and every quantifier. The lockstep half is stated over the same
+patterns but carries one side condition the other does not: the program is
+eligible. That is the hypothesis `(compile p).pike = true`, and it is a real
+restriction rather than a formality — `pike_ok` refuses `\R`, every bounded
+quantifier, and any star whose body can finish an iteration without
+consuming. It sits in the statement rather than in the conclusion because an
+ineligible program is one the matcher declines at the door, for a reason the
+specification has no opinion about. The argument is four layers deep — the
+epsilon closure against the backtracking mirror, one position's thread list
+against the merge of the attempts still running, one position's seed, and
+the position loop against `Spec.scan` — and the middle layers are where the
+lockstep matcher earns what it does differently: a built list is several
+attempts side by side in leftmost order, and its visited set deduplicates
+across them.
 
-R-6, R-8 and S-10 are proved outright for programs whose region tree is
-groups inside groups at any depth, which is every pattern with capturing and
-non-capturing groups and no alternation or repetition. For the rest they are
-proved conditional on one hypothesis, `AttemptsWithin`, which is BOUNDS.md
-section 4's composition read against the VM's own pushes. Everything around
-it is done: the section 5 whole-call arithmetic, the growth schedule, the
-checker's tree facts, the per-region dominance, and the charge sites priced
-against a claim. What is missing is a run-side account of a fork — that a
-fork's second arm is entered at most once per entry into its region, which
-is what `outs` prices. The Pike configuration's cost and memory bounds are
-at the same stage: the closed form, the checker transfer, the enforcement
-invariant, the list dedup and the pool ownership are proved, and the
-per-position accounting that joins them is not.
+S-12 is proved as the corollary DESIGN.md section 6 says it is — two runs
+refining the same specification and both completing answer the same thing.
+Both of its refinement premises are now discharged rather than assumed:
+`matchers_agree_wf` asks only for the pattern conditions the two halves of
+S-8 already ask for, plus the premise that was always inherent, that neither
+run blew its budget. Those pattern conditions are the ones listed at the end
+of this section — `Wf`, the subject cap, the counter-wrap bound — and, for
+the lockstep side, eligibility.
 
-One thing found while proving R-6 is worth recording, because it is about
-the engine rather than about the Lean. `cert_shape` never asks whether a
+The backtracking half of R-6, R-7, R-8, R-9's no-allocation clause and S-10
+is proved outright for every pattern whose constructs are groups,
+alternations and optional items — BOUNDS.md sections 4.1, 4.2 and 4.3 — at
+any nesting depth. Counted repetitions, section 4.4, are open, and for them
+the family is proved conditional on one hypothesis, `AttemptsWithin`, which
+is that section's composition read against the VM's own pushes. The reason
+4.4 is a step rather than another case is written down at the end of
+`Proofs/BtBounds.lean`: the pricing that carries the other three is a
+function of the program point, and a counted repetition's tail jumps
+backwards, so the pricing has to gain a counter index and the stack's
+weights stop being pointwise. Everything else that half needs is done —
+the section 5 whole-call arithmetic, the growth schedule, the checker's
+tree facts and per-region dominance, the fork account, the charge
+sites priced against a claim, and both ends of 4.4 itself: the run side
+takes the four repetition opcodes as they come, and `scanRepeat_counted`
+reads the checker's counted arm back to that section's four equations. What
+is between them is the pricing, and `repRegion_dom` is the statement it has
+to satisfy.
+
+The Pike configuration is further along, because its accounting is a
+closed form rather than a composition: R-6, R-7, R-8 and S-10 hold there
+against any certificate the checker accepted, on every program the checker
+admits and at every start offset — no class restriction and nothing like
+`AttemptsWithin`. S-10's half reads the same per-position account over the
+charges a run *attempts* rather than the ones it completes, since a refusal
+on this path is exactly a pre-charge test failing; `pikeRun_inBudget` is
+the statement, and it asks for the cost and memory limits only, the stack
+limit having nothing to refuse. What that half reads the program through is
+`ReWf`, four clauses — a non-empty program whose jump and fork targets are
+in range, and sizes inside the declared maxima — and
+`Proofs/ReWfCompile.lean` now derives all four from `Ref.compile`. The
+first two hold of the compiled form of every covered tree. The other two
+cannot: `Ref.compile` has no size guard, faithfully, since the engine's
+codegen refusals are unreachable for parser output, so the maxima are
+properties of the pattern and travel as `PatFits` — the parser's own
+MAX_NODES and MAX_GROUPS, restated over the tree. `compile_reWf` is the
+theorem, and the four bounds are restated over `Ref.compile p` beneath it.
+
+Two things found while proving R-6 are worth recording, because they are
+about the engine rather than about the Lean. The first: `cert_shape` never
+asks whether a
 program contains an `Accept`, and a straight-line region of tests without
 one walks off the end of its own code. The two layers part company there:
 TIR's checked indexing traps (TIR-SPEC.md T-01) while the Lean reference
@@ -287,6 +344,16 @@ trailing `Accept` — and the bound theorems carry its existence as an
 explicit hypothesis rather than assume it away. Whether the checker should
 refuse a program without an `Accept` is a BOUNDS.md question, and moving it
 would move the frozen artifact, so it is written down here instead.
+
+The second is the same shape. `cert_shape` pins a counted repetition's four
+opcodes and its three offsets, but it leaves a `Save`'s slot free — and a
+program whose `Save` named a counter register would move that counter with
+no `RepZero` or `RepNext` to account for it, which breaks both the pass
+count of BOUNDS.md section 4.4 and the measure the proof of that section
+descends on. The rule that settles it is that a `Save`'s slot sits below
+`novec`, which the compiler guarantees, since it emits one only for a
+numbered group. Like the `Accept`, it is a rule the checker could have and
+has not, and it is written down rather than added, for the same reason.
 
 The refinement theorems quantify over patterns satisfying `Wf`, which names
 the three shapes a parse never emits: an alternation with no branches, a

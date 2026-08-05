@@ -1326,3 +1326,301 @@ to take it.
 - Kept copy-pasting `dsimp only;` from the `Within` proof into the budget
   and steady proofs, where the state was already a variable and there was
   nothing to reduce. "dsimp made no progress" is an error, not a warning.
+
+## Closing the per-position account (PikeBounds round nine)
+
+- Wrote the arms of `stepThreads_spent` before the `simp only [stepThreads]`
+  and the split on its charge test, so the dispatch below was working on the
+  unreduced call and every `split` failed with "could not split". The error
+  points at the split, not at the missing unfold, and the goal it prints is
+  the one from before the `have` block — which is the tell.
+- Assumed `cases hop : e <;> simp only [hop]` was doing the rewriting. It is
+  mostly doing iota reduction, and which of the two is needed differs per
+  opcode: `first | dsimp only | simp only [hop] | skip` covers both and
+  leaves the unused-simp-arg linter quiet.
+- Passed `_` for a universally quantified state and let the elaborator pick
+  it from the first hypothesis that mentioned it, twice more. When the
+  hypothesis is `stA.stk.size ≤ st.stk.size` the wrong state satisfies it.
+- Let two hypotheses about the same state disagree on whether a structure
+  instance had been zeta-reduced: `Charged … (let __src := {}; {…}) …` and
+  `Charged … {…} …` are the same proposition and different omega atoms. The
+  fix that always works is to quantify the state, prove the step about the
+  bound variable, and let `refine` unify it with whatever the goal holds.
+- Reached for `simp only [Nat.max_le]` on `x ≤ max a b`. That lemma is about
+  `max a b ≤ c`; omega handles `max` on either side without help.
+- Unfolded `addMeasure` in one hypothesis and left it folded in the other,
+  again, this time inside a `have` that only needed the folded form. The
+  entry from round seven of BtBounds says exactly this.
+
+## The attempt reading (PikeBounds round ten)
+
+- Estimated the round as "mostly mechanical" and sized only the new
+  mathematics. The mathematics was one lemma; the threading is four large
+  inductions and was the whole cost. The honest reading of "mechanical" is
+  "no new ideas", not "small".
+- Wrote a structure instance across lines with commas for the third time in
+  two rounds. The entry from the previous round says exactly this. Putting
+  `{ st with` on its own line is not a style preference, it is the only
+  layout that parses when the fields wrap.
+- Passed `hrooms.stk` to `chargeGrow_refused` out of habit, having just
+  written the lemma without that hypothesis — the capacity bound follows from
+  `oldcap ≤ len < claim` alone. The error surfaces as `rcases failed: not an
+  inductive datatype` two lines later, because the misplaced argument shifts
+  everything after it.
+
+## The closure invariant (PikeRefine, block-stability round)
+
+- Wrote down "a marked pc stands for a segment of the parked prefix" as the
+  closure invariant twice, in two rounds of prose, before working out that it
+  is not inductive. Marking pushes the expansion onto the worklist; it
+  reaches the parked list only as the stack above a later duplicate drains.
+  The invariant has to be about the stack's shape — a complete segment above
+  every marked entry — and that is where the acyclicity is actually spent.
+  Prose that names an invariant is cheap; checking that it survives the step
+  that establishes it is the part worth doing first.
+
+## The threading (PikeBounds round eleven)
+
+- Picked the shape of the loop's refusal conjunct before doing the run-level
+  arithmetic it has to survive. A plain `Blown` at the price of the positions
+  covered is provable everywhere and is short by one `closureLeftFull` at the
+  cash-out whenever the scan starts at offset zero, which is the ordinary
+  case. The tight form needs to know that the last position's step marks
+  nothing, and that cost a whole extra reading (`BlownFlat`) and a second
+  induction (`stepThreads_last`). Deriving the final inequality first would
+  have found it in ten minutes rather than in the middle of the fourth
+  induction.
+- Assumed the fuel premise the previous round identified was the only one.
+  `pike_loop`'s step count is a variant too, and its base case answers
+  `exceeded` outright, so the refusal conjunct is false there without
+  `s.size + 1 - pos < steps`. The tell is that the base case of the first
+  reading was provable and the base case of the second one was not.
+- Reached for `Rooms.zero rfl rfl rfl rfl rfl rfl` to get `Rooms re st` for a
+  state that had inherited its capacities from another. `Rooms.zero` wants
+  every capacity to be zero; the anonymous constructor over the six
+  projections of the state's own `Rooms` is what carries them across.
+- Wrote `exact by decide` for `⟨Outcome.noMatch, …⟩.outcome ≠
+  .resourceExceeded`. It works while the record is closed and fails the
+  moment the record mentions a local — see api-faq.md.
+
+## The closure correspondence (PikeRefine, induction round)
+
+- Typed a Cyrillic `e` into an identifier and spent two builds on "expected
+  token" pointing at a column in the middle of what reads as an ordinary name.
+  The message is right and the eye is wrong: "expected token" inside a plain
+  identifier is what a homoglyph looks like.
+- Wrote a structure field `∀ q, st.seen[q]! = true → …` without annotating
+  `q : Nat`. The index type stays a metavariable, `GetElem?` gets stuck, the
+  whole structure fails to elaborate, and every later use then reports
+  "unknown identifier" for it. The real error is the first one in the list,
+  not the twenty that follow.
+- Ran a search-and-replace of `th.pc` across a proof to follow a `subst`, and
+  it also hit the line *before* the `subst`, which still needed `th`. Renaming
+  across a `subst` boundary is not mechanical.
+- Called a lemma whose implicit `start` and `attempt` occur only in its
+  conclusion from inside an `obtain`, where there is no expected type to pin
+  them. The failure is two stray `⊢ Nat` goals reported at the enclosing
+  bullet, nowhere near the call. Name them.
+- Assumed `<;> [tac₁; tac₂]` was available for taking a `split`'s two branches
+  apart. It is not in this toolchain; write the bullets out, even at the price
+  of a repeated block.
+
+## `ReWf` from the compiler (ReWfCompile)
+
+- Reached for `emit` from a new file because `Refine.lean` names it freely.
+  It is private to `Compile.lean`, and every use of it elsewhere goes
+  through the `open private` line at the top of the file doing the using. A
+  three-line probe answered the question in one build, which is cheaper
+  than the assumption would have been.
+- Wrote a four-field structure literal across three lines with the
+  continuations lined up under the term rather than under the first field.
+  The parser stops at the first comma and reports `unexpected identifier;
+  expected '}'` a line later, and every branch of the enclosing `cases`
+  then reports as missing. The trap is already written down in api-faq.md;
+  hit it anyway.
+- Closed a `Op.repNext = Op.repNext ∧ …` goal with `⟨rfl, h⟩` after the
+  `simp only` that produced it had already normalised the equation to
+  `True`. The anonymous constructor then wants `trivial`, and the failure
+  reads as an application type mismatch between `?a = ?a` and `True`, which
+  looks like the wrong lemma rather than like a normalised conjunct.
+- Reached for `tauto` to close two dozen small disjunction goals produced
+  by one `<;>`. It is not in this toolchain — see api-faq.md.
+- Assumed a lemma stated over `re.code` and `re.reps` with `re` implicit
+  could not be applied to a `FragAt (compile p).code …` hypothesis, and
+  made `re` explicit to avoid the problem. The unifier solves
+  `?re.code =?= (compile p).code` by itself; the workaround was free but
+  the belief behind it was wrong, and a probe would have said so.
+
+## The merge (PikeRefine, dedup-across-attempts round)
+
+- Applied `eff_accept_give` with every implicit free and a `by omega` for
+  its one hypothesis, which constrains nothing. The elaborator guessed
+  `attempt := a₂` and `pos := a₁`, and the failure surfaced two lines later
+  as a `rw` that could not find its pattern — with the arguments visibly
+  permuted in the message, which is the tell.
+- Reached for `rw [resumes_cons]` on a goal carrying two copies of it, one
+  at `r` and one at `.nomatch`. `rw` instantiates the metavariables from the
+  first match and rewrites only that term; `simp only` is what takes both.
+- Wrote `List.map_append _ _ _`. It takes no explicit arguments here.
+
+## Re-indexing onto the merge (PikeRefine, currency round)
+
+- Let a bulk edit script abort halfway through its list of replacements. It
+  had already mutated the string in memory but had not written the file, so
+  the tree was untouched and the build error output was stale — which read
+  for a moment like the edits had been applied and done nothing. Collect the
+  misses and write once, rather than asserting per replacement.
+- Wrote `simp [untag, tagAtt]` for `List.map (Prod.snd ∘ fun e => (a, e)) L =
+  L` and left it unsolved: simp composes the two maps and then has no lemma
+  for the composition. `Function.comp_def` is the argument that makes it go.
+
+## Section 4.4's fork account (BtBounds, counter-indexed pricing round)
+
+- Followed the previous round's note into a ghost weight list carried beside
+  the backtrack stack, and only afterwards noticed that the fold it was there
+  to replace does the job by itself if it is written as a recursion that
+  replays as it walks down the stack. Each of the three moves — push, record,
+  pop — is then one unfolding of the definition, with no auxiliary state and
+  no invariant tying it to anything. The note had called that shape "worse";
+  it is the cheap one, and reading the VM rather than the note would have said
+  so sooner.
+- Aimed `rw [replayTrail_id (by omega)]` at a goal with the same function
+  nested inside itself. The `by omega` pins no implicit argument, so the
+  rewrite hit the outer call — see api-faq.md.
+- Wrote `writeReg_owedAt (fun h => Held_mark hheld h) hw`, and the elaborator
+  read the state off `hheld` rather than off `hw`, so the two disagreed by one
+  `BtSt.tick`. The message blames `hw` and prints the expected type with
+  metavariables in it, which is the tell that the implicit was pinned by an
+  earlier argument. `(st := BtSt.tick st)` is the fix, four times over.
+- Left the `1 ≤ W pc` fact out of the branch where a loose instruction hands
+  its failure to the stack. Every other branch gets it from the clause it is
+  using; that one uses no clause, so the universally quantified one has to be
+  instantiated at the current position on purpose.
+- Ran a bulk replacement over two textually identical proof blocks and patched
+  the first when the second was meant. Anchoring on the last occurrence, or on
+  more context, is the difference between a green build and a puzzling
+  "unknown identifier".
+
+## The list step and the seed (PikeRefine, lockstep round)
+
+- Wrote `have htp : tp = pos := hat.2.1` and then `subst htp`, expecting `tp`
+  to go. `subst` eliminates the right-hand side when it can, so it ate `pos`
+  — a variable bound in the theorem's own signature — and every later mention
+  of `pos` became an unknown identifier several hundred lines away. Reversing
+  the equation is the whole fix, but the error points at the use, not at the
+  `subst`.
+- Renamed a variable inside a proof with a bulk textual replacement and hit
+  the `obtain ⟨a, pcx, t⟩` binder along with the uses, producing a binder
+  literally named `th.pc`. That elaborates — it is a legal hierarchical name —
+  and shadows the projection, so the failure is a type mismatch on
+  `hat.left : … = th.pc` rather than a syntax error. Rename by hand, or
+  exclude binder lines.
+- Modelled "two moves that differ only in the file they carry" as an
+  `inductive` indexed by two `Eff`s and then tried to `cases` a hypothesis
+  whose indices were both `eff …` applications. Dependent elimination cannot
+  abstract those. A plain `def` by match on the pair, read off with four small
+  lemmas that each `revert` and `cases` the concrete side, is what goes
+  through.
+- Attached the accept arm's ownership reasoning to `st` when the machine had
+  already charged the meter, so the write was really on `{ st with m := … }`.
+  The neighbouring `stepThreads_owned` had already solved this: quantify the
+  arm over its own intermediate state and take the field equations as `rfl` at
+  the call site. Reading the file next door before writing the same proof
+  again would have saved a rewrite.
+- Left `rw [fst_of_tagAtt hy]` closing a goal that became `a ≤ a`. `rw`'s
+  trailing `rfl` only fires on `Eq` and `Iff`, so an order goal is left open
+  and the message is a bare "unsolved goals" with nothing obviously wrong in
+  it. `Nat.le_of_eq` on the equation is the honest form.
+
+## Section 4.4's measure (BtBounds, nesting-order round)
+
+- Reported that region index order is not a containment order, with a
+  breadth-first numbering as the counterexample: root, then two children A and
+  B, then A's child C, so C outranks B while sitting inside A which precedes
+  B. The counterexample is real and irrelevant — B and C are *disjoint*, and
+  the measure needs an order only between a region and the regions inside it.
+  Containment among regions is ancestry, because `cert_shape` nests the ranges
+  and forbids siblings from overlapping, and every parent has a smaller index
+  than its child. I had compared code order against containment and concluded
+  something about index order.
+- Chased the `RepZero` case of the measure for a while before noticing that
+  the flag it needs is `pc ≤ r.lo` rather than `pc < r.lo`. With the strict
+  form the flag has already fallen by the time the `RepZero` runs, so the
+  counter reset is unpaid for; with the non-strict one the flag falls *at* the
+  reset, which is what makes entering a repetition payable exactly once.
+- Wrote `intro -` and `rw [Nat.mul_add] at h` — see api-faq.md for both.
+
+## Two checker rules that are not there (M6)
+
+Proving the resource bounds turned up two rules `cert_shape` could enforce and
+does not. A program with no `Accept` walks off the end of its own code, and a
+`Save` naming a counter register moves that counter with nothing to account for
+it. Neither is reachable from the parser — `generate` emits the trailing
+`Accept`, and a `Save` is emitted only for a numbered group — so both live in
+the proofs as standing hypotheses, and both are written down in THEOREMS.md
+rather than added to the checker, since adding them would move the artifact the
+milestone froze.
+
+What they are worth recording for is the pattern. A checker written to refuse
+what an analyzer might get wrong will not, on its own, refuse what a *program*
+might be; the two are different questions, and it is the proof that asks the
+second one.
+
+## Reading `scan_repeat` (BtBounds, flow-bridge round)
+
+- Reached for `simp only [scanRepeat] at h` to expose the checker's counted
+  arm, and for `dsimp only at h` followed by `split at h` when that timed out.
+  Both fail for reasons the messages do not name — see api-faq.md. The shape
+  that works on functions like this is already in the file twice, in
+  `chargeCall_dom` and `chargeGrow_unfold`, and reading them first would have
+  saved the two attempts.
+- Set out to prove the whole of `scan_repeat`'s reading in one theorem and had
+  to stop at the flag chain. The half that is arithmetic — that the checker's
+  flow covers `S` — is separable from the half that is plumbing, and splitting
+  them at the start would have landed the same result without the detour.
+
+## The position loop (PikeRefine, closing round)
+
+- Fell into `subst`'s direction twice more in the same proof, once on
+  `att = pos` and once on `tp = pos`. Both ate the theorem's own `pos` and
+  the error surfaced hundreds of lines later as an unknown identifier. The
+  rule that would have saved all three: never `subst` an equation whose
+  right-hand side is a variable the statement quantifies over — rewrite the
+  other one away instead.
+- Wrote `intro -` for a binder to discard. `-` is an `rcases` pattern, not an
+  `intro` one, and the parse error lands on the next line rather than on the
+  dash. `intro _` is the spelling.
+- Reached for `by_contra` and `set` out of habit. Neither is in core or in
+  Batteries, and this repo takes no mathlib; the failure is a bare "unknown
+  tactic" with no hint that a dependency is missing. `rcases Nat.lt_or_ge`,
+  `cases h : e` and an `obtain ⟨x, hx⟩ : ∃ x, x = e := ⟨_, rfl⟩` cover
+  everything they were wanted for.
+- Put `by` blocks inside an `exact` inside a `first`. A failing `by` block is
+  postponed rather than raised, so `first` does not backtrack and reports the
+  failure of the *first* alternative as an unsolved goal. Writing the
+  impossible branches as `fun h => Outcome.noConfusion h` — no tactic block at
+  all — is what makes the alternation work.
+- Modelled the scan's unopened tail as a scan call indexed by an attempt, and
+  had to abandon it: the loop must fix the tail before it knows what the
+  current attempt answered, and the two possible tails differ by whether the
+  scan stopped. Carrying the tail as a plain `Option MatchAnswer` value, with
+  a separate invariant saying which scan it is, closes in one case split.
+
+## Closing a hand-inlined equation lemma (BtBounds, `scan_repeat` round)
+
+- Ended `scanRepeat_counted_unfold` with `rfl`, which is what an equation
+  between two spellings of the same body asks for, and it timed out at `whnf`.
+  `dsimp only` naming the two definitions the right-hand side introduced closes
+  the same goal at once — see api-faq.md. The tell was there in the previous
+  round's note: anything that reduces rather than rewrites walks into
+  `scan_span`'s recursion.
+- Wrote `rcases hspan : scan_span … with ⟨v, a, o⟩` and then `rw [hspan]`,
+  which failed with "did not find an occurrence": the `rcases` had already
+  generalized the goal. The same two lines in sequence *are* right when the
+  target is a hypothesis, which is how `scanRepeat_opt` uses them, and I had
+  copied the pattern without noticing which side it was aimed at.
+- Planned the round as "the whole bounded case" and got one joint of it. The
+  half that is reading the checker back is separable from the half that is
+  building the pricing, and they meet at one abstract statement
+  (`repRegion_dom`); saying that at the start would have made the stopping
+  point a decision rather than a discovery.
