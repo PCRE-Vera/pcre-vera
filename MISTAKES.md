@@ -1769,3 +1769,76 @@ it before the first line of it was written.
   printing as plain arithmetic and unreadable to `omega` — see api-faq.md. The
   tell was in the counterexample all along: the atom it listed was the whole
   right-hand side rather than the term the equation was about.
+
+## Assuming the arena's index order was the tree's (the quantifier lowering)
+
+The compiler's dry run prices a node from its children, so it needs an order
+where every child comes first. I read `alloc_node` — it appends — and read
+`apply_quant` — it allocates the copied body after the slot it rewrites — and
+concluded that a child always has a higher index than its parent, so a reverse
+scan of the arena would do. I wrote the pass that way.
+
+It is not true, and the counterexample is every alternation. An `NdAlt` node
+is allocated when the first `|` is read, which is after its own first branch
+has been parsed: the parser then re-parents that branch under the new node.
+So an alternation's first child sits *below* it and its later branches above,
+and a reverse scan reaches the alternation before the branch it needs.
+
+What made this cheap to find rather than expensive is that I checked the
+claim on `(a|b)` before trusting it, node by node. What made it possible to
+get wrong is reading two allocation sites and generalising from them; the
+third site was the one that mattered, and it does not allocate at all — it
+rewrites a link.
+
+The fix is a list of the reachable nodes built parents-before-children —
+push the root, then walk it appending each node's children — and read
+backwards. It costs one array and no assumption about how the parser
+happened to allocate.
+
+## Pricing the replay before deciding, and then still finding it too big
+
+PLAN-POST-M6.md asks for the M6 obligations to be classified by semantic
+dependence on the compiler *before* the implementation starts, priced as an
+input to the go decision. I did that, wrote the inventory, and concluded the
+dependent set was four items of which two were definitional — on the strength
+of a design where `R.compile` becomes `compileNode ∘ lower` and every
+structural proof underneath it is untouched.
+
+The inventory was right about the shape and wrong about the size, and the
+thing it missed was not a theorem at all. `ReWfCompile.lean` bounds the
+emitted program at four instructions per arena node. The lowering breaks that
+invariant by design — that is the *whole* point of the dry run on the Python
+side — and I had noted the same break in `spec.py` an hour earlier without
+carrying it across to the Lean. So the replay does not want one new theorem
+plus some plumbing; it wants a second counting theorem the size of the one it
+replaces, and that only shows up when the build does.
+
+Two things follow. A pricing exercise should walk the *invariants* the proofs
+rest on, not only the theorem statements — the statements moved hardly at all
+and the invariant is what broke. And a change already known to break a sizing
+argument in one language should be checked against the same argument in every
+language that states it, at the moment it is first noticed rather than at the
+moment a compiler complains.
+
+## Choosing a witness the arbiter cannot answer for (the quantifier lowering)
+
+The lowering's caps want witnesses on both sides, and I wrote three
+over-the-cap cells into the sweep's quantifier matrix by reading our own
+limits: one past MAX_REPS, one past MAX_CODE through a one-instruction body,
+and one past MAX_CODE through a two-instruction body. The third was
+`(?:ab){9000}c`, and the campaign that found it produced thirty-three
+disagreements in a row — every trial of that case, all saying the same thing.
+
+pcre2 replicates a bounded quantifier and refuses at its own compiled size.
+`(?:ab){9000}` is "regular expression is too large" there and an ordinary
+counter here, so the cell had no answer to be compared against: our engine and
+the arbiter disagree about whether the pattern exists, before anything about
+the lowering is reached.
+
+Two things are worth keeping. A witness for one of *our* limits is still a
+differential case, and a limit of ours that sits above one of pcre2's is
+exactly where a generated population walks off the end of the oracle — so a
+cap witness wants checking against the arbiter before it is written down, not
+after. And the failure was loud in a useful way: thirty-three findings on one
+case is the shape of a case that should not exist rather than of an engine
+that is wrong, and reading the count that way saved chasing an ovector.

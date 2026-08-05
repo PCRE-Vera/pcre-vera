@@ -24,20 +24,22 @@ from ..oracle import conformance
 from ..paths import CONFORMANCE_DIR
 from . import campaign, manifest, promote
 from .checks import run_case
-from .population import CROSS
+from .population import LAID_OUT
 
 PATH = CONFORMANCE_DIR / "sweep.json"
 
 SEED = 20260803
-STRUCTURED = len(CROSS)
-"""The atom-by-quantifier product and nothing past it: the shard is here for
-the opcodes and the option families, and the grammar is the campaign's."""
+STRUCTURED = LAID_OUT
+"""The atom-by-quantifier product and the quantifier matrix, and nothing past
+them: the shard is here for the opcodes, the option families and the lowering,
+and the grammar is the campaign's."""
 
 HOSTILE = 64
 SUBJECTS = 8
 STRIDE = 7
-"""Co-prime with the twelve quantifiers, so the slice walks every atom rather
-than taking the same quantifier from each."""
+"""Co-prime with both products the slice runs through — twelve quantifiers over
+the atoms, thirty-six over the lowering's bodies — so it walks every atom and
+every body rather than taking the same spelling from each."""
 
 NOTE = (
     campaign.NOTE

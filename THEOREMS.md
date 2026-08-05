@@ -21,8 +21,8 @@ of the frozen artifact is written down.
 
     +--------------------------+------------------------------------------+
     | the artifact             | gen/engine.tir.json                      |
-    | the artifact sha256      | 6a6dfaddef328fdb85950946041356ab3a55a766 |
-    |                          | 835ab415dc7d764d02569451                 |
+    | the artifact sha256      | 4b51962c6539c56954e5165f1abd3f7f7648bc87 |
+    |                          | 055b50e7e44e84729100a3a5                 |
     | the commit               | the one tagged wave1-frozen              |
     | the pcre2 version        | 10.47                                    |
     | the pcre2 tarball sha256 | 47fe8c99461250d42f89e6e8fdaeba9da057855d |
@@ -35,29 +35,32 @@ of the frozen artifact is written down.
 The corpora the artifact is held to, by content hash:
 
     +--------------------------------------+------------------------------------------+
-    | oracle/corpus/wave1.json             | 0c5ff7d00d40d43ecd4e27b436c5aab0bdac20ae |
-    |                                      | 840ca1aca7676e310f1368a5                 |
+    | oracle/corpus/wave1.json             | 983a3413fa73df9177e88f93186ec81d80733d26 |
+    |                                      | 80caf1cf925b496648f1a714                 |
     | oracle/corpus/sweep-regressions.json | 815d58542aba14629d859b0f9978627c3293d3ee |
     |                                      | ddba3c0fc4e2b367a9f954bf                 |
-    | conformance/corpus.json              | 97c8affaa99d062e423837192adf702c000cc1cf |
-    |                                      | c5de7967fb754eb17683c26c                 |
-    | conformance/certificates.json        | db318a71e6b23bc2f0f3c119bb1f5fc806f61ba0 |
-    |                                      | c7867de084944d8f1966c58d                 |
+    | conformance/corpus.json              | a7349f418f8fbd2c139d5a487284686f1111cd4c |
+    |                                      | 13b600736dde421acd518092                 |
+    | conformance/certificates.json        | 587da12e186553d784d813e0d99a13bc6c1423c5 |
+    |                                      | 3b7cf4f76083d92ca9ac3daf                 |
     | conformance/lowering.json            | 88f537fcd39b5c718b12167fdbdc85e9782383eb |
     |                                      | 872dc432b7637ad9ac369748                 |
-    | conformance/sweep.json               | 7f3a0cb28cca6857c642b7f7ffd7a99e27c02339 |
-    |                                      | 834ad108e54443d64eb39f3a                 |
+    | conformance/migration.json           | faa0e484687fe010d30fd79a5a68175d34696e37 |
+    |                                      | df68becdbe6e55ba18955dbc                 |
+    | conformance/sweep.json               | 76a127d06afab56706269f18e7e014589fb1459f |
+    |                                      | 14c7cd35d645a69a3d122c71                 |
     +--------------------------------------+------------------------------------------+
 
-And the campaign that closed M5, which is reproducible rather than kept:
+And the campaign that refroze the artifact after the quantifier lowering,
+which is reproducible rather than kept:
 
-    make sweep SWEEP="--seed 20260803 --structured 2000 --hostile 400 \
-        --subjects 32 --jobs 8 --out tmp/sweep-m5"
+    make sweep SWEEP="--seed 20260805 --structured 2000 --hostile 400 \
+        --subjects 32 --jobs 8 --out tmp/sweep-post-m6"
 
     manifest sha256
-      348c195ed6fe84f54137e79cceefff79595e3ad5e4b71d9accc19241971feac5
+      2590e179eab030796c83a5c9f78cf78d62456e6997cde0cce492892cb5a58a72
 
-The LOG entry for M5 carries its counts. A rerun of that command on this
+The LOG entry carries its counts. A rerun of that command on this
 artifact reproduces the manifest hash exactly — the test rebuilds the manifest
 from those five numbers and checks it — and the answers are a function of the
 artifact, so a rerun that disagrees is a regression rather than noise.
@@ -184,6 +187,15 @@ Parser correctness is deferred to M10. Until then every theorem above
 quantifies over spec ASTs, and the step from pattern text to AST is a tested
 link — the oracle corpus, the sweep and pcre2 itself — not a proved one.
 Wherever coverage is described, that sentence goes with it.
+
+The quantifier lowering of DESIGN.md section 4.3 is inside that link, and
+naming it is the point of saying so: the tree the theorems are about is the
+one the code generator walked, which for a lowered pattern is the rewritten
+one, and the rewrite itself carries no theorem. What holds it is the corpus
+replay, which compiles the exported tree and compares the bytecode, the
+region tree, the ovector and the usage to the engine's, plus the sweep's
+comparison with pcre2. Section 6 says what moving the rewrite inside
+`R.compile` would cost and why it was not done here.
 
 The generated Go and JavaScript are tested links too, and stay that way. The
 proofs cover the TIR artifact under the TIR semantics; the printers are kept
@@ -590,3 +602,76 @@ caps are load-bearing there, the quantifier one and the subject one, since
 an unbounded repetition counts one per byte. The premise is gone from the
 statements rather than weakened in them, and `a*b*` at any admissible
 length is back inside S-8 and S-12 where it belongs.
+
+## 6. Where the quantifier lowering sits, and what proving it would cost
+
+PLAN-POST-M6.md changes what the compiler emits for a counted repetition, and
+it asks for the price of replaying M6 against the new artifact before the
+first line of it is written rather than after. This section is that price and
+the decision it led to.
+
+The lowering is a function on the AST: a counted repetition that is not
+already an optional, a singleton or a pure star becomes copies of its body
+followed by either a pure star or a chain of one-split optionals. Every node
+it generates is one the emitter already compiles, so the rewrite could sit on
+either side of `R.compile` — ahead of it, in the step from pattern text to
+tree, or inside it.
+
+It sits ahead of it. `Ref.compile` is the emission half of the compiler
+restated and it compiles the tree it is handed; `gen/lean/bridge.json` hands
+it the tree the code generator really walked, which for a lowered pattern is
+the lowered one. That puts the rewrite inside the pattern-text-to-AST link
+section 4 already declares tested rather than proved, and it widens that link
+by exactly one transformation. Section 4 says so.
+
+What the link is tested by is not weak. `lake exe corpuscheck` compiles the
+exported tree with `R.compile`, runs it with `R.run`, and holds the bytecode,
+the region tree, the outcome, the ovector and the observed cost, stack and
+memory to the engine's numbers, case by case — 315 replayed cases, every one
+of them well formed for the refinement theorems. Beside it, the differential
+sweep compares 47,683 answers to pcre2 with full ovector equality and 38,412
+of them across both matchers. A rewrite that disagreed with the compiler by
+one instruction, or with pcre2 by one capture, fails a build.
+
+So every theorem of sections 2 and 3 holds unchanged, of the trees it is
+given. What changes is coverage rather than statement, and it changes in one
+direction: S-12 is quantified over Pike-eligible patterns, and the lowering
+makes 116 more of the 334 patterns the corpora pin eligible, none fewer.
+
+    +---------------+------------------------+-------------------------------+
+    | obligation    | dependence             | what the replay cost          |
+    +---------------+------------------------+-------------------------------+
+    | S-1 .. S-12   | none                   | the trees moved, the theorems |
+    |               |                        | did not; S-12 covers more     |
+    | R-1 .. R-9    | none                   | `R.compile` compiles what it  |
+    |               |                        | is handed, as before          |
+    | R-10          | numeric                | rerun against the regenerated |
+    |               |                        | corpora, 0 disagreements      |
+    +---------------+------------------------+-------------------------------+
+
+The alternative — moving the rewrite inside `R.compile` — is priced rather
+than done, and it is the honest outstanding work of this change. It wants
+four things, and the first two are the substance:
+
+- `Matches (lower a) = Matches a`: that the lowered tree matches the same
+  strings with the same captures in the same preference order. A theorem
+  about the specification alone, with no VM and no certificate in it, and the
+  one that carries the whole claim. The shape is settled — `x{m,n}` at count
+  k is the optional chain at `n - k`, and past the minimum an unbounded
+  repetition's count stops mattering — and the fuel side is an implication
+  rather than an equation, since the lowered form spends no fuel on a bounded
+  quantifier.
+- A replacement for the per-node size invariant. `ReWfCompile.lean` bounds
+  the emitted program at four cells per arena node, and the lowering breaks
+  that by design; what replaces it is the compiler's dry run, so the counting
+  theorem has to be restated over the lowered sizes rather than over
+  `nodeCount`. Roughly the same size as the one it replaces.
+- Preservation lemmas, all structural and all small: `WfAst`, `CapsBelow`,
+  `Covered`, `maxGroup`, and `crWalk` for the bumpalong bit.
+- The definitional follow-through in `Ref/Compile.lean`, `RepCompile.lean`
+  and the two refinement files, which is mechanical once the above exist.
+
+Nothing in that list is a research question, and none of it blocks the
+guarantee being stated honestly with the carve-outs in place. It is the piece
+of this plan that was deliberately deferred, and this is where it is written
+down.

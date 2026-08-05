@@ -170,8 +170,12 @@ def test_the_scratch_arrays_have_no_limit_of_their_own(engine: Engine) -> None:
 
 # --- runtime limits ---
 
-PATHOLOGICAL = rb"(?:a+)+b"
+PATHOLOGICAL = rb"(?:a*)*b"
 SUBJECT = b"a" * 22
+"""What is left of catastrophic backtracking once the quantifier lowering has
+run. `(?:a+)+b`, the classic, lowers to `(?:aa*)(?:aa*)*b` and runs in lockstep
+now; this one cannot, because its inner star lets the outer body finish an
+iteration without consuming, which is the carve-out no lowering removes."""
 
 
 def test_a_pathological_pattern_runs_out_of_cost(engine: Engine) -> None:
@@ -238,13 +242,17 @@ def test_the_cost_limit_is_exact_at_the_edge(engine: Engine) -> None:
 
 
 def test_the_stack_limit_is_exact_at_the_edge(engine: Engine) -> None:
-    engine.match(b"a+b", b"aaab")
+    """`a+b` no longer pushes anything, so the edge is read on a pattern that
+    still backtracks: the nullable body keeps it off the lockstep path."""
+    engine.match(rb"(?:a?)+b", b"aaab")
     used = engine.last_usage
     assert used is not None and used.stack > 0
     at = Limits(cost=1 << 40, stack=used.stack, memory=1 << 26)
-    assert isinstance(engine.match(b"a+b", b"aaab", limits=at), Match)
+    assert isinstance(engine.match(rb"(?:a?)+b", b"aaab", limits=at), Match)
     below = Limits(cost=1 << 40, stack=used.stack - 1, memory=1 << 26)
-    assert isinstance(engine.match(b"a+b", b"aaab", limits=below), ResourceExceeded)
+    assert isinstance(
+        engine.match(rb"(?:a?)+b", b"aaab", limits=below), ResourceExceeded
+    )
 
 
 def test_a_pattern_with_no_choice_points_never_touches_the_stack(engine: Engine) -> None:

@@ -30,7 +30,7 @@ from pcrevera.engine.driver import (
 from pcrevera.oracle import corpus as wave1
 from pcrevera.oracle.corpus import CompiledExpectation, MatchExpectation
 from pcrevera.sweep import campaign, checks, draw, gate, manifest, promote, reduce, shard
-from pcrevera.sweep.population import CONVENTIONS, CROSS, OPTION_SETS, Case, Trial
+from pcrevera.sweep.population import CONVENTIONS, LAID_OUT, OPTION_SETS, Case, Trial
 from pcrevera.sweep.population import case as one_case
 from pcrevera.sweep.population import population
 
@@ -87,7 +87,7 @@ def test_a_case_is_a_function_of_the_four_numbers_that_name_it():
     assert one_case(11, 7) != one_case(12, 7)
     assert one_case(11, 7) != one_case(11, 8)
     assert one_case(11, 7, subjects=8) != one_case(11, 7, subjects=9)
-    assert one_case(11, 500, structured=600) != one_case(11, 500, structured=500)
+    assert one_case(11, 1500, structured=1600) != one_case(11, 1500, structured=1400)
 
 
 def test_the_population_crosses_every_option_family_with_every_convention():
@@ -103,22 +103,22 @@ def test_the_population_crosses_every_option_family_with_every_convention():
     wanted = [
         (options, convention) for convention in CONVENTIONS for options in OPTION_SETS
     ]
-    opening = population(1, structured=len(CROSS), hostile=0, subjects=1)[: len(wanted)]
+    opening = population(1, structured=LAID_OUT, hostile=0, subjects=1)[: len(wanted)]
     assert [(one.options, (one.newline, one.bsr)) for one in opening] == wanted
 
 
 def test_every_case_can_be_asked_about_the_subjects_it_carries():
-    for one in population(3, structured=len(CROSS), hostile=20, subjects=8, stride=13):
+    for one in population(3, structured=LAID_OUT, hostile=20, subjects=8, stride=13):
         assert one.maxlen == max(len(trial.subject) for trial in one.trials)
         for trial in one.trials:
             assert 0 <= trial.start <= len(trial.subject)
 
 
 def test_a_manifest_survives_being_written_down():
-    built = manifest.build(5, structured=len(CROSS), hostile=4, subjects=4, stride=9)
+    built = manifest.build(5, structured=LAID_OUT, hostile=4, subjects=4, stride=9)
     held = manifest.read(built)
     assert held.cases == population(
-        5, structured=len(CROSS), hostile=4, subjects=4, stride=9
+        5, structured=LAID_OUT, hostile=4, subjects=4, stride=9
     )
     assert held.digest == manifest.digest(built)
     assert manifest.text(manifest.document(5, held.cases, **held.shape)) == manifest.text(built)
@@ -220,7 +220,7 @@ def test_a_generated_campaign_agrees_with_pcre2(oracle):
     """The smoke-sized campaign: the same generator, a population the committed
     shard does not hold, and every check the campaign runs."""
     built = manifest.read(
-        manifest.build(SMOKE_SEED, structured=len(CROSS), hostile=40, subjects=8, stride=11)
+        manifest.build(SMOKE_SEED, structured=LAID_OUT, hostile=40, subjects=8, stride=11)
     )
     report = campaign.run(built, engine=ENGINE, oracle=oracle)
     assert not report.findings, "\n".join(str(one) for one in report.findings[:10])

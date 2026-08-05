@@ -37,7 +37,16 @@ group count, which the ovector fixes.
 """
 
 MAX_CODE = 4 * MAX_NODES + 16
-"""Bytecode instructions: no node emits more than four."""
+"""Bytecode instructions.
+
+Four per node plus a tail is what the counter form emits, and that is what
+sizes this. The quantifier lowering of DESIGN.md section 4.3 breaks the
+per-node invariant on purpose — a copied body emits its instructions again for
+every copy — so what keeps the array safe there is not the invariant but the
+compiler's dry run, which prices the lowered form against this number before
+emitting a single instruction of it and leaves the pattern in counter form
+when it does not fit. The counter form is still bounded per node, so the
+fallback always has room."""
 
 MAX_CLASSES = MAX_PATTERN
 """Character class bitmaps, 32 bytes each."""
@@ -116,7 +125,9 @@ MAX_REGIONS = MAX_NODES
 
 A region is a source construct the compiler flattened — a group, an alternation
 branch, a quantifier body — so the AST arena already bounds how many there can
-be."""
+be. A lowered quantifier emits a construct several times and opens its regions
+each time, which breaks that reading exactly as it breaks the one behind
+MAX_CODE; the dry run is what holds the lowered form to this number."""
 
 # --- the Pike VM's scratch (DESIGN.md section 4.3) ---
 #
@@ -269,6 +280,36 @@ because a bound at a length no subject can have describes nothing."""
 
 MC_DEFAULT = 0
 MC_MEMO = 1
+
+# --- the quantifier lowering (DESIGN.md section 4.3) ---
+#
+# What the compiler decided about a pattern, and why. The report of
+# PLAN-POST-M6.md step 3 carries these verbatim rather than deducing them, so
+# that a decision nobody can reproduce is a finding about the compiler instead
+# of a difference in how two programs read the same AST.
+
+LOW_NOT_NEEDED = 0
+"""Every repetition was already an optional, a singleton or a pure star."""
+
+LOW_LOWERED = 1
+LOW_BLOCKED = 2
+"""The pre-check found something no lowering can help, so the counter form
+stays: it is smaller, and BOUNDS.md section 4.4 already prices it."""
+
+LOW_CAPPED = 3
+"""The lowered form does not fit the compiler's storage. A documented
+carve-out, never a compile error."""
+
+# Everything the pre-check looks for, on the original AST. All of them are
+# reported, not the first: a pattern can hold both at once, and a report that
+# named only one would flap when the walk order changed.
+
+LB_NULLABLE = 1 << 0
+"""An unbounded repetition whose body can finish an iteration without
+consuming — the `(a?)*` problem, which survives any amount of lowering."""
+
+LB_BSR = 1 << 1
+"""A `\\R`, which consumes a variable number of bytes."""
 
 # --- complexity classes ---
 #

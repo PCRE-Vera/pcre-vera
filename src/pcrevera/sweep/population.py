@@ -19,12 +19,13 @@ The generator those numbers name is this package's own `Draw`, not `random`,
 for the same reason: a manifest hash written into a freeze record must not
 depend on which interpreter produced the population.
 
-Two things are laid out rather than sampled. The compile options cycle by index
-and the newline/BSR conventions cycle once per pass through them, so the first
-sixty-six cases of any sweep — eleven option families by six convention pairs —
-already cross every one with every other, each exactly once; and the
+Three things are laid out rather than sampled. The compile options cycle by
+index and the newline/BSR conventions cycle once per pass through them, so the
+first sixty-six cases of any sweep — eleven option families by six convention
+pairs — already cross every one with every other, each exactly once; the
 atom-by-quantifier product opens the population, so no opcode waits on a lucky
-draw. Everything past that is the grammar, and the
+draw; and the quantifier matrix follows it, so neither does any shape of the
+lowering. Everything past that is the grammar, and the
 subjects are built from the bytes the pattern itself mentions, which is what
 makes them structure-aware rather than random noise the pattern never looks at.
 """
@@ -48,6 +49,85 @@ ATOMS = (
 QUANTIFIERS = (
     "", "*", "+", "?", "??", "*?", "+?", "{2}", "{1,3}", "{0,2}", "{2,}", "{2,3}?",
 )
+
+QUANT_BODIES = (
+    "a", "[ab]", "(a)", "(?:ab)", "(a|b)", "(a|aa)", "(a|)", "(|a)",
+    "(?:a?)", "(?:(a)?)", "(?:a*)", "(a*)", "(?:(a)|(b))", "(?<g1>a?)",
+)
+"""The bodies the quantifier matrix repeats.
+
+A defined grammar rather than a sample: a literal and a class, a capture and a
+non-capturing group, alternations of equal and unequal width, alternations with
+an empty arm on either side, an optional and a star with and without a capture,
+and a body whose two captures are mutually exclusive. Between them they cover
+what a copied body can do that a single one cannot — overwrite a group, leave
+one unset, and finish an iteration without consuming.
+
+The ones that end in a quantifier of their own are written grouped, because a
+quantifier may not follow a quantifier: `a?{1,3}` is pcre2's "nothing to
+repeat" and a cell built from it would compare two refusals rather than two
+matches."""
+
+
+def _counts() -> tuple[str, ...]:
+    """Every quantifier spelling the lowering has a rule for, greedy and lazy.
+
+    `{m}`, `{m,}` and `{m,n}` for m and n from zero to three, which is enough
+    to reach both sides of every boundary in the rewrite: no mandatory copy and
+    several, no optional tail and several, an exact count, and the two forms
+    that are already canonical. The cap-adjacent counts are `QUANT_OVER_CAP`,
+    beside this rather than in it, because they belong to the caps and not to
+    the rewrite's own boundaries."""
+    out = []
+    for low in range(4):
+        out.append("{%d}" % low)
+        out.append("{%d,}" % low)
+        for high in range(low, 4):
+            out.append("{%d,%d}" % (low, high))
+    return tuple(count + lazy for count in out for lazy in ("", "?"))
+
+
+QUANT_COUNTS = _counts()
+
+QUANT_OVER_CAP = ("(?:a*){4097}b", "a{32848}b")
+"""The far side of two of the compiler's caps: the repetition table, one
+counter per copy, and the code generator's walk fuel, which for a body of one
+instruction runs out before the code array does — two visits per copy against
+one cell, and the fuel is twice the code array.
+
+Only the far side. A candidate that *fits* a cap is a program of tens of
+thousands of instructions, and laying one out costs more steps than the
+reference interpreter's budget allows — a Python limit rather than an engine
+one, but the shard is generated in Python, so a cell that could not be
+generated is not a cell. The fitting side is asserted instead in
+`tests/test_lowering.py`, off the dry run's own report, and what is here is
+what the fallback has to do: compile in counter form, answer what pcre2
+answers, and not become PatternTooLarge.
+
+Both reach their cap through a one-instruction body, which is not decoration.
+pcre2 replicates a bounded quantifier and refuses at its own compiled size, so
+a body of two instructions runs out of *its* room first — `(?:ab){9000}` is
+"regular expression is too large" there and an ordinary counter here — and a
+cell the arbiter declines is a cell with nothing to compare against."""
+
+QUANT = tuple(
+    "%s%sb" % (body, count)
+    for body, count in itertools.product(QUANT_BODIES, QUANT_COUNTS)
+) + QUANT_OVER_CAP
+"""The matrix itself, each cell followed by a literal so that a subject which
+runs out forces backtracking into the copies rather than stopping at the last
+one.
+
+What is crossed with what, exactly. Every cell is asked under all six match
+option families, including NOTEMPTY, NOTEMPTY_ATSTART and match-time
+anchoring, because those cycle per trial and a case carries more trials than
+there are families; every cell is asked at a start of zero, one, the middle
+and the end, because the matrix lays its offsets out rather than drawing them.
+The compile options and the newline and BSR conventions cycle per *case*, so
+the matrix covers all eleven families and all six convention pairs across its
+cells rather than within each one — crossing those per cell as well would be
+eleven populations of it, and the grammar population beside it is where that
+breadth already comes from."""
 
 OPTION_SETS = (
     (),
@@ -184,6 +264,12 @@ CROSS = tuple(
 )
 """The atom-by-quantifier product, which opens the structured population."""
 
+LAID_OUT = len(CROSS) + len(QUANT)
+"""What every structured population opens with, whatever its size: the
+atom-by-quantifier product and the quantifier matrix. Both are laid out rather
+than sampled, so no structured population can be smaller than the two of
+them."""
+
 STRUCTURED = 2000
 HOSTILE = 400
 SUBJECTS = 32
@@ -197,6 +283,8 @@ one thing a replay command exists to prevent."""
 def _pattern(rng: Draw, index: int, family: str) -> str:
     if family == "cross":
         return CROSS[index]
+    if family == "quant":
+        return QUANT[index - len(CROSS)]
     if family == "grammar":
         return _sequence(rng, rng.between(0, 3))
     if family == "mutation":
@@ -208,11 +296,14 @@ def _family(index: int, structured: int) -> str:
     """Which population an index belongs to.
 
     The product first so the opcodes are covered from the start, then the
-    grammar, then the hostile syntax: mutations of grammatical patterns, and
-    the soup that is mostly not a pattern at all.
+    quantifier matrix so the lowering is too, then the grammar, then the
+    hostile syntax: mutations of grammatical patterns, and the soup that is
+    mostly not a pattern at all.
     """
     if index < len(CROSS):
         return "cross"
+    if index < LAID_OUT:
+        return "quant"
     if index < structured:
         return "grammar"
     return "mutation" if (index - structured) % 2 == 0 else "soup"
@@ -280,15 +371,21 @@ def _subjects(rng: Draw, pattern: str, count: int) -> tuple[bytes, ...]:
     return tuple(text.encode("latin-1") for text in chosen[:count])
 
 
-def _start(rng: Draw, subject: bytes) -> int:
+def _start(rng: Draw, subject: bytes, family: str, position: int) -> int:
     """A start offset inside the subject, weighted toward the beginning.
 
     Never past the end: an offset outside the subject is the engine's own
     BadInput and pcre2 has no answer to compare it against, so it is tested
     where it belongs — in the corpus, from the side.
+
+    The quantifier matrix lays its offsets out instead of drawing them, so
+    that every cell is asked at a nonzero start rather than most of them: a
+    lowered quantifier's copies are what a start offset moves through.
     """
     if not subject:
         return 0
+    if family == "quant":
+        return (0, 1, len(subject) // 2, len(subject))[position % 4]
     return rng.pick([0, 0, 0, 0, 1, len(subject) // 2, len(subject)])
 
 
@@ -303,7 +400,7 @@ def case(
         Trial(
             subject=subject,
             match_options=MATCH_OPTION_SETS[(index + position) % len(MATCH_OPTION_SETS)],
-            start=_start(rng, subject),
+            start=_start(rng, subject, family, position),
         )
         for position, subject in enumerate(_subjects(rng, text, subjects))
     )
@@ -341,10 +438,11 @@ def population(
     own. The cases it keeps carry their original indices, so a failure found in
     the shard replays at the same numbers a campaign would name.
     """
-    if structured < len(CROSS):
+    if structured < LAID_OUT:
         raise ValueError(
             f"a structured population starts with the {len(CROSS)} atom-quantifier "
-            f"pairs, so it cannot hold {structured}"
+            f"pairs and the {len(QUANT)} cells of the quantifier matrix, so it "
+            f"cannot hold {structured}"
         )
     return tuple(
         case(seed, index, subjects=subjects, structured=structured)

@@ -34,6 +34,7 @@ NAMED = {
     "conformance/corpus.json": "conformance/corpus.json",
     "conformance/certificates.json": "conformance/certificates.json",
     "conformance/lowering.json": "conformance/lowering.json",
+    "conformance/migration.json": "conformance/migration.json",
     "conformance/sweep.json": "conformance/sweep.json",
 }
 """Every row of the freeze tables that is a hash of a file in this checkout,

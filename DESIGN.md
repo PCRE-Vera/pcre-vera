@@ -63,11 +63,22 @@ our Lean semantics (which defines them), not against pcre2's counters.
 
 We stage features in three waves. The wave 1 subset is chosen so the linear
 matcher can handle essentially all of it, which keeps the first Lean
-proofs tractable. The one documented carve-out: a counted repetition
-whose unrolled form exceeds the section 4.3 program-size cap routes to
-the backtracking matcher and is classified accordingly, so the linear
-guarantee is always stated per pattern by the classifier, never as a
-blanket property of the wave.
+proofs tractable. Three documented carve-outs route a wave 1 pattern to the
+backtracking matcher instead:
+
+- a counted repetition whose lowered form exceeds one of the section 4.3
+  program-size caps;
+- a star whose body can complete an iteration without consuming a byte,
+  which is the `(a?)*` capture-preference problem of section 4.3 — semantic,
+  and no amount of lowering removes it;
+- `\R`, until it compiles as an alternation, because it consumes a variable
+  number of bytes.
+
+All three say which matcher runs and nothing about the class. The two are
+not the same question and do not coincide: `\R` routes to the backtracking
+matcher and still classifies linear, because its certified bound is linear.
+The linear guarantee is always stated per pattern by the classifier, never
+as a blanket property of the wave and never read off the routing.
 
 ```
 +--------+----------------------------------------------------------------+
@@ -529,7 +540,10 @@ PCRE extensions:
 | Save slot      | record current position in ovector slot                 |
 | AssertBOL/EOL, | anchors and word boundaries, multiline-aware            |
 | AssertWB, ...  |                                                         |
-| RepInit/RepChk | counted repetition {m,n} using a counter register       |
+| RepZero r      | zero repetition r's counter                             |
+| RepLoop r      | read the counter, decide whether to go round again      |
+| RepEnter r     | remember where this iteration began                     |
+| RepNext r      | count, then jump back to the head or fall out           |
 | BackRef k      | wave 2: match text of group k again                     |
 | LookStart/End  | wave 2: lookaround sub-match with direction and sign    |
 | AtomicStart/   | wave 2: cut backtracking on exit                        |
@@ -540,8 +554,11 @@ PCRE extensions:
 
 Compilation of quantifiers, alternation, and groups follows the standard
 constructions; possessive quantifiers desugar to atomic groups; UNGREEDY
-just swaps Split arms. The compiler also runs the analyses of section 5 and
-stores their results in the compiled object.
+just swaps Split arms. A counted repetition is lowered to star form first,
+under the caps section 4.3 describes; what survives the lowering is the
+four Rep opcodes of a pure star, and the fallback keeps the counter. The
+compiler also runs the analyses of section 5 and stores their results in
+the compiled object.
 
 ### 4.3 Two matchers
 
@@ -577,21 +594,61 @@ accounting; the representation is part of what the Layer R and I proofs
 cover rather than an implementation liberty.
 Keying the visited set by pc alone is only sound if pc determines the
 thread's future behavior, so programs routed to the Pike VM must be
-state-free: counted repetitions {m,n} are compiled by unrolling instead of
-RepInit/RepChk counter registers, under a program-size cap, and a pattern
-whose unrolled form would exceed the cap routes to the backtracking VM
-(and is then classified notProvenLinear, since the linear class is defined
-as Pike-eligible). That discipline gives leftmost, priority-ordered,
+state-free. There is one bytecode and both matchers read it. What makes a
+program state-free is that every repetition left in it is a pure star —
+minimum zero, no maximum — because then the four Rep opcodes never consult
+their counter to decide anything, and the Pike VM may read them as the
+epsilon forks their control flow amounts to: RepZero and RepEnter as plain
+epsilons, RepLoop and RepNext as a fork between one more iteration and the
+exit, ordered by greediness.
+
+A counted repetition that is not already an optional, a singleton or a pure
+star is therefore *lowered* to star form at compilation:
+
+    x+       ->  x x*
+    x{m,}    ->  x .. x x*             (m copies)
+    x{m,n}   ->  x .. x (x (..)?)?     (m copies, then n-m nested optionals)
+
+Every copy of a body saves into the original group's slots, so a group
+repeated three times is still one group reported once. The optionals nest
+so that the k-th copy's presence is decided before the (k+1)-th's, which is
+what makes the count preference pcre2's. The lowering is recursive and
+all-or-nothing: one retained counter is enough to make a program ineligible,
+so a pattern is lowered whole or not at all.
+
+Two things keep it from applying everywhere. A star whose body can complete
+an iteration without consuming a byte stays ineligible however it is
+spelled — that is the `(a?)*` capture-preference problem, and lowering
+`(?:a?)+` to `(?:a?)(?:a?)*` leaves the same nullable body behind — and `\R`
+consumes a variable number of bytes, so a pattern containing one is left in
+counter form until `\R` compiles as an alternation. Those are the two
+semantic carve-outs of section 2.1, decided by a pre-check on the AST before
+anything is emitted; the third is size. The lowered form is measured against
+the compiler's storage caps by a dry run that computes closed-form counts
+rather than expanding anything, and a candidate that does not fit leaves the
+whole pattern in counter form on the backtracking matcher. Oversize is a
+documented carve-out, never a compile error: a pattern whose ordinary
+counter form compiles today still compiles.
+
+Eligibility itself is decided by one predicate over the emitted program, and
+the lowering never gets a vote in it: the pre-check chooses whether to lower,
+and `pike_ok` alone says whether the result may run in lockstep.
+
+That discipline gives leftmost, priority-ordered,
 greedy-by-split-order results with O(program_size * subject_len) cost and
 O(program_size) threads. The claim that this reproduces PCRE backtracking
 exactly on the wave 1 subset is a proof obligation (the section 6
 refinement theorem for the Pike configuration) and a standing test
 obligation (section 8), not an
-assumption. The accurate statement of the wave 1 guarantee, cap included:
-a wave 1 pattern whose counted repetitions fit under the unroll cap runs
-on the Pike VM and is classified linear, which in practice is nearly all
-of them; the cap is a documented part of the contract, not a hidden
-constant.
+assumption. The accurate statement of the wave 1 guarantee, carve-outs
+included: a wave 1 pattern with no `\R`, no star whose body can finish
+emptily, and a lowered form inside the caps runs on the Pike VM, which in
+practice is nearly all of them. Which matcher runs is not the class,
+though, and section 5 is where the class comes from: it is read off the
+shape of the certified cost bound, whatever the path, so `a{2}` and `\R`
+classify linear on the backtracking matcher because their certified bounds
+are linear. The carve-outs are a documented part of the contract, not
+hidden constants.
 
 The backtracking VM is the complete engine: depth-first exploration with an
 explicit heap-allocated stack of (pc, position, plus undo entries for
@@ -609,12 +666,16 @@ backtracking applies to the same patterns Pike handles and must return the
 same results (a proof obligation). Its value is better constants than the
 Pike VM on short subjects, at a memory cost the section 5 accounting
 includes; it is selected through the API's matchConfig argument, rejected as
-BadInput on patterns that are not Pike-eligible.
+BadInput on patterns that are not Pike-eligible. Eligibility is the
+condition there, and it is not the linear class: a pattern can classify
+linear and still be refused the memoized path, `\R` being the standing
+example.
 
 Both matchers implement the empty-match rule (a quantifier iteration that
 consumes nothing does not loop) and the section 2.4 find-all advance
 rule.
-On Pike-eligible patterns, which is wave 1 under the unroll cap, the two
+On Pike-eligible patterns, which is wave 1 less the three carve-outs of
+section 2.1, the two
 matchers must agree exactly whenever both run under sufficient budgets
 (section 6 states this precisely). The public API never routes such a
 pattern to the plain backtracking matcher; that side of the comparison
@@ -733,11 +794,18 @@ exactly the number a realtime caller wants pinned once. This is the number a rea
 budget with, and the matchers enforce the corresponding limit across all
 of those arrays together, not just the backtrack stack.
 
-Cost bound and classification. For patterns routed to the Pike VM the bound
-is `cost <= c * (n + 1)` with c derived from program size, and
-`complexityClass()` reports linear; this is the only class claim we make
-soundness theorems about at first, because it is the one applications
-gate on. For patterns needing the backtracking VM, the analyzer always
+Cost bound and classification. The class is a property of the certificate,
+not of matcher selection. BOUNDS.md section 6 is the normative rule and it
+reads the shape of the certified cost bound for the path compilation
+selected: base one and no power above the first is `linear`, everything
+else is `notProvenLinear`. For patterns routed to the Pike VM that bound is
+`cost <= c * (n + 1)` with c derived from program size, so those patterns
+classify linear as a matter of course. They are not the only ones, and it
+would be wrong to define the class that way: `a{2}` and `\R` run on the
+backtracking matcher and classify linear too, because the bound their
+certificate carries is linear. The linear claim is the one applications
+gate on, and it is the one we make soundness theorems about.
+For patterns needing the backtracking VM, the analyzer always
 produces a conservative closed-form cost bound by structural analysis
 (choice points, quantifier nesting, backreference lengths), and additionally
 runs a ReDoS-style ambiguity analysis to label the pattern

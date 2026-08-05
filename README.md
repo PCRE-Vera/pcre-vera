@@ -26,10 +26,32 @@ same for the resource bounds.
 ## Where the project is
 
 M0 (scaffolding), M1 (the pcre2 oracle), M2 (the TIR core), M3 (the wave 1
-engine), M4 (the Go and JavaScript backends) and M5 (the Pike VM, the resource
-analyzer, the analysis accessors and the preallocated context) are done. The
-wave 1 artifact is frozen at the hash `THEOREMS.md` records, and that is what
-the Lean proofs of M6 and M7 target.
+engine), M4 (the Go and JavaScript backends), M5 (the Pike VM, the resource
+analyzer, the analysis accessors and the preallocated context) and M6 (the
+Lean specification and reference engine) are done. The wave 1 artifact is
+frozen at the hash `THEOREMS.md` records, and that is what the Lean proofs of
+M6 and M7 target.
+
+The wave 1 guarantee holds with three named carve-outs, and they are the ones
+DESIGN.md section 2.1 lists: a counted repetition whose lowered form exceeds a
+program-size cap, a star whose body can finish an iteration without consuming
+a byte, and `\R` until it compiles as an alternation. Everything else runs on
+the Pike VM. Counted repetitions are lowered to star form at compilation to
+get there — `a+` is `aa*`, `a{2,4}` is `aa(a(a)?)?`. Against the engine that
+came before it, over the 334 patterns the corpora pin and both compile: 116
+moved onto the lockstep path, 39 from `notProvenLinear` to `linear` and 7 more
+from no certificate at all, and none moved the other way.
+`conformance/migration.json` is that census, pattern by pattern. Which matcher
+runs is not the class, though: the class comes off the shape of the certified
+bound, so `a{2}` and `\R` classify linear on the backtracking path too.
+
+One piece of that change is deliberately not proved. The lowering is a rewrite
+on the tree, and it sits ahead of the Lean reference compiler rather than
+inside it, which puts it in the pattern-text-to-AST link `THEOREMS.md` already
+declares tested rather than proved. The corpus replay compiles the rewritten
+tree and holds its bytecode, region tree, ovector and usage to the engine's,
+and the sweep holds its answers to pcre2's; section 6 of that document prices
+what proving it instead would cost.
 
 Four things work today, and everything else leans on them.
 
@@ -109,7 +131,7 @@ limit, and returns ResourceExceeded rather than running long. Compilation
 computes what those limits would have to be, which is the analysis below, and
 the accessors on the compiled pattern report it before anything runs.
 
-`oracle/corpus/wave1.json` is 264 hand-written cases that our engine, the
+`oracle/corpus/wave1.json` is 274 hand-written cases that our engine, the
 pinned pcre2, and the expectation all have to agree on. Beside it,
 `pcrevera.sweep` generates cases nobody wrote: a case is a function of a seed
 and an index, so a campaign is a command rather than a directory of files, and
@@ -340,9 +362,13 @@ own has no dependencies at all.
 
 Worth saying early, because the point of the exercise is precision.
 
-The theorems, once they exist, will cover the IR artifact under the TIR
+The theorems cover the IR artifact under the TIR
 semantics. The translation from that artifact to Go and JavaScript is a
 separate link, kept small and covered by cross-implementation testing.
+
+They quantify over parsed trees, so the step from pattern text to tree is a
+tested link too, and so is the quantifier lowering that happens in the same
+step. `THEOREMS.md` names both.
 
 The generated libraries are never described as formally verified. They are
 generated from a formally verified artifact by a printer that is tested.

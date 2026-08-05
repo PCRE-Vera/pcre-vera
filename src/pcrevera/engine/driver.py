@@ -663,6 +663,15 @@ class Engine:
         """What compilation decided about the Pike VM, off the stored flag."""
         return bool(built.re.fields["pike"])
 
+    def pike_hollow(self, built: CompiledPattern, which: int) -> bool:
+        """Can that repetition's body finish an iteration without consuming?
+
+        One of the two halves of eligibility, asked on its own so that the
+        migration report of PLAN-POST-M6.md can hold the compiler's pre-check
+        to what the emitted program shows rather than to its own reasoning.
+        """
+        return bool(self._interp().call("pike_hollow", [built.re, which]))
+
     def pike_match_compiled(self, built, subject: bytes, **kwargs):
         """`match_compiled`, pinned to the Pike VM.
 
@@ -889,6 +898,44 @@ class Engine:
         cand = Cell(interp.zero(StructType("Cert")))
         found = variant_of(interp.call("cert_build", [built.re, cand]))
         return found, _read_cert(cand.value) if found == "ArOk" else None
+
+    def lowering_plan(
+        self,
+        pattern: bytes,
+        *,
+        options: Sequence[str] = (),
+        newline: str = "LF",
+    ) -> tuple[int, int, bool]:
+        """The blockers, the decision and the fit, with nothing emitted.
+
+        `plan_lowering` is the compiler's dry run and it prices the lowered
+        candidate in closed form, so asking it on its own costs a walk of the
+        parsed tree however large the candidate would be. That is what the
+        cap-adjacent witnesses of PLAN-POST-M6.md are found with: the boundary
+        is read off the dry run's own report rather than guessed at, and only
+        the two patterns either side of it are ever compiled.
+        """
+        bits = _options(options, spec.COMPILE_OPTIONS, "a compile option")
+        assert bits is not None, options
+        interp = self._interp()
+        work = Cell(interp.zero(StructType("Work")))
+        interp.call(
+            "parse", [_blob(pattern), bits, spec.NEWLINE_CONVENTIONS[newline], work]
+        )
+        value = work.value
+        assert isinstance(value, StructValue)
+        if value.fields["err"]:
+            raise ValueError(f"{pattern!r} does not parse: {value.fields['err']}")
+        interp.call(
+            "plan_lowering", [work, bool(bits & spec.ENDANCHORED)]
+        )
+        value = work.value
+        assert isinstance(value, StructValue)
+        return (
+            value.fields["blockers"],
+            value.fields["lowdec"],
+            bool(value.fields["lowfits"]),
+        )
 
     def check_shape(self, built: CompiledPattern) -> str:
         """The checker's verdict on the region tree alone, named.

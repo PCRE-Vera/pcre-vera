@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   6a6dfaddef328fdb85950946041356ab3a55a766835ab415dc7d764d02569451
+//   4b51962c6539c56954e5165f1abd3f7f7648bc87055b50e7e44e84729100a3a5
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -18,7 +18,7 @@ package engine
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact this package was printed
 // from.
-const ArtifactSHA256 = "6a6dfaddef328fdb85950946041356ab3a55a766835ab415dc7d764d02569451"
+const ArtifactSHA256 = "4b51962c6539c56954e5165f1abd3f7f7648bc87055b50e7e44e84729100a3a5"
 
 // Tir_Trap is what a checked operation panics with, per TIR-SPEC.md section 12.
 type Tir_Trap struct {
@@ -480,6 +480,9 @@ type Re struct {
 	hascrlf uint32
 	crfirst uint32
 	pike bool
+	lowdec uint32
+	blockers uint32
+	lowfits bool
 	hascert bool
 	cert Cert
 	haspikecert bool
@@ -515,6 +518,18 @@ type Room struct {
 	pool uint64
 	words uint32
 	reserved uint64
+}
+
+type Size struct {
+	code uint64
+	regions uint64
+	reps uint64
+	visits uint64
+	depth uint32
+	patches uint32
+	nullable bool
+	blockers uint32
+	needs bool
 }
 
 type Th struct {
@@ -561,6 +576,21 @@ type Work struct {
 	clscrlf uint32
 	pending []uint32
 	seen []byte
+	sizes []Size
+	order []uint32
+	lowering bool
+	lowdec uint32
+	blockers uint32
+	lowfits bool
+	predicted bool
+	fitcode uint64
+	fitregion uint64
+	fitrep uint64
+	fitvisit uint64
+	fitjobs uint32
+	fitpatch uint32
+	peakjobs uint32
+	peakpatch uint32
 }
 
 var BITS = []byte{
@@ -1924,6 +1954,31 @@ func charge_grow(oldcap uint32, lenv uint32, esize uint32, maxv uint32, mem *uin
 	return true
 }
 
+func check_fit(w *Work, used uint64) {
+	var tmp1 bool = false
+	if ((*w).fitcode != uint64(uint32(len((*w).code)))) {
+		tmp1 = true
+	}
+	if ((*w).fitregion != uint64(uint32(len((*w).regions)))) {
+		tmp1 = true
+	}
+	if ((*w).fitrep != uint64((*w).nrep)) {
+		tmp1 = true
+	}
+	if ((*w).fitvisit != used) {
+		tmp1 = true
+	}
+	if ((*w).fitjobs != (*w).peakjobs) {
+		tmp1 = true
+	}
+	if ((*w).fitpatch != (*w).peakpatch) {
+		tmp1 = true
+	}
+	if tmp1 {
+		(*w).err = uint32(1003)
+	}
+}
+
 func check_possess(w *Work) {
 	var tmp1 uint32 = uint32(len((*w).nodes))
 	var tmp2 uint32 = uint32(0)
@@ -2271,6 +2326,9 @@ func compile(pat []byte, popts uint32, nltype uint32, bsr uint32, out *Out) {
 	(*out).re.bsr = bsr
 	(*out).re.hascrlf = w.hascrlf
 	(*out).re.crfirst = w.crfirst
+	(*out).re.lowdec = w.lowdec
+	(*out).re.blockers = w.blockers
+	(*out).re.lowfits = w.lowfits
 	(*out).re.code = w.code
 	w.code = nil
 	(*out).re.classes = w.classes
@@ -2489,6 +2547,10 @@ func emit(w *Work, op Op, arg uint32, alt uint32) uint32 {
 }
 
 func generate(w *Work, endanchored bool) {
+	plan_lowering(w, endanchored)
+	if ((*w).err != uint32(0)) {
+		return
+	}
 	var tmp1 uint32 = (*w).root
 	var tmp2 uint32 = uint32(0)
 	tir_t1 := open_region(w, RkRoot, uint32(4294967295))
@@ -2645,6 +2707,9 @@ func generate(w *Work, endanchored bool) {
 	tir_t26 := emit(w, OpAccept, uint32(0), uint32(0))
 	tmp4 = tir_t26
 	close_region(w, tmp2)
+	if (((*w).err == uint32(0)) && (*w).predicted) {
+		check_fit(w, tir_csub(uint64(65664), tmp3))
+	}
 	if ((*w).err == uint32(0)) {
 		scan_first(w)
 	}
@@ -4633,6 +4698,100 @@ func pike_write(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, h *u
 	return true
 }
 
+func plan_lowering(w *Work, endanchored bool) {
+	var tmp1 uint32 = uint32(len((*w).nodes))
+	var tmp2 uint32 = uint32(0)
+	for (tmp2 < tmp1) {
+		tir_push(&(*w).sizes, 8208, (Size{code: uint64(0), regions: uint64(0), reps: uint64(0), visits: uint64(0), depth: uint32(0), patches: uint32(0), nullable: false, blockers: uint32(0), needs: false}))
+		tmp2 = (tmp2 + uint32(1))
+	}
+	tir_push(&(*w).order, 8208, (*w).root)
+	var tmp3 uint32 = uint32(0)
+	var tmp4 uint64 = uint64(8208)
+	for ((tmp3 < uint32(len((*w).order))) && (tmp4 > uint64(0))) {
+		tmp4 = tir_csub(tmp4, uint64(1))
+		var tmp5 uint32 = (*w).nodes[(*w).order[tmp3]].first
+		var tmp6 uint64 = uint64(8208)
+		for ((tmp5 != uint32(0)) && (tmp6 > uint64(0))) {
+			tmp6 = tir_csub(tmp6, uint64(1))
+			if (uint32(len((*w).order)) >= uint32(8208)) {
+				(*w).err = uint32(1003)
+				return
+			}
+			tir_push(&(*w).order, 8208, tmp5)
+			tmp5 = (*w).nodes[tmp5].nxt
+		}
+		if (tmp6 == uint64(0)) {
+			(*w).err = uint32(1003)
+			return
+		}
+		tmp3 = (tmp3 + uint32(1))
+	}
+	if (tmp4 == uint64(0)) {
+		(*w).err = uint32(1003)
+		return
+	}
+	var tmp7 uint32 = uint32(len((*w).order))
+	for (tmp7 > uint32(0)) {
+		tmp7 = (tmp7 - uint32(1))
+		var tmp8 uint32 = (*w).order[tmp7]
+		size_node(w, tmp8)
+	}
+	var tmp9 Size = (*w).sizes[(*w).root]
+	var tmp10 uint64 = tir_cadd(tmp9.code, uint64(1))
+	if endanchored {
+		tmp10 = tir_cadd(tmp10, uint64(1))
+	}
+	var tmp11 uint64 = tir_cadd(tmp9.regions, uint64(1))
+	var tmp12 uint64 = tmp9.reps
+	var tmp13 uint64 = tir_cadd(tir_cmul(uint64(((*w).ncap + uint32(1))), uint64(2)), tir_cmul(tmp12, uint64(2)))
+	(*w).fitcode = tmp10
+	(*w).fitregion = tmp11
+	(*w).fitrep = tmp12
+	(*w).fitvisit = tmp9.visits
+	(*w).fitjobs = tmp9.depth
+	(*w).fitpatch = tmp9.patches
+	var tmp14 bool = true
+	if (tmp10 > uint64(32848)) {
+		tmp14 = false
+	}
+	if (tmp11 > uint64(8208)) {
+		tmp14 = false
+	}
+	if (tmp12 > uint64(4096)) {
+		tmp14 = false
+	}
+	if (tmp13 > uint64(8704)) {
+		tmp14 = false
+	}
+	if (tmp9.visits > uint64(65664)) {
+		tmp14 = false
+	}
+	if (tmp9.depth > uint32(2048)) {
+		tmp14 = false
+	}
+	if (tmp9.patches > uint32(4096)) {
+		tmp14 = false
+	}
+	(*w).lowfits = tmp14
+	(*w).blockers = tmp9.blockers
+	(*w).lowdec = uint32(0)
+	(*w).lowering = false
+	if tmp9.needs {
+		if (tmp9.blockers != uint32(0)) {
+			(*w).lowdec = uint32(2)
+		} else {
+			if tmp14 {
+				(*w).lowdec = uint32(1)
+				(*w).lowering = true
+			} else {
+				(*w).lowdec = uint32(3)
+			}
+		}
+	}
+	(*w).predicted = ((*w).lowering || (!tmp9.needs))
+}
+
 func poly_add(a Poly, b Poly, over *bool) Poly {
 	var out Poly
 	out.base = a.base
@@ -5435,6 +5594,9 @@ func push_job(w *Work, node uint32, here uint32) {
 		return
 	}
 	tir_push(&(*w).jobs, 2048, (Job{node: node, phase: uint32(0), cur: uint32(0), mark: uint32(0), base: uint32(0), here: here, arm: uint32(4294967295)}))
+	if ((*w).peakjobs < uint32(len((*w).jobs))) {
+		(*w).peakjobs = uint32(len((*w).jobs))
+	}
 }
 
 func push_patch(w *Work, pc uint32) {
@@ -5443,6 +5605,9 @@ func push_patch(w *Work, pc uint32) {
 		return
 	}
 	tir_push(&(*w).patches, 4096, pc)
+	if ((*w).peakpatch < uint32(len((*w).patches))) {
+		(*w).peakpatch = uint32(len((*w).patches))
+	}
 }
 
 func quantifier(pat []byte, at *uint32, w *Work) {
@@ -6937,6 +7102,215 @@ func shape_span(code []Inst, regions []Region, sibs *[]uint32, lo uint32, hi uin
 	return CrOk
 }
 
+func size_node(w *Work, at uint32) {
+	var tmp1 uint32 = at
+	var tmp2 Node = (*w).nodes[tmp1]
+	var tmp3 Size
+	tmp3.code = uint64(0)
+	tmp3.regions = uint64(0)
+	tmp3.reps = uint64(0)
+	tmp3.visits = uint64(1)
+	tmp3.depth = uint32(1)
+	tmp3.patches = uint32(0)
+	tmp3.nullable = false
+	tmp3.blockers = uint32(0)
+	tmp3.needs = false
+	switch tmp2.kind {
+	case NdNil:
+		tmp3.nullable = true
+	case NdChar:
+		tmp3.code = uint64(1)
+	case NdCharCI:
+		tmp3.code = uint64(1)
+	case NdClass:
+		tmp3.code = uint64(1)
+	case NdAny:
+		tmp3.code = uint64(1)
+	case NdAnyNoNL:
+		tmp3.code = uint64(1)
+	case NdBsr:
+		tmp3.code = uint64(1)
+		tmp3.blockers = uint32(2)
+	case NdCirc:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdCircM:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdDoll:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdDollE:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdDollM:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdSod:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdEod:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdEodn:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdWordB:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdNotWordB:
+		tmp3.code = uint64(1)
+		tmp3.nullable = true
+	case NdConcat:
+		var tmp4 uint32 = tmp2.first
+		var tmp5 uint32 = uint32(0)
+		var tmp6 uint64 = uint64(8208)
+		tmp3.depth = uint32(0)
+		tmp3.nullable = true
+		for ((tmp4 != uint32(0)) && (tmp6 > uint64(0))) {
+			tmp6 = tir_csub(tmp6, uint64(1))
+			var tmp7 Size = (*w).sizes[tmp4]
+			tmp3.code = tir_cadd(tmp3.code, tmp7.code)
+			tmp3.regions = tir_cadd(tmp3.regions, tmp7.regions)
+			tmp3.reps = tir_cadd(tmp3.reps, tmp7.reps)
+			tmp3.visits = tir_cadd(tmp3.visits, tmp7.visits)
+			if (tmp7.depth > tmp3.depth) {
+				tmp3.depth = tmp7.depth
+			}
+			var tmp8 uint32 = tmp7.patches
+			if (tmp8 > tmp3.patches) {
+				tmp3.patches = tmp8
+			}
+			if (!tmp7.nullable) {
+				tmp3.nullable = false
+			}
+			tmp3.blockers = (tmp3.blockers | tmp7.blockers)
+			if tmp7.needs {
+				tmp3.needs = true
+			}
+			tmp5 = (tmp5 + uint32(1))
+			tmp4 = (*w).nodes[tmp4].nxt
+		}
+		tmp3.visits = tir_cadd(tmp3.visits, uint64(tmp5))
+		tmp3.depth = (tmp3.depth + uint32(1))
+	case NdAlt:
+		var tmp9 uint32 = tmp2.first
+		var tmp10 uint32 = uint32(0)
+		var tmp11 uint64 = uint64(8208)
+		tmp3.depth = uint32(0)
+		tmp3.nullable = false
+		for ((tmp9 != uint32(0)) && (tmp11 > uint64(0))) {
+			tmp11 = tir_csub(tmp11, uint64(1))
+			var tmp12 Size = (*w).sizes[tmp9]
+			tmp3.code = tir_cadd(tmp3.code, tmp12.code)
+			tmp3.regions = tir_cadd(tmp3.regions, tmp12.regions)
+			tmp3.reps = tir_cadd(tmp3.reps, tmp12.reps)
+			tmp3.visits = tir_cadd(tmp3.visits, tmp12.visits)
+			if (tmp12.depth > tmp3.depth) {
+				tmp3.depth = tmp12.depth
+			}
+			var tmp13 uint32 = (tmp10 + tmp12.patches)
+			if (tmp13 > tmp3.patches) {
+				tmp3.patches = tmp13
+			}
+			if tmp12.nullable {
+				tmp3.nullable = true
+			}
+			tmp3.blockers = (tmp3.blockers | tmp12.blockers)
+			if tmp12.needs {
+				tmp3.needs = true
+			}
+			tmp10 = (tmp10 + uint32(1))
+			tmp9 = (*w).nodes[tmp9].nxt
+		}
+		tmp3.visits = tir_cadd(tmp3.visits, uint64(tmp10))
+		tmp3.depth = (tmp3.depth + uint32(1))
+		if (tmp10 > uint32(1)) {
+			tmp3.code = tir_cadd(tmp3.code, tir_cmul(uint64((tmp10 - uint32(1))), uint64(2)))
+			tmp3.regions = tir_cadd(tir_cadd(tmp3.regions, uint64(tmp10)), uint64(1))
+		}
+	case NdGroup:
+		var tmp14 uint32 = tmp2.first
+		tmp3.nullable = true
+		tmp3.visits = uint64(2)
+		if (tmp14 != uint32(0)) {
+			var tmp15 Size = (*w).sizes[tmp14]
+			tmp3.code = tmp15.code
+			tmp3.regions = tmp15.regions
+			tmp3.reps = tmp15.reps
+			tmp3.patches = tmp15.patches
+			tmp3.blockers = tmp15.blockers
+			tmp3.visits = tir_cadd(uint64(2), tmp15.visits)
+			tmp3.depth = (tir_k(uint32(1)) + tmp15.depth)
+			tmp3.nullable = tmp15.nullable
+			tmp3.needs = tmp15.needs
+		}
+		if (tmp2.val != uint32(0)) {
+			tmp3.code = tir_cadd(tmp3.code, uint64(2))
+		}
+		if (tmp3.code != uint64(0)) {
+			tmp3.regions = tir_cadd(tmp3.regions, uint64(1))
+		}
+	case NdRepeat:
+		var tmp16 uint32 = tmp2.first
+		var tmp17 Size = (*w).sizes[tmp16]
+		var tmp18 uint32 = tmp2.val
+		var tmp19 uint32 = tmp2.aux
+		tmp3.nullable = true
+		if (tmp19 != uint32(0)) {
+			tmp3.depth = (tir_k(uint32(1)) + tmp17.depth)
+			tmp3.patches = tmp17.patches
+			tmp3.needs = tmp17.needs
+			tmp3.blockers = tmp17.blockers
+			tmp3.nullable = ((tmp18 == uint32(0)) || tmp17.nullable)
+			if ((tmp19 == uint32(4294967295)) && tmp17.nullable) {
+				tmp3.blockers = (tmp3.blockers | uint32(1))
+			}
+			var tmp20 uint64 = uint64(1)
+			var tmp21 uint64 = uint64(0)
+			var tmp22 uint64 = uint64(0)
+			var tmp23 uint64 = uint64(0)
+			var tmp24 uint64 = uint64(2)
+			var tmp25 bool = ((tmp18 == uint32(1)) && (tmp19 == uint32(1)))
+			var tmp26 bool = ((tmp18 == uint32(0)) && (tmp19 == uint32(1)))
+			var tmp27 bool = ((tmp18 == uint32(0)) && (tmp19 == uint32(4294967295)))
+			if tmp26 {
+				tmp21 = uint64(1)
+				tmp22 = uint64(1)
+			}
+			if tmp27 {
+				tmp21 = uint64(4)
+				tmp22 = uint64(1)
+				tmp23 = uint64(1)
+			}
+			if (!(tmp25 || (tmp26 || tmp27))) {
+				tmp3.needs = true
+				if (tmp19 == uint32(4294967295)) {
+					tmp20 = tir_cadd(uint64(tmp18), uint64(1))
+					tmp21 = uint64(4)
+					tmp22 = uint64(1)
+					tmp23 = uint64(1)
+					tmp24 = tir_cadd(uint64(tmp18), uint64(3))
+				} else {
+					tmp20 = uint64(tmp19)
+					tmp21 = uint64((tmp19 - tmp18))
+					tmp22 = uint64((tmp19 - tmp18))
+					tmp24 = tir_cadd(uint64(tmp19), uint64(2))
+				}
+			}
+			tmp3.code = tir_cadd(tir_cmul(tmp20, tmp17.code), tmp21)
+			tmp3.regions = tir_cadd(tir_cmul(tmp20, tmp17.regions), tmp22)
+			tmp3.reps = tir_cadd(tir_cmul(tmp20, tmp17.reps), tmp23)
+			tmp3.visits = tir_cadd(tmp24, tir_cmul(tmp20, tmp17.visits))
+		}
+	}
+	tir_t1 := tmp1
+	if tir_t1 >= uint32(len((*w).sizes)) {
+		tir_oob(tir_t1, uint32(len((*w).sizes)))
+	}
+	(*w).sizes[tir_t1] = tmp3
+}
+
 func skip_blanks(pat []byte, at *uint32) {
 	var tmp1 uint32 = uint32(len(pat))
 	var tmp2 uint32 = (*at)
@@ -7112,6 +7486,146 @@ func walk_alt(w *Work, top uint32, job Job, nd Node) {
 	push_job(w, tmp6, tmp9)
 }
 
+func walk_lowered(w *Work, top uint32, job Job, nd Node) {
+	var tmp1 uint32 = top
+	var tmp2 Job
+	_ = tmp2
+	var tmp3 uint32 = uint32(0)
+	_ = tmp3
+	var tmp4 bool = (nd.opts != uint32(0))
+	var tmp5 uint32 = nd.val
+	var tmp6 uint32 = nd.aux
+	var tmp7 uint32 = nd.first
+	var tmp8 uint32 = job.cur
+	if (tmp8 < tmp5) {
+		tir_t1 := tmp1
+		if tir_t1 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t1, uint32(len((*w).jobs)))
+		}
+		(*w).jobs[tir_t1].cur = (tmp8 + uint32(1))
+		push_job(w, tmp7, job.here)
+		return
+	}
+	if (tmp6 == uint32(4294967295)) {
+		var tmp9 uint32 = uint32(0)
+		tir_t2 := open_region(w, RkRepeat, job.here)
+		tmp9 = tir_t2
+		var tmp10 uint32 = uint32(0)
+		tir_t3 := new_rep(w)
+		tmp10 = tir_t3
+		if ((*w).err != uint32(0)) {
+			return
+		}
+		tir_t4 := tmp1
+		if tir_t4 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t4, uint32(len((*w).jobs)))
+		}
+		(*w).jobs[tir_t4].here = tmp9
+		tir_t5 := emit(w, OpRepZero, tmp10, uint32(0))
+		tmp3 = tir_t5
+		var tmp11 uint32 = uint32(0)
+		tir_t6 := emit(w, OpRepLoop, tmp10, uint32(0))
+		tmp11 = tir_t6
+		tir_t7 := emit(w, OpRepEnter, tmp10, uint32(0))
+		tmp3 = tir_t7
+		if ((*w).err != uint32(0)) {
+			return
+		}
+		tir_t8 := tmp10
+		if tir_t8 >= uint32(len((*w).reps)) {
+			tir_oob(tir_t8, uint32(len((*w).reps)))
+		}
+		(*w).reps[tir_t8].lo = uint32(0)
+		tir_t9 := tmp10
+		if tir_t9 >= uint32(len((*w).reps)) {
+			tir_oob(tir_t9, uint32(len((*w).reps)))
+		}
+		(*w).reps[tir_t9].hi = uint32(4294967295)
+		tir_t10 := tmp10
+		if tir_t10 >= uint32(len((*w).reps)) {
+			tir_oob(tir_t10, uint32(len((*w).reps)))
+		}
+		(*w).reps[tir_t10].greedy = tmp4
+		tir_t11 := tmp10
+		if tir_t11 >= uint32(len((*w).reps)) {
+			tir_oob(tir_t11, uint32(len((*w).reps)))
+		}
+		(*w).reps[tir_t11].head = tmp11
+		tir_t12 := tmp10
+		if tir_t12 >= uint32(len((*w).reps)) {
+			tir_oob(tir_t12, uint32(len((*w).reps)))
+		}
+		(*w).reps[tir_t12].body = (tmp11 + uint32(1))
+		tir_t13 := tmp1
+		if tir_t13 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t13, uint32(len((*w).jobs)))
+		}
+		(*w).jobs[tir_t13].mark = tmp10
+		tir_t14 := tmp1
+		if tir_t14 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t14, uint32(len((*w).jobs)))
+		}
+		(*w).jobs[tir_t14].phase = uint32(2)
+		push_job(w, tmp7, tmp9)
+		return
+	}
+	if (tmp8 < tmp6) {
+		var tmp12 uint32 = uint32(0)
+		tir_t15 := open_region(w, RkRepeat, job.here)
+		tmp12 = tir_t15
+		tir_t16 := emit(w, OpSplit, uint32(0), uint32(0))
+		tmp3 = tir_t16
+		if ((*w).err != uint32(0)) {
+			return
+		}
+		tir_t17 := tmp1
+		if tir_t17 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t17, uint32(len((*w).jobs)))
+		}
+		(*w).jobs[tir_t17].here = tmp12
+		tir_t18 := tmp1
+		if tir_t18 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t18, uint32(len((*w).jobs)))
+		}
+		(*w).jobs[tir_t18].cur = (tmp8 + uint32(1))
+		push_job(w, tmp7, tmp12)
+		return
+	}
+	var tmp13 uint32 = uint32(len((*w).code))
+	var tmp14 uint32 = job.here
+	var tmp15 uint32 = (tmp6 - tmp5)
+	for (tmp15 > uint32(0)) {
+		tmp15 = (tmp15 - uint32(1))
+		var tmp16 uint32 = (*w).regions[tmp14].lo
+		if tmp4 {
+			tir_t19 := tmp16
+			if tir_t19 >= uint32(len((*w).code)) {
+				tir_oob(tir_t19, uint32(len((*w).code)))
+			}
+			(*w).code[tir_t19].arg = (tmp16 + uint32(1))
+			tir_t20 := tmp16
+			if tir_t20 >= uint32(len((*w).code)) {
+				tir_oob(tir_t20, uint32(len((*w).code)))
+			}
+			(*w).code[tir_t20].alt = tmp13
+		} else {
+			tir_t21 := tmp16
+			if tir_t21 >= uint32(len((*w).code)) {
+				tir_oob(tir_t21, uint32(len((*w).code)))
+			}
+			(*w).code[tir_t21].arg = tmp13
+			tir_t22 := tmp16
+			if tir_t22 >= uint32(len((*w).code)) {
+				tir_oob(tir_t22, uint32(len((*w).code)))
+			}
+			(*w).code[tir_t22].alt = (tmp16 + uint32(1))
+		}
+		close_region(w, tmp14)
+		tmp14 = (*w).regions[tmp14].parent
+	}
+	tmp2 = tir_pop(&(*w).jobs)
+}
+
 func walk_repeat(w *Work, top uint32, job Job, nd Node) {
 	var tmp1 uint32 = top
 	var tmp2 Job
@@ -7168,6 +7682,10 @@ func walk_repeat(w *Work, top uint32, job Job, nd Node) {
 		tmp2 = tir_pop(&(*w).jobs)
 		return
 	}
+	if (job.phase == uint32(4)) {
+		walk_lowered(w, tmp1, job, nd)
+		return
+	}
 	var tmp8 uint32 = nd.val
 	var tmp9 uint32 = nd.aux
 	var tmp10 uint32 = nd.first
@@ -7184,84 +7702,97 @@ func walk_repeat(w *Work, top uint32, job Job, nd Node) {
 		push_job(w, tmp10, job.here)
 		return
 	}
-	var tmp11 uint32 = uint32(0)
-	tir_t8 := open_region(w, RkRepeat, job.here)
-	tmp11 = tir_t8
-	tir_t9 := tmp1
-	if tir_t9 >= uint32(len((*w).jobs)) {
-		tir_oob(tir_t9, uint32(len((*w).jobs)))
+	if ((*w).lowering && (!(((tmp8 == uint32(0)) && (tmp9 == uint32(1))) || ((tmp8 == uint32(0)) && (tmp9 == uint32(4294967295)))))) {
+		tir_t8 := tmp1
+		if tir_t8 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t8, uint32(len((*w).jobs)))
+		}
+		(*w).jobs[tir_t8].cur = uint32(0)
+		tir_t9 := tmp1
+		if tir_t9 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t9, uint32(len((*w).jobs)))
+		}
+		(*w).jobs[tir_t9].phase = uint32(4)
+		return
 	}
-	(*w).jobs[tir_t9].here = tmp11
+	var tmp11 uint32 = uint32(0)
+	tir_t10 := open_region(w, RkRepeat, job.here)
+	tmp11 = tir_t10
+	tir_t11 := tmp1
+	if tir_t11 >= uint32(len((*w).jobs)) {
+		tir_oob(tir_t11, uint32(len((*w).jobs)))
+	}
+	(*w).jobs[tir_t11].here = tmp11
 	if ((tmp8 == uint32(0)) && (tmp9 == uint32(1))) {
-		tir_t10 := emit(w, OpSplit, uint32(0), uint32(0))
-		tmp3 = tir_t10
+		tir_t12 := emit(w, OpSplit, uint32(0), uint32(0))
+		tmp3 = tir_t12
 		if ((*w).err != uint32(0)) {
 			return
 		}
-		tir_t11 := tmp1
-		if tir_t11 >= uint32(len((*w).jobs)) {
-			tir_oob(tir_t11, uint32(len((*w).jobs)))
+		tir_t13 := tmp1
+		if tir_t13 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t13, uint32(len((*w).jobs)))
 		}
-		(*w).jobs[tir_t11].mark = tmp3
-		tir_t12 := tmp1
-		if tir_t12 >= uint32(len((*w).jobs)) {
-			tir_oob(tir_t12, uint32(len((*w).jobs)))
+		(*w).jobs[tir_t13].mark = tmp3
+		tir_t14 := tmp1
+		if tir_t14 >= uint32(len((*w).jobs)) {
+			tir_oob(tir_t14, uint32(len((*w).jobs)))
 		}
-		(*w).jobs[tir_t12].phase = uint32(1)
+		(*w).jobs[tir_t14].phase = uint32(1)
 		push_job(w, tmp10, tmp11)
 		return
 	}
 	var tmp12 uint32 = uint32(0)
-	tir_t13 := new_rep(w)
-	tmp12 = tir_t13
+	tir_t15 := new_rep(w)
+	tmp12 = tir_t15
 	if ((*w).err != uint32(0)) {
 		return
 	}
-	tir_t14 := emit(w, OpRepZero, tmp12, uint32(0))
-	tmp3 = tir_t14
-	var tmp13 uint32 = uint32(0)
-	tir_t15 := emit(w, OpRepLoop, tmp12, uint32(0))
-	tmp13 = tir_t15
-	tir_t16 := emit(w, OpRepEnter, tmp12, uint32(0))
+	tir_t16 := emit(w, OpRepZero, tmp12, uint32(0))
 	tmp3 = tir_t16
+	var tmp13 uint32 = uint32(0)
+	tir_t17 := emit(w, OpRepLoop, tmp12, uint32(0))
+	tmp13 = tir_t17
+	tir_t18 := emit(w, OpRepEnter, tmp12, uint32(0))
+	tmp3 = tir_t18
 	if ((*w).err != uint32(0)) {
 		return
 	}
-	tir_t17 := tmp12
-	if tir_t17 >= uint32(len((*w).reps)) {
-		tir_oob(tir_t17, uint32(len((*w).reps)))
-	}
-	(*w).reps[tir_t17].lo = tmp8
-	tir_t18 := tmp12
-	if tir_t18 >= uint32(len((*w).reps)) {
-		tir_oob(tir_t18, uint32(len((*w).reps)))
-	}
-	(*w).reps[tir_t18].hi = tmp9
 	tir_t19 := tmp12
 	if tir_t19 >= uint32(len((*w).reps)) {
 		tir_oob(tir_t19, uint32(len((*w).reps)))
 	}
-	(*w).reps[tir_t19].greedy = tmp4
+	(*w).reps[tir_t19].lo = tmp8
 	tir_t20 := tmp12
 	if tir_t20 >= uint32(len((*w).reps)) {
 		tir_oob(tir_t20, uint32(len((*w).reps)))
 	}
-	(*w).reps[tir_t20].head = tmp13
+	(*w).reps[tir_t20].hi = tmp9
 	tir_t21 := tmp12
 	if tir_t21 >= uint32(len((*w).reps)) {
 		tir_oob(tir_t21, uint32(len((*w).reps)))
 	}
-	(*w).reps[tir_t21].body = (tmp13 + uint32(1))
-	tir_t22 := tmp1
-	if tir_t22 >= uint32(len((*w).jobs)) {
-		tir_oob(tir_t22, uint32(len((*w).jobs)))
+	(*w).reps[tir_t21].greedy = tmp4
+	tir_t22 := tmp12
+	if tir_t22 >= uint32(len((*w).reps)) {
+		tir_oob(tir_t22, uint32(len((*w).reps)))
 	}
-	(*w).jobs[tir_t22].mark = tmp12
-	tir_t23 := tmp1
-	if tir_t23 >= uint32(len((*w).jobs)) {
-		tir_oob(tir_t23, uint32(len((*w).jobs)))
+	(*w).reps[tir_t22].head = tmp13
+	tir_t23 := tmp12
+	if tir_t23 >= uint32(len((*w).reps)) {
+		tir_oob(tir_t23, uint32(len((*w).reps)))
 	}
-	(*w).jobs[tir_t23].phase = uint32(2)
+	(*w).reps[tir_t23].body = (tmp13 + uint32(1))
+	tir_t24 := tmp1
+	if tir_t24 >= uint32(len((*w).jobs)) {
+		tir_oob(tir_t24, uint32(len((*w).jobs)))
+	}
+	(*w).jobs[tir_t24].mark = tmp12
+	tir_t25 := tmp1
+	if tir_t25 >= uint32(len((*w).jobs)) {
+		tir_oob(tir_t25, uint32(len((*w).jobs)))
+	}
+	(*w).jobs[tir_t25].phase = uint32(2)
 	push_job(w, tmp10, tmp11)
 }
 
@@ -7380,6 +7911,10 @@ func Tir_charge_call(re Re, cert Cert, whole Price, over *bool) Cr {
 
 func Tir_charge_grow(oldcap uint32, lenv uint32, esize uint32, maxv uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
 	return charge_grow(oldcap, lenv, esize, maxv, mem, peak, cost, memlimit, costlimit)
+}
+
+func Tir_check_fit(w *Work, used uint64) {
+	check_fit(w, used)
 }
 
 func Tir_check_possess(w *Work) {
@@ -7560,6 +8095,10 @@ func Tir_pike_take(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, m
 
 func Tir_pike_write(pool *[]uint32, rc *[]uint32, free *[]uint32, novec uint32, h *uint32, slot uint32, value uint32, mem *uint64, peak *uint64, cost *uint64, memlimit uint64, costlimit uint64) bool {
 	return pike_write(pool, rc, free, novec, h, slot, value, mem, peak, cost, memlimit, costlimit)
+}
+
+func Tir_plan_lowering(w *Work, endanchored bool) {
+	plan_lowering(w, endanchored)
 }
 
 func Tir_poly_add(a Poly, b Poly, over *bool) Poly {
@@ -7746,6 +8285,10 @@ func Tir_shape_span(code []Inst, regions []Region, sibs *[]uint32, lo uint32, hi
 	return shape_span(code, regions, sibs, lo, hi, first)
 }
 
+func Tir_size_node(w *Work, at uint32) {
+	size_node(w, at)
+}
+
 func Tir_skip_blanks(pat []byte, at *uint32) {
 	skip_blanks(pat, at)
 }
@@ -7756,6 +8299,10 @@ func Tir_skip_gaps(pat []byte, at *uint32, w *Work) {
 
 func Tir_walk_alt(w *Work, top uint32, job Job, nd Node) {
 	walk_alt(w, top, job, nd)
+}
+
+func Tir_walk_lowered(w *Work, top uint32, job Job, nd Node) {
+	walk_lowered(w, top, job, nd)
 }
 
 func Tir_walk_repeat(w *Work, top uint32, job Job, nd Node) {
@@ -7871,6 +8418,9 @@ func (v *Re) Tir_bsr() uint32 { return v.bsr }
 func (v *Re) Tir_hascrlf() uint32 { return v.hascrlf }
 func (v *Re) Tir_crfirst() uint32 { return v.crfirst }
 func (v *Re) Tir_pike() bool { return v.pike }
+func (v *Re) Tir_lowdec() uint32 { return v.lowdec }
+func (v *Re) Tir_blockers() uint32 { return v.blockers }
+func (v *Re) Tir_lowfits() bool { return v.lowfits }
 func (v *Re) Tir_hascert() bool { return v.hascert }
 func (v *Re) Tir_cert() Cert { return v.cert }
 func (v *Re) Tir_haspikecert() bool { return v.haspikecert }
@@ -7899,6 +8449,16 @@ func (v *Room) Tir_pool() uint64 { return v.pool }
 func (v *Room) Tir_words() uint32 { return v.words }
 func (v *Room) Tir_reserved() uint64 { return v.reserved }
 
+func (v *Size) Tir_code() uint64 { return v.code }
+func (v *Size) Tir_regions() uint64 { return v.regions }
+func (v *Size) Tir_reps() uint64 { return v.reps }
+func (v *Size) Tir_visits() uint64 { return v.visits }
+func (v *Size) Tir_depth() uint32 { return v.depth }
+func (v *Size) Tir_patches() uint32 { return v.patches }
+func (v *Size) Tir_nullable() bool { return v.nullable }
+func (v *Size) Tir_blockers() uint32 { return v.blockers }
+func (v *Size) Tir_needs() bool { return v.needs }
+
 func (v *Th) Tir_pc() uint32 { return v.pc }
 func (v *Th) Tir_h() uint32 { return v.h }
 
@@ -7923,3 +8483,16 @@ func (v *Work) Tir_nltype() uint32 { return v.nltype }
 func (v *Work) Tir_clselems() uint32 { return v.clselems }
 func (v *Work) Tir_clsrange() uint32 { return v.clsrange }
 func (v *Work) Tir_clscrlf() uint32 { return v.clscrlf }
+func (v *Work) Tir_lowering() bool { return v.lowering }
+func (v *Work) Tir_lowdec() uint32 { return v.lowdec }
+func (v *Work) Tir_blockers() uint32 { return v.blockers }
+func (v *Work) Tir_lowfits() bool { return v.lowfits }
+func (v *Work) Tir_predicted() bool { return v.predicted }
+func (v *Work) Tir_fitcode() uint64 { return v.fitcode }
+func (v *Work) Tir_fitregion() uint64 { return v.fitregion }
+func (v *Work) Tir_fitrep() uint64 { return v.fitrep }
+func (v *Work) Tir_fitvisit() uint64 { return v.fitvisit }
+func (v *Work) Tir_fitjobs() uint32 { return v.fitjobs }
+func (v *Work) Tir_fitpatch() uint32 { return v.fitpatch }
+func (v *Work) Tir_peakjobs() uint32 { return v.peakjobs }
+func (v *Work) Tir_peakpatch() uint32 { return v.peakpatch }

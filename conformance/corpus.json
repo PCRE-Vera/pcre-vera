@@ -1786,6 +1786,201 @@
         "kind": "match",
         "ovector": [
           0,
+          4
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-count-preference-is-lazy-first",
+      "newline": 0,
+      "note": "the generated optionals nest so the k-th copy is decided before the (k+1)-th, which is what makes a wrong nesting visible here",
+      "pattern": "617b312c337d3f62",
+      "start": 0,
+      "subject": "61616162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-count-preference-is-greedy-first",
+      "newline": 0,
+      "pattern": "617b312c337d62",
+      "start": 0,
+      "subject": "616162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3,
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-copy-overwrites-the-group",
+      "newline": 0,
+      "pattern": "2861297b337d",
+      "start": 0,
+      "subject": "616161"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          3,
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-skipped-copy-keeps-the-previous-capture",
+      "newline": 0,
+      "pattern": "2861297b312c337d62",
+      "start": 0,
+      "subject": "616162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1,
+          0,
+          1,
+          -1,
+          -1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-unselected-arm-stays-unset",
+      "newline": 0,
+      "pattern": "283f3a2861297c286229297b312c327d",
+      "start": 0,
+      "subject": "61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2,
+          0,
+          1,
+          1,
+          2
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-both-arms-over-two-copies",
+      "newline": 0,
+      "pattern": "283f3a2861297c286229297b312c327d",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-optional-copy-of-an-optional-group",
+      "newline": 0,
+      "pattern": "283f3a2861293f297b312c327d",
+      "start": 0,
+      "subject": "61"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          4,
+          2,
+          3,
+          2,
+          3
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-ambiguous-body-backtracks-into-a-copy",
+      "newline": 0,
+      "pattern": "2828617c616129297b312c337d62",
+      "start": 0,
+      "subject": "61616162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
+          2,
+          1,
+          1
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-named-nullable-group",
+      "newline": 0,
+      "pattern": "283f3c673e613f297b312c337d62",
+      "start": 0,
+      "subject": "6162"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          9,
+          26,
+          9,
+          14,
+          15,
+          26
+        ]
+      },
+      "flags": 0,
+      "matchFlags": 0,
+      "name": "lowered-email-two-plus-quantifiers",
+      "newline": 0,
+      "pattern": "283f3c757365723e5c772b2940283f3c686f73743e5b5c772e5d2b29",
+      "start": 0,
+      "subject": "777269746520746f20616c696365406578616d706c652e6f72672c20706c65617365"
+    },
+    {
+      "bsr": 0,
+      "expect": {
+        "kind": "match",
+        "ovector": [
+          0,
           2,
           0,
           1,

@@ -2,9 +2,11 @@
 
 Four language-neutral JSON files and a small runner per backend. They are what
 makes "the Python interpreter, the generated Go, and the generated JavaScript
-agree bit for bit" a thing that gets checked rather than hoped for.
+agree bit for bit" a thing that gets checked rather than hoped for. A fifth
+file, `migration.json`, sits beside them and is a report rather than a
+contract; it has no runner, and the section below says why.
 
-All four are generated — `make generate` writes them — and all four are
+All of them are generated — `make generate` writes them — and all of them are
 committed, so a change to any of them shows up as a reviewable diff and
 `make generate-verify` fails on a checkout where one has drifted.
 
@@ -18,7 +20,7 @@ pcre2 for the same reason the Python engine does.
 
 `lowering.json` answers a different question. The engine exercises the backends
 broadly but not squarely: every multiplication it performs is on a small
-offset, so a JavaScript printer that forgot `Math.imul` would pass all 264
+offset, so a JavaScript printer that forgot `Math.imul` would pass all 274
 pattern cases and then be wrong the first time a product went past 2^53. So
 `src/pcrevera/backends/lowering.py` is a small TIR program that does those
 things on purpose, with operands sitting on the boundary — the 32-bit widths,
@@ -111,6 +113,26 @@ pcre2's opinion of the same cases is a test rather than a file:
 `tests/test_sweep.py` replays the shard through the oracle in the same run that
 replays it through the interpreter. The chain is the wave 1 corpus's — pcre2
 agrees with Python, and Go and JavaScript agree with the file.
+
+`migration.json` is the odd one out, and says so: it is a report rather than a
+contract. Every pattern the three files above name gets a row saying what the
+quantifier lowering of DESIGN.md section 4.3 did to it — the blockers the
+pre-check found on the original tree, the decision they led to, whether
+`pike_ok` accepted the emitted program, what the backtracking analyzer answered
+about it whichever path was selected, which certificate the pattern carries and
+the class it claims, and the three accessors at a thousand bytes. The columns
+are deliberately not recombined: a pattern can be Pike-selected and linear
+while the backtracking analyzer answers `ArOverflow` for the same program, and
+a schema with one certificate column would have to record that as a
+contradiction.
+
+No backend replays it, because nothing in it is a claim about a backend: the
+generator writes a row only after reproducing the compiler's recorded decision
+from the parsed tree, after `pike_ok` has agreed with every lowering, and after
+the counter form left behind by a decline has been found to show the blockers
+the pre-check named. `tests/test_migration.py` then reads the census off the
+columns. A decision the derivation cannot reproduce fails generation rather
+than appearing in the file.
 
 The runners, one row per file and one column per language:
 

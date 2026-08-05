@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .. import leanexport
 from ..leanexport import bridge
-from ..engine import certificate_corpus
+from ..engine import certificate_corpus, migration
 from ..engine.program import program
 from ..oracle import conformance
 from ..paths import GEN_DIR
@@ -79,6 +79,7 @@ def generate() -> tuple[str, list[Output]]:
         Output(lowering.PATH, lowering.corpus_text()),
         Output(certificate_corpus.PATH, certificate_corpus.corpus_text()),
         Output(shard.PATH, shard.corpus_text()),
+        Output(migration.PATH, migration.corpus_text()),
         # The AST bridge is a function of the two corpora it feeds the Lean
         # replay of, computed from the same fresh texts so that verifying it
         # never depends on what happens to be on disk.

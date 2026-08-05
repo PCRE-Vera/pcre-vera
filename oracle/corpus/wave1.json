@@ -117,6 +117,17 @@
     {"name": "quantifier-empty-alternative-stops-the-loop", "pattern": "(|a)*", "subject": "aa", "expect": {"match": [0, 0, 0, 0]}},
     {"name": "quantifier-bounded-copies-all-run", "pattern": "(|a){1,3}", "subject": "a", "match_options": ["NOTEMPTY"], "expect": {"match": [0, 1, 0, 1]}, "note": "a bounded repetition is replicated, so it has no empty-loop break"},
 
+    {"name": "lowered-count-preference-is-lazy-first", "pattern": "a{1,3}?b", "subject": "aaab", "expect": {"match": [0, 4]}, "note": "the generated optionals nest so the k-th copy is decided before the (k+1)-th, which is what makes a wrong nesting visible here"},
+    {"name": "lowered-count-preference-is-greedy-first", "pattern": "a{1,3}b", "subject": "aab", "expect": {"match": [0, 3]}},
+    {"name": "lowered-copy-overwrites-the-group", "pattern": "(a){3}", "subject": "aaa", "expect": {"match": [0, 3, 2, 3]}},
+    {"name": "lowered-skipped-copy-keeps-the-previous-capture", "pattern": "(a){1,3}b", "subject": "aab", "expect": {"match": [0, 3, 1, 2]}},
+    {"name": "lowered-unselected-arm-stays-unset", "pattern": "(?:(a)|(b)){1,2}", "subject": "a", "expect": {"match": [0, 1, 0, 1, -1, -1]}},
+    {"name": "lowered-both-arms-over-two-copies", "pattern": "(?:(a)|(b)){1,2}", "subject": "ab", "expect": {"match": [0, 2, 0, 1, 1, 2]}},
+    {"name": "lowered-optional-copy-of-an-optional-group", "pattern": "(?:(a)?){1,2}", "subject": "a", "expect": {"match": [0, 1, 0, 1]}},
+    {"name": "lowered-ambiguous-body-backtracks-into-a-copy", "pattern": "((a|aa)){1,3}b", "subject": "aaab", "expect": {"match": [0, 4, 2, 3, 2, 3]}},
+    {"name": "lowered-named-nullable-group", "pattern": "(?<g>a?){1,3}b", "subject": "ab", "expect": {"match": [0, 2, 1, 1]}},
+    {"name": "lowered-email-two-plus-quantifiers", "pattern": "(?<user>\\w+)@(?<host>[\\w.]+)", "subject": "write to alice@example.org, please", "expect": {"match": [9, 26, 9, 14, 15, 26]}},
+
     {"name": "capture-two-groups", "pattern": "(a)(b)", "subject": "ab", "expect": {"match": [0, 2, 0, 1, 1, 2]}},
     {"name": "capture-unset-group-is-minus-one", "pattern": "(a)|(b)", "subject": "b", "expect": {"match": [0, 1, -1, -1, 0, 1]}},
     {"name": "capture-non-capturing-group", "pattern": "(?:a)(b)", "subject": "ab", "expect": {"match": [0, 2, 1, 2]}},

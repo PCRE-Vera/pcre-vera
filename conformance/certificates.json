@@ -436,14 +436,14 @@
         "value": 1
       },
       "name": "a-large-linear-constant",
-      "note": "A counted repetition keeps the backtracking path, and this one is linear with a coefficient near the top of the counter, so the cost answer crosses from finite to ExceedsBudget down the length list while the class stays linear throughout.",
-      "pattern": "283f3a617c61297b302c34337d",
+      "note": "The `\\R` keeps the backtracking path, and the counted repetition beside it is linear with a coefficient near the top of the counter, so the cost answer crosses from finite to ExceedsBudget down the length list while the class stays linear throughout.",
+      "pattern": "283f3a617c61297b302c34337d5c52",
       "queries": [
         {
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 5471169859813717
+            "value": 5523946417946965
           },
           "exercise": false,
           "mem": {
@@ -460,7 +460,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 5875790138835306
+            "value": 5981343255101802
           },
           "exercise": false,
           "mem": {
@@ -477,7 +477,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 6280410417856895
+            "value": 6438740092256639
           },
           "exercise": false,
           "mem": {
@@ -865,6 +865,866 @@
         "status": 0,
         "value": 1
       },
+      "name": "a-plus-gone-lockstep",
+      "note": "The ordinary spelling of one-or-more. It used to be a counter, a backtracking certificate and a superlinear class; lowered to `aa*` it is the same pattern on the thread list, and the class is what the wave 1 guarantee always meant to say about it.",
+      "pattern": "612b",
+      "queries": [
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 4704
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 3121
+          },
+          "n": 0,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 4735
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 3121
+          },
+          "n": 1,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 4766
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 3121
+          },
+          "n": 2,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 5014
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 3121
+          },
+          "n": 10,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 6347
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 3121
+          },
+          "n": 53,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 2036289
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 3121
+          },
+          "n": 65535,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 66571997761
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 3121
+          },
+          "n": 2147483647,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 2147483648,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 9007199254740991,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 1,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 2,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 4294967295,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "class": {
+        "status": 0,
+        "value": 1
+      },
+      "name": "an-ambiguous-body-lowered",
+      "note": "A repetition of a repetition. In counter form the inner loop's ambiguity grew with the subject and there was no certificate at all, so every accessor refused; lowered, it is two stars side by side and every accessor answers. The migration is from ExceedsBudget rather than from a worse number.",
+      "pattern": "283f3a612b297b327d",
+      "queries": [
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 8174
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 5426
+          },
+          "n": 0,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 8218
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 5426
+          },
+          "n": 1,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 8262
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 5426
+          },
+          "n": 2,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 8614
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 5426
+          },
+          "n": 10,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 10506
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 5426
+          },
+          "n": 53,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 2891714
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 5426
+          },
+          "n": 65535,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 94489288642
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 5426
+          },
+          "n": 2147483647,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 2147483648,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 9007199254740991,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 1,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 2,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 4294967295,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "class": {
+        "status": 0,
+        "value": 1
+      },
+      "name": "the-pattern-the-lowering-was-for",
+      "note": "The example the README opens with, and the one PLAN-POST-M6.md was written about. Two ordinary one-or-more quantifiers used to make it a cubic backtracking certificate and a superlinear class; lowered, it runs on the thread list and answers numbers a realtime caller can budget with.",
+      "pattern": "283f3c757365723e5c772b2940283f3c686f73743e5b5c772e5d2b29",
+      "queries": [
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 18330
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 12115
+          },
+          "n": 0,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 18513
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 12115
+          },
+          "n": 1,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 18696
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 12115
+          },
+          "n": 2,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 20160
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 12115
+          },
+          "n": 10,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 28029
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 12115
+          },
+          "n": 53,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 12011235
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 12115
+          },
+          "n": 65535,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 392989525731
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 12115
+          },
+          "n": 2147483647,
+          "stack": {
+            "status": 0,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 2147483648,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 9007199254740991,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 1,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 2,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 4294967295,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "class": {
+        "status": 0,
+        "value": 0
+      },
+      "name": "a-quantifier-a-backslash-r-keeps",
+      "note": "The same quantifier with a `\\R` after it. The pre-check declines the whole pattern rather than lowering what it could, so this keeps its counter, its backtracking certificate and its superlinear class \u2014 which is the carve-out stated honestly rather than a number that moved.",
+      "pattern": "612b5c52",
+      "queries": [
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 893
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 560
+          },
+          "n": 0,
+          "stack": {
+            "status": 0,
+            "value": 3
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 1162
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 672
+          },
+          "n": 1,
+          "stack": {
+            "status": 0,
+            "value": 4
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 1463
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 784
+          },
+          "n": 2,
+          "stack": {
+            "status": 0,
+            "value": 5
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 5023
+          },
+          "exercise": true,
+          "mem": {
+            "status": 0,
+            "value": 1680
+          },
+          "n": 10,
+          "stack": {
+            "status": 0,
+            "value": 13
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 59246
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 6496
+          },
+          "n": 53,
+          "stack": {
+            "status": 0,
+            "value": 56
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 0,
+            "value": 68733960848
+          },
+          "exercise": false,
+          "mem": {
+            "status": 0,
+            "value": 7340480
+          },
+          "n": 65535,
+          "stack": {
+            "status": 0,
+            "value": 65538
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 4,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 4,
+            "value": 0
+          },
+          "n": 2147483647,
+          "stack": {
+            "status": 4,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 2147483648,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 0,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 9007199254740991,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 1,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 2,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        },
+        {
+          "config": 4294967295,
+          "cost": {
+            "status": 3,
+            "value": 0
+          },
+          "exercise": false,
+          "mem": {
+            "status": 3,
+            "value": 0
+          },
+          "n": 10,
+          "stack": {
+            "status": 3,
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "class": {
+        "status": 0,
+        "value": 1
+      },
       "name": "an-ambiguity-lockstep-defuses",
       "note": "Two identical arms under a star are exponential to a backtracker and nothing at all to a thread list, so what used to be the textbook refusal answers small linear numbers.",
       "pattern": "283f3a617c61292a",
@@ -1081,14 +1941,14 @@
         "value": 0
       },
       "name": "polynomial-looking",
-      "note": "A counted repetition pins this to the backtracking path, and the star after it makes that path quadratic, so the class is the honest notProvenLinear and the numbers grow with the square.",
-      "pattern": "617b302c327d622a",
+      "note": "The `\\R` pins this to the backtracking path, and the star before it makes that path quadratic, so the class is the honest notProvenLinear and the numbers grow with the square.",
+      "pattern": "617b302c327d622a5c52",
       "queries": [
         {
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 3399
+            "value": 3423
           },
           "exercise": true,
           "mem": {
@@ -1105,7 +1965,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 4838
+            "value": 4910
           },
           "exercise": true,
           "mem": {
@@ -1122,7 +1982,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 6445
+            "value": 6589
           },
           "exercise": true,
           "mem": {
@@ -1139,7 +1999,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 25349
+            "value": 26933
           },
           "exercise": false,
           "mem": {
@@ -1156,7 +2016,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 311170
+            "value": 346810
           },
           "exercise": false,
           "mem": {
@@ -1173,7 +2033,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 360855046224
+            "value": 412395440208
           },
           "exercise": false,
           "mem": {
@@ -1296,14 +2156,14 @@
         "value": 0
       },
       "name": "exponential-looking",
-      "note": "A lower bound keeps this off the lockstep path, and the ambiguous body under an unbounded repetition gives the backtracking bound a growing base, so finite numbers at short lengths turn to ExceedsBudget within a few dozen bytes.",
-      "pattern": "283f3a617c61297b322c7d",
+      "note": "The `\\R` keeps this off the lockstep path, and the ambiguous body under an unbounded repetition gives the backtracking bound a growing base, so finite numbers at short lengths turn to ExceedsBudget within a few dozen bytes.",
+      "pattern": "283f3a617c61297b322c7d5c52",
       "queries": [
         {
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 5317
+            "value": 5365
           },
           "exercise": true,
           "mem": {
@@ -1320,7 +2180,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 11412
+            "value": 11604
           },
           "exercise": true,
           "mem": {
@@ -1337,7 +2197,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 24380
+            "value": 24956
           },
           "exercise": false,
           "mem": {
@@ -1354,7 +2214,7 @@
           "config": 0,
           "cost": {
             "status": 0,
-            "value": 9427968
+            "value": 9968640
           },
           "exercise": false,
           "mem": {
@@ -1726,8 +2586,8 @@
         "value": 0
       },
       "name": "overflowing-no-certificate",
-      "note": "One more iteration than the coefficient that fits, on the backtracking path a counted repetition pins it to. The same refusal as above by a different route, and the accessors must not care which.",
-      "pattern": "283f3a617c61297b302c34347d",
+      "note": "One more iteration than the coefficient that fits, on the backtracking path the `\\R` pins it to. The same refusal as above by a different route, and the accessors must not care which.",
+      "pattern": "283f3a617c61297b302c34347d5c52",
       "queries": [
         {
           "config": 0,
@@ -2512,37 +3372,37 @@
     {
       "bounds": [
         {
-          "cost": 1433,
+          "cost": 1445,
           "mem": 896,
           "n": 0,
           "stack": 6
         },
         {
-          "cost": 1538,
+          "cost": 1562,
           "mem": 896,
           "n": 1,
           "stack": 6
         },
         {
-          "cost": 1643,
+          "cost": 1679,
           "mem": 896,
           "n": 2,
           "stack": 6
         },
         {
-          "cost": 2483,
+          "cost": 2615,
           "mem": 896,
           "n": 10,
           "stack": 6
         },
         {
-          "cost": 6998,
+          "cost": 7646,
           "mem": 896,
           "n": 53,
           "stack": 6
         },
         {
-          "cost": 6882608,
+          "cost": 7669040,
           "mem": 896,
           "n": 65535,
           "stack": 6
@@ -2558,7 +3418,109 @@
       "found": 3,
       "name": "counted",
       "note": "Bounded above, the declared maximum is what stops it, so there is no term in n inside the loop and the pattern is linear after all.",
+      "pattern": "617b322c357d5c52"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 404,
+          "mem": 264,
+          "n": 0,
+          "stack": 3
+        },
+        {
+          "cost": 424,
+          "mem": 264,
+          "n": 1,
+          "stack": 3
+        },
+        {
+          "cost": 444,
+          "mem": 264,
+          "n": 2,
+          "stack": 3
+        },
+        {
+          "cost": 604,
+          "mem": 264,
+          "n": 10,
+          "stack": 3
+        },
+        {
+          "cost": 1464,
+          "mem": 264,
+          "n": 53,
+          "stack": 3
+        },
+        {
+          "cost": 1311104,
+          "mem": 264,
+          "n": 65535,
+          "stack": 3
+        },
+        {
+          "cost": null,
+          "mem": 264,
+          "n": 9007199254740991,
+          "stack": 3
+        }
+      ],
+      "complexity": 1,
+      "found": 3,
+      "name": "a-bounded-quantifier-lowered",
+      "note": "The same quantifier lowered, which is what the analyzer usually sees now: no counter, no pass count, and a chain of optionals whose flow multiplies out to a constant.",
       "pattern": "617b322c357d"
+    },
+    {
+      "bounds": [
+        {
+          "cost": 2390,
+          "mem": 1480,
+          "n": 0,
+          "stack": 10
+        },
+        {
+          "cost": 4852,
+          "mem": 2776,
+          "n": 1,
+          "stack": 21
+        },
+        {
+          "cost": 8482,
+          "mem": 4520,
+          "n": 2,
+          "stack": 36
+        },
+        {
+          "cost": 99730,
+          "mem": 34600,
+          "n": 10,
+          "stack": 300
+        },
+        {
+          "cost": 5677948,
+          "mem": 687512,
+          "n": 53,
+          "stack": 6105
+        },
+        {
+          "cost": 7883086121010080,
+          "mem": null,
+          "n": 65535,
+          "stack": null
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "complexity": 0,
+      "found": 3,
+      "name": "an-ambiguous-body-under-a-bounded-quantifier",
+      "note": "Two copies of a body that is itself a repetition. In counter form this had no certificate at all \u2014 the inner loop's ambiguity grew with the subject \u2014 and lowered it is two ordinary stars side by side, each with a body that has to consume.",
+      "pattern": "283f3a612b297b327d"
     },
     {
       "bounds": [
@@ -2608,7 +3570,7 @@
       "complexity": 1,
       "found": 3,
       "name": "a-repetition-at-the-declared-maximum",
-      "note": "The largest count a quantifier may name. Nothing here is near the counter's range; the numbers are simply large, which is what a caller asking for a budget wanted to know.",
+      "note": "The largest count a quantifier may name. Sixty-five thousand copies of the body is well past the program-size cap, so this is the carve-out the dry run decides rather than one the pre-check does, and the counter form it falls back to prices in section 4.4. Nothing here is near the counter's range; the numbers are simply large, which is what a caller asking for a budget wanted to know.",
       "pattern": "617b36353533357d"
     },
     {
@@ -2842,19 +3804,19 @@
     {
       "bounds": [
         {
-          "cost": 5471169859813717,
+          "cost": 5523946417946965,
           "mem": null,
           "n": 0,
           "stack": null
         },
         {
-          "cost": 5875790138835306,
+          "cost": 5981343255101802,
           "mem": null,
           "n": 1,
           "stack": null
         },
         {
-          "cost": 6280410417856895,
+          "cost": 6438740092256639,
           "mem": null,
           "n": 2,
           "stack": null
@@ -2888,7 +3850,7 @@
       "found": 3,
       "name": "the-largest-coefficient-that-fits",
       "note": "Two ways round a loop that may go round forty-three times is 2^44 passes, and everything the tree multiplies by that still lands inside a counter.",
-      "pattern": "283f3a617c61297b302c34337d"
+      "pattern": "283f3a617c61297b302c34337d5c52"
     },
     {
       "bounds": [],
@@ -2896,7 +3858,7 @@
       "found": 2,
       "name": "one-coefficient-too-many",
       "note": "One more time round and it does not. The requirement saturating is not a requirement met, and a coefficient that stopped at the cap is one every claim would be found to satisfy.",
-      "pattern": "283f3a617c61297b302c34347d"
+      "pattern": "283f3a617c61297b302c34347d5c52"
     },
     {
       "bounds": [],
@@ -2904,7 +3866,7 @@
       "found": 2,
       "name": "a-pass-count-past-the-counter",
       "note": "Far enough out that it is the pass count itself that runs out of room rather than anything derived from it, which is a different place in the arithmetic and gets there its own way.",
-      "pattern": "283f3a617c61297b302c35327d"
+      "pattern": "283f3a617c61297b302c35327d5c52"
     },
     {
       "bounds": [],
@@ -2912,7 +3874,7 @@
       "found": 2,
       "name": "nested-counted-repetitions",
       "note": "Ten of ten of ten is a hundred iterations of a body that already costs, and the product runs past what a counter holds well before anything about it is ambiguous.",
-      "pattern": "283f3a283f3a61297b31307d297b31307d"
+      "pattern": "283f3a283f3a61297b31307d297b31307d5c52"
     }
   ],
   "cases": [
@@ -4399,37 +5361,37 @@
     {
       "bounds": [
         {
-          "cost": 1433,
+          "cost": 1445,
           "mem": 896,
           "n": 0,
           "stack": 6
         },
         {
-          "cost": 1538,
+          "cost": 1562,
           "mem": 896,
           "n": 1,
           "stack": 6
         },
         {
-          "cost": 1643,
+          "cost": 1679,
           "mem": 896,
           "n": 2,
           "stack": 6
         },
         {
-          "cost": 2483,
+          "cost": 2615,
           "mem": 896,
           "n": 10,
           "stack": 6
         },
         {
-          "cost": 6998,
+          "cost": 7646,
           "mem": 896,
           "n": 53,
           "stack": 6
         },
         {
-          "cost": 6882608,
+          "cost": 7669040,
           "mem": 896,
           "n": 65535,
           "stack": 6
@@ -4447,7 +5409,7 @@
         "cost": {
           "base": 1,
           "c0": 1328,
-          "c1": 105,
+          "c1": 117,
           "c2": 0,
           "c3": 0,
           "c4": 0
@@ -4465,6 +5427,40 @@
             "outs": {
               "base": 1,
               "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 6,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 13,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 49,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 12,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -4528,40 +5524,6 @@
               "c3": 0,
               "c4": 0
             }
-          },
-          {
-            "outs": {
-              "base": 1,
-              "c0": 12,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "stack": {
-              "base": 1,
-              "c0": 6,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "trail": {
-              "base": 1,
-              "c0": 13,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "work": {
-              "base": 1,
-              "c0": 25,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            }
           }
         ],
         "stack": {
@@ -4585,7 +5547,7 @@
       "config": 0,
       "name": "counted",
       "note": "A bounded one, where the declared maximum is what stops it and the bound has no term in n at all.",
-      "pattern": "617b322c357d",
+      "pattern": "617b322c357d5c52",
       "shape": 28
     },
     {
@@ -5145,37 +6107,37 @@
     {
       "bounds": [
         {
-          "cost": 5317,
+          "cost": 5365,
           "mem": 3296,
           "n": 0,
           "stack": 32
         },
         {
-          "cost": 5706,
+          "cost": 5802,
           "mem": 3296,
           "n": 1,
           "stack": 32
         },
         {
-          "cost": 6095,
+          "cost": 6239,
           "mem": 3296,
           "n": 2,
           "stack": 32
         },
         {
-          "cost": 9207,
+          "cost": 9735,
           "mem": 3296,
           "n": 10,
           "stack": 32
         },
         {
-          "cost": 25934,
+          "cost": 28526,
           "mem": 3296,
           "n": 53,
           "stack": 32
         },
         {
-          "cost": 25498432,
+          "cost": 28644160,
           "mem": 3296,
           "n": 65535,
           "stack": 32
@@ -5193,7 +6155,7 @@
         "cost": {
           "base": 1,
           "c0": 4928,
-          "c1": 389,
+          "c1": 437,
           "c2": 0,
           "c3": 0,
           "c4": 0
@@ -5234,7 +6196,7 @@
             },
             "work": {
               "base": 1,
-              "c0": 177,
+              "c0": 225,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -5268,7 +6230,7 @@
             },
             "work": {
               "base": 1,
-              "c0": 129,
+              "c0": 177,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -5467,7 +6429,425 @@
       "config": 0,
       "name": "ambiguous-body-bounded",
       "note": "A body with two ways to match the same character, repeated at most three times. Each iteration doubles the ways into the next, so the flow through the head is a power of two and the bound stays a number.",
-      "pattern": "283f3a617c61297b302c337d",
+      "pattern": "283f3a617c61297b302c337d5c52",
+      "shape": 28
+    },
+    {
+      "bounds": [
+        {
+          "cost": 329,
+          "mem": 216,
+          "n": 0,
+          "stack": 2
+        },
+        {
+          "cost": 346,
+          "mem": 216,
+          "n": 1,
+          "stack": 2
+        },
+        {
+          "cost": 363,
+          "mem": 216,
+          "n": 2,
+          "stack": 2
+        },
+        {
+          "cost": 499,
+          "mem": 216,
+          "n": 10,
+          "stack": 2
+        },
+        {
+          "cost": 1230,
+          "mem": 216,
+          "n": 53,
+          "stack": 2
+        },
+        {
+          "cost": 1114424,
+          "mem": 216,
+          "n": 65535,
+          "stack": 2
+        },
+        {
+          "cost": null,
+          "mem": 216,
+          "n": 9007199254740991,
+          "stack": 2
+        }
+      ],
+      "cert": {
+        "complexity": 1,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 312,
+          "c1": 17,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 216,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 9,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 6,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 4,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 2,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 2,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 0,
+          "c1": 0,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 28,
+      "config": 0,
+      "name": "a-bounded-quantifier-lowered",
+      "note": "The same quantifier with nothing to keep it in counter form. It comes out as two copies of the body and a chain of nested one-split optionals, so what prices it is section 4.3 three times over rather than section 4.4 once \u2014 and the tree the compiler emitted for it is what the checker reads back.",
+      "pattern": "617b322c347d",
+      "shape": 28
+    },
+    {
+      "bounds": [
+        {
+          "cost": 707,
+          "mem": 448,
+          "n": 0,
+          "stack": 2
+        },
+        {
+          "cost": 954,
+          "mem": 560,
+          "n": 1,
+          "stack": 3
+        },
+        {
+          "cost": 1229,
+          "mem": 672,
+          "n": 2,
+          "stack": 4
+        },
+        {
+          "cost": 4437,
+          "mem": 1568,
+          "n": 10,
+          "stack": 12
+        },
+        {
+          "cost": 52382,
+          "mem": 6384,
+          "n": 53,
+          "stack": 55
+        },
+        {
+          "cost": 60142977512,
+          "mem": 7340368,
+          "n": 65535,
+          "stack": 65537
+        },
+        {
+          "cost": null,
+          "mem": null,
+          "n": 9007199254740991,
+          "stack": null
+        }
+      ],
+      "cert": {
+        "complexity": 0,
+        "config": 0,
+        "cost": {
+          "base": 1,
+          "c0": 488,
+          "c1": 205,
+          "c2": 14,
+          "c3": 0,
+          "c4": 0
+        },
+        "mem": {
+          "base": 1,
+          "c0": 336,
+          "c1": 112,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "prices": [
+          {
+            "outs": {
+              "base": 1,
+              "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 9,
+              "c1": 6,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 7,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 2,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 1,
+              "c1": 1,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 3,
+              "c1": 2,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 5,
+              "c1": 4,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          }
+        ],
+        "stack": {
+          "base": 1,
+          "c0": 1,
+          "c1": 1,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        },
+        "trail": {
+          "base": 1,
+          "c0": 3,
+          "c1": 2,
+          "c2": 0,
+          "c3": 0,
+          "c4": 0
+        }
+      },
+      "check": 28,
+      "config": 0,
+      "name": "an-unbounded-quantifier-lowered",
+      "note": "A nonzero minimum and no maximum: the copies the minimum demands, and then the native pure star, which is the one repetition shape the lockstep matcher admits and the one section 4.4 still prices here.",
+      "pattern": "617b322c7d",
       "shape": 28
     },
     {
@@ -8771,8 +10151,8 @@
       "check": 11,
       "config": 1,
       "name": "pike-on-an-ineligible-pattern",
-      "note": "A lower bound keeps `a+` off the lockstep path, so no Pike certificate can be about it, whatever its numbers say. Refused before anything is priced.",
-      "pattern": "612b",
+      "note": "`\\R` consumes a variable number of bytes, so it keeps a pattern off the lockstep path however that pattern is compiled, and no Pike certificate can be about it whatever its numbers say. Refused before anything is priced.",
+      "pattern": "5c52",
       "shape": 28
     },
     {
@@ -9676,37 +11056,37 @@
     {
       "bounds": [
         {
-          "cost": 887,
+          "cost": 893,
           "mem": 560,
           "n": 0,
           "stack": 4
         },
         {
-          "cost": 950,
+          "cost": 962,
           "mem": 560,
           "n": 1,
           "stack": 4
         },
         {
-          "cost": 1013,
+          "cost": 1031,
           "mem": 560,
           "n": 2,
           "stack": 4
         },
         {
-          "cost": 1517,
+          "cost": 1583,
           "mem": 560,
           "n": 10,
           "stack": 4
         },
         {
-          "cost": 4226,
+          "cost": 4550,
           "mem": 560,
           "n": 53,
           "stack": 4
         },
         {
-          "cost": 4129592,
+          "cost": 4522808,
           "mem": 560,
           "n": 65535,
           "stack": 4
@@ -9724,7 +11104,7 @@
         "cost": {
           "base": 1,
           "c0": 824,
-          "c1": 63,
+          "c1": 69,
           "c2": 0,
           "c3": 0,
           "c4": 0
@@ -9742,6 +11122,40 @@
             "outs": {
               "base": 1,
               "c0": 0,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "stack": {
+              "base": 1,
+              "c0": 3,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "trail": {
+              "base": 1,
+              "c0": 7,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            },
+            "work": {
+              "base": 1,
+              "c0": 25,
+              "c1": 0,
+              "c2": 0,
+              "c3": 0,
+              "c4": 0
+            }
+          },
+          {
+            "outs": {
+              "base": 1,
+              "c0": 6,
               "c1": 0,
               "c2": 0,
               "c3": 0,
@@ -9805,40 +11219,6 @@
               "c3": 0,
               "c4": 0
             }
-          },
-          {
-            "outs": {
-              "base": 1,
-              "c0": 6,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "stack": {
-              "base": 1,
-              "c0": 3,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "trail": {
-              "base": 1,
-              "c0": 7,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            },
-            "work": {
-              "base": 1,
-              "c0": 13,
-              "c1": 0,
-              "c2": 0,
-              "c3": 0,
-              "c4": 0
-            }
           }
         ],
         "stack": {
@@ -9862,7 +11242,7 @@
       "config": 0,
       "name": "a-unit-extra-on-stack",
       "note": "Cost and memory are bounds and may overestimate; the stack claim is what a preallocated context sizes its backtrack array from, while the memory requirement was priced from the root region's number, so any daylight between the two is refused. One entry above exact, at the constant.",
-      "pattern": "617b312c327d",
+      "pattern": "617b312c327d5c52",
       "shape": 28
     },
     {
@@ -13624,7 +15004,7 @@
       "config": 0,
       "name": "a-pass-count-past-the-counter",
       "note": "Two ways round a loop that may go round sixty times is 2^61, which no counter holds. The requirement saturating is not a requirement met.",
-      "pattern": "283f3a617c61297b302c36307d",
+      "pattern": "283f3a617c61297b302c36307d5c52",
       "shape": 28
     },
     {
@@ -17665,19 +19045,19 @@
           "cost": null,
           "ovector": [
             0,
-            3
+            4
           ],
           "stack": null,
           "start": 0,
           "status": 0,
-          "subject": "616162"
+          "subject": "6161620a"
         },
         {
           "cost": null,
           "stack": 0,
           "start": 0,
           "status": 2,
-          "subject": "616162"
+          "subject": "6161620a"
         },
         {
           "cost": null,
@@ -17690,12 +19070,12 @@
           "cost": null,
           "ovector": [
             0,
-            1
+            2
           ],
           "stack": null,
           "start": 0,
           "status": 0,
-          "subject": "62"
+          "subject": "620a"
         }
       ],
       "creations": [
@@ -17743,8 +19123,8 @@
       ],
       "maxlen": 32,
       "name": "a-backtracker-sized-from-its-claims",
-      "note": "A counted repetition keeps this on the backtracking path, so the arrays are sized from the certificate's stack and trail claims at the declared length \u2014 the reason those claims are held to equality. A stack limit lowered to nothing starves the first fork, and the context is none the worse for it.",
-      "pattern": "617b302c327d622a"
+      "note": "The `\\R` keeps this on the backtracking path, counted repetition and all, so the arrays are sized from the certificate's stack and trail claims at the declared length \u2014 the reason those claims are held to equality. A stack limit lowered to nothing starves the first fork, and the context is none the worse for it.",
+      "pattern": "617b302c327d622a5c52"
     },
     {
       "calls": [

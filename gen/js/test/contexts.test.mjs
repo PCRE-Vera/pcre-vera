@@ -156,12 +156,18 @@ const counting = (run) => {
 };
 
 test("matching on a context constructs no backing store", () => {
-  // One pattern per execution path: the star rides the Pike VM, the counted
-  // repetition stays on the backtracker.
-  for (const pattern of ["(a)(b*)", "a{0,2}b*"]) {
+  // One pattern per execution path, plus the one this promise was re-verified
+  // on when the quantifier lowering landed: the star rides the Pike VM, a
+  // lowered counted repetition rides it too, and a \R stays on the
+  // backtracker.
+  for (const pattern of [
+    "(a)(b*)",
+    String.raw`(?<user>\w+)@(?<host>[\w.]+)`,
+    String.raw`a{0,2}b*\R`,
+  ]) {
     const re = compile(pattern);
     const held = re.createContext(64);
-    const matching = ascii("aabb");
+    const matching = ascii(pattern.includes("@") ? "to alice@example.org" : "aabb\n");
     const missing = ascii("zzz");
     const tooLong = new Uint8Array(65);
     // Warm and verified outside the window, then every path counted inside

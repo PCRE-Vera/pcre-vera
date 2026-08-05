@@ -88,6 +88,11 @@ def _entry(L: Layout) -> None:
     f.set(out.field("re").field("bsr"), f["bsr"])
     f.set(out.field("re").field("hascrlf"), w.field("hascrlf"))
     f.set(out.field("re").field("crfirst"), w.field("crfirst"))
+    # What the compiler decided about the quantifier lowering, carried out of
+    # the work area so that a report can read it rather than guess at it.
+    f.set(out.field("re").field("lowdec"), w.field("lowdec"))
+    f.set(out.field("re").field("blockers"), w.field("blockers"))
+    f.set(out.field("re").field("lowfits"), w.field("lowfits"))
     f.freeze(out.field("re").field("code"), w.field("code"))
     f.freeze(out.field("re").field("classes"), w.field("classes"))
     f.freeze(out.field("re").field("reps"), w.field("reps"))

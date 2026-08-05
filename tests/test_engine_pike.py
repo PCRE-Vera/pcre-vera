@@ -178,20 +178,29 @@ def _bsr(value: int) -> str:
 
 
 def test_eligibility_is_the_documented_predicate() -> None:
-    """Pure stars with consuming bodies; nothing counted, nullable, or \\R."""
+    """Pure stars with consuming bodies, counted repetitions lowered into them,
+    and the three carve-outs of DESIGN.md section 2.1 left outside."""
     for pattern, eligible in (
         (b"a*", True),
         (b"(a|b)*", True),
         (b"(ab)*", True),
         (b"a?", True),
         (b"", True),
-        (b"a+", False),
-        (b"a{2,3}", False),
-        (b"a{0,2}", False),
+        # What the lowering buys: a nonzero minimum, a finite bound, and an
+        # ambiguous body under a finite bound, which had no certificate at all.
+        (b"a+", True),
+        (b"a{2,3}", True),
+        (b"a{0,2}", True),
+        (b"(?:a+){2}", True),
+        (b"(a?){1,3}", True),
+        # And what it does not: a star that can finish an iteration emptily
+        # however it is spelled, and anything that reaches a \\R.
         (b"(a?)*", False),
         (b"(?:a*)*", False),
         (b"(a|)*", False),
+        (b"(?:a?)+", False),
         (rb"\R", False),
+        (rb"a+\R", False),
         (rb"(\b)*", False),
     ):
         built = compiled(pattern)
@@ -202,13 +211,14 @@ def test_an_ineligible_pattern_is_bad_input_not_a_wrong_answer() -> None:
     """The engine's own refusal, per DESIGN.md section 6's `Exec` on a
     configuration the pattern is not eligible for.
 
-    `a+` is the case that showed why: read as a pure-star fork it admits the
-    zero-iteration exit and matches empty, so a missing guard is not a crash
-    but a silently wrong pcre2 answer.
+    `(?:a?)+` is the case that shows why the guard has to be about the emitted
+    program: it lowers to `(?:a?)(?:a?)*`, whose trailing star can finish an
+    iteration without consuming, and a visited set keyed by pc would hand the
+    answer to the wrong path rather than crash.
     """
     from pcrevera.engine import BadInput
 
-    for pattern in (b"a+", b"a{2,3}", b"(a?)*", rb"\R"):
+    for pattern in (rb"(?:a?)+", b"(a?)*", b"(a|)*", rb"\R", rb"a+\R"):
         built = compiled(pattern)
         assert not ENGINE.pike_eligible(built)
         got = ENGINE.pike_match_compiled(built, b"")
@@ -302,8 +312,8 @@ def test_the_public_match_runs_the_selected_path() -> None:
     got = ENGINE.match_compiled(eligible, b"abac")
     assert isinstance(got, Match)
     assert ENGINE.last_usage is not None and ENGINE.last_usage.stack == 0
-    counted = compiled(b"a{2,5}")
-    got = ENGINE.match_compiled(counted, b"aaa")
+    counted = compiled(rb"(?:a?)+b")
+    got = ENGINE.match_compiled(counted, b"aaab")
     assert isinstance(got, Match)
     assert ENGINE.last_usage is not None and ENGINE.last_usage.stack > 0
 

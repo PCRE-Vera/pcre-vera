@@ -167,10 +167,13 @@ func TestContextMatchingAllocatesNothing(t *testing.T) {
 		pattern string
 		subject string
 	}{
-		// One pattern per execution path: the star rides the Pike VM, the
-		// counted repetition stays on the backtracker.
+		// One pattern per execution path, plus the one this promise was
+		// re-verified on when the quantifier lowering landed: the star rides
+		// the Pike VM, a lowered counted repetition rides it too, and a \R
+		// stays on the backtracker.
 		{"lockstep", "(a)(b*)", "xabb"},
-		{"backtracking", "a{0,2}b*", "aabb"},
+		{"lowered", `(?<user>\w+)@(?<host>[\w.]+)`, "to alice@example.org"},
+		{"backtracking", `a{0,2}b*\R`, "aabb\n"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			re := MustCompile(tc.pattern, Options{})

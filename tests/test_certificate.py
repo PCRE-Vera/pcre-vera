@@ -38,6 +38,7 @@ from pcrevera.engine import (
 from pcrevera.engine import certificate_corpus
 from pcrevera.engine.certificate_corpus import (
     CASES,
+    KEPT,
     KINDS,
     LENGTHS,
     LITERAL,
@@ -54,7 +55,7 @@ from pcrevera.engine import driver
 from pcrevera.engine.driver import CompiledPattern, Limits, ResourceExceeded
 from pcrevera.oracle import corpus as wave1
 from pcrevera.engine.program import program
-from pcrevera.sweep.population import CROSS, population
+from pcrevera.sweep.population import LAID_OUT, population
 from pcrevera.tir.interp import Cell
 from pcrevera.tir.types import CAP, CEILING, StructType
 
@@ -683,7 +684,7 @@ def test_generated_patterns_are_priced_or_refused_too() -> None:
     """
     generated = [
         one.pattern
-        for one in population(5, structured=len(CROSS) + 200, hostile=0, subjects=1)
+        for one in population(5, structured=LAID_OUT + 200, hostile=0, subjects=1)
     ]
     assert sum(built.certificate is not None for _, built in _emitted(generated)) > 150
 
@@ -789,4 +790,4 @@ def test_the_reference_pricer_refuses_what_a_counter_could_not_hold(engine) -> N
     # can write down and the engine cannot hold is not one. The checker answers
     # `CrOverflow` for the same thing.
     with pytest.raises(ValueError):
-        minimal(b"(?:(?:a){10}){10}")
+        minimal(b"(?:(?:a){10}){10}" + KEPT)

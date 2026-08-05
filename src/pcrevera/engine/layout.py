@@ -113,9 +113,12 @@ class Layout:
         # quite the pattern's complexity class. The class of a pattern is fixed
         # at compilation and takes no configuration (DESIGN.md section 2.4),
         # and it is the class of the certificate for the path compilation
-        # selected: a Pike-eligible pattern is linear, and its test-only
-        # backtracking certificate honestly says otherwise about the path
-        # nobody can ask for.
+        # selected. Which path that is settles nothing on its own: a
+        # Pike-eligible pattern is linear, and so is `\R`, which is not
+        # eligible and carries a linear backtracking bound anyway. What the
+        # test-only backtracking certificate of an eligible pattern claims is
+        # about the path nobody can ask for, and it may honestly say
+        # otherwise.
         #
         # The order is the point rather than an accident, here and in `Cr`
         # below: a zero value is the first variant (TIR-SPEC.md section 4.1),
@@ -194,6 +197,37 @@ class Layout:
                 ("first", u32),
                 ("last", u32),
                 ("nxt", u32),
+            ],
+        )
+
+        # What one AST node's lowered form comes to, and what the pre-check
+        # found under it. The compiler computes one of these per arena slot in
+        # a single reverse scan — children always sit above their parent — and
+        # reads the root's off the top, which is how the fit vector of
+        # DESIGN.md section 4.3 is decided without expanding anything.
+        #
+        # The four sizes are counters because they multiply: a quantifier may
+        # name 65535 and quantifiers nest, so the product is exactly the number
+        # that has to saturate rather than wrap. The two transient counts do
+        # not multiply — the lowering copies constructs side by side, never
+        # inside one another — so u32 is the honest width for them.
+        self.Size = m.struct(
+            "Size",
+            [
+                ("code", counter),
+                ("regions", counter),
+                ("reps", counter),
+                ("visits", counter),
+                ("depth", u32),
+                ("patches", u32),
+                # Can this subtree match without consuming a byte? Read the
+                # way `pike_hollow` reads the bytecode, so assertions count as
+                # non-consuming and the two answers agree.
+                ("nullable", boolean),
+                ("blockers", u32),
+                # Is there a repetition under here that the lowering would
+                # actually rewrite? A pattern with none is already canonical.
+                ("needs", boolean),
             ],
         )
 
@@ -280,9 +314,9 @@ class Layout:
         #     base^n * (c0 + c1*(n+1) + c2*(n+1)^2 + ... )
         #
         # in the subject length n. A base of one is the polynomial case, which
-        # is what a Pike-eligible pattern gets; a base above one is the shape a
-        # backtracking bound takes when the structural analysis of BOUNDS.md
-        # finds genuine ambiguity.
+        # every Pike-eligible pattern gets and plenty of backtracking ones do
+        # too; a base above one is the shape a backtracking bound takes when
+        # the structural analysis of BOUNDS.md finds genuine ambiguity.
         #
         # Writing the powers in (n + 1) rather than in n is what makes the form
         # closed under the two things the checker does with it. Every basis
@@ -358,6 +392,8 @@ class Layout:
         self.frozen_bytes = frozen(bytes_)
 
         self.Nodes = vec(self.Node, spec.MAX_NODES)
+        self.Sizes = vec(self.Size, spec.MAX_NODES)
+        self.Order = vec(u32, spec.MAX_NODES)
         self.Frames = vec(self.Frame, spec.MAX_DEPTH + 1)
         self.Code = vec(self.Inst, spec.MAX_CODE)
         self.Reps = vec(self.Rep, spec.MAX_REPS)
@@ -440,6 +476,16 @@ class Layout:
                 # by pc alone is sound (DESIGN.md section 4.3). Fixed at
                 # compilation, like everything else about the execution path.
                 ("pike", boolean),
+                # What the compiler decided about lowering this pattern's
+                # counted repetitions, which of the two blockers the pre-check
+                # found on the original AST, and whether the fully lowered
+                # candidate would have fitted the storage caps. Three separate
+                # answers because they are three separate questions: a pattern
+                # can be left in counter form by a blocker and be oversized as
+                # well, and a report that recombined them could not say so.
+                ("lowdec", u32),
+                ("blockers", u32),
+                ("lowfits", boolean),
                 # The bound certificate for the backtracking configuration, and
                 # whether there is one. Compilation runs the analyzer and then
                 # the checker, and only a `CrOk` puts anything here, so the
@@ -493,6 +539,37 @@ class Layout:
                 ("clscrlf", u32),
                 ("pending", self.Pending),
                 ("seen", bytes_),
+                # The lowering's own workings: the per-node sizes, the
+                # decision they led to, and the fit vector the emitter is held
+                # to afterwards. `predicted` says whether that vector
+                # describes what is about to be emitted — it does when the
+                # lowering runs and when there was nothing to lower, and it
+                # does not when a blocker sent the pattern back to counter
+                # form, since then the sizes describe a program nobody emits.
+                ("sizes", self.Sizes),
+                # Every reachable node, parents before children. The arena's
+                # own order is not that: an alternation node is allocated when
+                # the first `|` is read, which is after its own first branch,
+                # so a reverse scan of the arena would price that branch after
+                # the alternation that needs it. One pass down this list
+                # instead, and every child is priced before its parent.
+                ("order", self.Order),
+                ("lowering", boolean),
+                ("lowdec", u32),
+                ("blockers", u32),
+                ("lowfits", boolean),
+                ("predicted", boolean),
+                ("fitcode", counter),
+                ("fitregion", counter),
+                ("fitrep", counter),
+                ("fitvisit", counter),
+                ("fitjobs", u32),
+                ("fitpatch", u32),
+                # And what the walk really reached, so that the two
+                # calculations of one number can be compared instead of
+                # trusted.
+                ("peakjobs", u32),
+                ("peakpatch", u32),
             ],
         )
 

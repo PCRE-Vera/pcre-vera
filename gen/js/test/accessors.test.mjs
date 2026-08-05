@@ -107,11 +107,13 @@ test("the match configuration is part of the match surface", () => {
 
 test("the class constants are the pinned ordinals", () => {
   // The corpus speaks ordinals, so the named constants have to be them. A
-  // star is linear now that it runs on the Pike VM; the counted repetition
-  // keeps the backtracking path and its honest notProvenLinear.
+  // star is linear on the Pike VM, and so is a counted repetition now that it
+  // is lowered onto the same path; what keeps the honest notProvenLinear is a
+  // \R, which no lowering removes.
   assert.equal(Complexity.NOT_PROVEN_LINEAR, 0);
   assert.equal(Complexity.LINEAR, 1);
   assert.equal(compile("abc").complexityClass(), Complexity.LINEAR);
   assert.equal(compile("a*").complexityClass(), Complexity.LINEAR);
-  assert.equal(compile("a{0,2}b*").complexityClass(), Complexity.NOT_PROVEN_LINEAR);
+  assert.equal(compile("a{0,2}").complexityClass(), Complexity.LINEAR);
+  assert.equal(compile("a{0,2}b*\\R").complexityClass(), Complexity.NOT_PROVEN_LINEAR);
 });

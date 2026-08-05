@@ -14,6 +14,17 @@ A case the engine refuses at compile time is exported as a skip with the
 reason: a compile error is the parser's territory, and the Lean side has
 nothing to replay it through.
 
+The tree exported is the one the code generator really walked, which for a
+pattern the quantifier lowering of DESIGN.md section 4.3 rewrote is the
+lowered one. That is deliberate and it is where the lowering sits in the
+trust boundary: `Ref.compile` is the *emission* half of the compiler
+restated, and the rewrite ahead of it belongs to the pattern-text-to-AST link
+THEOREMS.md section 4 already declares tested rather than proved. The test is
+not a weak one — the replay compiles this tree and holds the bytecode, the
+region tree, the outcome, the ovector and the usage to the engine's, case by
+case — but it is a test, and section 6 of that document prices what proving
+it instead would cost.
+
 `hascrlf` is parser output rather than a fact about the tree — the parser
 records an explicitly written CR or LF, with pcre2's `[^x]` exception, and
 no walk over the AST can recover that. It therefore travels with the tree
@@ -29,7 +40,7 @@ from __future__ import annotations
 
 import json
 
-from ..engine import spec
+from ..engine import lowered, spec
 from ..engine.driver import SETUP_STEPS, _blob, items, variant_of
 from ..engine.program import program
 from ..paths import CONFORMANCE_DIR, GEN_DIR
@@ -234,9 +245,13 @@ def _entry(pattern_hex: str, flags: int, nltype: int, bsr: int) -> dict:
         )
     nodes = items(work.fields["nodes"])
     classes = bytes(items(work.fields["classes"]))
+    parsed = _tree(nodes, classes, work.fields["root"])
+    re = out.fields["re"]
     return {
-        "ast": _tree(nodes, classes, work.fields["root"]),
-        "re": _re(out.fields["re"]),
+        "ast": lowered.tree_for(
+            parsed, re.fields["ncap"], bool(flags & spec.ENDANCHORED)
+        ),
+        "re": _re(re),
     }
 
 

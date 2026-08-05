@@ -599,6 +599,20 @@ def claiming(cert: Certificate, **over) -> Certificate:
     return replace(cert, **over)
 
 
+KEPT = rb"\R"
+"""What keeps a counted repetition in counter form.
+
+BOUNDS.md section 4.4 prices the five-part counter header, and after the
+quantifier lowering of DESIGN.md section 4.3 that header is only emitted for a
+pure star or for a pattern the lowering declined. So every case below that is
+about the *bounded* half of section 4.4 carries one of the three carve-outs,
+and this is the cheapest of them to write: `\\R` refuses the whole pattern the
+lowering, opens no region of its own and adds one instruction to the root, so
+the counted repetition beside it is priced exactly as section 4.4 says.
+
+A trailing `\\R` in a pattern here therefore means "and this is why the
+quantifier still has a counter", never "and here is what `\\R` does"."""
+
 LITERAL = minimal(b"abc")
 LOCKSTEP = lockstep(b"abc")
 LOCKSTEP_CAPTURED = lockstep(b"(a)(b*)")
@@ -607,10 +621,10 @@ ALTERNATION = minimal(b"a|b")
 OPTIONAL = minimal(b"a?")
 LAZY = minimal(b"a??")
 STAR = minimal(b"a*")
-COUNTED = minimal(b"a{2,5}")
+COUNTED = minimal(b"a{2,5}" + KEPT)
 GROUPED = minimal(b"(ab)*c")
 LOOPED_ALT = minimal(b"(a|b)*c")
-AMBIGUOUS = minimal(b"(?:a|a){0,3}")
+AMBIGUOUS = minimal(b"(?:a|a){0,3}" + KEPT)
 EXPONENTIAL = minimal(b"(?:a|a)*")
 EMPTY_BRANCH = minimal(b"(a|)")
 UNCAPTURED = minimal(b"(?:abc)")
@@ -686,7 +700,7 @@ CASES: list[Case] = [
         "A bounded one, where the declared maximum is what stops it and the "
         "bound has no term in n at all.",
         "CrOk",
-        b"a{2,5}",
+        b"a{2,5}" + KEPT,
         COUNTED,
     ),
     Case(
@@ -716,8 +730,28 @@ CASES: list[Case] = [
         "three times. Each iteration doubles the ways into the next, so the "
         "flow through the head is a power of two and the bound stays a number.",
         "CrOk",
-        b"(?:a|a){0,3}",
+        b"(?:a|a){0,3}" + KEPT,
         AMBIGUOUS,
+    ),
+    Case(
+        "a-bounded-quantifier-lowered",
+        "The same quantifier with nothing to keep it in counter form. It "
+        "comes out as two copies of the body and a chain of nested one-split "
+        "optionals, so what prices it is section 4.3 three times over rather "
+        "than section 4.4 once — and the tree the compiler emitted for it is "
+        "what the checker reads back.",
+        "CrOk",
+        b"a{2,4}",
+        minimal(b"a{2,4}"),
+    ),
+    Case(
+        "an-unbounded-quantifier-lowered",
+        "A nonzero minimum and no maximum: the copies the minimum demands, "
+        "and then the native pure star, which is the one repetition shape the "
+        "lockstep matcher admits and the one section 4.4 still prices here.",
+        "CrOk",
+        b"a{2,}",
+        minimal(b"a{2,}"),
     ),
     Case(
         "exponential",
@@ -922,11 +956,12 @@ CASES: list[Case] = [
     ),
     Case(
         "pike-on-an-ineligible-pattern",
-        "A lower bound keeps `a+` off the lockstep path, so no Pike "
-        "certificate can be about it, whatever its numbers say. Refused "
-        "before anything is priced.",
+        "`\\R` consumes a variable number of bytes, so it keeps a pattern off "
+        "the lockstep path however that pattern is compiled, and no Pike "
+        "certificate can be about it whatever its numbers say. Refused before "
+        "anything is priced.",
         "CrIneligible",
-        b"a+",
+        b"\\R",
         claiming(LOCKSTEP),
         config="CfgPike",
     ),
@@ -999,8 +1034,8 @@ CASES: list[Case] = [
         "any daylight between the two is refused. One entry above exact, at "
         "the constant.",
         "CrTotalStack",
-        b"a{1,2}",
-        more(minimal(b"a{1,2}"), "stack", 0),
+        b"a{1,2}" + KEPT,
+        more(minimal(b"a{1,2}" + KEPT), "stack", 0),
     ),
     Case(
         "a-unit-extra-on-a-growing-stack",
@@ -1154,7 +1189,7 @@ CASES: list[Case] = [
         "Two ways round a loop that may go round sixty times is 2^61, which no "
         "counter holds. The requirement saturating is not a requirement met.",
         "CrOverflow",
-        b"(?:a|a){0,60}",
+        b"(?:a|a){0,60}" + KEPT,
         # Same body as the bounded case above, and the same four regions under
         # the repeat, so the ambiguity is a number and only the count is not.
         Certificate(prices=(Price(),) * 3 + AMBIGUOUS.prices[3:]),
@@ -1487,15 +1522,37 @@ ANALYSES: list[Analysis] = [
         "counted",
         "Bounded above, the declared maximum is what stops it, so there is no "
         "term in n inside the loop and the pattern is linear after all.",
+        b"a{2,5}" + KEPT,
+        "ArOk",
+        "CcLinear",
+    ),
+    Analysis(
+        "a-bounded-quantifier-lowered",
+        "The same quantifier lowered, which is what the analyzer usually sees "
+        "now: no counter, no pass count, and a chain of optionals whose flow "
+        "multiplies out to a constant.",
         b"a{2,5}",
         "ArOk",
         "CcLinear",
     ),
     Analysis(
+        "an-ambiguous-body-under-a-bounded-quantifier",
+        "Two copies of a body that is itself a repetition. In counter form "
+        "this had no certificate at all — the inner loop's ambiguity grew "
+        "with the subject — and lowered it is two ordinary stars side by "
+        "side, each with a body that has to consume.",
+        b"(?:a+){2}",
+        "ArOk",
+        "CcNotProvenLinear",
+    ),
+    Analysis(
         "a-repetition-at-the-declared-maximum",
-        "The largest count a quantifier may name. Nothing here is near the "
-        "counter's range; the numbers are simply large, which is what a "
-        "caller asking for a budget wanted to know.",
+        "The largest count a quantifier may name. Sixty-five thousand copies "
+        "of the body is well past the program-size cap, so this is the "
+        "carve-out the dry run decides rather than one the pre-check does, "
+        "and the counter form it falls back to prices in section 4.4. Nothing "
+        "here is near the counter's range; the numbers are simply large, "
+        "which is what a caller asking for a budget wanted to know.",
         b"a{65535}",
         "ArOk",
         "CcLinear",
@@ -1567,7 +1624,7 @@ ANALYSES: list[Analysis] = [
         "Two ways round a loop that may go round forty-three times is 2^44 "
         "passes, and everything the tree multiplies by that still lands inside "
         "a counter.",
-        b"(?:a|a){0,43}",
+        b"(?:a|a){0,43}" + KEPT,
         "ArOk",
         "CcLinear",
     ),
@@ -1576,7 +1633,7 @@ ANALYSES: list[Analysis] = [
         "One more time round and it does not. The requirement saturating is "
         "not a requirement met, and a coefficient that stopped at the cap is "
         "one every claim would be found to satisfy.",
-        b"(?:a|a){0,44}",
+        b"(?:a|a){0,44}" + KEPT,
         "ArOverflow",
         None,
     ),
@@ -1585,7 +1642,7 @@ ANALYSES: list[Analysis] = [
         "Far enough out that it is the pass count itself that runs out of "
         "room rather than anything derived from it, which is a different place "
         "in the arithmetic and gets there its own way.",
-        b"(?:a|a){0,52}",
+        b"(?:a|a){0,52}" + KEPT,
         "ArOverflow",
         None,
     ),
@@ -1594,7 +1651,7 @@ ANALYSES: list[Analysis] = [
         "Ten of ten of ten is a hundred iterations of a body that already "
         "costs, and the product runs past what a counter holds well before "
         "anything about it is ambiguous.",
-        b"(?:(?:a){10}){10}",
+        b"(?:(?:a){10}){10}" + KEPT,
         "ArOverflow",
         None,
     ),
@@ -1649,11 +1706,12 @@ ACCESSES: list[Access] = [
     ),
     Access(
         "a-large-linear-constant",
-        "A counted repetition keeps the backtracking path, and this one is "
-        "linear with a coefficient near the top of the counter, so the cost "
+        "The `\\R` keeps the backtracking path, and the counted repetition "
+        "beside it is linear with a coefficient near the top of the counter, "
+        "so the cost "
         "answer crosses from finite to ExceedsBudget down the length list "
         "while the class stays linear throughout.",
-        b"(?:a|a){0,43}",
+        b"(?:a|a){0,43}" + KEPT,
         spec.OK,
         spec.CLASS_LINEAR,
     ),
@@ -1667,6 +1725,49 @@ ACCESSES: list[Access] = [
         spec.CLASS_LINEAR,
     ),
     Access(
+        "a-plus-gone-lockstep",
+        "The ordinary spelling of one-or-more. It used to be a counter, a "
+        "backtracking certificate and a superlinear class; lowered to `aa*` "
+        "it is the same pattern on the thread list, and the class is what the "
+        "wave 1 guarantee always meant to say about it.",
+        rb"a+",
+        spec.OK,
+        spec.CLASS_LINEAR,
+    ),
+    Access(
+        "an-ambiguous-body-lowered",
+        "A repetition of a repetition. In counter form the inner loop's "
+        "ambiguity grew with the subject and there was no certificate at all, "
+        "so every accessor refused; lowered, it is two stars side by side and "
+        "every accessor answers. The migration is from ExceedsBudget rather "
+        "than from a worse number.",
+        rb"(?:a+){2}",
+        spec.OK,
+        spec.CLASS_LINEAR,
+    ),
+    Access(
+        "the-pattern-the-lowering-was-for",
+        "The example the README opens with, and the one PLAN-POST-M6.md was "
+        "written about. Two ordinary one-or-more quantifiers used to make it a "
+        "cubic backtracking certificate and a superlinear class; lowered, it "
+        "runs on the thread list and answers numbers a realtime caller can "
+        "budget with.",
+        rb"(?<user>\w+)@(?<host>[\w.]+)",
+        spec.OK,
+        spec.CLASS_LINEAR,
+    ),
+    Access(
+        "a-quantifier-a-backslash-r-keeps",
+        "The same quantifier with a `\\R` after it. The pre-check declines the "
+        "whole pattern rather than lowering what it could, so this keeps its "
+        "counter, its backtracking certificate and its superlinear class — "
+        "which is the carve-out stated honestly rather than a number that "
+        "moved.",
+        rb"a+\R",
+        spec.OK,
+        spec.CLASS_NOT_PROVEN_LINEAR,
+    ),
+    Access(
         "an-ambiguity-lockstep-defuses",
         "Two identical arms under a star are exponential to a backtracker "
         "and nothing at all to a thread list, so what used to be the "
@@ -1677,20 +1778,20 @@ ACCESSES: list[Access] = [
     ),
     Access(
         "polynomial-looking",
-        "A counted repetition pins this to the backtracking path, and the "
-        "star after it makes that path quadratic, so the class is the honest "
+        "The `\\R` pins this to the backtracking path, and the star before "
+        "it makes that path quadratic, so the class is the honest "
         "notProvenLinear and the numbers grow with the square.",
-        b"a{0,2}b*",
+        b"a{0,2}b*" + KEPT,
         spec.OK,
         spec.CLASS_NOT_PROVEN_LINEAR,
     ),
     Access(
         "exponential-looking",
-        "A lower bound keeps this off the lockstep path, and the ambiguous "
-        "body under an unbounded repetition gives the backtracking bound a "
-        "growing base, so finite numbers at short lengths turn to "
-        "ExceedsBudget within a few dozen bytes.",
-        b"(?:a|a){2,}",
+        "The `\\R` keeps this off the lockstep path, and the ambiguous body "
+        "under an unbounded repetition gives the backtracking bound a growing "
+        "base, so finite numbers at short lengths turn to ExceedsBudget "
+        "within a few dozen bytes.",
+        b"(?:a|a){2,}" + KEPT,
         spec.OK,
         spec.CLASS_NOT_PROVEN_LINEAR,
     ),
@@ -1707,10 +1808,9 @@ ACCESSES: list[Access] = [
     Access(
         "overflowing-no-certificate",
         "One more iteration than the coefficient that fits, on the "
-        "backtracking path a counted repetition pins it to. The same refusal "
-        "as above by a different route, and the accessors must not care "
-        "which.",
-        b"(?:a|a){0,44}",
+        "backtracking path the `\\R` pins it to. The same refusal as above by "
+        "a different route, and the accessors must not care which.",
+        b"(?:a|a){0,44}" + KEPT,
         spec.EXCEEDS_BUDGET,
     ),
     Access(
@@ -1900,19 +2000,19 @@ CONTEXTS: list[ContextCase] = [
     ),
     ContextCase(
         "a-backtracker-sized-from-its-claims",
-        "A counted repetition keeps this on the backtracking path, so the "
-        "arrays are sized from the certificate's stack and trail claims at "
-        "the declared length — the reason those claims are held to equality. "
-        "A stack limit lowered to nothing starves the first fork, and the "
-        "context is none the worse for it.",
-        b"a{0,2}b*",
+        "The `\\R` keeps this on the backtracking path, counted repetition and "
+        "all, so the arrays are sized from the certificate's stack and trail "
+        "claims at the declared length — the reason those claims are held to "
+        "equality. A stack limit lowered to nothing starves the first fork, "
+        "and the context is none the worse for it.",
+        b"a{0,2}b*" + KEPT,
         32,
         spec.OK,
         (
-            Call(b"aab", spec.MATCHED),
-            Call(b"aab", spec.RESOURCE_EXCEEDED, stack=0),
+            Call(b"aab\n", spec.MATCHED),
+            Call(b"aab\n", spec.RESOURCE_EXCEEDED, stack=0),
             Call(b"a" * 33, spec.BAD_INPUT),
-            Call(b"b", spec.MATCHED),
+            Call(b"b\n", spec.MATCHED),
         ),
     ),
     ContextCase(
@@ -2117,6 +2217,19 @@ def _bounds(cert: Certificate) -> list[dict]:
         {"n": length, **{key: ENGINE.bound(cert, which, length) for key, which in KINDS}}
         for length in LENGTHS
     ]
+
+
+def patterns() -> list[bytes]:
+    """Every pattern this corpus names, in the order the lists name them.
+
+    The migration report reads them, and it wants the pattern rather than the
+    case: what a case says about a certificate is its own business, and what
+    the report asks is what compilation decided about the pattern.
+    """
+    out: list[bytes] = []
+    for one in (*CASES, *ANALYSES, *ACCESSES, *CONTEXTS):
+        out.append(one.pattern)
+    return list(dict.fromkeys(out))
 
 
 def cases() -> list[dict]:
