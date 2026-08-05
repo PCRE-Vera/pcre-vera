@@ -24,6 +24,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -308,7 +309,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -423,6 +426,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -717,7 +721,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -851,6 +857,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -1333,7 +1340,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -1472,6 +1481,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -1766,7 +1776,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -1886,6 +1898,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -2232,7 +2245,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -2338,6 +2353,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -2491,7 +2507,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -2581,6 +2599,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -2744,7 +2763,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -2834,6 +2855,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -2997,7 +3019,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -3079,6 +3103,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -3232,7 +3257,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -3314,6 +3341,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -3467,7 +3495,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -3545,6 +3575,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -3693,7 +3724,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -3775,6 +3808,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -3928,7 +3962,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -4010,6 +4046,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -4163,7 +4200,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 128,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -4245,6 +4284,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -4398,7 +4438,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -4480,6 +4522,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -4633,7 +4676,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -4715,6 +4760,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -4868,7 +4914,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -4950,6 +4998,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -5103,7 +5152,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -5185,6 +5236,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -5338,7 +5390,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -5420,6 +5474,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -5573,7 +5628,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -5651,6 +5708,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -5799,7 +5857,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -5833,6 +5893,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -5981,7 +6042,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -6015,6 +6078,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -6163,7 +6227,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -6197,6 +6263,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -6345,7 +6412,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -6379,6 +6448,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -6527,7 +6597,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -6602,6 +6674,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -6995,7 +7068,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -7126,6 +7201,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -7383,7 +7459,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 2,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -7483,6 +7561,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -7683,7 +7762,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -7777,6 +7858,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -7977,7 +8059,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -8084,6 +8168,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -8341,7 +8426,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 2,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -8454,6 +8541,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -8701,7 +8789,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -8821,6 +8911,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -9224,7 +9315,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -9320,6 +9413,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -9577,7 +9671,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 2,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -9700,6 +9796,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -10093,7 +10190,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 2,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -10217,6 +10316,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -10318,7 +10418,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -10619,6 +10721,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -10767,7 +10870,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -10846,6 +10951,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -10994,7 +11100,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -11073,6 +11181,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -11221,7 +11330,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -11300,6 +11411,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -11448,7 +11560,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -11533,6 +11647,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -11743,7 +11858,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -11793,6 +11910,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -11941,7 +12059,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -12020,6 +12140,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -12168,7 +12289,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -12247,6 +12370,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -12395,7 +12519,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -12474,6 +12600,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -12622,7 +12749,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -12701,6 +12830,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -12849,7 +12979,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -12928,6 +13060,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -13076,7 +13209,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -13155,6 +13290,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -13303,7 +13439,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -13382,6 +13520,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -13530,7 +13669,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -13609,6 +13750,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -13757,7 +13899,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -13860,6 +14004,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -14206,7 +14351,9 @@
     "hascrlf": 1,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 2,
+    "opts": 64,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -14309,6 +14456,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -14457,7 +14605,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -14560,6 +14710,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -14906,7 +15057,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 2,
+    "opts": 64,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -15009,6 +15162,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -15157,7 +15311,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -15242,6 +15398,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -15452,7 +15609,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -15502,6 +15661,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -15650,7 +15810,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -15729,6 +15891,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -15877,7 +16040,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -15962,6 +16127,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -16172,7 +16338,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -16222,6 +16390,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -16370,7 +16539,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -16449,6 +16620,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -16597,7 +16769,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -16676,6 +16850,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -16824,7 +16999,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -16903,6 +17080,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -17051,7 +17229,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -17133,6 +17313,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -17281,7 +17462,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -17363,6 +17546,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -17511,7 +17695,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -17590,6 +17776,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -17738,7 +17925,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -17823,6 +18012,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -18033,7 +18223,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -18089,6 +18281,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -18299,7 +18492,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -18397,6 +18592,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -18550,7 +18746,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -18635,6 +18833,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -18845,7 +19044,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -18974,6 +19175,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -19278,7 +19480,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 2,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -19413,6 +19617,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -19799,7 +20004,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 2,
+    "nltype": 0,
     "nregs": 10,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -19897,6 +20104,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -20154,7 +20362,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 2,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -20253,6 +20463,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -20411,7 +20622,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -20497,6 +20710,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -20655,7 +20869,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 4,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -20741,6 +20957,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -20899,7 +21116,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -20985,6 +21204,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -21143,7 +21363,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -21229,6 +21451,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -21387,7 +21610,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -21473,6 +21698,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -21631,7 +21857,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -21717,6 +21945,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -21875,7 +22104,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -21961,6 +22192,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -22119,7 +22351,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -22198,6 +22432,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -22346,7 +22581,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -22425,6 +22662,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -22573,7 +22811,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -22658,6 +22898,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -22868,7 +23109,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -22918,6 +23161,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -23066,7 +23310,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -23145,6 +23391,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -23293,7 +23540,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -23372,6 +23621,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -23520,7 +23770,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -23599,6 +23851,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -23747,7 +24000,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -23826,6 +24081,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -23974,7 +24230,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -24053,6 +24311,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -24201,7 +24460,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -24280,6 +24541,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -24428,7 +24690,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -24507,6 +24771,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -24655,7 +24920,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -24734,6 +25001,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -24882,7 +25150,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -24961,6 +25231,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -25109,7 +25380,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -25188,6 +25461,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -25336,7 +25610,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -25415,6 +25691,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -25563,7 +25840,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -25642,6 +25921,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -25790,7 +26070,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -25869,6 +26151,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -26017,7 +26300,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -26096,6 +26381,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -26244,7 +26530,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -26329,6 +26617,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -26539,7 +26828,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -26589,6 +26880,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -26737,7 +27029,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -26816,6 +27110,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -26964,7 +27259,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -27043,6 +27340,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -27191,7 +27489,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -27270,6 +27570,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -27418,7 +27719,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -27503,6 +27806,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -27713,7 +28017,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -27771,6 +28077,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -27929,7 +28236,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -28003,6 +28312,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -28104,7 +28414,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -28177,6 +28489,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -28325,7 +28638,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -28412,6 +28727,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -28570,7 +28886,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -28649,6 +28967,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -28797,7 +29116,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -28876,6 +29197,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -29024,7 +29346,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -29119,6 +29443,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -29287,7 +29612,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -29366,6 +29693,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -29514,7 +29842,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -29596,6 +29926,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -29749,7 +30080,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -29831,6 +30164,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -29984,7 +30318,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -30069,6 +30405,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -30279,7 +30616,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -30379,6 +30718,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -30589,7 +30929,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -30686,6 +31028,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -30839,7 +31182,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -30921,6 +31266,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -31074,7 +31420,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -31156,6 +31504,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -31309,7 +31658,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -31387,6 +31738,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -31535,7 +31887,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -31614,6 +31968,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -31762,7 +32117,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -31841,6 +32198,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -31989,7 +32347,9 @@
     "hascrlf": 1,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -32074,6 +32434,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -32284,7 +32645,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -32378,6 +32741,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -32526,7 +32890,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 32,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -32613,6 +32979,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -32771,7 +33138,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 1,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -32850,6 +33219,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -32998,7 +33368,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 1,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -33077,6 +33449,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -33225,7 +33598,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 1,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -33304,6 +33679,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -33452,7 +33828,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 1,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -33531,6 +33909,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -33679,7 +34058,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 1,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -33758,6 +34139,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -33911,7 +34293,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 64,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -33990,6 +34374,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -34143,7 +34528,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 64,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -34226,6 +34613,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -34379,7 +34767,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 8,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -34475,6 +34865,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -34675,7 +35066,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -34760,6 +35153,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -34908,7 +35302,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 8,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -34995,6 +35391,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -35153,7 +35550,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -35249,6 +35648,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -35449,7 +35849,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -35551,6 +35953,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -35751,7 +36154,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -35849,6 +36254,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -36054,7 +36460,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -36146,6 +36554,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -36304,7 +36713,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -36400,6 +36811,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -36610,7 +37022,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -36698,6 +37112,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -36851,7 +37266,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -36936,6 +37353,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -37146,7 +37564,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -37205,6 +37625,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -37420,7 +37841,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -37489,6 +37912,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -37840,7 +38264,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -37917,6 +38343,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -38132,7 +38559,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -38192,6 +38621,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -38407,7 +38837,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -38510,6 +38942,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -38725,7 +39158,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -38827,6 +39262,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -39042,7 +39478,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -39102,6 +39540,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -39317,7 +39756,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -39376,6 +39817,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -39591,7 +40033,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -39695,6 +40139,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -39910,7 +40355,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -39984,6 +40431,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -40382,7 +40830,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -40460,6 +40910,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -40613,7 +41064,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -40716,6 +41169,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -40894,7 +41348,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -40979,6 +41435,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -41189,7 +41646,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -41245,6 +41704,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -41455,7 +41915,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -41511,6 +41973,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -41721,7 +42184,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -41777,6 +42242,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -41987,7 +42453,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -42043,6 +42511,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -42253,7 +42722,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -42309,6 +42780,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -42519,7 +42991,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -42579,6 +43053,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -42727,7 +43202,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -42830,6 +43307,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -43228,7 +43706,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -43323,6 +43803,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": null,
     "classes": "",
     "code": [
@@ -43392,7 +43873,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 8,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -43483,6 +43966,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -43792,7 +44276,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -43864,6 +44350,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -44064,7 +44551,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -44155,6 +44644,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -44365,7 +44855,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -44465,6 +44957,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -44675,7 +45168,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -44735,6 +45230,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -44935,7 +45431,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -45026,6 +45524,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -45236,7 +45735,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -45355,6 +45856,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": null,
     "classes": "",
     "code": [
@@ -45419,7 +45921,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -45508,6 +46012,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -45765,7 +46270,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -45827,6 +46334,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -46037,7 +46545,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -46137,6 +46647,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -46347,7 +46858,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 16,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -46403,6 +46916,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -46613,7 +47127,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 16,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -46671,6 +47187,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -46829,7 +47346,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -46912,6 +47431,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -47065,7 +47585,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -47152,6 +47674,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -47310,7 +47833,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -47397,6 +47922,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -47555,7 +48081,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -47642,6 +48170,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -47800,7 +48329,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 8,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -47879,6 +48410,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -48027,7 +48559,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -48112,6 +48646,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -48322,7 +48857,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -48416,6 +48953,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -48564,7 +49102,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 1,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -48643,6 +49183,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -48791,7 +49332,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -48887,6 +49430,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -49055,7 +49599,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -49137,6 +49683,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -49290,7 +49837,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -49376,6 +49925,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -49534,7 +50084,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -49616,6 +50168,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -49769,7 +50322,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -49879,6 +50434,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -50282,7 +50838,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 17,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -50380,6 +50938,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -50778,7 +51337,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 1,
     "nregs": 6,
+    "opts": 32,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -50855,6 +51416,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -51003,7 +51565,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -51088,6 +51652,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -51298,7 +51863,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 3,
     "nregs": 4,
+    "opts": 32,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -51354,6 +51921,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -51549,7 +52117,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -51640,6 +52210,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -51850,7 +52421,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 4,
+    "opts": 6,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -51906,6 +52479,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -52116,7 +52690,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 16,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -52172,6 +52748,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -52382,7 +52959,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 1,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -52482,6 +53061,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -52692,7 +53272,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 4,
+    "opts": 4,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -52748,6 +53330,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -52958,7 +53541,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 128,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -53014,6 +53599,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -53209,7 +53795,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 2,
+    "opts": 8,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -53300,6 +53888,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -53510,7 +54099,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -53565,6 +54156,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -53780,7 +54372,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 4,
+    "opts": 64,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -53830,6 +54424,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -53978,7 +54573,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 3,
     "nregs": 2,
+    "opts": 4,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -54063,6 +54660,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -54273,7 +54871,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 3,
     "nregs": 4,
+    "opts": 17,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -54329,6 +54929,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -54539,7 +55140,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 4,
+    "opts": 32,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -54595,6 +55198,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -54805,7 +55409,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 2,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -54861,6 +55467,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -55056,7 +55663,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 6,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -55147,6 +55756,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -55357,7 +55967,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 16,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -55413,6 +56025,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -55623,7 +56236,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 4,
+    "opts": 17,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -55679,6 +56294,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -55889,7 +56505,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 4,
+    "opts": 1,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -55945,6 +56563,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -56155,7 +56774,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 4,
+    "opts": 128,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -56255,6 +56876,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -56465,7 +57087,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 4,
+    "opts": 8,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -56523,6 +57147,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -56671,7 +57296,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 2,
+    "opts": 17,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -56764,6 +57391,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -56959,7 +57587,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 2,
+    "opts": 32,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -57073,6 +57703,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -57283,7 +57914,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 2,
+    "opts": 64,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -57382,6 +58015,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -57602,7 +58236,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 4,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -57658,6 +58294,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -57868,7 +58505,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 17,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -57962,6 +58601,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -58110,7 +58750,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 32,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -58195,6 +58837,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -58405,7 +59048,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 4,
+    "opts": 2,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -58460,6 +59105,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -58670,7 +59316,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 3,
     "nregs": 4,
+    "opts": 2,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -58726,6 +59374,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -58936,7 +59585,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 4,
+    "opts": 6,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -58992,6 +59643,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -59202,7 +59854,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 4,
+    "opts": 16,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -59267,6 +59921,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -59514,7 +60169,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 3,
     "nregs": 4,
+    "opts": 1,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -59620,6 +60277,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -59882,7 +60540,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 3,
     "nregs": 6,
+    "opts": 128,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -59957,6 +60617,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -60214,7 +60875,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 4,
+    "opts": 8,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -60285,6 +60948,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -60547,7 +61211,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -60662,6 +61328,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -60929,7 +61596,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 64,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -61014,6 +61683,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -61402,7 +62072,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 4,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -61540,6 +62212,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -61943,7 +62616,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 0,
     "nregs": 6,
+    "opts": 17,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -62041,6 +62716,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -62439,7 +63115,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 1,
     "nregs": 6,
+    "opts": 32,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -62519,6 +63197,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -62729,7 +63408,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 3,
     "nregs": 4,
+    "opts": 6,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -62797,6 +63478,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -63133,7 +63815,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 1,
+    "nltype": 2,
     "nregs": 4,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -63260,6 +63944,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -63658,7 +64343,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 2,
     "nregs": 6,
+    "opts": 6,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -63738,6 +64425,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -63948,7 +64636,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 3,
     "nregs": 4,
+    "opts": 16,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -64004,6 +64694,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -64214,7 +64905,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 4,
+    "opts": 1,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -64283,6 +64976,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -64525,7 +65219,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 2,
+    "opts": 128,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -64635,6 +65331,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -64892,7 +65589,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 8,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -64954,6 +65653,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -65164,7 +65864,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 0,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -65220,6 +65922,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -65430,7 +66133,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 4,
+    "opts": 16,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -65530,6 +66235,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -65740,7 +66446,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 1,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -65796,6 +66504,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -65991,7 +66700,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 128,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -66082,6 +66793,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -66297,7 +67009,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 64,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -66353,6 +67067,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -66563,7 +67278,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 4,
+    "opts": 8,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -66619,6 +67336,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -66829,7 +67547,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 4,
+    "opts": 0,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -66923,6 +67643,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -67076,7 +67797,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 2,
+    "opts": 64,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -67161,6 +67884,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -67371,7 +68095,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 4,
+    "opts": 4,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -67427,6 +68153,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcNotProvenLinear",
      "config": "CfgBacktrack",
@@ -67637,7 +68364,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 0,
+    "nltype": 2,
     "nregs": 4,
+    "opts": 17,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -67802,6 +68531,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": null,
     "classes": "ffc1fffffeffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "code": [
@@ -67981,7 +68711,9 @@
     "hascrlf": 0,
     "haspikecert": false,
     "ncap": 1,
+    "nltype": 3,
     "nregs": 12,
+    "opts": 6,
     "pike": false,
     "pikecert": null,
     "regions": [
@@ -68158,6 +68890,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -68346,7 +69079,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 0,
     "nregs": 2,
+    "opts": 64,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -68445,6 +69180,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -68618,7 +69354,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 1,
     "nregs": 2,
+    "opts": 17,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -68708,6 +69446,7 @@
     ]
    ],
    "re": {
+    "bsr": 1,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -68871,7 +69610,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 3,
     "nregs": 2,
+    "opts": 2,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",
@@ -68958,6 +69699,7 @@
     ]
    ],
    "re": {
+    "bsr": 0,
     "cert": {
      "complexity": "CcLinear",
      "config": "CfgBacktrack",
@@ -69116,7 +69858,9 @@
     "hascrlf": 0,
     "haspikecert": true,
     "ncap": 0,
+    "nltype": 4,
     "nregs": 2,
+    "opts": 16,
     "pike": true,
     "pikecert": {
      "complexity": "CcLinear",

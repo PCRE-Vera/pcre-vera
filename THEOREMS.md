@@ -219,11 +219,13 @@ below depends on nothing beyond Lean's own three axioms.
     | S-6  | proved                 | Ref/Exec.lean, createCtx             |
     | S-7  | proved                 | Proofs/BadInput.lean                 |
     | S-8  | proved for both        | Proofs/Refine.lean,                  |
-    |      | matchers               | btRun_refines_matches;               |
-    |      |                        | Proofs/PikeRefine.lean,              |
+    |      | matchers, over the     | btRun_refines_matches;               |
+    |      | whole Config domain    | Proofs/PikeRefine.lean,              |
     |      |                        | pikeRun_refines_matches; the Exec    |
     |      |                        | wrappers in Proofs/ExecBacktrack.lean|
-    |      |                        | and Proofs/ExecPike.lean             |
+    |      |                        | and Proofs/ExecPike.lean; contexts   |
+    |      |                        | in Proofs/ExecContext.lean,          |
+    |      |                        | exec_refinesAnswers                  |
     | S-9  | proved                 | Proofs/Monotone.lean, exec_monotone  |
     | S-10 | proved for the         | Proofs/BtBounds.lean,                |
     |      | backtracking half on   | btRun_inBudget_forward;              |
@@ -232,9 +234,12 @@ below depends on nothing beyond Lean's own three axioms.
     |      | half                   |                                      |
     | S-11 | proved from the        | Proofs/CtxSufficient.lean            |
     |      | plain-call premise     |                                      |
-    | S-12 | proved; both S-8       | Proofs/ExecRefine.lean,              |
-    |      | premises now           | matchers_agree; Proofs/ExecPike.lean,|
-    |      | discharged             | matchers_agree_wf                    |
+    | S-12 | proved for every wave  | Proofs/ExecPike.lean,                |
+    |      | 1 pattern, the budget  | matchers_agree_wf; the budgets       |
+    |      | premise inherent;      | discharged in                        |
+    |      | discharged from        | Proofs/AgreeSufficient.lean,         |
+    |      | certificates where     | matchers_agree_sufficient            |
+    |      | both classes overlap   |                                      |
     +------+------------------------+--------------------------------------+
 
     +------+------------------------+--------------------------------------+
@@ -267,8 +272,19 @@ Five of those entries carry a qualifier the inventory does not — S-10,
 S-11, R-6, R-8 and R-9 — and the narrowing is the point of writing this
 section at all.
 
-S-8 is proved for both matchers, at every start offset and under every
-combination of match options. The backtracking half covers every wave 1
+S-8 is proved for both matchers, at every start offset, under every
+combination of match options, and over the whole `Config` domain rather
+than the two plain configurations alone. A context configuration runs the
+same core on scratch reserved earlier, and the core theorems quantify over
+the starting scratch, so `exec_refinesAnswers` carries the refinement
+across every configuration `Exec` admits. It states the two clauses the
+inventory names — Found and NotFound are `Matches` — and not the BadInput
+coincidence the plain wrappers can also offer, because a context refuses
+calls the specification has no opinion about at all: the wrong matcher,
+creation parameters the engine declines, a memory limit off the
+reservation, a subject past the declared maximum, a limit raised past what
+creation paid for. Those are S-7's, and `exec_badinput_iff` is where they
+are characterized. The backtracking half covers every wave 1
 construct — literals, classes, the dot, `\R`, every anchor, groups,
 alternation and every quantifier. The lockstep half is stated over the same
 patterns but carries one side condition the other does not: the program is
@@ -287,12 +303,31 @@ across them.
 
 S-12 is proved as the corollary DESIGN.md section 6 says it is — two runs
 refining the same specification and both completing answer the same thing.
-Both of its refinement premises are now discharged rather than assumed:
+Both of its refinement premises are discharged rather than assumed:
 `matchers_agree_wf` asks only for the pattern conditions the two halves of
-S-8 already ask for, plus the premise that was always inherent, that neither
-run blew its budget. Those pattern conditions are the ones listed at the end
-of this section — `Wf`, the subject cap, the counter-wrap bound — and, for
-the lockstep side, eligibility.
+S-8 already ask for, plus the premise that is inherent, that neither run
+blew its budget. Those pattern conditions are the ones listed at the end of
+this section — `Wf` and the subject cap — and, for the lockstep side,
+eligibility.
+
+That budget premise is what the inventory means by sufficient budgets, and
+`matchers_agree_sufficient` discharges it from certificates rather than
+assuming it — no hypothesis of that theorem mentions how a run ended. The
+lockstep side needs only its accepted certificate, since its sufficiency
+covers every program the checker admits; the backtracking side's comes from
+`btRun_inBudget_forward`, so it carries that theorem's certificate, region
+shape and limit conditions.
+
+Which means the discharged form is narrower than either half alone, and
+worth saying exactly. Eligibility asks that every row of the repetition
+table be a pure star; the composition asks that every repeat region begin
+with a split, which is the optional item, and an optional item claims no
+row. So the patterns both admit are those whose only quantifiers are `?`
+and `??`, with groups and alternations above them freely — `(a|b)?c` is
+one, and the conditions are satisfiable there rather than vacuous. Widening
+it waits on section 4.4 with the rest of the backtracking family; until
+then `matchers_agree_wf` is the form that covers every wave 1 pattern, with
+the budget premise left where it is inherent.
 
 The backtracking half of R-6, R-7, R-8, R-9's no-allocation clause and S-10
 is proved outright for every pattern whose constructs are groups,
@@ -317,7 +352,13 @@ The Pike configuration is further along, because its accounting is a
 closed form rather than a composition: R-6, R-7, R-8 and S-10 hold there
 against any certificate the checker accepted, on every program the checker
 admits and at every start offset — no class restriction and nothing like
-`AttemptsWithin`. S-10's half reads the same per-position account over the
+`AttemptsWithin`. What that covers is the plain call, the one that starts
+on empty scratch. A lockstep call through a preallocated context is not
+covered: `ctx_sufficient` reduces a context's three bounds to two and
+leaves the core's own sufficiency as its premise, which the plain theorem
+supplies only at the plain call's starting scratch, and there is no
+lockstep counterpart to `btRun_no_growth_forward`. So R-9's no-allocation
+clause is proved for the backtracking classes and not for this one. S-10's half reads the same per-position account over the
 charges a run *attempts* rather than the ones it completes, since a refusal
 on this path is exactly a pre-charge test failing; `pikeRun_inBudget` is
 the statement, and it asks for the cost and memory limits only, the stack
@@ -357,8 +398,32 @@ has not, and it is written down rather than added, for the same reason.
 
 The refinement theorems quantify over patterns satisfying `Wf`, which names
 the three shapes a parse never emits: an alternation with no branches, a
-quantifier bound sitting on the u32 sentinel, and a capture slot outside the
+quantifier bound past spec.py's MAX_QUANT, and a capture slot outside the
 ovector window. Until M10 proves the parser that is a claim to be tested
 rather than assumed, so `Proofs/WfDecide.lean` decides it and the corpus
-replay asks it of every tree the engine's own parser produced. All 248
-replayed patterns satisfy it.
+replay asks it of every tree the engine's own parser produced, along with
+the `PatFits` size clauses the lockstep bounds read the program through.
+All 248 replayed patterns satisfy both.
+
+Those two, with the subject cap, are the whole list. There used to be a
+third, `suffFuel s.size p.root < none32`, and it was an overclaim in the
+other direction: it kept a repetition's counter register faithful to the
+count the specification threads, but it read that need off the whole
+search's fuel, which adds across sibling repetitions. `a*b*` — a
+parser-produced, `Wf`, Pike-eligible pattern — puts `suffFuel` past the
+sentinel at the longest subject DESIGN.md section 2.4 admits, so the
+theorems were quietly excluding part of the domain they advertised.
+
+What a counter needs is a bound per repetition, and that is now
+`Spec.repCap`: the largest count any single repetition in the tree can
+reach, a maximum over the tree rather than a sum. A bounded repetition
+stops entering at `max lo hi`, and an unbounded one is stopped by the
+empty-match rule, which makes every round past the minimum eat a byte —
+so nothing counts higher than `lo` plus the subject's length, plus the one
+the ended round takes with it. `Wf.repCap_lt` discharges it outright:
+MAX_QUANT is 65535 and a subject stops at `2 ^ 31 - 1`, so the worst any
+counter can reach is about `2 ^ 31`, half of what a `UInt32` holds. Both
+caps are load-bearing there, the quantifier one and the subject one, since
+an unbounded repetition counts one per byte. The premise is gone from the
+statements rather than weakened in them, and `a*b*` at any admissible
+length is back inside S-8 and S-12 where it belongs.

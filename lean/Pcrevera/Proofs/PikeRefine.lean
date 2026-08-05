@@ -6645,7 +6645,6 @@ theorem fit_seed_tag {p : Pat} {s : ByteArray} {attempt : Nat}
 theorem seed_attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
     {start attempt : Nat} {r : Out} (hw : Wf p) (hs : s.size ≤ ceiling)
     (hatt : attempt ≤ s.size)
-    (hwrap : Spec.suffFuel s.size p.root < none32)
     (hruns : Runs (compile p) s mo start attempt 0 attempt
       ((Array.replicate (compile p).nregs unset32).set! 0 attempt.toUInt32)
       [] r) :
@@ -6660,7 +6659,8 @@ theorem seed_attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
       (fuel := Spec.suffFuel s.size p.root) (r0 := 0) (a := p.root)
       (pos := attempt) (regs := Array.replicate (compile p).nregs unset32)
       hatt (by rw [Array.size_replicate]; exact hnreg) (Nat.le_refl _))
-  refine runs_attempt_refines hw.1.covered hw.2 hs hatt hwrap hden ?_
+  refine runs_attempt_refines hw.1.covered hw.2 hs hatt (hw.repCap_lt hs)
+    hden ?_
   refine (runs_offTag (show 0 < (compile p).novec from by
     show 0 < 2 * (p.ncap + 1)
     omega) ?_).mp hruns
@@ -6833,7 +6833,7 @@ not — which is what `Decides` says and what `Link` keeps aligned. -/
 theorem pikeLoop_refine {p : Pat} {s : ByteArray} {mo : MOpts} {lim : Limits}
     {start : Nat} {anchored : Bool} {words : Nat}
     (hw : Wf p) (hpike : (compile p).pike = true) (hs : s.size ≤ ceiling)
-    (hwrap : Spec.suffFuel s.size p.root < none32) (hstart : start ≤ s.size)
+    (hstart : start ≤ s.size)
     (hanch : anchored = (p.opts.anchored || mo.anchored)) :
     ∀ (steps pos : Nat) (st : PikeSt) (mh : Nat) (matched : Bool)
       (L : List MEntry) (back : Out) (tail top : Option Spec.MatchAnswer),
@@ -6989,7 +6989,7 @@ theorem pikeLoop_refine {p : Pat} {s : ByteArray} {mo : MOpts} {lim : Limits}
               rcases (show _ ∨ _ from hr) with ⟨w, rfl, hrun⟩ | ⟨hrun, rfl⟩
               · rw [ht0] at hrun
                 obtain ⟨tsO, hthreads, hout⟩ :=
-                  seed_attempt_refines hw hs hposle hwrap hrun
+                  seed_attempt_refines hw hs hposle hrun
                 cases htsO : tsO with
                 | nil =>
                     rw [htsO] at hout
@@ -7023,7 +7023,7 @@ theorem pikeLoop_refine {p : Pat} {s : ByteArray} {mo : MOpts} {lim : Limits}
                       exact hszt)]
               · rw [ht0] at hrun
                 obtain ⟨tsO, hthreads, hout⟩ :=
-                  seed_attempt_refines hw hs hposle hwrap hrun
+                  seed_attempt_refines hw hs hposle hrun
                 have htsO : tsO = [] := by
                   cases tsO with
                   | nil => rfl
@@ -7364,7 +7364,6 @@ def PikeRunRefinesMatches : Prop :=
   ∀ (p : Pat) (s : ByteArray) (start : Nat) (mo : MOpts) (lim : Limits)
     (init : PikeSt),
     Wf p → s.size ≤ ceiling → (compile p).pike = true →
-    Spec.suffFuel s.size p.root < none32 →
     RefinesMatches (pikeRun (compile p) s start mo lim init) p s start mo
 
 /-- The whole scan, read against the specification. The loop enters on an
@@ -7374,8 +7373,7 @@ attempt the specification opens — and the scan from the first attempt is
 theorem pikeRun_loop_agrees {p : Pat} {s : ByteArray} {start : Nat}
     {mo : MOpts} {lim : Limits} {init : PikeSt} (hw : Wf p)
     (hpike : (compile p).pike = true) (hs : s.size ≤ ceiling)
-    (hwrap : Spec.suffFuel s.size p.root < none32) (hstart : start ≤ s.size)
-    (setup words : Nat) :
+    (hstart : start ≤ s.size) (setup words : Nat) :
     PikeAgrees p (some (Spec.Matches p s start mo))
       (pikeLoop (compile p) s mo lim start
         ((compile p).anchored || mo.anchored) words (s.size + 2) start
@@ -7392,7 +7390,7 @@ theorem pikeRun_loop_agrees {p : Pat} {s : ByteArray} {start : Nat}
       simp only [Bool.or_eq_true, decide_eq_true_eq, not_or]
       omega
     rwa [Spec.matchesF, if_neg hcond] at hst
-  exact pikeLoop_refine hw hpike hs hwrap hstart rfl
+  exact pikeLoop_refine hw hpike hs hstart rfl
     (s.size + 2) start _ none32 false [] .nomatch
     (some (Spec.Matches p s start mo)) (some (Spec.Matches p s start mo))
     rfl rfl (by simp) (pikeRun_posOk (compile p) init setup).owned
@@ -7420,7 +7418,7 @@ theorem PikeAgrees.destruct {p : Pat} {top : Option Spec.MatchAnswer}
 what a match hands back is the block its handle names, which is the very
 ovector `Spec.scan` computes. -/
 theorem pikeRun_refines_matches : PikeRunRefinesMatches := by
-  intro p s start mo lim init hw hs hpike hwrap
+  intro p s start mo lim init hw hs hpike
   have hmain :
       ((pikeRun (compile p) s start mo lim init).outcome = .matched →
         Spec.Matches p s start mo =
@@ -7432,7 +7430,7 @@ theorem pikeRun_refines_matches : PikeRunRefinesMatches := by
       exact ⟨fun h => Outcome.noConfusion h, fun h => Outcome.noConfusion h⟩
     · have hstart' : start ≤ s.size := by omega
       have hagree := pikeRun_loop_agrees (init := init) (lim := lim)
-        (mo := mo) hw hpike hs hwrap hstart'
+        (mo := mo) hw hpike hs hstart'
         ((compile p).novec * regSize + ((compile p).code.size / 8 + 1))
         ((compile p).code.size / 8 + 1)
       rw [pikeRun, if_neg (by simp [hpike]), if_neg hstart]

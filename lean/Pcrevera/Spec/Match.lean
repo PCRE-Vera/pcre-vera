@@ -20,6 +20,11 @@ Totality is earned through fuel. Fuel is spent once per repetition round
 only — the branching lives in the list, so fuel bounds recursion depth, not
 the size of the search tree — which is what makes the computable sufficient
 fuel of S-3 a small structural bound rather than an exponential one.
+
+`repCap` is the other structural number here, and the two are worth keeping
+apart: fuel bounds how deep the whole search recurses and adds along a
+chain, while `repCap` bounds how high one repetition's count climbs, which
+is what an engine's fixed-width counter has to hold.
 -/
 
 
@@ -172,6 +177,31 @@ def suffFuel (n : Nat) : Ast → Nat
         | some h => max lo h + 1
         | none => lo + n + 2
       rounds + suffFuel n body + 2
+  | _ => 0
+
+/-- How high a single repetition's count can climb on a subject of `n`
+bytes: the largest number the search ever forms for one repetition, and so
+the largest an engine's counter register ever has to hold. This is not
+fuel and does not add across siblings — a count belongs to one repetition
+where fuel is the whole search's — which is why it takes a maximum over
+the tree where `suffFuel` takes a sum.
+
+A round of a bounded repetition is entered below `max lo h` or not at all,
+since below the minimum it enters whatever the high says and at or past
+the high the exit is its only continuation, so its count stops there. An
+unbounded repetition has no high to stop it, but past the minimum the
+empty-match rule ends an iteration that consumed nothing, so every round
+beyond the first `lo` eats a byte — and the round the rule ends counts
+itself on the way out, which is where the `+ 1` comes from. -/
+def repCap (n : Nat) : Ast → Nat
+  | .cat kids => kids.attach.foldl (fun acc ⟨k, _⟩ => max acc (repCap n k)) 0
+  | .alt arms => arms.attach.foldl (fun acc ⟨a, _⟩ => max acc (repCap n a)) 0
+  | .grp _ body => repCap n body
+  | .rep lo hi _ body =>
+      let rounds := match hi with
+        | some h => max lo h
+        | none => lo + n + 1
+      max rounds (repCap n body)
   | _ => 0
 
 /-- What a whole match call answers, before resources enter the picture. -/

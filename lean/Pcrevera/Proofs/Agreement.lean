@@ -61,13 +61,13 @@ theorem agree_of_refines {r₁ r₂ : RunResult} {p : Pat} {s : ByteArray}
       cases ho₂ : r₂.outcome with
       | resourceExceeded => exact absurd ho₂ hne₂
       | matched => exact absurd ((hn₁ ho₁).symm.trans (hm₂ ho₂)) (by simp)
-      | noMatch => exact ⟨rfl, by simp [ho₁]⟩
+      | noMatch => exact ⟨rfl, by simp⟩
       | badInput => exact absurd ((hn₁ ho₁).symm.trans (hb₂.mp ho₂)) (by simp)
   | badInput =>
       cases ho₂ : r₂.outcome with
       | resourceExceeded => exact absurd ho₂ hne₂
       | matched => exact absurd ((hb₁.mp ho₁).symm.trans (hm₂ ho₂)) (by simp)
       | noMatch => exact absurd ((hb₁.mp ho₁).symm.trans (hn₂ ho₂)) (by simp)
-      | badInput => exact ⟨rfl, by simp [ho₁]⟩
+      | badInput => exact ⟨rfl, by simp⟩
 
 end Pcrevera.Ref

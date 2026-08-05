@@ -1624,3 +1624,70 @@ second one.
   building the pricing, and they meet at one abstract statement
   (`repRegion_dom`); saying that at the start would have made the stopping
   point a decision rather than a discovery.
+
+## Claiming a side condition was free (M6)
+
+The refinement theorems carry `suffFuel s.size p.root < none32`, and both the
+docstrings and THEOREMS.md said it followed from the parser's own limits —
+quantifiers stop at 65535, subjects at the cap, so the counter cannot wrap. A
+review disproved it in one line: `suffFuel` is the *whole search's* fuel and
+adds across sibling repetitions, so `a*b*` at the longest admitted subject
+already exceeds the sentinel. The premise a counter needs is per repetition;
+the premise the proof was handed is per search, and nobody checked that the
+second implied the first before writing that it did.
+
+The lesson is narrow and worth keeping: a hypothesis inherited from a proof is
+not a claim about the world until someone evaluates it at the boundary. The
+counterexample took a four-line arithmetic script to find.
+
+Three smaller findings from the same review, all now fixed: `Exec`'s context
+configurations had no refinement theorem at all, though the cores were already
+stated over arbitrary scratch; the corpus replay compared `hascrlf` against the
+very value it had been handed, which cannot fail, while omitting the option
+fields that can; and the runner checked `Wf` but not the `PatFits` sizes the
+lockstep bounds also read the program through.
+
+## Proving the per-repetition counter bound (the counter-wrap round)
+
+- Assumed the sharper premise would fall straight out of `Wf`, since the
+  previous round's note said "the parser's own quantifier limit would give
+  it". `Wf` did not give it: the rep clause capped the *high* and left the
+  low free, so a `Wf` pattern could name `{2^40,}` and count there. The
+  clause now restates MAX_QUANT on both sides, which is what the parser
+  enforces — but the gap was in the file the whole time, and reading the
+  clause before believing the sentence about it would have cost nothing.
+- Reached for `rw [Spec.repCap]` inside the repetition case, the way the
+  neighbouring `repCount` proofs do, and got "simp made no progress". The
+  arm has a nested `match hi with` in it, so the equation lemma is split per
+  `Option` shape and nothing fires until `hi` is destructed — see api-faq.md.
+  A one-line `repCap_rep_body` lemma that does the `cases hi` once is what
+  the three repetition cases actually wanted.
+- Wrote the fold-max helper with `rw [List.foldl_cons]` and finished with
+  `omega`, which failed on a goal whose atoms included
+  `(fun a x => max a (f x)) acc x`. `rw` does not beta-reduce what it puts
+  in place; `simp only` does.
+- Wrote `repCap`'s unbounded arm as `lo + n` and documented it as "how high a
+  repetition's count can climb". It is how high a round is *entered* with,
+  which is what the proof happens to need, so nothing failed and nothing
+  complained. The round the empty-match rule ends bumps the counter once more
+  before leaving, so the register really goes to `lo + n + 1`. A review found
+  it by evaluating the definition on `.rep 0 none _ .nul` at the empty
+  subject; I had reasoned about the recursive branch and never about the
+  terminal one. A definition whose docstring makes a claim the proof does not
+  use is a claim nobody checks.
+
+## Forwarding a premise and calling it discharged (M6)
+
+The first attempt at S-12's sufficient-budget form took `hbtBudget` — the
+backtracking run did not answer ResourceExceeded — and passed it straight
+through, while the prose said both budgets were discharged from certificates.
+The lockstep side really was discharged; the backtracking side was the same
+assumption under a new name, one hop further from the reader.
+
+It is now composed with `btRun_inBudget_forward`, so no hypothesis mentions how
+a run ended. Doing that exposed something the first version hid: the two
+matchers' class conditions intersect much more tightly than either alone —
+eligibility wants every repetition to be a pure star, the composition wants
+every repeat region to be an optional item, and the two only overlap where a
+pattern's quantifiers are `?` and `??`. A forwarded premise had made the
+statement look wider than it was.

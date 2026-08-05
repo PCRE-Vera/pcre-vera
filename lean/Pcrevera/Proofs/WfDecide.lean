@@ -43,8 +43,8 @@ private theorem attach_iff {α : Type _} {f : α → Bool} {P : α → Prop} :
 /-- The quantifier-bound clause, decided on its own so the recursion below
 never has to case on the bound. -/
 private theorem hi_bound_iff (hi : Option Nat) :
-    hi.all (fun h => h < Ref.none32) = true ↔
-      ∀ h, hi = some h → h < Ref.none32 := by
+    hi.all (fun h => h ≤ maxQuant) = true ↔
+      ∀ h, hi = some h → h ≤ maxQuant := by
   cases hi <;> simp
 
 /-- `WfAst` as a decision procedure. -/
@@ -52,7 +52,8 @@ def wfAstB : Ast → Bool
   | .cat kids => kids.attach.all (fun ⟨k, _⟩ => wfAstB k)
   | .alt arms => !arms.isEmpty && arms.attach.all (fun ⟨a, _⟩ => wfAstB a)
   | .grp _ body => wfAstB body
-  | .rep _ hi _ body => hi.all (fun h => h < Ref.none32) && wfAstB body
+  | .rep lo hi _ body =>
+      (lo ≤ maxQuant && hi.all (fun h => h ≤ maxQuant)) && wfAstB body
   | .nul | .chr _ | .chrCI _ | .cls _ | .any | .anyNoNL | .bsr
   | .circ | .circM | .doll | .dollE | .dollM
   | .sod | .eod | .eodn | .wordB | .notWordB => true
@@ -93,9 +94,10 @@ theorem wfAstB_iff (a : Ast) : wfAstB a = true ↔ WfAst a := by
         | cons _ _ => simp
   | .grp _ body =>
       rw [wfAstB, WfAst]; exact wfAstB_iff body
-  | .rep _ hi _ body =>
-      rw [wfAstB, WfAst, Bool.and_eq_true]
-      exact and_congr (hi_bound_iff hi) (wfAstB_iff body)
+  | .rep lo hi _ body =>
+      rw [wfAstB, WfAst, Bool.and_eq_true, Bool.and_eq_true]
+      exact and_congr (and_congr (by simp) (hi_bound_iff hi))
+        (wfAstB_iff body)
   | .nul | .chr _ | .chrCI _ | .cls _ | .any | .anyNoNL | .bsr
   | .circ | .circM | .doll | .dollE | .dollM
   | .sod | .eod | .eodn | .wordB | .notWordB => simp [wfAstB, WfAst]

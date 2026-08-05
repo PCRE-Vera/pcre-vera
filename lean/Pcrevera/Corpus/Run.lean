@@ -1,6 +1,7 @@
 import Pcrevera.Corpus.Decode
 import Pcrevera.Ref.Exec
 import Pcrevera.Proofs.WfDecide
+import Pcrevera.Proofs.ReWfCompile
 
 /-!
 # Replaying the corpora through the reference engine (R-10)
@@ -19,6 +20,14 @@ construct dropped between the two (a `{0}` quantifier) can shift every
 index after it. A class instruction is therefore compared by the 32 bytes
 its argument resolves to, which is the meaning of the instruction, while
 every other field is compared exactly.
+
+One field is deliberately not compared, because comparing it would prove
+nothing. `hascrlf` is parser output — an explicitly written CR or LF, with
+pcre2's `[^x]` exception, which no walk over the tree can recover — so it
+travels with the tree as input and `R.compile` copies it through. Holding
+the copy to the original would be an identity. It is a tested link the same
+way the tree is, and the behaviour it drives, the CR LF bumpalong, is
+covered wherever a recorded trial exercises it.
 -/
 
 namespace Pcrevera.Corpus
@@ -40,14 +49,18 @@ def backtrackRun (re : Re) (s : ByteArray) (start : Nat) (mo : MOpts)
 def offsets (ov : Array UInt32) : List Int :=
   ov.toList.map fun v => if v == unset32 then -1 else Int.ofNat v.toNat
 
-/-- The well-formedness the refinement theorems quantify over, asked of the
-tree the engine's own parser produced. `Wf` names the shapes a parse never
-emits, and until M10 proves the parser that is a claim to be tested rather
-than assumed — so every replayed case checks it, and a pattern that failed
-would be a finding about the hypothesis rather than about the run. -/
+/-- The pattern-side conditions the theorems read a tree through, asked of
+the tree the engine's own parser produced: `Wf`, which names the shapes a
+parse never emits, and the two `PatFits` sizes the lockstep bounds carry.
+Until M10 proves the parser both are claims to be tested rather than
+assumed — so every replayed case checks them, and a pattern that failed
+would be a finding about the hypotheses rather than about the run. -/
 def wfAgrees (p : Pat) : Option String :=
-  if Refine.wfB p then none
-  else some "the parsed tree is not well formed for the refinement theorems"
+  if !Refine.wfB p then
+    some "the parsed tree is not well formed for the refinement theorems"
+  else if !(decide (Refine.nodeCount p.root ≤ Ref.maxNodes) && decide (p.ncap < 256)) then
+    some "the parsed tree is past the sizes the bound theorems read it through"
+  else none
 
 /-- One instruction against the engine's, classes compared by meaning. -/
 def instAgrees (mine : Inst) (mineClasses : Array UInt8)
@@ -75,10 +88,16 @@ def compileAgrees (mine : Re) (theirs : BridgeRe) : Option String :=
     some s!"nregs {mine.nregs} vs {theirs.nregs}"
   else if mine.crfirst != theirs.crfirst then
     some s!"crfirst {mine.crfirst} vs {theirs.crfirst}"
-  else if mine.hascrlf != theirs.hascrlf then
-    some s!"hascrlf {mine.hascrlf} vs {theirs.hascrlf}"
   else if mine.pike != theirs.pike then
     some s!"pike {mine.pike} vs {theirs.pike}"
+  else if mine.anchored != (theirs.opts &&& 32 != 0) then
+    some "the anchored option disagrees"
+  else if mine.endanchored != (theirs.opts &&& 64 != 0) then
+    some "the endanchored option disagrees"
+  else if mine.nltype != theirs.nltype then
+    some "the newline conventions disagree"
+  else if mine.bsrtype != theirs.bsrtype then
+    some "the R conventions disagree"
   else none
 
 /-- A bridge polynomial: base and low-to-high coefficients. -/

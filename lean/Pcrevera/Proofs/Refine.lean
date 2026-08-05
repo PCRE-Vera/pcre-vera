@@ -13,8 +13,8 @@ or no-match, never resource-exceeded — its answer is `Spec.Matches`, the
 trusted semantics, ovector included; and the two layers call an input bad
 on exactly the same offsets. `btRun_refines_matches` is that theorem, and
 `BtRunRefinesMatches` at the end of the file is its statement, read
-against three hypotheses: the parser facts (`Wf`), the documented subject
-cap, and the counter-wrap bound.
+against two hypotheses: the parser facts (`Wf`) and the documented subject
+cap.
 
 The development is a chain of four joints.
 
@@ -42,11 +42,13 @@ The development is a chain of four joints.
   queuing `denot`'s matches, retargeted at the fragment's exit, in front
   of the pending stack. The counted repetition is where the two number
   systems meet: the machine reads a `UInt32` count out of the register
-  file where the enumeration carries a `Nat`, and the fuel bound is what
-  keeps the two the same number and keeps a bounded high apart from the
-  `none32` sentinel. `compileNode_facts` proves the compiler establishes
-  the relation, under the append-only `Grows` discipline on all three
-  tables.
+  file where the enumeration carries a `Nat`, and what keeps the two the
+  same number, and keeps a bounded high apart from the `none32` sentinel,
+  is `Spec.repCap` — how high one repetition's count can climb, which is
+  a maximum over the tree rather than a sum, and which the quantifier cap
+  and the subject cap together leave at half a `UInt32`.
+  `compileNode_facts` proves the compiler establishes the relation, under
+  the append-only `Grows` discipline on all three tables.
 
 * **The trail discipline and the metered bridge.** With register writes in
   play a backtrack entry decodes to the register file at push time:
@@ -520,26 +522,36 @@ Two recursive predicates and their conjunction over a pattern. Every
 clause is a fact about the engine's parser, not an extra assumption on
 top of it: an alternation always has at least one arm; quantifier bounds
 are capped at 65535, far below the `none32` sentinel the compiled
-repetition table would confuse an unbounded repetition with; and capture
+repetition table would confuse an unbounded repetition with, and far
+enough below it that no repetition can count its way there; and capture
 numbers never exceed `maxGroup`, which is how `ncap` is defined, so every
 save slot lands inside the ovector. `CapsBelow` is spelled as a clause
 rather than derived from `Ast.maxGroup` to keep this round self-contained
 — deriving it is a small foldl induction that can land later without
 changing any statement here. -/
 
-/-- The shape clauses: non-empty alternations, bounded quantifier highs.
-`h < none32` matters because the compiler encodes `hi = none` as the
-`none32` sentinel in the repetition table — a bounded repetition at or
-past it would compile to the unbounded semantics, empty-match rule
-included. The parser caps quantifiers at 65535. -/
+/-- spec.py's MAX_QUANT: the largest number a quantifier bound may name,
+which the parser refuses to exceed on either side of a `{m,n}`. -/
+def maxQuant : Nat := 65535
+
+theorem maxQuant_lt_none32 : maxQuant < none32 := by
+  simp only [maxQuant, none32]
+  omega
+
+/-- The shape clauses: non-empty alternations, and quantifier bounds inside
+MAX_QUANT. The cap earns its keep twice over. A high at or past `none32`
+would compile to the unbounded semantics, empty-match rule included, since
+that is the sentinel the repetition table spells `hi = none` with; and a
+low past the cap would let a repetition count further than the machine's
+`UInt32` counter can hold. -/
 def WfAst : Ast → Prop
   | .cat kids => kids.attach.foldr (fun ⟨k, _⟩ acc => WfAst k ∧ acc) True
   | .alt arms =>
       arms ≠ [] ∧
         arms.attach.foldr (fun ⟨a, _⟩ acc => WfAst a ∧ acc) True
   | .grp _ body => WfAst body
-  | .rep _ hi _ body =>
-      (∀ h, hi = some h → h < none32) ∧ WfAst body
+  | .rep lo hi _ body =>
+      (lo ≤ maxQuant ∧ ∀ h, hi = some h → h ≤ maxQuant) ∧ WfAst body
   | _ => True
 
 /-- Every capturing group's save slots sit inside the first `novec`
@@ -667,6 +679,175 @@ theorem repCount_alt_cons (a : Ast) (arms : List Ast) :
   simp only [List.attach_cons, List.foldl_cons, List.foldl_map]
   rw [foldl_add_start (fun x : { y // y ∈ arms } => repCount x.1) _ (0 + repCount a),
     foldl_add_start (fun x : { y // y ∈ arms } => repCount x.1) _ 0]
+  omega
+
+/-! ## The counter bound
+
+`Spec.repCap` is the counter's side of the arithmetic: how high a single
+repetition's count can climb, which is what the machine's `UInt32` counter
+has to hold. It takes a maximum where `Spec.suffFuel` takes a sum, since a
+counter belongs to one repetition and fuel is spent by the whole search, so
+it wants the same peeling lemmas over a different fold.
+
+`repReach` is the same quantity read one round at a time, which is the form
+the induction inside `frag_runs` can carry, and `WfAst.repCap_le` is what
+the parser's quantifier cap buys: on a well-formed tree over a subject
+inside the documented cap, no counter gets anywhere near the sentinel. -/
+
+/-- Peeling an accumulator off a left fold that only ever takes maxima. -/
+private theorem foldl_max_start {α : Type _} (f : α → Nat) :
+    ∀ (l : List α) (acc : Nat),
+      l.foldl (fun a x => max a (f x)) acc =
+        max acc (l.foldl (fun a x => max a (f x)) 0) := by
+  intro l
+  induction l with
+  | nil => intro acc; simp
+  | cons x xs ih =>
+      intro acc
+      simp only [List.foldl_cons]
+      rw [ih (max acc (f x)), ih (max 0 (f x))]
+      omega
+
+theorem repCap_alt_nil {n : Nat} : Spec.repCap n (.alt []) = 0 := by
+  rw [Spec.repCap]; simp
+
+theorem repCap_cat_cons {n : Nat} (k : Ast) (kids : List Ast) :
+    Spec.repCap n (.cat (k :: kids)) =
+      max (Spec.repCap n k) (Spec.repCap n (.cat kids)) := by
+  rw [Spec.repCap, Spec.repCap]
+  simp only [List.attach_cons, List.foldl_cons, List.foldl_map]
+  rw [foldl_max_start (fun x : { y // y ∈ kids } => Spec.repCap n x.1) _
+      (max 0 (Spec.repCap n k)),
+    foldl_max_start (fun x : { y // y ∈ kids } => Spec.repCap n x.1) _ 0]
+  omega
+
+theorem repCap_alt_cons {n : Nat} (a : Ast) (arms : List Ast) :
+    Spec.repCap n (.alt (a :: arms)) =
+      max (Spec.repCap n a) (Spec.repCap n (.alt arms)) := by
+  rw [Spec.repCap, Spec.repCap]
+  simp only [List.attach_cons, List.foldl_cons, List.foldl_map]
+  rw [foldl_max_start (fun x : { y // y ∈ arms } => Spec.repCap n x.1) _
+      (max 0 (Spec.repCap n a)),
+    foldl_max_start (fun x : { y // y ∈ arms } => Spec.repCap n x.1) _ 0]
+  omega
+
+theorem repCap_rep_body {n lo : Nat} {hi : Option Nat} {greedy : Bool}
+    {body : Ast} :
+    Spec.repCap n body ≤ Spec.repCap n (.rep lo hi greedy body) := by
+  cases hi with
+  | none => simp only [Spec.repCap]; omega
+  | some h => simp only [Spec.repCap]; omega
+
+/-- How far a repetition's counter can have run when a round starting at
+`pos` is about to be entered: a bounded one is stopped by its high, and an
+unbounded one has eaten a byte for every round past the minimum. -/
+def repReach (lo : Nat) (hi : Option Nat) (pos : Nat) : Nat :=
+  match hi with
+  | some h => max lo h
+  | none => lo + pos
+
+/-- Anywhere inside the subject, what one round can reach is inside what
+the node's whole counter can. -/
+theorem repReach_le_repCap {n lo pos : Nat} {hi : Option Nat} {greedy : Bool}
+    {body : Ast} (hpos : pos ≤ n) :
+    repReach lo hi pos ≤ Spec.repCap n (.rep lo hi greedy body) := by
+  cases hi with
+  | none => simp only [Spec.repCap, repReach]; omega
+  | some h => simp only [Spec.repCap, repReach]; omega
+
+/-- One round's worth of that bound, which is the whole counter argument.
+A round the loop head agreed to enter, and which the empty-match rule did
+not end on the spot, leaves the count inside what the repetition can still
+reach from the position the round landed on: a bounded repetition was below
+its high to have been entered at all, and an unbounded one either had not
+met its minimum yet or ate a byte. -/
+theorem repReach_succ {lo cnt pos q : Nat} {hi : Option Nat}
+    (hreach : cnt ≤ repReach lo hi pos) (hq : pos ≤ q)
+    (hin : cnt < lo ∨ hi.any (fun x => decide (cnt ≥ x)) = false)
+    (hgo : (hi.isNone && q == pos && decide (cnt + 1 ≥ lo)) = false) :
+    cnt + 1 ≤ repReach lo hi q := by
+  cases hi with
+  | none =>
+      simp only [repReach] at hreach ⊢
+      simp only [Option.isNone_none, Bool.true_and, Bool.and_eq_false_iff,
+        beq_eq_false_iff_ne, ne_eq, decide_eq_false_iff_not, Nat.not_le] at hgo
+      rcases hgo with hne | hlt <;> omega
+  | some h =>
+      simp only [repReach] at hreach ⊢
+      rcases hin with hlo | hhi
+      · omega
+      · simp only [Option.any_some, decide_eq_false_iff_not, Nat.not_le] at hhi
+        omega
+
+private theorem foldl_max_le {α : Type _} {f : α → Nat} {B : Nat} :
+    ∀ {l : List α} {acc : Nat}, acc ≤ B → (∀ x ∈ l, f x ≤ B) →
+      l.foldl (fun a x => max a (f x)) acc ≤ B := by
+  intro l
+  induction l with
+  | nil => intro acc hacc _; simpa using hacc
+  | cons x xs ih =>
+      intro acc hacc hall
+      simp only [List.foldl_cons]
+      refine ih ?_ (fun y hy => hall y (by simp [hy]))
+      have := hall x (by simp)
+      omega
+
+/-- What the parser's quantifier cap buys the counter: on a well-formed
+tree no repetition can count past MAX_QUANT rounds plus one per byte of
+the subject, plus the one an ended round takes with it. The rep case is
+where the cap is spent — everything else only passes the maximum along. -/
+theorem WfAst.repCap_le {n : Nat} : ∀ {a : Ast}, WfAst a →
+    Spec.repCap n a ≤ maxQuant + n + 1
+  | .cat kids, h => by
+      rw [WfAst] at h
+      rw [Spec.repCap]
+      refine foldl_max_le (Nat.zero_le _) ?_
+      rintro ⟨k, hk⟩ -
+      have := List.sizeOf_lt_of_mem hk
+      exact WfAst.repCap_le (attach_foldr_forall h k hk)
+  | .alt arms, h => by
+      rw [WfAst] at h
+      rw [Spec.repCap]
+      refine foldl_max_le (Nat.zero_le _) ?_
+      rintro ⟨a, ha⟩ -
+      have := List.sizeOf_lt_of_mem ha
+      exact WfAst.repCap_le (attach_foldr_forall h.2 a ha)
+  | .grp cap body, h => by
+      rw [WfAst] at h
+      rw [Spec.repCap]
+      exact WfAst.repCap_le h
+  | .rep lo hi greedy body, h => by
+      rw [WfAst] at h
+      have hbody := WfAst.repCap_le (n := n) h.2
+      have hlo := h.1.1
+      cases hi with
+      | none =>
+          simp only [Spec.repCap]
+          omega
+      | some k =>
+          have hhi := h.1.2 k rfl
+          simp only [Spec.repCap]
+          omega
+  | .nul, _ | .chr _, _ | .chrCI _, _ | .cls _, _ | .any, _ | .anyNoNL, _
+  | .bsr, _ | .circ, _ | .circM, _ | .doll, _ | .dollE, _ | .dollM, _
+  | .sod, _ | .eod, _ | .eodn, _ | .wordB, _ | .notWordB, _ => by
+      simp [Spec.repCap]
+termination_by a _ => sizeOf a
+decreasing_by
+  all_goals simp
+  all_goals omega
+
+/-- And therefore the counter-wrap bound holds outright for parser output
+on a subject the documented cap admits: MAX_QUANT plus `ceiling` is about
+`2 ^ 31`, half of what a `UInt32` counter holds. Both halves are needed —
+an unbounded repetition counts one per byte, so a subject without a cap
+would have no counter bound whatever the quantifiers say. -/
+theorem Wf.repCap_lt {p : Pat} {s : ByteArray} (hw : Wf p)
+    (hs : s.size ≤ ceiling) : Spec.repCap s.size p.root < none32 := by
+  have hb := WfAst.repCap_le (n := s.size) hw.1
+  simp only [maxQuant] at hb
+  simp only [ceiling] at hs
+  simp only [none32]
   omega
 
 mutual
@@ -2135,15 +2316,16 @@ that stack.
 
 The three side conditions are what the counted repetition needs and every
 other construct only passes on: the position is inside the subject, so the
-entry position a round records survives the trip through `UInt32`; the
-fuel is below the sentinel, so a count can never reach it; and the
-register file is long enough to hold the rows this node's repetitions
-claim, so the counter writes land instead of falling off the end. -/
+entry position a round records survives the trip through `UInt32`; no
+repetition's count can reach the sentinel, which is `repCap`'s business
+and not the search fuel's; and the register file is long enough to hold
+the rows this node's repetitions claim, so the counter writes land instead
+of falling off the end. -/
 theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
     (h : FragAt re.code re.classes re.reps r0 a lo hi) :
     ∀ (fuel pos : Nat) (regs : Spec.Regs) (ts : List Spec.Thread),
       denot fuel (mctx re s mo) re.novec r0 a pos regs = some ts →
-      pos ≤ s.size → fuel < none32 → CapsBelow re.novec a →
+      pos ≤ s.size → Spec.repCap s.size a < none32 → CapsBelow re.novec a →
       re.novec + 2 * (r0 + repCount a) ≤ regs.size →
       ∀ (stk : List Entry) (r : Out),
         Runs re s mo start attempt lo pos regs stk r ↔
@@ -2242,24 +2424,26 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
       simp only [List.map_cons, List.map_nil, List.cons_append,
         List.nil_append, resumes_cons]
   | @catCons k kids r0 lo mid hi hk hkids ihk ihkids =>
-      intro fuel pos regs ts hd hpos hfuel hcaps hsize stk r
+      intro fuel pos regs ts hd hpos hcap hcaps hsize stk r
       obtain ⟨hck, hcr⟩ := capsBelow_cat_cons.mp hcaps
       rw [repCount_cat_cons] at hsize
+      rw [repCap_cat_cons] at hcap
       rw [denot_cat, denotCat.eq_def] at hd
       simp only [Option.pure_def, Option.bind_eq_bind] at hd
       obtain ⟨heads, hheads, hd⟩ := bind_some hd
       obtain ⟨tails, htails, hd⟩ := bind_some hd
       cases hd
-      rw [ihk fuel pos regs heads hheads hpos hfuel hck (by omega) stk r]
+      rw [ihk fuel pos regs heads hheads hpos (by omega) hck (by omega) stk r]
       refine resumes_bindM heads tails htails ?_ stk r
       intro t ht us hus stk' r'
       obtain ⟨hsz, _⟩ := denot_frame hheads hck t ht
       obtain ⟨_, hp2⟩ := denot_pos_le hheads hpos (by omega) t ht
-      exact ihkids fuel t.pos t.regs us (by rw [denot_cat]; exact hus) hp2 hfuel
-        hcr (by rw [hsz]; omega) stk' r'
+      exact ihkids fuel t.pos t.regs us (by rw [denot_cat]; exact hus) hp2
+        (by omega) hcr (by rw [hsz]; omega) stk' r'
   | @altOne a r0 lo hi ha iha =>
-      intro fuel pos regs ts hd hpos hfuel hcaps hsize stk r
+      intro fuel pos regs ts hd hpos hcap hcaps hsize stk r
       rw [repCount_alt_cons, repCount_alt_nil] at hsize
+      rw [repCap_alt_cons, repCap_alt_nil] at hcap
       rw [denot_alt, denotAlt.eq_def] at hd
       simp only [Option.pure_def, Option.bind_eq_bind] at hd
       obtain ⟨mine, hmine, hd⟩ := bind_some hd
@@ -2268,12 +2452,13 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
       rw [denotAlt.eq_def] at htheirs
       cases htheirs
       simp only [List.append_nil]
-      exact iha fuel pos regs mine hmine hpos hfuel
+      exact iha fuel pos regs mine hmine hpos (by omega)
         (capsBelow_alt_cons.mp hcaps).1 (by omega) stk r
   | @altCons a b rest r0 lo j hi hsplit ha hjump hrest iha ihrest =>
-      intro fuel pos regs ts hd hpos hfuel hcaps hsize stk r
+      intro fuel pos regs ts hd hpos hcap hcaps hsize stk r
       obtain ⟨hca, hcr⟩ := capsBelow_alt_cons.mp hcaps
       rw [repCount_alt_cons] at hsize
+      rw [repCap_alt_cons] at hcap
       rw [denot_alt, denotAlt.eq_def] at hd
       simp only [Option.pure_def, Option.bind_eq_bind] at hd
       obtain ⟨mine, hmine, hd⟩ := bind_some hd
@@ -2284,7 +2469,7 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
         simp [eff, hsplit]
       rw [runs_eff, heff]
       simp only [Eff.judg]
-      rw [iha fuel pos regs mine hmine hpos hfuel hca (by omega)
+      rw [iha fuel pos regs mine hmine hpos (by omega) hca (by omega)
         ((j + 1, (⟨pos, regs⟩ : Spec.Thread)) :: stk) r]
       have hjt : ∀ (t : Spec.Thread) (stk' : List Entry) (r' : Out),
           Runs re s mo start attempt j t.pos t.regs stk' r' ↔
@@ -2303,26 +2488,28 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
         intro r'
         rw [resumes_cons]
         exact ihrest fuel pos regs theirs (by rw [denot_alt]; exact htheirs)
-          hpos hfuel hcr (by omega) stk r'
+          hpos (by omega) hcr (by omega) stk r'
       refine Iff.trans (resumes_congr_tail hstep) ?_
       simp [List.map_append, List.append_assoc]
   | @grpZero body r0 lo hi hbody ihbody =>
-      intro fuel pos regs ts hd hpos hfuel hcaps hsize stk r
+      intro fuel pos regs ts hd hpos hcap hcaps hsize stk r
       rw [CapsBelow] at hcaps
       rw [repCount] at hsize
+      rw [Spec.repCap] at hcap
       rw [denot.eq_def] at hd
       simp only [bne_self_eq_false, Bool.false_eq_true, if_false,
         Option.map_eq_some_iff] at hd
       obtain ⟨taken, htaken, rfl⟩ := hd
-      rw [ihbody fuel pos regs taken htaken hpos hfuel hcaps.2 hsize stk r]
+      rw [ihbody fuel pos regs taken htaken hpos hcap hcaps.2 hsize stk r]
       simp
-  | @grpCap cap body r0 lo j hcap hopen hbody hclose ihbody =>
-      intro fuel pos regs ts hd hpos hfuel hcaps hsize stk r
+  | @grpCap cap body r0 lo j hnz hopen hbody hclose ihbody =>
+      intro fuel pos regs ts hd hpos hcap hcaps hsize stk r
       rw [CapsBelow] at hcaps
       rw [repCount] at hsize
-      have hcap' : (cap != 0) = true := by simpa using hcap
+      rw [Spec.repCap] at hcap
+      have hnz' : (cap != 0) = true := by simpa using hnz
       rw [denot.eq_def] at hd
-      simp only [hcap', if_true, Option.map_eq_some_iff] at hd
+      simp only [hnz', if_true, Option.map_eq_some_iff] at hd
       obtain ⟨taken, htaken, rfl⟩ := hd
       have heff : eff re s mo start attempt lo pos regs =
           .goto (lo + 1) pos (regs.set! (2 * cap) pos.toUInt32) := by
@@ -2330,7 +2517,7 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
       rw [runs_eff, heff]
       simp only [Eff.judg]
       rw [ihbody fuel pos (regs.set! (2 * cap) pos.toUInt32) taken htaken hpos
-        hfuel hcaps.2 (by simpa [Array.set!_eq_setIfInBounds] using hsize) stk r]
+        hcap hcaps.2 (by simpa [Array.set!_eq_setIfInBounds] using hsize) stk r]
       have hstep : ∀ (t : Spec.Thread) (stk' : List Entry) (r' : Out),
           Runs re s mo start attempt j t.pos t.regs stk' r' ↔
           Runs re s mo start attempt (j + 1)
@@ -2355,16 +2542,19 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
       simp only [List.map_cons, List.map_nil, List.cons_append,
         List.nil_append, resumes_cons]
   | @repOne greedy body r0 lo hi hbody ihbody =>
-      intro fuel pos regs ts hd hpos hfuel hcaps hsize stk r
+      intro fuel pos regs ts hd hpos hcap hcaps hsize stk r
       rw [CapsBelow] at hcaps
       rw [repCount] at hsize
       rw [denot.eq_def] at hd
       simp only [beq_self_eq_true, if_true] at hd
-      exact ihbody fuel pos regs ts hd hpos hfuel hcaps hsize stk r
+      exact ihbody fuel pos regs ts hd hpos
+        (Nat.lt_of_le_of_lt repCap_rep_body hcap) hcaps hsize stk r
   | @repGen lo' hi greedy body r0 lo j hzero hloop hentr hnext hrow hinfo
       hbound hnot0 hnot1 hbody ihbody =>
-      intro fuel pos regs ts hd hpos hfuel hcaps hsize stk r
+      intro fuel pos regs ts hd hpos hcap hcaps hsize stk r
       rw [CapsBelow] at hcaps
+      have hcapb : Spec.repCap s.size body < none32 :=
+        Nat.lt_of_le_of_lt repCap_rep_body hcap
       have hrc : repCount (Ast.rep lo' hi greedy body) = 1 + repCount body := by
         cases hi with
         | none => simp [repCount]
@@ -2395,13 +2585,16 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
               Nat.not_le]
             omega
         | some h => simp [hiCode]
-      -- One round of the counted loop, from the deciding head.
+      -- One round of the counted loop, from the deciding head. What keeps
+      -- the register and the count the same number is `repReach`: the
+      -- round about to run cannot have counted past what this repetition
+      -- can reach from the position it stands at.
       have key : ∀ (f cnt pos' : Nat) (regs' : Spec.Regs)
           (ts' : List Spec.Thread),
           denotRep f (mctx re s mo) re.novec (re.novec + 2 * r0) (r0 + 1) body
             lo' hi greedy cnt pos' regs' = some ts' →
           regs'[re.novec + 2 * r0]! = cnt.toUInt32 →
-          pos' ≤ s.size → cnt + f < none32 →
+          pos' ≤ s.size → cnt ≤ repReach lo' hi pos' →
           re.novec + 2 * (r0 + 1 + repCount body) ≤ regs'.size →
           ∀ (stk' : List Entry) (r' : Out),
             Runs re s mo start attempt (lo + 1) pos' regs' stk' r' ↔
@@ -2414,7 +2607,12 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
             rw [denotRep.eq_def] at hdr
             exact absurd hdr (by simp)
         | succ f ihf =>
-            intro cnt pos' regs' ts' hdr hcnt hpos' hwrap hsz' stk' r'
+            intro cnt pos' regs' ts' hdr hcnt hpos' hreach hsz' stk' r'
+            have hwrap : cnt < none32 :=
+              Nat.lt_of_le_of_lt
+                (Nat.le_trans hreach
+                  (repReach_le_repCap (greedy := greedy) (body := body) hpos'))
+                hcap
             have hcntlt : cnt < 2 ^ 32 := by
               simp only [none32] at hwrap
               omega
@@ -2427,8 +2625,11 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
                  else if greedy then Eff.fork (lo + 2) (j + 1)
                  else Eff.fork (j + 1) (lo + 2)) := by
               simp only [eff, hloop, hslot, hrep, hcntv]
-            -- The body, entered through the round's own entry-position write.
-            have henter : ∀ (taken : List Spec.Thread)
+            -- The body, entered through the round's own entry-position
+            -- write. The loop head's own reason for entering travels with
+            -- it, since that is what bounds the count the round hands on.
+            have henter : cnt < lo' ∨ hi.any (fun x => decide (cnt ≥ x)) = false →
+                ∀ (taken : List Spec.Thread)
                 (onward : List (List Spec.Thread)),
                 denot f (mctx re s mo) re.novec (r0 + 1) body pos'
                   (regs'.set! (re.novec + 2 * r0 + 1) pos'.toUInt32) =
@@ -2446,20 +2647,20 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
                   Runs re s mo start attempt (lo + 2) pos' regs' stk'' r'' ↔
                   Resumes re s mo start attempt
                     ((onward.flatten.map fun t => (j + 1, t)) ++ stk'') r'' := by
-              intro taken onward htaken honward stk'' r''
+              intro hin taken onward htaken honward stk'' r''
               have heffe : eff re s mo start attempt (lo + 2) pos' regs' =
                   Eff.goto (lo + 3) pos'
                     (regs'.set! (re.novec + 2 * r0 + 1) pos'.toUInt32) := by
                 simp only [eff, hentr, hslot]
               rw [runs_eff, heffe]
               simp only [Eff.judg]
-              rw [ihbody f pos' _ taken htaken hpos' (by omega) hcaps
+              rw [ihbody f pos' _ taken htaken hpos' hcapb hcaps
                 (by rw [Array.set!_eq_setIfInBounds, Array.size_setIfInBounds]
                     omega) stk'' r'']
               refine resumes_bindM taken onward honward ?_ stk'' r''
               intro t ht us hus stk₃ r₃
               obtain ⟨hszt, hfrt⟩ := denot_frame htaken hcaps t ht
-              obtain ⟨_, hpost⟩ := denot_pos_le htaken hpos' (by
+              obtain ⟨hmono, hpost⟩ := denot_pos_le htaken hpos' (by
                 rw [Array.set!_eq_setIfInBounds, Array.size_setIfInBounds]
                 omega) t ht
               rw [Array.set!_eq_setIfInBounds, Array.size_setIfInBounds] at hszt
@@ -2511,7 +2712,8 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
                 exact ihf (cnt + 1) t.pos _ us hus
                   (by rw [Array.set!_eq_setIfInBounds,
                         getBang_set_eq _ (by omega)])
-                  hpost (by omega)
+                  hpost
+                  (repReach_succ hreach hmono hin (eq_false_of_ne_true htst))
                   (by rw [Array.set!_eq_setIfInBounds,
                         Array.size_setIfInBounds]
                       omega) stk₃ r₃
@@ -2524,11 +2726,9 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
               obtain ⟨taken, htaken, hdr⟩ := bind_some hdr
               obtain ⟨onward, honward, hdr⟩ := bind_some hdr
               cases hdr
-              exact henter taken onward htaken honward stk' r'
+              exact henter (Or.inl hlt) taken onward htaken honward stk' r'
             · rw [if_neg hlt] at hdr ⊢
-              have hcw : cnt < none32 := by
-                simp only [none32] at hwrap ⊢
-                omega
+              have hcw : cnt < none32 := hwrap
               by_cases hhi : hi.any (fun x => decide (cnt ≥ x)) = true
               · rw [if_pos hhi] at hdr
                 rw [if_pos ((hge cnt hcw).mpr hhi)]
@@ -2546,7 +2746,8 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
                 cases greedy with
                 | true =>
                     simp only [if_true, Eff.judg]
-                    rw [henter taken onward htaken honward
+                    rw [henter (Or.inr (eq_false_of_ne_true hhi)) taken onward
+                      htaken honward
                       ((j + 1, (⟨pos', regs'⟩ : Spec.Thread)) :: stk') r']
                     simp [List.map_append, List.append_assoc]
                 | false =>
@@ -2562,7 +2763,8 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
                       (A := [(j + 1, (⟨pos', regs'⟩ : Spec.Thread))])
                       (fun r'' => by
                         rw [resumes_cons]
-                        exact henter taken onward htaken honward stk' r'')
+                        exact henter (Or.inr (eq_false_of_ne_true hhi)) taken
+                          onward htaken honward stk' r'')
       -- The block starts by zeroing the count.
       have hd' : denotRep fuel (mctx re s mo) re.novec (re.novec + 2 * r0)
           (r0 + 1) body lo' hi greedy 0 pos
@@ -2583,11 +2785,11 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
       exact key fuel 0 pos (regs.set! (re.novec + 2 * r0) 0) ts hd'
         (by rw [Array.set!_eq_setIfInBounds, getBang_set_eq _ (by omega)]
             rfl)
-        hpos (by omega)
+        hpos (Nat.zero_le _)
         (by rw [Array.set!_eq_setIfInBounds, Array.size_setIfInBounds]
             omega) stk r
   | @repOpt lo' greedy body r0 sp j hlo hsplit hbody ihbody =>
-      intro fuel pos regs ts hd hpos hfuel hcaps hsize stk r
+      intro fuel pos regs ts hd hpos hcap hcaps hsize stk r
       rw [CapsBelow] at hcaps
       rw [repCount] at hsize
       have hlo' : (lo' == 1) = false := by simp [hlo]
@@ -2595,7 +2797,8 @@ theorem frag_runs {a : Ast} {r0 lo hi : Nat} (hs : s.size ≤ ceiling)
       simp only [hlo', Bool.false_eq_true, if_false,
         Option.map_eq_some_iff] at hd
       obtain ⟨taken, htaken, rfl⟩ := hd
-      have ihb := ihbody fuel pos regs taken htaken hpos hfuel hcaps hsize
+      have ihb := ihbody fuel pos regs taken htaken hpos
+        (Nat.lt_of_le_of_lt repCap_rep_body hcap) hcaps hsize
       cases greedy with
       | true =>
           rw [if_pos rfl] at hsplit
@@ -4661,7 +4864,8 @@ reaches it through its thread lists, which is why the statement is about
 theorem runs_attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
     {start attempt F : Nat} {r : Out} {ts : List Spec.Thread}
     (hc : Covered p.root) (hcaps : CapsBelow (2 * (p.ncap + 1)) p.root)
-    (hs : s.size ≤ ceiling) (hatt : attempt ≤ s.size) (hF : F < none32)
+    (hs : s.size ≤ ceiling) (hatt : attempt ≤ s.size)
+    (hcap : Spec.repCap s.size p.root < none32)
     (hden : denot F (mctx (compile p) s mo) (2 * (p.ncap + 1)) 0 p.root attempt
       (Array.replicate (compile p).nregs unset32) = some ts)
     (hruns : Runs (compile p) s mo start attempt 0 attempt
@@ -4678,7 +4882,7 @@ theorem runs_attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
     omega
   have hres := (frag_runs hs hfrag F attempt
     (Array.replicate (compile p).nregs unset32) ts (by rw [hnovec]; exact hden)
-    hatt hF (by rw [hnovec]; exact hcaps)
+    hatt hcap (by rw [hnovec]; exact hcaps)
     (by rw [hnovec, Array.size_replicate, hnregs]; omega) [] r).mp hruns
   rw [List.append_nil] at hres
   have hgate : Resumes (compile p) s mo start attempt
@@ -4717,7 +4921,7 @@ theorem attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
     (hc : Covered p.root) (hcaps : CapsBelow (2 * (p.ncap + 1)) p.root)
     (hs : s.size ≤ ceiling) (hbt : st.bt = #[])
     (hregs : st.regs = Array.replicate (compile p).nregs unset32)
-    (hatt : attempt ≤ s.size) (hF : F < none32)
+    (hatt : attempt ≤ s.size) (hcap : Spec.repCap s.size p.root < none32)
     (hden : denot F (mctx (compile p) s mo) (2 * (p.ncap + 1)) 0 p.root attempt
       (Array.replicate (compile p).nregs unset32) = some ts)
     (h : verdict (btStep (compile p) s mo lim start attempt fuel 0 attempt
@@ -4733,7 +4937,7 @@ theorem attempt_refines {p : Pat} {s : ByteArray} {mo : MOpts}
       simp at he
     · rw [hbt]
       simp
-  exact runs_attempt_refines hc hcaps hs hatt hF hden
+  exact runs_attempt_refines hc hcaps hs hatt hcap hden
     ⟨fuel, btStep_mirror fuel 0 attempt st
       (Array.replicate (compile p).nregs unset32) [] hsync r h⟩
 
@@ -4783,9 +4987,14 @@ theorem WfAst.covered : ∀ {a : Ast}, WfAst a → Covered a
           · subst hlo
             exact .repOne (WfAst.covered h.2)
           · exact .repOpt hlo (WfAst.covered h.2)
-      | none => exact .repGen (by simp) (by simp) h.1 (WfAst.covered h.2)
+      | none =>
+          exact .repGen (by simp) (by simp)
+            (fun k hk => Nat.lt_of_le_of_lt (h.1.2 k hk) maxQuant_lt_none32)
+            (WfAst.covered h.2)
       | some (_ + 2) =>
-          exact .repGen (by simp) (by simp) h.1 (WfAst.covered h.2)
+          exact .repGen (by simp) (by simp)
+            (fun k hk => Nat.lt_of_le_of_lt (h.1.2 k hk) maxQuant_lt_none32)
+            (WfAst.covered h.2)
   | .nul, _ => .nul
   | .chr b, _ => .chr b
   | .chrCI folded, _ => .chrCI folded
@@ -5096,11 +5305,11 @@ theorem ScanAgrees.step {p : Pat} {s : ByteArray} {mo : MOpts}
 skips, same stop rule, and on a match the same ovector. A budget refusal
 is the one answer that claims nothing. -/
 theorem btLoop_refines {p : Pat} {s : ByteArray} {mo : MOpts} {lim : Limits}
-    {start : Nat} (hw : Wf p) (hs : s.size ≤ ceiling)
-    (hwrap : Spec.suffFuel s.size p.root < none32) :
+    {start : Nat} (hw : Wf p) (hs : s.size ≤ ceiling) :
     ∀ (steps attempt : Nat) (st : BtSt), attempt ≤ s.size →
       ScanAgrees p s mo start attempt steps
         (btLoop (compile p) s mo lim start steps attempt st) := by
+  have hwrap : Spec.repCap s.size p.root < none32 := hw.repCap_lt hs
   have hcov : Covered p.root := hw.1.covered
   have hnreg : 2 * (p.ncap + 1) ≤ (compile p).nregs := by
     show 2 * (p.ncap + 1) ≤ (p.ncap + 1) * 2 + (compile p).reps.size * 2
@@ -5214,18 +5423,21 @@ theorem btLoop_refines {p : Pat} {s : ByteArray} {mo : MOpts} {lim : Limits}
 
 /-! ## The target: S-8's backtracking half
 
-Three reading notes on the side conditions. `Wf p` is the parser facts.
+Two reading notes on the side conditions. `Wf p` is the parser facts.
 `s.size ≤ ceiling` resolves the one guard asymmetry honestly: `Spec.matchesF` answers BadInput for a
 subject past the documented cap while `btRun` does not — that check
 lives in `Exec`'s validation, not in the raw run — so the raw-run
 statement carries the cap as a hypothesis, and the `Exec`-level
-corollary can drop it. `suffFuel s.size p.root < none32` is the
-counter-wrap bound: every count the search can reach is below the
-sufficient fuel, so the machine's 32-bit counters never wrap nor collide
-with the `none32` sentinel; it mentions the subject length, which is why
-it is a hypothesis here rather than a `Wf` clause — and it always holds
-for parser output on capped subjects, whose quantifiers stay at or below
-65535. -/
+corollary can drop it.
+
+There is no third one. The counter-wrap bound the proof needs,
+`repCap s.size p.root < none32`, is what `Wf.repCap_lt` gets out of those
+two: MAX_QUANT rounds plus one per byte of a subject inside `ceiling` is
+about `2 ^ 31`, half of what a `UInt32` counter holds. It has to be read
+per repetition to come out that way — the search's fuel adds across
+siblings, and a counter does not, so `a*b*` on the longest admissible
+subject already puts `suffFuel` past the sentinel while every counter in
+it stays at half. -/
 
 /-- Whenever the metered backtracking run completes, its answer is the
 spec's: found with the very ovector, no-match, and bad-input agreeing
@@ -5234,7 +5446,6 @@ def BtRunRefinesMatches : Prop :=
   ∀ (p : Pat) (s : ByteArray) (start : Nat) (mo : MOpts) (lim : Limits)
     (btCap trailCap : Nat),
     Wf p → s.size ≤ ceiling →
-    Spec.suffFuel s.size p.root < none32 →
     ((btRun (compile p) s start mo lim btCap trailCap).outcome =
         .matched →
       Spec.Matches p s start mo =
@@ -5251,7 +5462,7 @@ the scan, and the two guards: a start outside the subject is the only
 BadInput either layer can answer under the documented cap, and a match
 delivers the very ovector the spec computes. -/
 theorem btRun_refines_matches : BtRunRefinesMatches := by
-  intro p s start mo lim btCap trailCap hw hs hwrap
+  intro p s start mo lim btCap trailCap hw hs
   by_cases hstart : start > s.size
   · -- Outside the subject both layers refuse at the door.
     have hbad : (btRun (compile p) s start mo lim btCap trailCap).outcome =
@@ -5284,7 +5495,7 @@ theorem btRun_refines_matches : BtRunRefinesMatches := by
     have hloop : ∀ (st : BtSt) (out : RunEnd),
         btLoop (compile p) s mo lim start (s.size + 1 - start) start st =
           out → ScanAgrees p s mo start start (s.size + 1 - start) out :=
-      fun st out h => h ▸ btLoop_refines hw hs hwrap _ _ st hstart'
+      fun st out h => h ▸ btLoop_refines hw hs _ _ st hstart'
     rw [btRun, if_neg hstart]
     simp only []
     split

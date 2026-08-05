@@ -14,6 +14,13 @@ A case the engine refuses at compile time is exported as a skip with the
 reason: a compile error is the parser's territory, and the Lean side has
 nothing to replay it through.
 
+`hascrlf` is parser output rather than a fact about the tree — the parser
+records an explicitly written CR or LF, with pcre2's `[^x]` exception, and
+no walk over the AST can recover that. It therefore travels with the tree
+as part of the same tested link, and the replay uses it as input rather
+than checking it. Everything else here the replay holds the Lean compiler
+to.
+
 The output is deterministic — sorted keys, no floats — so its freshness is
 checkable the same way the generated backends are.
 """
@@ -195,6 +202,12 @@ def _re(value) -> dict:
         ],
         "ncap": value.fields["ncap"],
         "nregs": value.fields["nregs"],
+        # The compile-time options the engine actually compiled with, so the
+        # replay can hold the tree it is handed to them rather than assume
+        # the case record and the engine read the record the same way.
+        "opts": value.fields["opts"],
+        "nltype": value.fields["nltype"],
+        "bsr": value.fields["bsr"],
         "hascrlf": value.fields["hascrlf"],
         "crfirst": value.fields["crfirst"],
         "pike": bool(value.fields["pike"]),

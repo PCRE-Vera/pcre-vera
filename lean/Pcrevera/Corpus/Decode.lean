@@ -184,6 +184,9 @@ structure BridgeRe where
   regions : Array Region
   ncap : Nat
   nregs : Nat
+  opts : Nat
+  nltype : NlType
+  bsrtype : BsrType
   hascrlf : Bool
   crfirst : Bool
   pike : Bool
@@ -212,6 +215,9 @@ def bridgeReOf (j : Json) : D BridgeRe := do
   .ok { code, classes := classes.data, reps, regions
         ncap := ← natField j "ncap"
         nregs := ← natField j "nregs"
+        opts := ← natField j "opts"
+        nltype := ← nlOf (← natField j "nltype")
+        bsrtype := ← bsrOf (← natField j "bsr")
         hascrlf := (← natField j "hascrlf") != 0
         crfirst := (← natField j "crfirst") != 0
         pike := ← boolField j "pike"

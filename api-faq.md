@@ -601,3 +601,28 @@ with `rw [h]` therefore reports "did not find an occurrence of the pattern",
 naming a pattern that is plainly still visible in the sources. `rw [h] at hyp`
 is the right form, and when the thing being taken apart drives the goal there
 is nothing to rewrite at all.
+
+## Equation lemmas for an arm that contains a nested `match`
+
+`Spec.repCap`'s repetition arm computes its rounds with a `match hi with`
+inside the body. Lean splits the generated equations along that inner match,
+so with `hi` still a variable there is no equation for
+`repCap n (.rep lo hi greedy body)` at all: `simp only [Spec.repCap]` reports
+"made no progress" and `rw` fails the same way. Destructing the inner
+scrutinee first (`cases hi with | none => … | some h => …`) makes both work,
+which is worth doing once in a small lemma rather than at every use site.
+
+The other half of the same story: `rw [f]` on a `def` written with a
+catch-all arm (`| _ => 0`) leaves behind one goal per constructor the
+catch-all swallowed — `∀ kids, Ast.rep … = Ast.cat kids → False` and so on —
+because that is what the equation for the catch-all is conditioned on.
+`simp only [f]` discharges those conditions itself.
+
+## `rw` does not beta-reduce, and `omega` will not either
+
+`rw [List.foldl_cons]` turns `(x :: xs).foldl g acc` into `xs.foldl g (g acc x)`
+with `g acc x` left as a redex. If `g` is a lambda literal, the resulting term
+is an application of a lambda, which `omega` treats as one opaque atom — so a
+goal that is arithmetically obvious fails with a counterexample naming
+`(fun a x => max a (f x)) acc x` as an unknown. `simp only [List.foldl_cons]`
+beta-reduces on the way through and the same `omega` closes it.
