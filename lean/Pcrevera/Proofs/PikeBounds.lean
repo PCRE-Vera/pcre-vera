@@ -11,7 +11,7 @@ success path every `satAdd` and `satMul` was exact, so the certificate the
 analyzer hands out is one explicit polynomial, and `Poly.val` reads it as the
 number BOUNDS.md writes down.
 
-Nine things live here.
+Ten things live here.
 
 The stack line is the easy one and it is R-7 for this configuration: no
 backtrack entry exists on the lockstep path, the field is only ever written
@@ -79,14 +79,16 @@ its handle go — so the clear charged there is never drawn on.
 `pikeRun_cost_le` and `pikeRun_mem_le` are the payoff, and R-6 and R-8 follow
 against a computed price, against a checked certificate, and at the accessor.
 
-Ninth, and last, is S-10's Pike half. It wants the same account read over the
+Ninth is S-10's Pike half. It wants the same account read over the
 charges a run *attempts* rather than the ones it completes: a refusal is a
 pre-charge test failing, so ruling one out under a sufficient budget means
 covering the charge that was refused as well as the ones that were made.
 `Blown` is that reading — some state the account already covers has passed a
 limit, which against a certificate the limits dominate is a contradiction —
 and `Tried` carries it beside `Spent` up the same four inductions, all the way
-to `pikeRun_inBudget`.
+to `pikeRun_inBudget_ctx`, which asks nothing of the scratch it was handed
+beyond every capacity being inside the schedule's own answer for it. The plain
+call is the instance of that at empty scratch.
 
 Every charging helper is read that way, `chargeGrow_refused` being the one
 with anything in it: neither of a growth step's two tests can be blamed on the
@@ -100,6 +102,14 @@ position — the step there opens no closure, so what a refusal was asking for
 is pure charge and the visited set cleared there is never drawn on. That is
 `BlownFlat` and `stepThreads_last`, and it is what keeps the leftover of the
 last clear available for the seed at the very first position.
+
+Tenth, and last, is R-9's no-allocation clause, which reads the same account
+backwards. `Charged` says a stretch never reserves more than the schedule
+allows, never gives a reservation back, and moves its resident reading only
+with that reservation. A call that arrives at the schedule's ceiling is
+therefore pinned to it, and being pinned is what leaves the meter alone:
+`pikeRun_no_growth` is the lockstep twin of `btRun_no_growth_forward`, and
+like it, it mentions no limit at all.
 
 `ReWf` itself is a hypothesis throughout: it is a fact about compiler output,
 and no proof that `Ref.compile` supplies it is in this file.
@@ -3337,7 +3347,13 @@ Twice the bound is below the declared maximum, so the `min` does not clamp
 and the capacity grows the way the schedule means it to: it stays inside its
 answer for the bound, the charge it makes is covered by three times the
 reservation it leaves standing, and the memory identity survives with both
-buffers counted at the peak. -/
+buffers counted at the peak.
+
+The peak line carries the old capacity on both sides. A step that found room
+moves nothing at all, and one that grew doubles, so the buffer it copies out
+of is paid for twice over by the one it copies into — which is what lets a
+whole stretch's peak be read against the reservation it ends with rather than
+against every intermediate one. -/
 theorem chargeGrow_capFor {oldcap len esize maxv cap claim : Nat}
     {m m' : Meter} {lim : Limits}
     (hgm : growMin ≤ maxv) (hclaim : growFactor * claim ≤ maxv)
@@ -3346,7 +3362,8 @@ theorem chargeGrow_capFor {oldcap len esize maxv cap claim : Nat}
     cap ≤ capFor claim ∧ oldcap ≤ cap ∧
       m'.cost + 3 * (oldcap * esize) ≤ m.cost + 3 * (cap * esize) ∧
       m'.mem + oldcap * esize = m.mem + cap * esize ∧
-      m'.peak ≤ max m.peak (m.mem + cap * esize) := by
+      m'.peak + 2 * (oldcap * esize) ≤
+        max (m.peak + 2 * (oldcap * esize)) (m.mem + 2 * (cap * esize)) := by
   have hclaim0 : claim ≠ 0 := by omega
   simp only [capFor, if_neg hclaim0, growMin, growFactor] at hroom ⊢
   simp only [growMin, growFactor] at hgm hclaim
@@ -3446,76 +3463,107 @@ theorem Rooms.zero {re : Re} {st : PikeSt} (hc : st.clistCap = 0)
 
 /-- A stretch of a run inside the prices BOUNDS.md section 9 names: it
 charges at most `spent` on top of the growth its own reservation pays for,
-it stays inside every room, its memory reading is the setup plus what it
-reserves, and its peak never passes the setup and twice the reservation.
+it stays inside every room, it never gives a reservation back, its memory
+reading is the setup plus what it reserves and moves only with that
+reservation, and its peak is bounded by where it started and by twice what
+it ends up holding.
 
 The cost line is amortized the way section 5's is. Growth is charged once
 across the call rather than once per position, and the schedule doubles, so
 a stretch that grows an array from `c` entries to `2c` pays `3c` entry
 widths and leaves three times the new reservation standing. Carrying the
 reservation on both sides of the inequality is what lets the positions
-compose without counting a growth twice. -/
+compose without counting a growth twice.
+
+The memory lines are carried the same way, and for the same reason. `held`
+is the absolute reading a plain call needs; `moved` is the relative one, and
+it is what a call through a preallocated context needs, since such a call
+starts with a reservation already in hand and a meter that has not been told
+about it. Read together they say a stretch that grew nothing moved nothing —
+which is R-9's no-allocation clause. -/
 structure Charged (re : Re) (setup spent : Nat) (st out : PikeSt) : Prop where
   charge : out.m.cost + 3 * st.reserved ≤ st.m.cost + 3 * out.reserved + spent
   rooms : Rooms re out
-  held : out.m.mem = setup + out.reserved
-  resident : out.m.peak ≤ max st.m.peak (setup + 2 * pikeScratch re)
+  grown : st.reserved ≤ out.reserved
+  held : out.m.mem ≤ setup + out.reserved
+  moved : out.m.mem + st.reserved = st.m.mem + out.reserved
+  resident : out.m.peak + 2 * st.reserved ≤
+    max (st.m.peak + 2 * st.reserved) (st.m.mem + 2 * out.reserved)
 
 /-- Standing still is inside any price, and so is a step that writes a
 buffer without growing it — the reading is about capacities and the meter,
 and neither moves. -/
 theorem Charged.idle {re : Re} {setup : Nat} {st st' : PikeSt}
     (hrooms : Rooms re st') (hres : st'.reserved = st.reserved)
-    (hm : st'.m = st.m) (hmem : st.m.mem = setup + st.reserved) :
+    (hm : st'.m = st.m) (hmem : st.m.mem ≤ setup + st.reserved) :
     Charged re setup 0 st st' :=
-  ⟨by rw [hm, hres]; omega, hrooms, by rw [hm, hres]; exact hmem,
-    by rw [hm]; exact Nat.le_max_left _ _⟩
+  ⟨by rw [hm, hres]; omega, hrooms, Nat.le_of_eq hres.symm,
+    by rw [hm, hres]; exact hmem, by rw [hm, hres],
+    by rw [hm, hres]; exact Nat.le_max_left _ _⟩
 
 /-- Two stretches in a row spend what the two of them spend, and the
-reservation in the middle cancels — which is the point of carrying it. -/
+reservation in the middle cancels — which is the point of carrying it. The
+peak cancels the same way: the middle reservation is at least the first and
+at most the last, so what the second stretch could reach above the first is
+already covered by the reservation the pair ends with. -/
 theorem Charged.trans {re : Re} {setup a b : Nat} {st mid out : PikeSt}
     (h₁ : Charged re setup a st mid) (h₂ : Charged re setup b mid out) :
     Charged re setup (a + b) st out := by
-  obtain ⟨c₁, -, -, p₁⟩ := h₁
-  obtain ⟨c₂, r₂, m₂, p₂⟩ := h₂
-  exact ⟨by omega, r₂, m₂, by omega⟩
+  obtain ⟨c₁, -, g₁, -, v₁, p₁⟩ := h₁
+  obtain ⟨c₂, r₂, g₂, m₂, v₂, p₂⟩ := h₂
+  exact ⟨by omega, r₂, by omega, m₂, by omega, by omega⟩
 
 /-- A stretch inside one price is inside any larger one. -/
 theorem Charged.mono {re : Re} {setup a b : Nat} {st out : PikeSt}
     (h : Charged re setup a st out) (hle : a ≤ b) : Charged re setup b st out :=
-  ⟨by have := h.charge; omega, h.rooms, h.held, h.resident⟩
+  ⟨by have := h.charge; omega, h.rooms, h.grown, h.held, h.moved, h.resident⟩
+
+/-- The peak, read absolutely. A reservation the growth schedule bounds puts
+the relative reading back where the plain call wants it: the setup, and twice
+what the schedule reserves. -/
+theorem Charged.resident_le {re : Re} {setup c : Nat} {st out : PikeSt}
+    (h : Charged re setup c st out) (hmem : st.m.mem ≤ setup + st.reserved) :
+    out.m.peak ≤ max st.m.peak (setup + 2 * pikeScratch re) := by
+  have hle := h.rooms.scratch_le
+  have hr := h.resident
+  omega
 
 /-- A charge that moves nothing else: the mark a closure pays for a fresh
 pc, the unit a step pays per suspended thread, the visited set cleared. -/
 theorem Charged.pay {re : Re} {setup : Nat} {st : PikeSt} (c : Nat)
-    (hrooms : Rooms re st) (hmem : st.m.mem = setup + st.reserved) :
+    (hrooms : Rooms re st) (hmem : st.m.mem ≤ setup + st.reserved) :
     Charged re setup c st
       { st with m := { st.m with cost := st.m.cost + c } } := by
   refine ⟨?_, ⟨hrooms.clist, hrooms.nlist, hrooms.stk, hrooms.rc, hrooms.free,
-    hrooms.pool⟩, ?_, ?_⟩
+    hrooms.pool⟩, ?_, ?_, ?_, ?_⟩
   · show st.m.cost + c + 3 * st.reserved ≤ st.m.cost + 3 * st.reserved + c
     omega
-  · show st.m.mem = setup + st.reserved
+  · show st.reserved ≤ st.reserved
+    exact Nat.le_refl _
+  · show st.m.mem ≤ setup + st.reserved
     exact hmem
-  · show st.m.peak ≤ max st.m.peak (setup + 2 * pikeScratch re)
+  · show st.m.mem + st.reserved = st.m.mem + st.reserved
+    rfl
+  · show st.m.peak + 2 * st.reserved ≤
+      max (st.m.peak + 2 * st.reserved) (st.m.mem + 2 * st.reserved)
     exact Nat.le_max_left _ _
 
 /-- One growth step read into the run's own reading. Only the array's
 capacity moves, so the reservation on both sides of the schedule's
-inequalities is the same up to that one term, and the three lines follow
-from `chargeGrow_capFor` verbatim. -/
+inequalities is the same up to that one term, and the lines follow from
+`chargeGrow_capFor` verbatim. -/
 theorem charged_of_grow {re : Re} {setup rest old new esize : Nat}
     {st st' : PikeSt} (hrooms : Rooms re st') (hold : old ≤ new)
     (hres : st.reserved = rest + old * esize)
     (hres' : st'.reserved = rest + new * esize)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hcost : st'.m.cost + 3 * (old * esize) ≤ st.m.cost + 3 * (new * esize))
     (hmem' : st'.m.mem + old * esize = st.m.mem + new * esize)
-    (hpeak : st'.m.peak ≤ max st.m.peak (st.m.mem + new * esize)) :
+    (hpeak : st'.m.peak + 2 * (old * esize) ≤
+      max (st.m.peak + 2 * (old * esize)) (st.m.mem + 2 * (new * esize))) :
     Charged re setup 0 st st' := by
-  have hle := hrooms.scratch_le
   have hstep : old * esize ≤ new * esize := Nat.mul_le_mul_right esize hold
-  exact ⟨by omega, hrooms, by omega, by omega⟩
+  exact ⟨by omega, hrooms, by omega, by omega, by omega, by omega⟩
 
 /-! ## What one position costs
 
@@ -3732,7 +3780,7 @@ theorem Spent.rooms {re : Re} {setup extra : Nat} {st out : PikeSt}
   exact hc.rooms
 
 theorem Spent.held {re : Re} {setup extra : Nat} {st out : PikeSt}
-    (h : Spent re setup extra st out) : out.m.mem = setup + out.reserved := by
+    (h : Spent re setup extra st out) : out.m.mem ≤ setup + out.reserved := by
   obtain ⟨spent, hc, hle⟩ := h
   exact hc.held
 
@@ -3745,7 +3793,7 @@ theorem Spent.charged {re : Re} {setup extra k : Nat} {st out : PikeSt}
   exact hc.mono (by omega)
 
 theorem Spent.refl {re : Re} {setup : Nat} {st : PikeSt} (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved) : Spent re setup 0 st st :=
+    (hmem : st.m.mem ≤ setup + st.reserved) : Spent re setup 0 st st :=
   ⟨0, Charged.idle hrooms rfl rfl hmem, by omega⟩
 
 theorem Spent.trans {re : Re} {setup a b : Nat} {st mid out : PikeSt}
@@ -3796,8 +3844,9 @@ agrees on both is the same starting point. -/
 theorem Charged.ofState {re : Re} {setup c : Nat} {st st' out : PikeSt}
     (h : Charged re setup c st' out) (hm : st'.m = st.m)
     (hres : st'.reserved = st.reserved) : Charged re setup c st out :=
-  ⟨by rw [← hm, ← hres]; exact h.charge, h.rooms, h.held,
-    by rw [← hm]; exact h.resident⟩
+  ⟨by rw [← hm, ← hres]; exact h.charge, h.rooms, by rw [← hres]; exact h.grown,
+    h.held, by rw [← hm, ← hres]; exact h.moved,
+    by rw [← hm, ← hres]; exact h.resident⟩
 
 /-- A helper that answered, at the shape a `split` leaves behind, so that
 what follows never has to see through `outSt`. -/
@@ -3856,7 +3905,7 @@ level and the account only enters at the loops. -/
 
 theorem pikeDefer_charged {re : Re} {st : PikeSt} {pc h setup : Nat}
     {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hsize : st.stk.size < re.code.size * 2) :
     Charged re setup 0 st (outSt id (pikeDefer st pc h lim)) := by
   obtain ⟨-, ⟨hgm, hcl⟩, -, -⟩ := pikeSchedule hwf
@@ -3876,7 +3925,7 @@ theorem pikeDefer_charged {re : Re} {st : PikeSt} {pc h setup : Nat}
 
 theorem pikePark_charged {re : Re} {st : PikeSt} {intoNext : Bool}
     {pc h setup : Nat} {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hsize : (parkList intoNext st).size < re.code.size) :
     Charged re setup 0 st (outSt id (pikePark st intoNext pc h lim)) := by
   obtain ⟨⟨hgm, hcl⟩, -, -, -⟩ := pikeSchedule hwf
@@ -3914,7 +3963,7 @@ theorem pikePark_charged {re : Re} {st : PikeSt} {intoNext : Bool}
 
 theorem pikeDrop_charged {re : Re} {st : PikeSt} {h setup : Nat} {lim : Limits}
     (hwf : ReWf re) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hsize : st.rc[h]! ≤ 1 → st.free.size < re.code.size * 4 + 2) :
     Charged re setup 0 st (outSt id (pikeDrop st h lim)) := by
   obtain ⟨-, -, ⟨hgm, hcl⟩, -⟩ := pikeSchedule hwf
@@ -3946,7 +3995,7 @@ pool's own entry bound because the block it is filling is one the pool has
 room for. -/
 theorem pikeTake_fill_charged {re : Re} {setup : Nat} {lim : Limits}
     (hwf : ReWf re) : ∀ (k : Nat) (st : PikeSt), Rooms re st →
-      st.m.mem = setup + st.reserved →
+      st.m.mem ≤ setup + st.reserved →
       st.pool.size + k ≤ (re.code.size * 4 + 2) * re.novec →
       Charged re setup 0 st (outSt id (pikeTake.fill lim k st)) := by
   obtain ⟨-, -, -, ⟨hgm, hcl⟩⟩ := pikeSchedule hwf
@@ -3981,7 +4030,7 @@ theorem pikeTake_fill_charged {re : Re} {setup : Nat} {lim : Limits}
 
 theorem pikeTake_charged {re : Re} {st : PikeSt} {novec setup : Nat}
     {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hrc : st.free.size = 0 → st.rc.size < re.code.size * 4 + 2)
     (hpool : st.free.size = 0 →
       st.pool.size + novec ≤ (re.code.size * 4 + 2) * re.novec) :
@@ -4026,7 +4075,7 @@ theorem pikeTake_charged {re : Re} {st : PikeSt} {novec setup : Nat}
 per byte, and the fresh block it copies into. -/
 theorem pikeWrite_charged {re : Re} {st : PikeSt} {novec h slot setup : Nat}
     {value : UInt32} {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hrc : st.free.size = 0 → st.rc.size < re.code.size * 4 + 2)
     (hpool : st.free.size = 0 →
       st.pool.size + novec ≤ (re.code.size * 4 + 2) * re.novec) :
@@ -4176,7 +4225,7 @@ theorem Blown.ofCharged {re : Re} {setup c : Nat} {lim : Limits}
 the meter with the charge on it is past the limit, whether or not the meter
 was inside it to begin with. -/
 theorem Blown.ofCost {re : Re} {setup : Nat} {lim : Limits} {st : PikeSt}
-    (k : Nat) (hrooms : Rooms re st) (hmem : st.m.mem = setup + st.reserved)
+    (k : Nat) (hrooms : Rooms re st) (hmem : st.m.mem ≤ setup + st.reserved)
     (htest : k > lim.cost - st.m.cost) : Blown re setup k lim st :=
   Blown.ofCharged (Charged.pay k hrooms hmem) rfl (Or.inl (by
     show lim.cost < st.m.cost + k
@@ -4214,7 +4263,7 @@ theorem BlownFlat.ofCharged {re : Re} {setup c : Nat} {lim : Limits}
   ⟨st', h, hs, hp⟩
 
 theorem BlownFlat.ofCost {re : Re} {setup : Nat} {lim : Limits} {st : PikeSt}
-    (k : Nat) (hrooms : Rooms re st) (hmem : st.m.mem = setup + st.reserved)
+    (k : Nat) (hrooms : Rooms re st) (hmem : st.m.mem ≤ setup + st.reserved)
     (htest : k > lim.cost - st.m.cost) : BlownFlat re setup k lim st :=
   BlownFlat.ofCharged (Charged.pay k hrooms hmem) rfl (Or.inl (by
     show lim.cost < st.m.cost + k
@@ -4231,7 +4280,8 @@ theorem chargeGrow_refused {oldcap len esize maxv claim : Nat} {m : Meter}
     ∃ (m' : Meter) (cap : Nat), cap ≤ capFor claim ∧ oldcap ≤ cap ∧
       m'.cost + 3 * (oldcap * esize) ≤ m.cost + 3 * (cap * esize) ∧
       m'.mem + oldcap * esize = m.mem + cap * esize ∧
-      m'.peak ≤ max m.peak (m.mem + cap * esize) ∧
+      m'.peak + 2 * (oldcap * esize) ≤
+        max (m.peak + 2 * (oldcap * esize)) (m.mem + 2 * (cap * esize)) ∧
       (lim.cost < m'.cost ∨ lim.mem < m'.peak) := by
   have hclaim0 : claim ≠ 0 := by omega
   simp only [capFor, if_neg hclaim0, growMin, growFactor]
@@ -4249,6 +4299,8 @@ theorem chargeGrow_refused {oldcap len esize maxv claim : Nat} {m : Meter}
       have hprod : 2 * (oldcap * esize) ≤ max 4 (oldcap * 2) * esize := by
         have := Nat.mul_le_mul_right esize hstep
         rwa [Nat.mul_assoc] at this
+      have hwidth : min maxv (max 4 (oldcap * 2)) * esize =
+          max 4 (oldcap * 2) * esize := by rw [hdouble]
       refine ⟨⟨m.cost + (min maxv (max 4 (oldcap * 2)) * esize + oldcap * esize),
         m.mem + min maxv (max 4 (oldcap * 2)) * esize - oldcap * esize,
         max m.peak (m.mem + min maxv (max 4 (oldcap * 2)) * esize)⟩,
@@ -4261,7 +4313,7 @@ theorem chargeGrow_refused {oldcap len esize maxv claim : Nat} {m : Meter}
       · show m.mem + _ - _ + _ = _
         rw [hdouble]
         omega
-      · show max m.peak _ ≤ _
+      · show max m.peak _ + _ ≤ _
         omega
       · split at h
         · rename_i hmemtest
@@ -4291,7 +4343,7 @@ theorem table_lt_maxBlocks {re : Re} (hwf : ReWf re) :
 
 theorem pikeDefer_refused {re : Re} {st stE : PikeSt} {pc h setup : Nat}
     {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hsize : st.stk.size < re.code.size * 2)
     (he : pikeDefer st pc h lim = .error stE) : BlownFlat re setup 0 lim st := by
   obtain ⟨-, ⟨hgm, hcl⟩, -, -⟩ := pikeSchedule hwf
@@ -4314,7 +4366,7 @@ theorem pikeDefer_refused {re : Re} {st stE : PikeSt} {pc h setup : Nat}
 
 theorem pikePark_refused {re : Re} {st stE : PikeSt} {intoNext : Bool}
     {pc h setup : Nat} {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hsize : (parkList intoNext st).size < re.code.size)
     (he : pikePark st intoNext pc h lim = .error stE) :
     BlownFlat re setup 0 lim st := by
@@ -4359,7 +4411,7 @@ theorem pikePark_refused {re : Re} {st stE : PikeSt} {intoNext : Bool}
 
 theorem pikeDrop_refused {re : Re} {st stE : PikeSt} {h setup : Nat}
     {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hsize : st.rc[h]! ≤ 1 → st.free.size < re.code.size * 4 + 2)
     (he : pikeDrop st h lim = .error stE) : BlownFlat re setup 0 lim st := by
   obtain ⟨-, -, ⟨hgm, hcl⟩, -⟩ := pikeSchedule hwf
@@ -4390,7 +4442,7 @@ theorem pikeDrop_refused {re : Re} {st stE : PikeSt} {h setup : Nat}
 
 theorem pikeTake_fill_refused {re : Re} {setup : Nat} {lim : Limits}
     (hwf : ReWf re) : ∀ (k : Nat) (st stE : PikeSt), Rooms re st →
-      st.m.mem = setup + st.reserved →
+      st.m.mem ≤ setup + st.reserved →
       st.pool.size + k ≤ (re.code.size * 4 + 2) * re.novec →
       pikeTake.fill lim k st = .error stE → BlownFlat re setup 0 lim st := by
   obtain ⟨-, -, -, ⟨hgm, hcl⟩⟩ := pikeSchedule hwf
@@ -4438,7 +4490,7 @@ theorem pikeTake_fill_refused {re : Re} {setup : Nat} {lim : Limits}
 
 theorem pikeTake_refused {re : Re} {st stE : PikeSt} {novec setup : Nat}
     {lim : Limits} (hwf : ReWf re) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hrc : st.free.size = 0 → st.rc.size < re.code.size * 4 + 2)
     (hpool : st.free.size = 0 →
       st.pool.size + novec ≤ (re.code.size * 4 + 2) * re.novec)
@@ -4495,7 +4547,7 @@ theorem pikeTake_refused {re : Re} {st stE : PikeSt} {novec setup : Nat}
 
 theorem pikeWrite_refused {re : Re} {st stE : PikeSt}
     {novec h slot setup : Nat} {value : UInt32} {lim : Limits} (hwf : ReWf re)
-    (hrooms : Rooms re st) (hmem : st.m.mem = setup + st.reserved)
+    (hrooms : Rooms re st) (hmem : st.m.mem ≤ setup + st.reserved)
     (hrc : st.free.size = 0 → st.rc.size < re.code.size * 4 + 2)
     (hpool : st.free.size = 0 →
       st.pool.size + novec ≤ (re.code.size * 4 + 2) * re.novec)
@@ -4643,7 +4695,7 @@ structure AddOk (re : Re) (intoNext : Bool) (ext : List Nat) (setup : Nat)
   seenSize : st.seen.size = re.code.size
   inRange : listInRange re st.stk
   rooms : Rooms re st
-  held : st.m.mem = setup + st.reserved
+  held : st.m.mem ≤ setup + st.reserved
   owned : Owned re.novec st.rc st.free st.pool (buildLive intoNext st ext)
   stack : st.stk.size + 2 * unmarked st.seen ≤ re.code.size * 2 + 1
   parked : (parkList intoNext st).size + unmarked st.seen ≤ re.code.size
@@ -4803,8 +4855,8 @@ theorem pikeAdd_go_tried (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
                   seen := st.seen.set! st.stk.back!.pc true
                   m := { st.m with cost := st.m.cost + 1 } } := by
               refine ⟨?_, ⟨hok.rooms.clist, hok.rooms.nlist, hok.rooms.stk,
-                hok.rooms.rc, hok.rooms.free, hok.rooms.pool⟩, hok.held,
-                Nat.le_max_left _ _⟩
+                hok.rooms.rc, hok.rooms.free, hok.rooms.pool⟩, Nat.le_refl _,
+                hok.held, rfl, Nat.le_max_left _ _⟩
               show st.m.cost + 1 + 3 * st.reserved ≤
                 st.m.cost + 3 * st.reserved + 1
               omega
@@ -4816,8 +4868,8 @@ theorem pikeAdd_go_tried (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
                   rc := st.rc.set! st.stk.back!.h
                     (st.rc[st.stk.back!.h]! + 1) } := by
               refine ⟨?_, ⟨hok.rooms.clist, hok.rooms.nlist, hok.rooms.stk,
-                hok.rooms.rc, hok.rooms.free, hok.rooms.pool⟩, hok.held,
-                Nat.le_max_left _ _⟩
+                hok.rooms.rc, hok.rooms.free, hok.rooms.pool⟩, Nat.le_refl _,
+                hok.held, rfl, Nat.le_max_left _ _⟩
               show st.m.cost + 1 + 3 * st.reserved ≤
                 st.m.cost + 3 * st.reserved + 1
               omega
@@ -5285,7 +5337,7 @@ theorem pikeAdd_tried (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
     (hwf : ReWf re) (intoNext : Bool) (pos pc0 h0 setup : Nat) (ext : List Nat)
     {st : PikeSt}
     (hsz : st.seen.size = re.code.size) (hrange : listInRange re st.stk)
-    (hrooms : Rooms re st) (hmem : st.m.mem = setup + st.reserved)
+    (hrooms : Rooms re st) (hmem : st.m.mem ≤ setup + st.reserved)
     (hown : Owned re.novec st.rc st.free st.pool
       (h0 :: buildLive intoNext st ext))
     (hstk0 : st.stk.size = 0)
@@ -5372,7 +5424,7 @@ each block it frees has room on the free list because someone was holding
 it. -/
 theorem dropRest_charged {re : Re} {setup : Nat} {lim : Limits} (hwf : ReWf re) :
     ∀ (rest : List Th) (st : PikeSt) (L : List Nat), Rooms re st →
-      st.m.mem = setup + st.reserved →
+      st.m.mem ≤ setup + st.reserved →
       Owned re.novec st.rc st.free st.pool (rest.map Th.h ++ L) →
       st.rc.size ≤ re.code.size * 4 + 2 →
       Charged re setup 0 st (outSt id (dropRest lim rest st)) := by
@@ -5400,7 +5452,7 @@ theorem dropRest_charged {re : Re} {setup : Nat} {lim : Limits} (hwf : ReWf re) 
 
 theorem dropRest_refused {re : Re} {setup : Nat} {lim : Limits} (hwf : ReWf re) :
     ∀ (rest : List Th) (st stE : PikeSt) (L : List Nat), Rooms re st →
-      st.m.mem = setup + st.reserved →
+      st.m.mem ≤ setup + st.reserved →
       Owned re.novec st.rc st.free st.pool (rest.map Th.h ++ L) →
       st.rc.size ≤ re.code.size * 4 + 2 →
       dropRest lim rest st = .error stE → BlownFlat re setup 0 lim st := by
@@ -5511,7 +5563,7 @@ theorem stepThreads_tried (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
     ∀ (threads : List Th) (st : PikeSt) (mh : Nat) (seeding matched : Bool),
       BuildOk re st → st.stk.size = 0 →
       (∀ th ∈ threads, th.pc < re.code.size) →
-      Rooms re st → st.m.mem = setup + st.reserved →
+      Rooms re st → st.m.mem ≤ setup + st.reserved →
       Owned re.novec st.rc st.free st.pool
         (buildLive true st (threads.map Th.h ++ mhList mh)) →
       st.nlist.size + unmarked st.seen ≤ re.code.size →
@@ -5551,7 +5603,7 @@ theorem stepThreads_tried (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
         Charged.pay 1 hrooms hmem
       have hstep : ∀ (stB : PikeSt) (c : Nat),
           BuildOk re stB → stB.stk.size = 0 →
-          Rooms re stB → stB.m.mem = setup + stB.reserved →
+          Rooms re stB → stB.m.mem ≤ setup + stB.reserved →
           Owned re.novec stB.rc stB.free stB.pool
             (buildLive true stB (rest.map Th.h ++ mhList mh)) →
           stB.nlist.size + unmarked stB.seen ≤ re.code.size →
@@ -5935,7 +5987,7 @@ theorem stepThreads_last (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
     (hwf : ReWf re) (start pos setup : Nat) (hpos : s.size ≤ pos) :
     ∀ (threads : List Th) (st : PikeSt) (mh : Nat) (seeding matched : Bool)
       (stX : PikeSt),
-      Rooms re st → st.m.mem = setup + st.reserved →
+      Rooms re st → st.m.mem ≤ setup + st.reserved →
       Owned re.novec st.rc st.free st.pool
         (buildLive true st (threads.map Th.h ++ mhList mh)) →
       addMeasure true st + threads.length + 1 ≤ re.code.size * 3 + 1 →
@@ -6189,7 +6241,7 @@ theorem pikeSeed_tried (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
     (hwf : ReWf re) (start pos setup : Nat) (ext : List Nat) {st : PikeSt}
     (hsz : st.seen.size = re.code.size) (hrange : listInRange re st.stk)
     (hstk0 : st.stk.size = 0) (hrooms : Rooms re st)
-    (hmem : st.m.mem = setup + st.reserved)
+    (hmem : st.m.mem ≤ setup + st.reserved)
     (hown : Owned re.novec st.rc st.free st.pool (buildLive false st ext))
     (hparked : (parkList false st).size + unmarked st.seen ≤ re.code.size)
     (hreach : addMeasure false st + ext.length + 1 ≤ re.code.size * 4)
@@ -6332,7 +6384,7 @@ theorem pikeLoop_tried (re : Re) (s : ByteArray) (mo : MOpts) (lim : Limits)
     (hwf : ReWf re) (start : Nat) (anchored : Bool) (setup : Nat) :
     ∀ (steps pos : Nat) (st : PikeSt) (mh : Nat) (seeding matched : Bool),
       pos ≤ s.size → s.size + 1 - pos < steps → PosOk re st mh → Rooms re st →
-      st.m.mem = setup + st.reserved →
+      st.m.mem ≤ setup + st.reserved →
       Scanned re setup ((s.size + 1 - pos) * pikePosition re) st
           (pikeLoop re s mo lim start anchored (pikeWords re) steps pos st mh
             seeding matched).1 ∧
@@ -6770,7 +6822,7 @@ theorem pikeRun_mem_le {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
             (re.anchored || mo.anchored) (pikeSetup re) (s.size + 2) start st0
             none32 true false hstart (by omega) hp hr
             (by rw [hmem0, hres0]; omega)).1
-          have hpeak := hch.resident
+          have hpeak := hch.resident_le (by rw [hmem0, hres0]; omega)
           rw [hpeak0] at hpeak
           show (pikeLoop re s mo lim start (re.anchored || mo.anchored)
               (pikeWords re) (s.size + 2) start st0 none32 true false).1.m.peak ≤ _
@@ -6868,23 +6920,37 @@ certificate's own two dominations, the loop's `exceeded` is the attempt
 reading cashed out, and the delivered block is what `pikeRun_cost_le` already
 leaves room for. -/
 
-/-- S-10 for `CfgPike`: a caller whose cost and memory limits sit at or above
-what an accepted certificate names never sees ResourceExceeded. The stack
-limit does not appear, because nothing on this path is ever pushed, and
-neither does the eligibility flag, because a run that fails that test answers
-BadInput rather than a refusal. The start offset is here for the account
-rather than for the guard: the price covers `n + 1` starting positions and the
-scan is entered at one of them.
+/-- S-10 for `CfgPike`, at any call shape the growth schedule admits: a
+caller whose cost and memory limits sit at or above what an accepted
+certificate names never sees ResourceExceeded, whether it starts on empty
+scratch or on a context's reservation. The stack limit does not appear,
+because nothing on this path is ever pushed, and neither does the eligibility
+flag, because a run that fails that test answers BadInput rather than a
+refusal. The start offset is here for the account rather than for the guard:
+the price covers `n + 1` starting positions and the scan is entered at one of
+them.
+
+`Rooms re init` is what the handed-over scratch has to satisfy, and it is
+what a context creation leaves behind: every capacity inside the growth
+schedule's own answer at its array's entry bound. It is doing real work. The
+`3R` and `2R` of BOUNDS.md section 9 are read against that schedule, so a
+caller who arrived with more reserved than the schedule ever asks for would
+be running under a price that was never computed for it.
+
+Nothing else changes with the reservation. `pike_run` resets every array and
+puts the meter back at the setup, so the only difference between this call
+and a plain one is the six capacities it did not have to buy.
 
 `ReWf` is here for the same reason it is everywhere else in this file: the
 per-position count rests on the closure marking each instruction once, and
 that needs the program's successors to stay inside the program. -/
-theorem pikeRun_inBudget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
-    {start : Nat} {cert : Cert} (hwf : ReWf re)
-    (hstart : start ≤ s.size) (h : pikeCheck re cert = .crOk)
+theorem pikeRun_inBudget_ctx {re : Re} {s : ByteArray} {mo : MOpts}
+    {lim : Limits} {start : Nat} {init : PikeSt} {cert : Cert} (hwf : ReWf re)
+    (hinit : Rooms re init) (hstart : start ≤ s.size)
+    (h : pikeCheck re cert = .crOk)
     (hcost : cert.cost.val s.size ≤ lim.cost)
     (hmem : cert.mem.val s.size ≤ lim.mem) :
-    (pikeRun re s start mo lim {}).outcome ≠ .resourceExceeded := by
+    (pikeRun re s start mo lim init).outcome ≠ .resourceExceeded := by
   have hdomc := pikeCheck_cost_dom h s.size
   have hdomm := pikeCheck_mem_dom h s.size
   obtain ⟨-, -, -, -, need, hneed, -, -, -, -⟩ := pikeCheck_spec h
@@ -6896,7 +6962,7 @@ theorem pikeRun_inBudget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
   -- The loop, once its budget is read against the certificate: it cannot end
   -- exceeded, and it leaves room for the block the answer is copied into.
   have hgo : ∀ st0 : PikeSt, Rooms re st0 → PosOk re st0 none32 →
-      st0.reserved = 0 → st0.m.cost = pikeSetup re →
+      st0.m.cost = pikeSetup re →
       st0.m.mem = pikeSetup re → st0.m.peak = pikeSetup re →
       closureLeft re st0.seen = closureLeftFull re →
       (pikeLoop re s mo lim start (re.anchored || mo.anchored)
@@ -6905,10 +6971,10 @@ theorem pikeRun_inBudget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
       ¬ re.novec * regSize >
         lim.cost - (pikeLoop re s mo lim start (re.anchored || mo.anchored)
           (pikeWords re) (s.size + 2) start st0 none32 true false).1.m.cost := by
-    intro st0 hr hp hres0 hcost0 hmem0 hpeak0 hseen0
+    intro st0 hr hp hcost0 hmem0 hpeak0 hseen0
     obtain ⟨hsp, hbl⟩ := pikeLoop_tried re s mo lim hwf start
       (re.anchored || mo.anchored) (pikeSetup re) (s.size + 2) start st0
-      none32 true false hstart (by omega) hp hr (by rw [hmem0, hres0]; omega)
+      none32 true false hstart (by omega) hp hr (by rw [hmem0]; omega)
     have hmul : (s.size + 1 - start) * pikePosition re ≤
         pikePosition re * (s.size + 1) := by
       rw [Nat.mul_comm]
@@ -6918,8 +6984,8 @@ theorem pikeRun_inBudget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
       obtain ⟨out, ⟨spB, hcB, hleB⟩, hpast⟩ := hbl hexc
       have hresB := hcB.rooms.scratch_le
       have hchB := hcB.charge
-      have hpk := hcB.resident
-      rw [hres0, hcost0] at hchB
+      have hpk := hcB.resident_le (by rw [hmem0]; omega)
+      rw [hcost0] at hchB
       rw [hpeak0] at hpk
       rw [hseen0] at hleB
       rcases hpast with hc | hm
@@ -6928,9 +6994,16 @@ theorem pikeRun_inBudget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
     · obtain ⟨spent, hc, hle⟩ := hsp
       have hres := hc.rooms.scratch_le
       have hcharge := hc.charge
-      rw [hres0, hcost0] at hcharge
+      rw [hcost0] at hcharge
       rw [hseen0] at hle
       omega
+  have hrooms0 : ∀ setup : Nat, Rooms re { init with
+      clist := #[], nlist := #[], stk := #[]
+      pool := #[], rc := #[], free := #[]
+      seen := Array.replicate re.code.size false
+      m := ⟨setup, setup, setup⟩ } :=
+    fun _ => ⟨hinit.clist, hinit.nlist, hinit.stk, hinit.rc, hinit.free,
+      hinit.pool⟩
   simp only [pikeRun]
   split
   · simp
@@ -6943,15 +7016,174 @@ theorem pikeRun_inBudget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
         rcases hguard with hg | hg <;> omega
       · split
         · rename_i hend
-          exact absurd hend (hgo _ (Rooms.zero rfl rfl rfl rfl rfl rfl)
-            (pikeRun_posOk re {} _) (by simp [PikeSt.reserved]) rfl rfl rfl
+          exact absurd hend (hgo _ (hrooms0 _)
+            (pikeRun_posOk re init _) rfl rfl rfl
             (closureLeft_replicate re)).1
         · simp
         · split
           · rename_i hblock
-            exact absurd hblock (hgo _ (Rooms.zero rfl rfl rfl rfl rfl rfl)
-              (pikeRun_posOk re {} _) (by simp [PikeSt.reserved]) rfl rfl rfl
+            exact absurd hblock (hgo _ (hrooms0 _)
+              (pikeRun_posOk re init _) rfl rfl rfl
               (closureLeft_replicate re)).2
           · simp
+
+/-- S-10 at the plain call shape, which is what a caller with no context
+reaches for. -/
+theorem pikeRun_inBudget {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start : Nat} {cert : Cert} (hwf : ReWf re)
+    (hstart : start ≤ s.size) (h : pikeCheck re cert = .crOk)
+    (hcost : cert.cost.val s.size ≤ lim.cost)
+    (hmem : cert.mem.val s.size ≤ lim.mem) :
+    (pikeRun re s start mo lim {}).outcome ≠ .resourceExceeded :=
+  pikeRun_inBudget_ctx hwf (Rooms.zero rfl rfl rfl rfl rfl rfl) hstart h hcost
+    hmem
+
+/-! ## R-9's no-allocation clause for a lockstep call
+
+`btRun_no_growth_forward` says a backtracking call whose two scratch arrays
+already hold the claims never grows either of them. A lockstep call has six
+arrays rather than two, and what stands in for the claims is the growth
+schedule's own answer at each array's entry bound — the four numbers
+`pikeRoom` weighs, which is what creation reserves and what `ctx_match` hands
+over.
+
+The argument is the account above, read the other way round. `Charged` says a
+stretch never reserves more than the schedule allows; it also says a stretch
+never gives a reservation back, and that the resident reading moves with the
+reservation and with nothing else. A call that arrives at the schedule's
+ceiling is therefore pinned to it, and being pinned is what leaves the meter
+alone.
+
+Nothing here mentions the caller's limits, for the same reason nothing does
+on the backtracking side: a run that never grows never reaches a growth test,
+and the tests that remain can refuse without allocating. -/
+
+/-- Every array of a state at the growth schedule's final capacity for its own
+entry bound. These are the four numbers `pikeRoom` weighs, at the shape
+`ctx_match` hands them over in: the two thread lists share a capacity, and the
+refcount table shares one with the free list. -/
+structure Reserved (re : Re) (st : PikeSt) : Prop where
+  clist : st.clistCap = capFor re.code.size
+  nlist : st.nlistCap = capFor re.code.size
+  stk : st.stkCap = capFor (re.code.size * 2)
+  rc : st.rcCap = capFor (re.code.size * 4 + 2)
+  free : st.freeCap = capFor (re.code.size * 4 + 2)
+  pool : st.poolCap = capFor ((re.code.size * 4 + 2) * re.novec)
+
+/-- Such a state is inside every room, with nothing to spare. -/
+theorem Reserved.rooms {re : Re} {st : PikeSt} (h : Reserved re st) :
+    Rooms re st :=
+  ⟨Nat.le_of_eq h.clist, Nat.le_of_eq h.nlist, Nat.le_of_eq h.stk,
+    Nat.le_of_eq h.rc, Nat.le_of_eq h.free, Nat.le_of_eq h.pool⟩
+
+/-- And it holds exactly BOUNDS.md section 9's `R`. -/
+theorem Reserved.scratch {re : Re} {st : PikeSt} (h : Reserved re st) :
+    st.reserved = pikeScratch re := by
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  simp only [PikeSt.reserved, pikeScratch, h1, h2, h3, h4, h5, h6, thSize,
+    regSize]
+  omega
+
+/-- And the capacities `pike_room` weighs are exactly that ceiling, which is
+what a context creation reserves — `ctx_create` takes its four numbers off
+this same call, and `ctx_match` hands them down in this shape. -/
+theorem Reserved.ofRoom {re : Re} {room : Room} {over : Bool}
+    (h : pikeRoom re over = (room, false)) :
+    Reserved re
+      { clistCap := room.lists
+        nlistCap := room.lists
+        stkCap := room.stk
+        poolCap := room.pool
+        rcCap := room.tables
+        freeCap := room.tables } := by
+  obtain ⟨-, hl, hs, ht, hp, -⟩ := pikeRoom_spec h
+  exact ⟨hl, hl, hs, ht, ht,
+    by rw [hp, Re.novec, Nat.mul_comm 2 (re.ncap + 1)]⟩
+
+/-- A stretch that started at the ceiling ends there. The schedule bounds
+every capacity from above and a stretch never gives one back, so the two
+readings leave no room for a capacity to have moved. -/
+theorem Charged.reserved {re : Re} {setup c : Nat} {st out : PikeSt}
+    (h : Charged re setup c st out) (hst : Reserved re st) :
+    Reserved re out := by
+  have hfull : out.reserved = pikeScratch re := by
+    have hle := h.rooms.scratch_le
+    have hg := h.grown
+    rw [hst.scratch] at hg
+    omega
+  obtain ⟨r1, r2, r3, r4, r5, r6⟩ := h.rooms
+  simp only [PikeSt.reserved, pikeScratch, thSize, regSize] at hfull
+  exact ⟨by omega, by omega, by omega, by omega, by omega, by omega⟩
+
+/-- The scan itself, at a call that had nothing left to buy: every capacity
+comes out where it went in, the resident reading does not move, and the peak
+does not rise. -/
+theorem pikeLoop_no_growth {re : Re} {s : ByteArray} {mo : MOpts}
+    {lim : Limits} {start : Nat} {anchored : Bool} {setup steps pos mh : Nat}
+    {st : PikeSt} {seeding matched : Bool} (hwf : ReWf re)
+    (hres : Reserved re st) (hok : PosOk re st mh) (hpos : pos ≤ s.size)
+    (hsteps : s.size + 1 - pos < steps) (hmem : st.m.mem = setup)
+    (hpeak : st.m.peak = setup) :
+    Reserved re (pikeLoop re s mo lim start anchored (pikeWords re) steps pos
+        st mh seeding matched).1 ∧
+      (pikeLoop re s mo lim start anchored (pikeWords re) steps pos st mh
+          seeding matched).1.m.mem = setup ∧
+      (pikeLoop re s mo lim start anchored (pikeWords re) steps pos st mh
+          seeding matched).1.m.peak ≤ setup := by
+  obtain ⟨spent, hch, -⟩ := (pikeLoop_tried re s mo lim hwf start anchored setup
+    steps pos st mh seeding matched hpos hsteps hok hres.rooms
+    (by rw [hmem]; omega)).1
+  have hout := hch.reserved hres
+  have hin := hres.scratch
+  have hfin := hout.scratch
+  have hmv := hch.moved
+  have hrs := hch.resident
+  exact ⟨hout, by omega, by omega⟩
+
+/-- R-9's no-allocation clause for `CfgPike`: a call handed six scratch
+arrays already reserved at the growth schedule's final capacities allocates
+nothing, so the resident bytes it reports are the ovector and the visited set
+it was given and nothing else.
+
+The statement is about capacities and asks nothing of the caller's limits,
+which is what makes it the lockstep twin of `btRun_no_growth_forward`. What
+it does ask for is the program, through `ReWf`: the reading that pins the
+capacities is the growth account of this file, and that account is kept
+against entry bounds read off the program. -/
+theorem pikeRun_no_growth {re : Re} {s : ByteArray} {mo : MOpts} {lim : Limits}
+    {start : Nat} {init : PikeSt} (hwf : ReWf re) (hinit : Reserved re init) :
+    (pikeRun re s start mo lim init).usage.mem ≤ pikeSetup re := by
+  simp only [pikeRun]
+  split
+  · exact Nat.zero_le _
+  · split
+    · exact Nat.zero_le _
+    · rename_i hstart
+      simp only [Nat.not_lt] at hstart
+      split
+      · exact Nat.zero_le _
+      · have hgo : ∀ st0 : PikeSt, Reserved re st0 → PosOk re st0 none32 →
+            st0.m.mem = pikeSetup re → st0.m.peak = pikeSetup re →
+            (pikeLoop re s mo lim start (re.anchored || mo.anchored)
+                (re.code.size / 8 + 1) (s.size + 2) start st0 none32 true
+                false).1.m.peak ≤ pikeSetup re := by
+          intro st0 hr hp hmem0 hpeak0
+          exact (pikeLoop_no_growth (lim := lim) (start := start)
+            (anchored := re.anchored || mo.anchored) (steps := s.size + 2)
+            (seeding := true) (matched := false) hwf hr hp hstart (by omega)
+            hmem0 hpeak0).2.2
+        have hres0 : ∀ setup : Nat, Reserved re { init with
+            clist := #[], nlist := #[], stk := #[]
+            pool := #[], rc := #[], free := #[]
+            seen := Array.replicate re.code.size false
+            m := ⟨setup, setup, setup⟩ } :=
+          fun _ => ⟨hinit.clist, hinit.nlist, hinit.stk, hinit.rc, hinit.free,
+            hinit.pool⟩
+        split
+        · exact hgo _ (hres0 _) (pikeRun_posOk re init _) rfl rfl
+        · exact hgo _ (hres0 _) (pikeRun_posOk re init _) rfl rfl
+        · split
+          · exact hgo _ (hres0 _) (pikeRun_posOk re init _) rfl rfl
+          · exact hgo _ (hres0 _) (pikeRun_posOk re init _) rfl rfl
 
 end Pcrevera.Ref

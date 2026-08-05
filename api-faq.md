@@ -626,3 +626,50 @@ is an application of a lambda, which `omega` treats as one opaque atom — so a
 goal that is arithmetically obvious fails with a counterexample naming
 `(fun a x => max a (f x)) acc x` as an unknown. `simp only [List.foldl_cons]`
 beta-reduces on the way through and the same `omega` closes it.
+
+## `obtain ⟨-, h, -⟩` on an existential clears the witness `h` depends on
+
+Destructing `∃ spent, Charged … spent … ∧ …` with the witness discarded looks
+tidy and is not: `h`'s type mentions `spent`, so clearing it takes `h` down
+with it. Nothing is reported at the `obtain`. The failure surfaces further
+down as `unknown identifier h.field`, which reads like a missing lemma rather
+than like a hypothesis that was never introduced. Name the witness even when
+nothing else uses it — it counts as used by the type of what follows, so the
+unused-variable linter stays quiet.
+
+## `noncomputable` does not hand a `dite` its `Decidable` instance
+
+`noncomputable def f := if h : ∃ a, P a then h.choose else …` is refused with a
+plain "failed to synthesize instance of type class", pointing at the whole
+definition rather than at the condition. The keyword only says the compiler
+need not produce code; the elaborator still wants `Decidable (∃ a, P a)` to
+build the `dite`. `open Classical in` on the line above the docstring supplies
+it, and `dif_pos` then reads the branch back exactly as it would for a
+decidable condition.
+
+## A `?_` hole cannot stand where an implicit argument is read off
+
+`refine f h₁ h₂ (fun x y => ?_) ?_` on a lemma whose implicit `body` appears
+only inside the third argument's type fails with "don't know how to synthesize
+implicit argument `body`": the hole is postponed, so nothing determines the
+implicit before elaboration gives up on it. Either name it — `f (body := …) …`
+— or give that argument as a complete term with a nested `by`. The same shape
+with every argument supplied elaborates without complaint, which is what makes
+the message look like a problem with the lemma.
+
+## `omega` cannot read an equation `simp only` reduced out of a `match`
+
+`have h := repCost_unfold hfwd hpc` gives an equation whose right-hand side is
+a `match` on the opcode, and `simp only [hop] at h` cuts it down to the clause
+that applies. The hypothesis then prints as plain `Nat` arithmetic, `pp.all`
+shows nothing unusual and `rw [h]` uses it — but `omega` treats the whole
+right-hand side as one atom and reports a counterexample for a goal that is
+one rewrite away. Restating the equation is what fixes it: `have h2 : … := h`
+with the type written out, and `omega` reads it. The same `simp only … at h`
+on a hypothesis whose type was written out in the first place leaves `omega`
+perfectly able to read it, so it is the reduced `match` that does it, not the
+rewriting.
+
+Writing the clause once as `∀ (u : Inst → Nat) (c : Nat → Nat), repCost re u n
+ways c pc regs pos = …` and instantiating it at each pricing is shorter than
+restating it per unit, and it keeps the three instances sharing their atoms.

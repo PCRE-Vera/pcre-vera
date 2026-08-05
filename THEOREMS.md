@@ -227,19 +227,21 @@ below depends on nothing beyond Lean's own three axioms.
     |      |                        | in Proofs/ExecContext.lean,          |
     |      |                        | exec_refinesAnswers                  |
     | S-9  | proved                 | Proofs/Monotone.lean, exec_monotone  |
-    | S-10 | proved for the         | Proofs/BtBounds.lean,                |
-    |      | backtracking half on   | btRun_inBudget_forward;              |
-    |      | one class of programs; | Proofs/PikeBounds.lean,              |
-    |      | proved for the Pike    | pikeRun_inBudget                     |
-    |      | half                   |                                      |
-    | S-11 | proved from the        | Proofs/CtxSufficient.lean            |
-    |      | plain-call premise     |                                      |
+    | S-10 | proved for both        | Proofs/RepRun.lean,                  |
+    |      | matchers, plain call   | btRun_inBudget_counted;              |
+    |      | and context call alike | Proofs/PikeBounds.lean,              |
+    |      |                        | pikeRun_inBudget and                 |
+    |      |                        | pikeRun_inBudget_ctx                 |
+    | S-11 | proved, with nothing   | Proofs/CtxSufficient.lean,           |
+    |      | assumed about the run  | ctx_sufficient; the two paths in     |
+    |      |                        | ctx_sufficient_pike and              |
+    |      |                        | ctx_sufficient_bt                    |
     | S-12 | proved for every wave  | Proofs/ExecPike.lean,                |
     |      | 1 pattern, the budget  | matchers_agree_wf; the budgets       |
     |      | premise inherent;      | discharged in                        |
     |      | discharged from        | Proofs/AgreeSufficient.lean,         |
-    |      | certificates where     | matchers_agree_sufficient            |
-    |      | both classes overlap   |                                      |
+    |      | certificates for every | matchers_agree_sufficient            |
+    |      | Pike-eligible pattern  |                                      |
     +------+------------------------+--------------------------------------+
 
     +------+------------------------+--------------------------------------+
@@ -249,28 +251,39 @@ below depends on nothing beyond Lean's own three axioms.
     | R-4  | proved                 | Ref/Exec.lean                        |
     | R-5  | proved                 | Proofs/BtTermination.lean,           |
     |      |                        | Proofs/PikeTermination.lean          |
-    | R-6  | proved for one class   | Proofs/BtBounds.lean,                |
-    |      | backtracking; proved   | btRun_cost_le_forward;               |
-    |      | for the Pike half      | Proofs/PikeBounds.lean,              |
+    | R-6  | proved for both        | Proofs/RepRun.lean,                  |
+    |      | matchers               | btRun_cost_le_counted;               |
+    |      |                        | Proofs/PikeBounds.lean,              |
     |      |                        | pikeRun_cost_le_check                |
-    | R-7  | proved                 | Proofs/PikeBounds.lean,              |
-    |      |                        | pikeRun_stack_le;                    |
-    |      |                        | Proofs/BtBounds.lean,                |
-    |      |                        | btRun_stack_le_forward               |
-    | R-8  | proved for one class   | Proofs/BtBounds.lean,                |
-    |      | backtracking; proved   | btRun_mem_le_forward;                |
-    |      | for the Pike half      | Proofs/PikeBounds.lean,              |
+    | R-7  | proved for both        | Proofs/RepRun.lean,                  |
+    |      | matchers               | btRun_stack_le_counted;              |
+    |      |                        | Proofs/PikeBounds.lean,              |
+    |      |                        | pikeRun_stack_le                     |
+    | R-8  | proved for both        | Proofs/RepRun.lean,                  |
+    |      | matchers               | btRun_mem_le_counted;                |
+    |      |                        | Proofs/PikeBounds.lean,              |
     |      |                        | pikeRun_mem_le_check                 |
     | R-9  | creation proved; the   | Proofs/CtxReserve.lean,              |
     |      | no-allocation half     | ctx_resident_eq_reservation;         |
-    |      | for one class          | Proofs/BtBounds.lean,                |
-    |      |                        | btRun_no_growth_forward              |
+    |      | proved for a context   | Proofs/CtxSufficient.lean,           |
+    |      | call on both matchers  | ctxMatch_no_growth_pike and          |
+    |      |                        | ctxMatch_no_growth_bt; the cores     |
+    |      |                        | underneath in Proofs/RepRun.lean,    |
+    |      |                        | btRun_no_growth_ctx_counted, and     |
+    |      |                        | Proofs/PikeBounds.lean,              |
+    |      |                        | pikeRun_no_growth                    |
     | R-10 | proved by running      | lean/CorpusCheck.lean                |
     +------+------------------------+--------------------------------------+
 
-Five of those entries carry a qualifier the inventory does not — S-10,
-S-11, R-6, R-8 and R-9 — and the narrowing is the point of writing this
-section at all.
+No entry carries a class of patterns any more. What every theorem with a
+backtracking run in it does carry is `ReRules`, the six rules listed at the
+end of this section: properties of the compiler's output that `cert_check`
+does not check. All six are proved of `Ref.compile` in
+`Proofs/RepCompile.lean`, so a pattern discharges them rather than a caller
+asserting them, and the theorems stated over a pattern carry none of them.
+What still carries them is a theorem stated over an arbitrary program, which
+has to. Naming that once rather than in seven rows is the honest shape of
+it.
 
 S-8 is proved for both matchers, at every start offset, under every
 combination of match options, and over the whole `Config` domain rather
@@ -314,62 +327,151 @@ That budget premise is what the inventory means by sufficient budgets, and
 `matchers_agree_sufficient` discharges it from certificates rather than
 assuming it — no hypothesis of that theorem mentions how a run ended. The
 lockstep side needs only its accepted certificate, since its sufficiency
-covers every program the checker admits; the backtracking side's comes from
-`btRun_inBudget_forward`, so it carries that theorem's certificate, region
-shape and limit conditions.
+covers every program the checker admits. The backtracking side used to be
+the one that narrowed the statement, because its sufficiency was proved for
+the programs BOUNDS.md sections 4.1 to 4.3 cover and the discharged form was
+the intersection of that class with eligibility — the patterns whose every
+reachable quantifier stops at one and which reach no `\R`. Section 4.4
+closed, so it does not narrow anything now: the discharged form holds for
+every Pike-eligible pattern, which is what the inventory says. Not one of its
+hypotheses mentions the bytecode — they are the premises the two halves of
+S-8 already ask for, `Wf`, `PatFits`, `Covered` and the subject cap, plus
+eligibility, the two certificates and the caller's own limits. `ReRules` is
+discharged from the pattern by `compile_reRules` rather than asserted.
 
-Which means the discharged form is narrower than either half alone, and the
-intersection is a condition on what the compiler reaches rather than on what
-the source spells. The composition asks that every repeat region begin with
-a split, and that holds of a quantifier whose upper bound is at most one and
-of no other: `{0}` is erased, `{1}` compiles as its body alone, and `?`,
-`??` and `{0,1}` get the one split, while anything unbounded or bounded
-above one gets the `RepZero` block. None of those three claims a row in the
-repetition table, so eligibility's demand that every row be a pure star is
-vacuous on them, and what is left of eligibility is its other clause: no
-`\R`.
-
-Read that down the tree and stop at every `{0}`, because the compiler stops
-there too — it never visits the body it is about to erase. So what both
-classes admit is the patterns where every repetition the walk reaches stops
-at one, and no `\R` the walk reaches. The stopping is not a technicality:
-`\R{0}c` spells a `\R` and is eligible, and `(?:a*){0}b` holds an unbounded
-repetition and still claims no row. `(a|b)?c` is in, so the conditions are
-satisfiable rather than vacuous; `\R?c` is out, though its only quantifier
-is a `?`. Widening this waits on section 4.4 with the rest of the
-backtracking family; until then `matchers_agree_wf` is the form that covers
-every wave 1 pattern, with the budget premise left where it is inherent.
+The widening is not theoretical. `a*b*`, `(a|b)*c` and every other eligible
+pattern with a star in it were outside the old statement and are inside this
+one; the intersection had been almost exactly the optional items.
+Eligibility itself is unchanged and is still a real restriction — `pike_ok`
+refuses `\R`, every bounded quantifier, and any star whose body can finish
+an iteration without consuming — so `a{2,5}b` is still outside S-12, and
+outside it for the reason it always was: there is no second run to agree
+with. Its backtracking bound is proved.
 
 The backtracking half of R-6, R-7, R-8, R-9's no-allocation clause and S-10
-is proved outright for every pattern whose constructs are groups,
-alternations and optional items — BOUNDS.md sections 4.1, 4.2 and 4.3 — at
-any nesting depth. Counted repetitions, section 4.4, are open, and for them
-the family is proved conditional on one hypothesis, `AttemptsWithin`, which
-is that section's composition read against the VM's own pushes. The reason
-4.4 is a step rather than another case is written down at the end of
-`Proofs/BtBounds.lean`: the pricing that carries the other three is a
-function of the program point, and a counted repetition's tail jumps
-backwards, so the pricing has to gain a counter index and the stack's
-weights stop being pointwise. Everything else that half needs is done —
-the section 5 whole-call arithmetic, the growth schedule, the checker's
-tree facts and per-region dominance, the fork account, the charge
-sites priced against a claim, and both ends of 4.4 itself: the run side
-takes the four repetition opcodes as they come, and `scanRepeat_counted`
-reads the checker's counted arm back to that section's four equations. What
-is between them is the pricing, and `repRegion_dom` is the statement it has
-to satisfy.
+was for a long time proved only for the patterns whose constructs are
+groups, alternations and optional items — BOUNDS.md sections 4.1, 4.2 and
+4.3. Counted repetitions, section 4.4, are the rest of it, and they are
+proved now.
+
+What was between the two ends was a pricing. A counted repetition's control
+flow is a loop, but its *price* is a
+closed form: `repLeft ways each base k`, read at the number of passes the
+head still has left, turns the head into a leaf of the walk rather than a
+way back into the body. Every other edge then goes forward, so the whole
+pricing is `costAt` with the counters carried along and `code.size` is
+enough fuel — no measure, no well-founded recursion, and none of the
+lexicographic word the earlier note at the end of `Proofs/BtBounds.lean`
+expected to need.
+
+The pass count is where the subject enters, and it enters once. Bounded, it
+is the counter value the head's own test leaves at. Unbounded, the head
+never leaves by its counter and the empty-match rule stops it instead, so
+what is left is the unmet part of the minimum plus one pass per byte still
+ahead. One more than that number, at the counter a `RepZero` leaves behind,
+is at most the checker's `repPasses` — equal to it at the start of a subject
+and smaller further in — and covering `repPasses` is exactly what the
+checker's flow does. The two halves of section 4.4 meet there rather than by
+construction.
+
+`Proofs/RepBounds.lean` is that walk — `repCostAt` with its fuel argument,
+the reading that a `Save` naming a capture slot is invisible to it, and the
+reading that the price never rises as the cursor moves forward.
+`Proofs/RepShape.lean` is what the walk needs of the code, with the
+optional-item hypothesis dropped: every repetition opcode sits inside the
+range its own record names, and a walk that has left a repetition never
+reads its counter again. `repLeft_dom` and `repRegion_dom` in
+`Proofs/BtBounds.lean` now charge `A + (1 + w) * X` per pass rather than
+`A + X`, because a pass leaves the region `1 + w` times — once at the head
+when the count is spent, once per way the body found to finish — which is
+what BOUNDS.md's `outs = S * (1 + w)` says and what the old shape was too
+rigid to state.
+
+The join is `Proofs/RepFlow.lean` and `Proofs/RepPriced.lean`. The first is
+`RegFlow` over the walk: every clause is definitional except the head's, and
+the head's needs what one pass through the body charges, which is the region
+tree's business rather than one instruction's. The second is that tree
+induction, `region_priced` generalized off `flowCost`, which discharges it and
+delivers the root's claim at the same time. `Proofs/RepOnce.lean` supplies the
+one fact the two numbers per repetition rest on — that a repetition index
+names one region and not two — and `Proofs/RepRun.lean` carries the family
+through to the theorems the inventory names, with the optional-item
+hypothesis gone.
+
+Three things about that construction are worth keeping. The counter never
+wraps, and what rules it out is the head's own maximum test rather than
+anything about the run's history: the recurrence is only unfolded on the arm
+where the head enters the body, and unbounded, the maximum it tests against is
+the sentinel, which is the largest value a counter can hold. The price walk
+has to be stepped alongside the *shape* walk rather than composed with the
+price walk alone, because a counted region's body runs to one short of its own
+end and only the shape walk refuses a child that runs past it. And the span
+composition had to be restated with its per-instruction hypothesis guarded by
+what a span actually admits, since a nested repetition's head sits inside the
+range and is priced by a closed form rather than by one more than the next
+point.
 
 The Pike configuration is further along, because its accounting is a
 closed form rather than a composition: R-6, R-7, R-8 and S-10 hold there
 against any certificate the checker accepted, on every program the checker
 admits and at every start offset — no class restriction and nothing like
-`AttemptsWithin`. What that covers is the plain call, the one that starts
-on empty scratch. A lockstep call through a preallocated context is not
-covered: `ctx_sufficient` reduces a context's three bounds to two and
-leaves the core's own sufficiency as its premise, which the plain theorem
-supplies only at the plain call's starting scratch, and there is no
-lockstep counterpart to `btRun_no_growth_forward`. So R-9's no-allocation
-clause is proved for the backtracking classes and not for this one. S-10's half reads the same per-position account over the
+`AttemptsWithin`. The lockstep call through a preallocated context is
+covered too: `pikeRun_inBudget_ctx` holds at any starting scratch the
+growth schedule admits — `Rooms re init`, every capacity inside the
+schedule's own answer at its array's entry bound, which is what creation
+reserves — and the `{}` call is its instance. R-9's no-allocation clause
+has a lockstep counterpart as well: `pikeRun_no_growth` says a call handed
+the six arrays already at the schedule's final capacities allocates
+nothing, `pikeLoop_no_growth` is the capacity reading underneath it, and
+neither mentions the caller's limits. What the two context statements
+conclude is that shape rather than an allocation event: the call reports the
+reservation creation took, and underneath it the core's own memory reading
+never passes its setup, which is what "no growth step was reached" comes to
+in an account that weighs capacities. They are about the calls a context
+admits; one over a cap is BadInput and never reaches a core at all. And they
+are about a context call and not about a plain one, which is not a gap but
+the clause itself: a plain call starts on empty scratch and grows it, which
+is what the growth schedule is for and what R-6 and R-8 price. What R-9 says
+is that paying for the scratch once, at creation, buys a call that never
+pays again. `Reserved.ofRoom` is where those
+capacities meet `pike_room`, so the ceiling the two theorems ask for is the
+one creation weighs and not a number invented for them.
+
+S-11 is what those meet in. `ctx_sufficient` used to take the core's own
+sufficiency as a premise and nothing supplied it; it now assumes nothing
+about how a run ends. What it asks for instead is what a caller can check —
+creation succeeded, the subject is admitted, and the per-call cost and
+stack sit at or above what the accessors answered at the caller's own
+subject length — together with what the two cores need of the program.
+`ctx_created_caps` is the bridge that was missing: `ctx_create` sizes every
+array from the selected certificate and nothing read those capacities back.
+The backtracking path carries the compiler rules of this section and nothing
+else, and it carries one more of them than the plain call does — a
+`CompiledPat` is whatever creation was handed, so nothing in its type ties
+it to compiler output, and the register-file rule cannot be discharged the
+way it can for `Ref.compile p`.
+
+Getting there cost two changes to the backtracking account, and both are
+worth recording because they were hidden by the plain call rather than
+absent from it. The first is that `Within` was reading one pair of numbers
+two ways at once: as the certificate's claims, which is what the depth line
+and the replay charge are about, and as the arrays' capacities, which is
+what the rooms and the scratch are about. A plain call starts empty and the
+two coincide; a context reserves at its declared maximum and is called at a
+shorter subject, and then they do not. They are separate parameters now.
+
+The second is subtler. Weakening the memory line from an equation to an
+inequality is enough for sufficiency, but the equation was load-bearing
+somewhere else: what rules out the growth schedule clamping at an array's
+declared maximum is a *lower* bound on the meter, and a preallocated call
+has no such bound — its meter honestly does not account for scratch it did
+not buy. So the account carries what the caller arrived with, and the
+no-clamp step has two arms: a plain call, where nothing was carried and the
+old argument stands, and a preallocated one, where the memory limit itself
+rules the maxima out because the schedule's factor and the allocation
+ceiling separate exactly.
+
+S-10's Pike half reads the same per-position account over the
 charges a run *attempts* rather than the ones it completes, since a refusal
 on this path is exactly a pre-charge test failing; `pikeRun_inBudget` is
 the statement, and it asks for the cost and memory limits only, the stack
@@ -384,8 +486,8 @@ properties of the pattern and travel as `PatFits` — the parser's own
 MAX_NODES and MAX_GROUPS, restated over the tree. `compile_reWf` is the
 theorem, and the four bounds are restated over `Ref.compile p` beneath it.
 
-Two things found while proving R-6 are worth recording, because they are
-about the engine rather than about the Lean. The first: `cert_shape` never
+Five things found while proving the resource bounds are worth recording,
+because they are about the engine rather than about the Lean. The first: `cert_shape` never
 asks whether a
 program contains an `Accept`, and a straight-line region of tests without
 one walks off the end of its own code. The two layers part company there:
@@ -406,6 +508,56 @@ descends on. The rule that settles it is that a `Save`'s slot sits below
 `novec`, which the compiler guarantees, since it emits one only for a
 numbered group. Like the `Accept`, it is a rule the checker could have and
 has not, and it is written down rather than added, for the same reason.
+
+The third turned up in section 4.4's pricing and is the same shape again.
+A repetition's counter is a `UInt32`, and the pricing reads it as a number:
+the recurrence at the head needs the successor of that reading to be its
+successor, and a counter at the sentinel would wrap to zero, which is priced
+for *more* passes than the value before it. What rules that out is the head's
+own maximum test rather than anything about the run's history — the
+recurrence is only ever unfolded on the arm where the head enters the body,
+and that arm is guarded by the counter being below the minimum or below the
+maximum. Unbounded, the maximum *is* the sentinel, which is the largest value
+a counter can hold, so the head leaves before a wrap can happen. All that is
+left is that a repetition's two declared bounds are themselves counter
+values, which the compiler guarantees and `cert_shape` does not ask, so it
+travels as a hypothesis beside the other two.
+
+The fourth and the fifth came out of finishing that pricing. `cert_check`
+never mentions `re.nregs`, so nothing says a program's register file has room
+for the counters its own repetitions name; a `RepEnter` with nowhere to write
+would leave the position it remembers unset, the empty-match rule would never
+fire, and an unbounded repetition would count without ever spending a byte.
+`Ref.compile` sizes the file so it holds with equality, so no pattern can
+produce one. And `cert_shape` bounds the region count nowhere, while the
+region tree is walked through child and sibling arrays that use `none32` as
+their empty marker — so a region at index `none32` files itself as absent from
+its parent's child list and is invisible to every walk. A program with two
+counted repetitions over one range, hidden that way, would have the analyzer's
+two numbers read off whichever region the walk happened to meet. In the engine
+the index is a `u32` and the sentinel is not an index; in the Lean reference
+it is a `Nat`, so the bound travels as a hypothesis.
+
+All of them are rules the checker could have and has not, and they travel
+together as `ReRules` — beside `ReWf`, which is what the lockstep bound reads
+a program through, and for the same reason. None of them narrows what a
+pattern may be: each is a property of the compiler's output rather than a
+condition on the source.
+
+All six are proved of `Ref.compile` in `Proofs/RepCompile.lean`, from the
+three conditions the refinement theorems already ask of a pattern — `Wf`,
+`Covered` and `PatFits`. `compile_ends` was the last, and it wanted one more
+walk of the region table carrying three clauses: the table is non-empty, its
+head is the root, and every alternation and repeat region in it closes at or
+before the code emitted so far. The root is exempt not because it is the root
+but because `compile` closes it after the trailing `Accept`, which is the one
+emission that happens with every other region already shut.
+
+A context call carries all six anyway, `Ref.compile` or not, because
+`ctx_create` takes whatever `CompiledPat` it is handed and nothing in that
+type says the thing came out of the compiler. Closing that is not another
+walk over the compiler; it wants an invariant on `CompiledPat` that does not
+exist.
 
 The refinement theorems quantify over patterns satisfying `Wf`, which names
 the three shapes a parse never emits: an alternation with no branches, a

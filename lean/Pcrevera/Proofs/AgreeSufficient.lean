@@ -1,6 +1,7 @@
 import Pcrevera.Proofs.ExecContext
 import Pcrevera.Proofs.BtBounds
 import Pcrevera.Proofs.ReWfCompile
+import Pcrevera.Proofs.RepCompile
 
 /-!
 # S-12 with its budgets discharged
@@ -10,46 +11,48 @@ is inherent — two matchers metering different work may legitimately part
 company on ResourceExceeded, so agreement is a sufficient-budget statement
 or it is nothing. What the inventory promises on top is that the premise is
 *discharged* from certificates: give each matcher limits at or above its
-own analyzer's bounds and neither can refuse, so the agreement follows from
-the certificates rather than from an assumption about the runs.
+own analyzer's bounds — and, on the backtracking side, a memory limit under
+the allocation ceiling, which is what makes the growth schedule double — and
+neither can refuse, so the agreement follows from the certificates rather
+than from an assumption about the runs.
 
 That is what this file does: no hypothesis below mentions how a run ended.
-The lockstep side needs nothing but its accepted certificate, since
-`pikeRun_inBudget` covers every program the checker admits. The
-backtracking side is the one still bounded by the composition, and it is
-what narrows the statement — its sufficiency is proved for the programs
-BOUNDS.md sections 4.1 to 4.3 cover, so the two class conditions have to
-hold at once.
+Each side needs its own accepted certificate and nothing about the other, and
+the two classes no longer intersect down to something smaller than either.
+`pikeRun_inBudget` covers every program the lockstep checker admits, and
+`btRun_inBudget_counted` covers every program the backtracking checker admits,
+BOUNDS.md section 4.4 included. So the only class of patterns either half
+still rules out is the one the lockstep matcher turns away at its own door.
 
-They intersect more tightly than either alone, and the intersection is a
-condition on what the compiler reaches rather than on what the source
-spells. The composition asks that every repeat region begin with a split,
-which holds of a quantifier whose upper bound is at most one and of no
-other: `{0}` is erased, `{1}` compiles as its body alone, and `?`, `??` and
-`{0,1}` get the one split, while anything unbounded or bounded above one
-gets the `RepZero` block. None of those three claims a row in the
-repetition table, so eligibility's demand that every row be a pure star is
-vacuous on them, and what is left of eligibility is its other clause: no
-`\R`.
+What the backtracking side asks of the program is `ReRules`, the six rules
+neither `cert_shape` nor `certCheck` checks — and it no longer asks the caller
+for them. `compile_reRules` reads all six off `Ref.compile`, from the same
+three pattern hypotheses the lockstep side already wants, so what used to be
+six conditions on the compiled form is now nothing at all.
 
-Read that down the tree and stop at every `{0}`, because the compiler stops
-there too — it never visits the body it is about to erase. So what both
-classes admit is the patterns where every repetition the walk reaches stops
-at one, and no `\R` the walk reaches. The stopping is not a technicality:
-`\R{0}c` spells a `\R` and is eligible, and `(?:a*){0}b` holds an
-unbounded repetition and still claims no row. `(a|b)?c` is in; `\R?c` is
-out, though its only quantifier is a `?`. Widening this is not a matter of
-restating anything here: it waits on section 4.4, with the rest of the
-backtracking family.
+So the only class condition left is eligibility, and it narrows honestly —
+`pike_ok` refuses `\R`, every bounded quantifier, and any star whose body can
+finish an iteration without consuming, because those are the programs the
+lockstep matcher declines at the door. `a*b*` and `(a|b)*c` are in, where the
+intersection this statement used to carry admitted only patterns that reach no
+repetition table row at all. `a{2,5}b` is still out, and it is out for the
+lockstep reason alone: its backtracking bound is proved, and there is simply
+no second run to agree with.
+
+Everything else in the list below is a condition rather than a class — the
+pattern's own well-formedness and size clauses, an accepted certificate per
+side, and limits at or above what each certificate names. A caller can check
+all of them, and none of them is about the bytecode.
 -/
 
 namespace Pcrevera.Ref
 
 open Pcrevera Pcrevera.Refine
 
-/-- S-12 with both budgets discharged from certificates: on a pattern both
-matchers' classes admit, limits at or above each matcher's own bounds make
-the two agree, with nothing assumed about how either run ended. -/
+/-- S-12 with both budgets discharged from certificates: on an eligible
+pattern, limits at or above each matcher's own bounds — with the backtracking
+side's memory limit inside the allocation ceiling — make the two agree, with
+nothing assumed about how either run ended. -/
 theorem matchers_agree_sufficient {p : Pat} {s : ByteArray} {start : Nat}
     {mo : MOpts} {limP limB : Limits} {certP certB : Cert}
     (hvP : limP.valid = true) (hvB : limB.valid = true) (hw : Wf p)
@@ -60,19 +63,10 @@ theorem matchers_agree_sufficient {p : Pat} {s : ByteArray} {start : Nat}
     (hcertP : pikeCheck (compile p) certP = .crOk)
     (hcostP : certP.cost.val s.size ≤ limP.cost)
     (hmemP : certP.mem.val s.size ≤ limP.mem)
-    -- the backtracking side's, on the class its composition covers: an
-    -- accepted certificate, the region tree read as groups, alternations and
-    -- optional items, the program's own two shape facts, and limits at or
-    -- above all three of its bounds
+    -- the backtracking side's: an accepted certificate, and limits at or
+    -- above all three of its bounds. The rules the checker does not ask
+    -- about are read off the compiler rather than asked for.
     (hcertB : certCheck (compile p) .backtrack certB = .crOk)
-    (hopt : ∀ j, j < (compile p).regions.size →
-      ((compile p).regions[j]!).kind = .«repeat» →
-      ((compile p).code[((compile p).regions[j]!).lo]!).op = .split)
-    (hends : ∀ j, j < (compile p).regions.size →
-      (((compile p).regions[j]!).kind = .alt ∨
-        ((compile p).regions[j]!).kind = .«repeat») →
-      ((compile p).regions[j]!).hi < (compile p).code.size)
-    (hlast : ((compile p).code[(compile p).code.size - 1]!).op = .accept)
     (hmemB : limB.mem ≤ ceiling)
     (hcostB : certB.cost.val s.size ≤ limB.cost)
     (hmemBb : certB.mem.val s.size ≤ limB.mem)
@@ -90,8 +84,8 @@ theorem matchers_agree_sufficient {p : Pat} {s : ByteArray} {start : Nat}
   have hneB : (Exec (.plain .backtrack) p s start mo limB).outcome ≠
       .resourceExceeded := by
     rw [exec_plain_backtrack hvB hs]
-    exact btRun_inBudget_forward hcertB hopt hends hlast hmemB hcostB hmemBb
-      hstackB
+    exact btRun_inBudget_counted hcertB (compile_reRules hw hcov hfits) hmemB
+      hcostB hmemBb hstackB
   exact matchers_agree_wf hvP hvB hw hs hpike hneP hneB
 
 end Pcrevera.Ref

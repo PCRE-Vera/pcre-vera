@@ -1713,3 +1713,59 @@ the compiler builds. A `{0}` is erased without its body ever being visited, so
 unbounded repetition and claims no row anyway. The accurate statement walks
 only what the compiler reaches, stopping at every `{0}` — which is a sentence
 longer than the wrong one, and the length is the finding.
+
+## Writing four hundred lines before compiling one (M6)
+
+Two agents were editing the file mine imports, so building would have raced
+with them, and rather than wait I wrote the whole next chunk of the counted
+repetition pricing blind. It cost two bugs. One was `∀ q` over an index the
+elaborator then could not type, which is already in `api-faq.md` under its own
+heading — I had read that entry earlier the same day and still wrote the
+pattern. The other was `rw [f, f]` on a goal whose two sides are an
+inequality, where the closing `rfl` does not fire and two goals stand.
+
+Neither is interesting on its own. What is interesting is that both were found
+by somebody else's build rather than by mine, and that the file sat red for the
+better part of an hour with nobody the wiser. Blind Lean is not progress
+banked; it is progress claimed. Waiting for the lock would have been faster.
+
+## Reading a theorem's shape off its name (M6)
+
+I planned a generalization of `btRun_no_growth_forward` over a context's
+reserved capacities, briefed an agent on it, and described the theorem as
+being stated at `0 0` the way `btRun_inBudget_forward` is. It was already
+quantified over both capacities. The two theorems sit fifty lines apart and I
+had read one of them.
+
+The cost was small — the agent checked and said so — but the habit is not: I
+had inferred the statement from its neighbour and from what the gap in
+THEOREMS.md implied, rather than from the statement.
+
+## Designing the invariant before doing the arithmetic (section 4.4's account)
+
+The brief for `RegFlow` over the counted pricing said the head needs its
+counter bounded by `rep.lo + pos`, that the bound has to ride along in the
+domain, and that closing it needs a code fact nobody had proved — that control
+enters a repeat region only at its own `RepZero`. I took the plan as given and
+spent a long while laying the invariant out: where it holds, which edges
+preserve it, which of those need two regions' ranges to nest. Only then did I
+work out what the head's arithmetic asks for. It asks for one thing, that the
+counter the recurrence reads not wrap, and the head's own maximum test already
+gives it: the recurrence is unfolded only on the arms where the count is below
+the maximum, and unbounded the maximum it reads is `none32`, which is the
+largest value a counter can hold. No invariant, no domain clause, no entry
+fact. What the arithmetic did want was something the plan had not mentioned —
+a register file long enough for the `RepEnter` to write in — and that fell out
+of the same computation, at the line where the walk reads back the position it
+had just remembered.
+
+The lesson is the ordering. The invariant was a plausible answer to a question
+I had not asked yet, and half an hour with the closed form would have retired
+it before the first line of it was written.
+
+- Lost a debugging round to `omega` reporting a counterexample for a goal one
+  rewrite away from a hypothesis in scope. The hypothesis had come out of a
+  `match`-shaped unfolding lemma through `simp only … at`, which leaves it
+  printing as plain arithmetic and unreadable to `omega` — see api-faq.md. The
+  tell was in the counterexample all along: the atom it listed was the whole
+  right-hand side rather than the term the equation was about.

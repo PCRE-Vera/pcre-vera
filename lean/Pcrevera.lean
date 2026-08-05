@@ -35,3 +35,10 @@ import Pcrevera.Proofs.PikeRefine
 import Pcrevera.Proofs.ReWfCompile
 import Pcrevera.Proofs.ExecContext
 import Pcrevera.Proofs.AgreeSufficient
+import Pcrevera.Proofs.RepBounds
+import Pcrevera.Proofs.RepShape
+import Pcrevera.Proofs.RepFlow
+import Pcrevera.Proofs.RepPriced
+import Pcrevera.Proofs.RepOnce
+import Pcrevera.Proofs.RepRun
+import Pcrevera.Proofs.RepCompile

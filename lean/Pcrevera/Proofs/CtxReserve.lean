@@ -90,6 +90,102 @@ theorem pikeRoom_reserved {re : Re} {room : Room} {over : Bool}
   dsimp only
   rw [v15, v13, v14, v11, v12, v10, v9]
 
+/-- What creation left in the context's capacity fields, read back off the
+success path: on the lockstep path the four numbers `pike_room` weighs, and on
+the backtracking one the growth schedule's final capacity for each of the two
+claims the selected certificate makes at the declared maximum.
+
+Both halves are stated raw — the flag chains as they came out, and
+`polyValue`'s own answer rather than the polynomial's value. Reading them as
+bounds needs `polyValue`'s soundness and the growth schedule's arithmetic,
+and both of those live in files that import this one. -/
+theorem ctx_created_caps {cp : CompiledPat} {mcfg maxlen : Nat}
+    {lim : Limits} {ctx : Ctx}
+    (h : ctxCreate cp mcfg maxlen lim = (.ok, some ctx)) :
+    ctx.cp = cp ∧ ctx.maxlen = maxlen ∧ ctx.costcap = lim.cost ∧
+      ctx.stackcap = lim.stack ∧
+      (cp.re.pike = true →
+        ∃ room : Room, pikeRoom cp.re false = (room, false) ∧
+          ctx.listsCap = room.lists ∧ ctx.stkCap = room.stk ∧
+          ctx.tablesCap = room.tables ∧ ctx.poolCap = room.pool) ∧
+      (cp.re.pike = false →
+        ∃ cert : Cert, rePick cp = some cert ∧
+          (polyValue cert.stack maxlen).ok = true ∧
+          (polyValue cert.trail maxlen).ok = true ∧
+          growthCap (polyValue cert.stack maxlen).value false =
+            (ctx.btCap, false) ∧
+          growthCap (polyValue cert.trail maxlen).value false =
+            (ctx.trailCap, false)) := by
+  simp only [ctxCreate] at h
+  split at h
+  · simp at h
+  · simp at h
+  · split at h
+    · simp at h
+    · rename_i picked hpick
+      split at h
+      · simp at h
+      · rename_i nregs cbt ctrail lists stk tables pool words setup ballast heq
+        split at h
+        · simp at h
+        · split at h
+          · simp at h
+          · split at h
+            · simp at h
+            · split at h
+              · simp at h
+              · simp only [Prod.mk.injEq, Option.some.injEq] at h
+                obtain ⟨-, hctx⟩ := h
+                subst hctx
+                refine ⟨rfl, rfl, rfl, rfl, ?_, ?_⟩
+                · intro hpike
+                  rw [if_pos hpike] at heq
+                  split at heq
+                  · simp at heq
+                  · rename_i hpover
+                    rw [Bool.not_eq_true] at hpover
+                    simp only [Option.some.injEq, Prod.mk.injEq] at heq
+                    obtain ⟨⟨e1, e2, e3, e4, e5, e6, e7, e8⟩, e9, e10⟩ := heq
+                    subst e4 e5 e6 e7
+                    refine ⟨(pikeRoom cp.re false).1, ?_, rfl, rfl, rfl, rfl⟩
+                    have hp : pikeRoom cp.re false =
+                        ((pikeRoom cp.re false).fst, (pikeRoom cp.re false).snd) :=
+                      rfl
+                    rw [hpover] at hp
+                    exact hp
+                · intro hpike
+                  rw [if_neg (by simp [hpike])] at heq
+                  split at heq
+                  · simp at heq
+                  · rename_i hdeep
+                    split at heq
+                    · simp at heq
+                    · rename_i hbflag
+                      rw [Bool.not_eq_true] at hbflag
+                      obtain ⟨-, f4⟩ := satAdd_snd hbflag
+                      obtain ⟨-, f3⟩ := satMul_snd f4
+                      obtain ⟨-, f2⟩ := satMul_snd f3
+                      have f1 := growthCap_snd f2
+                      simp only [Bool.or_eq_true, Bool.not_eq_true', not_or] at hdeep
+                      simp only [Option.some.injEq, Prod.mk.injEq] at heq
+                      obtain ⟨⟨e1, e2, e3, e4, e5, e6, e7, e8⟩, e9, e10⟩ := heq
+                      subst e2 e3
+                      refine ⟨picked, hpick, by simpa using hdeep.1,
+                        by simpa using hdeep.2, ?_, ?_⟩
+                      · have hg : growthCap (polyValue picked.stack maxlen).value
+                            false = ((growthCap (polyValue picked.stack maxlen).value
+                              false).fst, (growthCap (polyValue picked.stack maxlen).value
+                              false).snd) := rfl
+                        rw [f1] at hg
+                        exact hg
+                      · rw [f1] at f2 ⊢
+                        have hg : growthCap (polyValue picked.trail maxlen).value
+                            false = ((growthCap (polyValue picked.trail maxlen).value
+                              false).fst, (growthCap (polyValue picked.trail maxlen).value
+                              false).snd) := rfl
+                        rw [f2] at hg
+                        exact hg
+
 /-- The creation half of R-9 (`ctx_reserves_bound`): a context `ctxCreate`
 hands back is resident for exactly its `memcap`, and that `memcap` is the
 `reMem` answer the caller was given — the accessor said ok, and its value
