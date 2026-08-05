@@ -1691,3 +1691,25 @@ eligibility wants every repetition to be a pure star, the composition wants
 every repeat region to be an optional item, and the two only overlap where a
 pattern's quantifiers are `?` and `??`. A forwarded premise had made the
 statement look wider than it was.
+
+## Describing a class by its examples (M6)
+
+Having composed S-12's budgets properly, I described the resulting class as
+"the patterns whose only quantifiers are `?` and `??`". That is wrong in both
+directions, and a review caught it: `{0}`, `{1}` and `{0,1}` are in it too —
+the compiler erases the first, compiles the second as its body, and gives the
+third the same single split — while `\R?c` is out of it despite having only a
+`?`, because eligibility forbids `\R` for reasons that have nothing to do with
+quantifiers.
+
+The theorem was never wrong; its hypotheses are explicit and were checked. What
+was wrong was reading a class off the examples I had evaluated instead of off
+the conditions.
+
+The corrected wording was still wrong, and the second review said why: it read
+the condition off the source tree, when the conditions are about the program
+the compiler builds. A `{0}` is erased without its body ever being visited, so
+`\R{0}c` spells a `\R` and is eligible anyway, and `(?:a*){0}b` holds an
+unbounded repetition and claims no row anyway. The accurate statement walks
+only what the compiler reaches, stopping at every `{0}` — which is a sentence
+longer than the wrong one, and the length is the finding.

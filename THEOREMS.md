@@ -318,16 +318,27 @@ covers every program the checker admits; the backtracking side's comes from
 `btRun_inBudget_forward`, so it carries that theorem's certificate, region
 shape and limit conditions.
 
-Which means the discharged form is narrower than either half alone, and
-worth saying exactly. Eligibility asks that every row of the repetition
-table be a pure star; the composition asks that every repeat region begin
-with a split, which is the optional item, and an optional item claims no
-row. So the patterns both admit are those whose only quantifiers are `?`
-and `??`, with groups and alternations above them freely — `(a|b)?c` is
-one, and the conditions are satisfiable there rather than vacuous. Widening
-it waits on section 4.4 with the rest of the backtracking family; until
-then `matchers_agree_wf` is the form that covers every wave 1 pattern, with
-the budget premise left where it is inherent.
+Which means the discharged form is narrower than either half alone, and the
+intersection is a condition on what the compiler reaches rather than on what
+the source spells. The composition asks that every repeat region begin with
+a split, and that holds of a quantifier whose upper bound is at most one and
+of no other: `{0}` is erased, `{1}` compiles as its body alone, and `?`,
+`??` and `{0,1}` get the one split, while anything unbounded or bounded
+above one gets the `RepZero` block. None of those three claims a row in the
+repetition table, so eligibility's demand that every row be a pure star is
+vacuous on them, and what is left of eligibility is its other clause: no
+`\R`.
+
+Read that down the tree and stop at every `{0}`, because the compiler stops
+there too — it never visits the body it is about to erase. So what both
+classes admit is the patterns where every repetition the walk reaches stops
+at one, and no `\R` the walk reaches. The stopping is not a technicality:
+`\R{0}c` spells a `\R` and is eligible, and `(?:a*){0}b` holds an unbounded
+repetition and still claims no row. `(a|b)?c` is in, so the conditions are
+satisfiable rather than vacuous; `\R?c` is out, though its only quantifier
+is a `?`. Widening this waits on section 4.4 with the rest of the
+backtracking family; until then `matchers_agree_wf` is the form that covers
+every wave 1 pattern, with the budget premise left where it is inherent.
 
 The backtracking half of R-6, R-7, R-8, R-9's no-allocation clause and S-10
 is proved outright for every pattern whose constructs are groups,

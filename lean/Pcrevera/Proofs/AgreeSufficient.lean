@@ -21,14 +21,26 @@ what narrows the statement — its sufficiency is proved for the programs
 BOUNDS.md sections 4.1 to 4.3 cover, so the two class conditions have to
 hold at once.
 
-They intersect more tightly than either alone. Eligibility asks that every
-row of the repetition table be a pure star; the composition asks that every
-repeat region begin with a split, which is the optional item, and an
-optional item claims no row. So what both admit is the patterns whose only
-quantifiers are `?` and `??`, with groups and alternations above them
-freely — `(a|b)?c` is one. Widening it is not a matter of restating
-anything here: it waits on section 4.4, with the rest of the backtracking
-family.
+They intersect more tightly than either alone, and the intersection is a
+condition on what the compiler reaches rather than on what the source
+spells. The composition asks that every repeat region begin with a split,
+which holds of a quantifier whose upper bound is at most one and of no
+other: `{0}` is erased, `{1}` compiles as its body alone, and `?`, `??` and
+`{0,1}` get the one split, while anything unbounded or bounded above one
+gets the `RepZero` block. None of those three claims a row in the
+repetition table, so eligibility's demand that every row be a pure star is
+vacuous on them, and what is left of eligibility is its other clause: no
+`\R`.
+
+Read that down the tree and stop at every `{0}`, because the compiler stops
+there too — it never visits the body it is about to erase. So what both
+classes admit is the patterns where every repetition the walk reaches stops
+at one, and no `\R` the walk reaches. The stopping is not a technicality:
+`\R{0}c` spells a `\R` and is eligible, and `(?:a*){0}b` holds an
+unbounded repetition and still claims no row. `(a|b)?c` is in; `\R?c` is
+out, though its only quantifier is a `?`. Widening this is not a matter of
+restating anything here: it waits on section 4.4, with the rest of the
+backtracking family.
 -/
 
 namespace Pcrevera.Ref
