@@ -392,9 +392,10 @@ next person reads the state and the intent in one place.
     |        | gathered at the pattern as `wf_lowered`. No `sorry`, no      |
     |        | axiom beyond Lean's three, and the corpus replay is          |
     |        | unchanged at 331 cases and 0 disagreements.                  |
-    |        | Outstanding: L-4, the counting theorem over the dry-run      |
-    |        | sizes; and L-5, which moves the lowering inside `R.compile`  |
-    |        | and re-proves what follows it.                               |
+    |        | Outstanding in M7R, not in M7: L-4, the counting theorem over|
+    |        | the dry-run sizes, and L-5, which moves the lowering inside  |
+    |        | `R.compile` and re-proves what follows it. Section 10 sent   |
+    |        | both with the compiler simulation lemma they exist for.      |
     +--------+--------------------------------------------------------------+
     | gate 1 | Done. `Tir/Syntax.lean` is the grammar, `Tir/Interp.lean`    |
     |        | the definitional interpreter, `Tir/Exec.lean` the statement  |
@@ -402,18 +403,18 @@ next person reads the state and the intent in one place.
     |        | determinism, `Tir/Toy.lean` four programs run against known  |
     |        | answers at elaboration time.                                 |
     +--------+--------------------------------------------------------------+
-    | gate 2 | Checks in, theorem started. `Tir/Print.lean` is the canonical|
-    |        | printer, `Tir/Decode.lean` the audited decoder, and          |
+    | gate 2 | In, at the boundary section 11 draws. `Tir/Print.lean` is the|
+    |        | canonical printer, `Tir/Decode.lean` the audited decoder, and|
     |        | `Tir/PrintCheck.lean` holds the printer to `serialize.dumps` |
     |        | byte for byte and runs the round trip both ways on the toy   |
     |        | programs, with negative cases for the schema number, an      |
-    |        | unknown key and a non-object. `Tir/RoundTrip.lean` is the    |
-    |        | theorem, and section 11 says how far it goes: the bridge to  |
-    |        | `Lean.Json` is proved, and four of the five decoder families |
-    |        | are inverted — the types, the constants, the expressions and |
-    |        | places, and the statements. The declarations and the program |
-    |        | remain, and the step from printed text to a parsed value is  |
-    |        | named rather than proved.                                    |
+    |        | unknown key and a non-object. `Tir/RoundTrip.lean` proves    |
+    |        | `decodeProgram_programJ`: for a canonical program at a budget|
+    |        | past its depth, decoding what the printer built gives the    |
+    |        | program back. `Tir/Artifact.lean` settles that premise on the|
+    |        | artifact by reduction, which is the interpreter and not the  |
+    |        | kernel. The step from printed text to a parsed value is named|
+    |        | rather than proved.                                          |
     +--------+--------------------------------------------------------------+
     | gate 3 | In. `Tir/Artifact.lean` embeds the 2.8 megabytes of          |
     |        | `gen/engine.tir.json` with `include_str`, decodes them, and  |
@@ -459,17 +460,36 @@ and changes nothing the backends consume.
 Sections 8 to 10 are what those rows cost to find out, and section 10 is
 where the milestone splits.
 
-## 7. The checkpoint, and the order the next session opens in
+## 7. The close, and the order the next session opens in
 
-Commit `53068bd` is the verified handoff: `make verify` passes there end to
-end — 26 verification tests, the full Lean build, the corpus replay at 331
-cases and 0 disagreements — on a clean tree. This closeout commit on top of
-it changes documentation only, and the annotated tag `m7-foundation-20260806`
-marks it; `wave1-frozen` does not move, for the reason gate 3 already gave.
-The endpoint of section 1 has not been weakened anywhere. M7 stops here
-because it is incomplete and too large to finish responsibly in one
-stretch, not because anything is blocked — that distinction matters, and it
-is why this is a checkpoint rather than a fallback.
+Commit `e2b55f1` is the verified handoff: `make verify` passes there end to
+end — 32 verification tests, the full Lean build at 74 jobs, the corpus
+replay at 331 cases and 0 disagreements — on a clean tree. This closeout
+commit on top of it changes documentation only, and the annotated tag
+`m7-foundation-20260807` marks it; `wave1-frozen` does not move, for the
+reason gate 3 already gave. The endpoint of section 1 has not been weakened
+anywhere.
+
+This is the foundation complete rather than a checkpoint, which is the one
+thing that changed since the entry above it was written. Gate 2's semantic
+half is proved — section 11 has the decomposition and the measurement — so
+every gate M7 owns after section 10's split is in: the deep embedding and
+its interpreter, stability and determinism, the printer and the audited
+decoder with the round trip over every canonical program, the pinned
+artifact, the `make verify` harness, two loop-invariant samples and the
+automation section 10 measured.
+
+What is *not* here is not missing from M7; it moved. The per-function
+simulation campaign, gate 6's composition, gate 7's binding of the proofs to
+the artifact, and gate 0's L-4 and L-5 all belong to M7R, for the reasons
+section 10 gives and on the schedule DESIGN.md section 9 sets. The tag
+annotation says the same, so a reader who has the tag and not this file
+still learns where the rest went.
+
+The earlier tag `m7-foundation-20260806` stays where it is, on `25f4325`. It
+records the state when gate 2 was still open, which was true when it was cut
+and is a boundary worth keeping; moving it would make it say something it
+never said.
 
 The next proof session should not open with L-4. L-4 is owed eventually,
 but it reveals nothing about whether the 80-function simulation campaign is
@@ -860,16 +880,30 @@ What landed:
   default is the one occurrence spelled out where it stands instead, because
   its body belongs to the mutual induction and a lemma outside the block
   could not mention it;
+* `decodeEnum_enumJ`, `decodeStruct_structJ`, `decodeConstDecl_constDeclJ`
+  and `decodeFunc_funcJ`, the three lifted list companions beside them, the
+  four `mapD` inversions and `decodeProgram_programJ` on top: the fifth
+  family, and the statement itself. `optD_optTyJ` comes with them, for a
+  function's return type, which is the schema's fifth and last optional
+  field;
+* `sortBy_of_sortedNames`, which is the one genuinely new obligation the
+  family brought. `programJ` orders the four declaration lists by name and a
+  decoder cannot undo a sort, so `Program.Canonical` requires them ordered
+  already and this cancels the sort against that premise;
+* the artifact's premise, checked rather than stated. `Tir/Artifact.lean`
+  decides `Program.Canonical` on the decoded artifact and finds it true, and
+  records that its `decodeDepth` is inside the fuel `decode` passes. Both
+  are `#guard`, which is the interpreter and not the kernel.
 
 What that cost, because what is left wants an estimate rather than a guess:
 222 code lines at the type-family checkpoint, of which 80 are the seven type
 clauses and the rest is shared; 269 with the two constant prerequisites
 added; 436 with the constants family in; 867 with expressions and places in
-and the type family's own evidence beside it; and 1387 with the statements
-in. Every clause spends the shared part rather than growing it. Almost every
-object the printer builds has the schema's own keys rather than a program's,
-so `jobj`'s sort and the map's order both *compute* — `simp [jobj,
-List.mergeSort]` runs them, and the `closed`/`need` chain after that is
+and the type family's own evidence beside it; 1387 with the statements in;
+and 1735 finished. Every clause spends the shared part rather than growing
+it. Almost every object the printer builds has the schema's own keys rather
+than a program's, so `jobj`'s sort and the map's order both *compute* — `simp
+[jobj, List.mergeSort]` runs them, and the `closed`/`need` chain after that is
 `rfl`. The two clauses whose keys are a program's own — a constant's fields
 and a struct value's — are where `jFields_mkObj_perm` is spent, and they are
 the only two the schema has.
@@ -914,15 +948,41 @@ and nothing about the fuel needed proving. And the four optional fields cost
 one of two lemmas and only the switch default, whose body belongs to the
 mutual induction, had to be spelled out where it stands.
 
-The declarations and the program are fewer forms but bring one genuinely new
-obligation — `programJ` sorts the four declaration lists by name, so
-`Program.Canonical` has to require them *strictly* ordered by name the way
-`SortedKeys` orders object members, which rules out duplicate declaration
-names as well as undoing the sort, and it has to carry each declaration's
-own canonicality underneath. That premise then has to be shown true of the
-artifact rather than merely stated of it, and if the kernel cannot reduce
-`decide` over 2.8 MB the check stays a `#guard` — which is the interpreter
-and not the kernel, and has to be written down as such wherever the result
-is quoted. Then `decodeDepth`, the composed theorem, and the artifact check.
-That is what is left. Gate 2 is started and is not closed, and M7 does not
-get its tag until it is.
+The declarations came to 348 code lines, and the bill has the opposite shape
+to the statements'. The four inversions are 149 of it: 21 for the enum, 41
+for the struct, 18 for the constant, and 69 for the function, which is nearly
+half of the four on its own. The function is wide because a parameter's mode
+is the one field in the schema written from a `Bool` rather than from a
+constructor, so its list companion splits on it and the two halves are the
+same nineteen lines twice. The rest is 84 of scaffolding, 38 for the four list
+inversions, 27 for the program, 13 for the fifth optional field and 37 for
+the evidence.
+
+The obligation this section named beforehand as the genuinely new one turned
+out to be four lines. `List.mergeSort_of_pairwise` asks for no order
+typeclass at all, and on strings `a ≤ b` *is* `¬ b < a`, so the bridge from a
+strict premise to the printer's non-strict comparator is `String.lt_asymm`
+and nothing else. That is a miss in the opposite direction to the
+clause-count one and a cheaper kind: what was named as a new mechanism turned
+out to be a library lemma over a definitional unfolding.
+
+Strictness is also more than the theorem needs, and the section should not
+pretend otherwise. A merge sort leaves equal keys where it found them, so a
+merely non-decreasing premise would cancel the sort just as well and would
+make the theorem cover slightly more. Strict is there because a program with
+two declarations of one name is a program `Program.enum?` cannot read — it
+takes the first match — and the file now checks that rather than asserting
+it: `duplicateSample` is two enums of one name, it survives the round trip
+intact under a `#guard`, and `Program.Canonical` refuses it in the example
+beside it. Which of the two premises is load-bearing is evidence, not prose.
+
+The artifact's premise is checked and not proved, as expected.
+`Tir/Artifact.lean` decides `Program.Canonical` on the decoded artifact in
+under a second and records that its `decodeDepth` of twelve is inside the
+fuel `decode` passes, which is the input's length. Both are `#guard`, so both
+are the interpreter; a kernel `decide` over 2.8 MB and a `native_decide`
+axiom are the two prices this project declined, and the results should be
+quoted as checks wherever they appear.
+
+Gate 2's semantic half is closed. The syntactic half stays where the top of
+this section put it, covered by gate 3's byte comparison and `PrintCheck`'s.

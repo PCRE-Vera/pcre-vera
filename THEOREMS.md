@@ -325,20 +325,22 @@ say is what they say and nothing beyond it.
     | I-1  | proved                 | Tir/Syntax.lean, Tir/Interp.lean,    |
     |      |                        | Tir/Exec.lean; Tir/Stable.lean,      |
     |      |                        | runs_stable and runs_unique          |
-    | I-2  | checked; the theorem   | Tir/Print.lean, Tir/Decode.lean;     |
-    |      | started, not finished  | Tir/PrintCheck.lean holds the        |
-    |      |                        | printer to serialize.dumps byte for  |
+    | I-2  | the semantic half      | Tir/Print.lean, Tir/Decode.lean;     |
+    |      | proved; the syntactic  | Tir/PrintCheck.lean holds the        |
+    |      | half stays a check     | printer to serialize.dumps byte for  |
     |      |                        | byte and round-trips the toy         |
     |      |                        | programs both ways, with negative    |
-    |      |                        | cases. Tir/RoundTrip.lean proves the |
-    |      |                        | Json.mkObj bridge and inverts the    |
-    |      |                        | type, constant, expression, place    |
-    |      |                        | and statement decoders; the          |
-    |      |                        | declarations and the program are     |
-    |      |                        | outstanding. The step from printed   |
-    |      |                        | text to a parsed value stays a check |
-    |      |                        | rather than a theorem. PLAN-M7.md    |
-    |      |                        | section 11                           |
+    |      |                        | cases. Tir/RoundTrip.lean proves     |
+    |      |                        | decodeProgram_programJ, so the       |
+    |      |                        | decoder inverts the printer's tree   |
+    |      |                        | for every canonical program.         |
+    |      |                        | Tir/Artifact.lean settles that       |
+    |      |                        | premise on the artifact by           |
+    |      |                        | reduction, which is the interpreter  |
+    |      |                        | and not the kernel. The step from    |
+    |      |                        | printed text to a parsed value stays |
+    |      |                        | a check rather than a theorem.       |
+    |      |                        | PLAN-M7.md section 11                |
     | I-3  | proved by elaborating  | Tir/Artifact.lean: the 2.8 MB of     |
     |      |                        | gen/engine.tir.json decode and print |
     |      |                        | back to the same bytes, and the      |

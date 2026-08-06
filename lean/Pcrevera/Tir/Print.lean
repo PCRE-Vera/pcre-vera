@@ -330,7 +330,7 @@ def funcJ (d : Func) : JVal :=
     ("ret", optTyJ d.ret),
     ("body", .arr (bodyJ d.body))]
 
-private def sortBy {α : Type} (key : α → String) (l : List α) : List α :=
+def sortBy {α : Type} (key : α → String) (l : List α) : List α :=
   l.mergeSort fun a b => key a ≤ key b
 
 /-- The schema number of TIR-SPEC.md section 14. -/

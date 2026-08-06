@@ -526,7 +526,7 @@ def decodeFunc (n : Nat) (j : Json) : D Func := do
   return ⟨name, ← go raw, ret,
     ← decodeBody n (← jArr (← need fs "a function" "body") "a function body")⟩
 
-private def mapD {α β : Type} (f : α → D β) : List α → D (List β)
+def mapD {α β : Type} (f : α → D β) : List α → D (List β)
   | [] => .ok []
   | x :: rest => do
       let y ← f x

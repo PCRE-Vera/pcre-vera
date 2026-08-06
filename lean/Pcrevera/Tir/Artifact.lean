@@ -1,4 +1,4 @@
-import Pcrevera.Tir.Decode
+import Pcrevera.Tir.RoundTrip
 
 /-!
 # The frozen artifact, decoded and printed back (I-3)
@@ -44,5 +44,31 @@ def artifact : D Program := decode artifactText
 #guard match artifact with | .ok _ => true | .error _ => false
 
 #guard match artifact with | .ok p => print p == artifactText | .error _ => false
+
+/-! ## Gate 2's premise, on this artifact
+
+`Tir/RoundTrip.lean` proves the decoder inverts the printer for every
+canonical program, and canonicality is decidable, so whether *this* program is
+one of them is a question a machine can answer. Answering it is what turns a
+theorem about every canonical program into a statement about the artifact the
+backends were generated from: the four declaration lists really are strictly
+name-ordered, every name really is an identifier, and every struct value's
+members really are in key order.
+
+What follows is the interpreter's answer and not the kernel's. `#guard`
+evaluates by compiled reduction; a kernel proof would be `by decide` over 2.8
+megabytes of program, or `native_decide` and an axiom this project does not
+spend. So this is evidence of the same kind as the round trip above it, and it
+should be quoted that way — the theorem is proved, the premise is checked.
+
+The second guard is the budget. `decode` passes the input's length as fuel,
+which is enormous next to what the nesting actually needs, and this says so
+rather than leaving it to be assumed. -/
+
+#guard match artifact with | .ok p => decide p.Canonical | .error _ => false
+
+#guard match artifact with
+  | .ok p => decodeDepth p ≤ artifactText.length
+  | .error _ => false
 
 end Pcrevera.Tir

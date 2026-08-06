@@ -894,3 +894,19 @@ is in the `show` and rewrite it with an equation proved separately — which
 is what `optD_optExprJ` and `optD_optPlaceJ` are, and what the `have` in
 the switch clause does for the one occurrence whose decoder argument is a
 lambda.
+
+## A lambda inside a `show` needs its binder type where a statement's does not
+
+`decodeStruct_go`'s statement writes `fields.map fun f => jobj [("name",
+.str f.name), ("type", tyJ f.ty)]` and elaborates without complaint. The
+same expression inside the `show` that spells out the reduced do-block does
+not — the file spells its binder `g` there, to keep it clear of the clause's
+own `f` — and it fails on the projection with "type of `g` is not known",
+offering every `.name` in scope as a suggestion. The expected type is the
+difference — in the statement, `= .ok fields` pins `List.map`'s element type
+before the lambda is visited, while a `show` elaborates the whole do-block
+against a goal that is not unified yet, so the lambda arrives first with
+nothing to go on. Writing `fun (f : Field) =>` costs one annotation and
+removes the ordering question. The three list companions of the declaration
+family all want it; nothing earlier in the file did, because no earlier
+printer clause maps a lambda over a list.

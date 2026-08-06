@@ -6,20 +6,24 @@ import Pcrevera.Tir.Decode
 
 `Tir/PrintCheck.lean` runs the round trip on the programs there happen to be,
 and gate 3 runs it on the artifact. This file is where that becomes a theorem
-about every canonical program — and it is under way rather than finished.
-What is here is the bridge to `Lean.Json` and the first four of the five
-decoder families: the types, the constants, the expressions and places, and
-the statements. The declarations and the program itself are outstanding, and
-PLAN-M7.md section 11 says what they are expected to cost.
+about every canonical program. `decodeProgram_programJ` is the statement, and
+under it are the bridge to `Lean.Json` and the five decoder families the
+schema has: the types, the constants, the expressions and places, the
+statements, and the declarations that carry them.
 
-What the finished theorem will not cover either, and this is the honest
-boundary, is the step from the printed text to a `Json` value. `decode` calls
-`Lean.Json.parse`, and relating that parser to `renderJ` is a
-parser-correctness development rather than a structural induction. So the
-statement starts one step in, at the tree `programJ` builds, and `jsonOf` is
-the bridge — the same `Json.mkObj` a parser would produce from a canonical
-document. Gate 3's byte-level check is what covers the remaining step, on the
-artifact and on the toy programs.
+What the theorem does not cover, and this is the honest boundary, is the step
+from the printed text to a `Json` value. `decode` calls `Lean.Json.parse`, and
+relating that parser to `renderJ` is a parser-correctness development rather
+than a structural induction. So the statement starts one step in, at the tree
+`programJ` builds, and `jsonOf` is the bridge — the same `Json.mkObj` a parser
+would produce from a canonical document. Gate 3's byte-level check is what
+covers the remaining step, on the artifact and on the toy programs.
+
+Every canonicality predicate here carries a decision procedure, which is not a
+convenience. The theorem is about canonical programs and the artifact is one
+program, so somebody has to settle the premise on it; `Tir/Artifact.lean` does
+that by reduction, and a `Canonical` no machine could settle would be a
+premise that could only ever be stated.
 -/
 
 namespace Pcrevera.Tir
@@ -1791,5 +1795,520 @@ example : ¬ (Stmt.copy (.var "not a name") (.litBool true)).Canonical := by
 example : decodeStmt (stmtDepth stmtSample) (jsonOf (stmtJ stmtSample))
     = .ok stmtSample :=
   decodeStmt_stmtJ _ _ (Nat.le_refl _) (by decide)
+
+/-! ## Declarations and the program
+
+The fifth family and the last. It is also the shortest, because a declaration
+is a record rather than a tree: an enum holds names, a struct holds fields, a
+constant holds a type and a value, and a function holds parameters, a return
+type and a body. Every one of those is a family already proved, so a clause
+here is a `show` and a handful of rewrites over work that is done.
+
+What is new sits at the top. `programJ` sorts the four declaration lists by
+name before printing them, and a sort is not something a decoder can undo — it
+reads back the order it was handed. So `Program.Canonical` has to say the
+lists arrived sorted, and `sortBy_of_sortedNames` is where that premise gets
+spent.
+
+That premise is *strict*, which is more than the sort needs: a merge sort
+leaves equal keys where it found them, so merely non-decreasing would cancel
+it just as well. Strict is what the schema means by a declaration list —
+`Program.func?` takes the first match, so a second function of the same name
+is a declaration nothing can reach.
+
+The inner lists carry no ordering premise at all. A struct's fields, a
+function's parameters and an enum's variants are printed as arrays, and an
+array keeps the order it was given, which is the reason a switch's arms went
+unconstrained in the family before this one. -/
+
+/-- Strictly increasing by name. The four declaration lists of a program are
+the only arrays in the schema the printer sorts, so they are the only ones
+that need this. -/
+def SortedNames {α : Type} (key : α → String) (l : List α) : Prop :=
+  l.Pairwise fun a b => key a < key b
+
+instance {α : Type} (key : α → String) (l : List α) :
+    Decidable (SortedNames key l) :=
+  inferInstanceAs (Decidable (l.Pairwise _))
+
+/-- The printer's sort is the identity on a list that is sorted already.
+
+`sortBy` compares with `≤` where the premise gives `<`, and on strings those
+are one negation apart — `a ≤ b` *is* `¬ b < a` — so the asymmetry of `<` is
+the whole of the bridge between them. -/
+theorem sortBy_of_sortedNames {α : Type} {key : α → String} {l : List α}
+    (h : SortedNames key l) : sortBy key l = l :=
+  List.mergeSort_of_pairwise
+    (h.imp fun hab => decide_eq_true (String.lt_asymm hab))
+
+/-- Every element of a list, in the shape the list decoders recurse in.
+
+The earlier families spell this out one list at a time, because their element
+predicate is mutually recursive with the list one and a parameter cannot carry
+that. Nothing about a declaration is mutually recursive, so the seven lists
+below share a combinator instead. -/
+def EachCanonical {α : Type} (P : α → Prop) : List α → Prop
+  | [] => True
+  | x :: rest => P x ∧ EachCanonical P rest
+
+instance decEachCanonical {α : Type} {P : α → Prop} [inst : DecidablePred P] :
+    (l : List α) → Decidable (EachCanonical P l)
+  | [] => isTrue trivial
+  | x :: rest => @instDecidableAnd _ _ (inst x) (decEachCanonical rest)
+
+/-- The identifier check as a predicate, so that a list of bare names — an
+enum's variants — is `EachCanonical` like every other list here. -/
+def IsName (s : String) : Prop := isIdentifier s = true
+
+instance (s : String) : Decidable (IsName s) :=
+  inferInstanceAs (Decidable (isIdentifier s = true))
+
+/-! ### Depths
+
+`decodeEnum` is the one decoder in the file that takes no budget at all — an
+enum holds names, and a name costs nothing to read — so enums are missing
+from `decodeDepth` rather than contributing zero to it. -/
+
+def fieldsDepth : List Field → Nat
+  | [] => 0
+  | f :: rest => max (tyDepth f.ty) (fieldsDepth rest)
+
+def paramsDepth : List Param → Nat
+  | [] => 0
+  | p :: rest => max (tyDepth p.ty) (paramsDepth rest)
+
+def optTyDepth : Option Ty → Nat
+  | none => 0
+  | some t => tyDepth t
+
+def structDepth (d : StructDecl) : Nat := fieldsDepth d.fields
+
+def constDeclDepth (d : ConstDecl) : Nat :=
+  max (tyDepth d.ty) (constDepth d.value)
+
+def funcDepth (d : Func) : Nat :=
+  max (paramsDepth d.params) (max (optTyDepth d.ret) (bodyDepth d.body))
+
+def structsDepth : List StructDecl → Nat
+  | [] => 0
+  | d :: rest => max (structDepth d) (structsDepth rest)
+
+def constDeclsDepth : List ConstDecl → Nat
+  | [] => 0
+  | d :: rest => max (constDeclDepth d) (constDeclsDepth rest)
+
+def funcsDepth : List Func → Nat
+  | [] => 0
+  | d :: rest => max (funcDepth d) (funcsDepth rest)
+
+/-- The budget a whole program costs, which is what the composed theorem asks
+the caller for. -/
+def decodeDepth (p : Program) : Nat :=
+  max (structsDepth p.structs)
+    (max (constDeclsDepth p.consts) (funcsDepth p.funcs))
+
+/-! ### Canonicality -/
+
+def Field.Canonical (f : Field) : Prop := IsName f.name ∧ f.ty.Canonical
+
+def Param.Canonical (p : Param) : Prop := IsName p.name ∧ p.ty.Canonical
+
+def OptTyCanonical : Option Ty → Prop
+  | none => True
+  | some t => t.Canonical
+
+def EnumDecl.Canonical (d : EnumDecl) : Prop :=
+  IsName d.name ∧ EachCanonical IsName d.variants
+
+def StructDecl.Canonical (d : StructDecl) : Prop :=
+  IsName d.name ∧ EachCanonical Field.Canonical d.fields
+
+def ConstDecl.Canonical (d : ConstDecl) : Prop :=
+  IsName d.name ∧ d.ty.Canonical ∧ d.value.Canonical
+
+def Func.Canonical (d : Func) : Prop :=
+  IsName d.name ∧ EachCanonical Param.Canonical d.params ∧
+    OptTyCanonical d.ret ∧ BodyCanonical d.body
+
+/-- What a whole program has to satisfy: the four declaration lists strictly
+ordered by name, and every declaration in them canonical in its own right. -/
+def Program.Canonical (p : Program) : Prop :=
+  (SortedNames EnumDecl.name p.enums ∧
+    EachCanonical EnumDecl.Canonical p.enums) ∧
+  (SortedNames StructDecl.name p.structs ∧
+    EachCanonical StructDecl.Canonical p.structs) ∧
+  (SortedNames ConstDecl.name p.consts ∧
+    EachCanonical ConstDecl.Canonical p.consts) ∧
+  (SortedNames Func.name p.funcs ∧ EachCanonical Func.Canonical p.funcs)
+
+instance decFieldCanonical (f : Field) : Decidable f.Canonical :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+instance decParamCanonical (p : Param) : Decidable p.Canonical :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+instance decOptTyCanonical : (o : Option Ty) → Decidable (OptTyCanonical o)
+  | none => isTrue trivial
+  | some t => decTyCanonical t
+
+instance decEnumDeclCanonical (d : EnumDecl) : Decidable d.Canonical :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+instance decStructDeclCanonical (d : StructDecl) : Decidable d.Canonical :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+instance decConstDeclCanonical (d : ConstDecl) : Decidable d.Canonical :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+instance decFuncCanonical (d : Func) : Decidable d.Canonical :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+instance decProgramCanonical (p : Program) : Decidable p.Canonical :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+/-! ### The fifth optional field
+
+A function's return type, and the last one the schema has. It does not go
+through the object-or-array fact the statement family's four did, because a
+type can print as a bare string — `"u32"` is a type, and it is not `null`
+for a different reason. -/
+
+private theorem isNull_jsonOf_str {s : String} :
+    (jsonOf (.str s)).isNull = false := by rw [jsonOf.eq_def]; rfl
+
+private theorem isNull_jsonOf_tyJ {t : Ty} :
+    (jsonOf (tyJ t)).isNull = false := by
+  cases t <;> first | exact isNull_jsonOf_str | exact isNull_jsonOf_jobj
+
+theorem optD_optTyJ (n : Nat) : ∀ (o : Option Ty),
+    optTyDepth o ≤ n → OptTyCanonical o →
+    optD (jsonOf (optTyJ o)) (decodeTy n) = .ok o
+  | none, _, _ => rfl
+  | some t, h, hc => by
+      rw [optTyJ]
+      exact optD_some isNull_jsonOf_tyJ
+        (decodeTy_tyJ n t (by simp only [optTyDepth] at h; omega) hc)
+
+/-! ### The four declarations
+
+Each is a record with a companion for the one list it owns. The companions are
+`decodeEnum.go` and the two beside it, which are the local recursions of
+`Tir/Decode.lean` seen from outside: a `let rec` in a `do` block is lifted to a
+definition of its own, and its captured budget becomes its first argument. -/
+
+theorem decodeEnum_go : ∀ (vs : List String), EachCanonical IsName vs →
+    decodeEnum.go (jsonOfList (vs.map JVal.str)) = .ok vs
+  | [], _ => rfl
+  | v :: rest, hc => by
+      rw [List.map_cons, jsonOfList, decodeEnum.go, jName_str hc.1, ok_bind,
+        decodeEnum_go rest hc.2]
+      rfl
+
+theorem decodeEnum_enumJ (d : EnumDecl) (hc : d.Canonical) :
+    decodeEnum (jsonOf (enumJ d)) = .ok d := by
+  rw [enumJ, jsonOf_jobj_fields (l' := [("name", JVal.str d.name),
+    ("variants", .arr (d.variants.map JVal.str))])
+    (by simp [jobj, List.mergeSort])]
+  simp only [jsonOfFields]
+  show (do
+    let name ← jName (jsonOf (JVal.str d.name)) "an enum name"
+    let raw ← jArr (jsonOf (JVal.arr (d.variants.map JVal.str)))
+      "the variants of an enum"
+    let vs ← decodeEnum.go raw
+    .ok (⟨name, vs⟩ : EnumDecl)) = .ok d
+  rw [jName_str hc.1, ok_bind, jArr_arr, ok_bind, decodeEnum_go d.variants hc.2]
+  rfl
+
+theorem decodeStruct_go (n : Nat) : ∀ (fields : List Field),
+    fieldsDepth fields ≤ n → EachCanonical Field.Canonical fields →
+    decodeStruct.go n (jsonOfList (fields.map fun f =>
+      jobj [("name", .str f.name), ("type", tyJ f.ty)])) = .ok fields
+  | [], _, _ => rfl
+  | f :: rest, h, hc => by
+      simp only [List.map_cons, jsonOfList]
+      rw [decodeStruct.go, jsonOf_jobj_fields
+        (l' := [("name", JVal.str f.name), ("type", tyJ f.ty)])
+        (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let fname ← jName (jsonOf (JVal.str f.name)) "a field name"
+        let ty ← decodeTy n (jsonOf (tyJ f.ty))
+        let xs ← decodeStruct.go n (jsonOfList (rest.map fun (g : Field) =>
+          jobj [("name", .str g.name), ("type", tyJ g.ty)]))
+        .ok ((⟨fname, ty⟩ : Field) :: xs)) = .ok (f :: rest)
+      rw [jName_str hc.1.1, ok_bind,
+        decodeTy_tyJ n f.ty (by simp only [fieldsDepth] at h; omega) hc.1.2,
+        ok_bind,
+        decodeStruct_go n rest (by simp only [fieldsDepth] at h; omega) hc.2]
+      rfl
+
+theorem decodeStruct_structJ (n : Nat) (d : StructDecl)
+    (h : structDepth d ≤ n) (hc : d.Canonical) :
+    decodeStruct n (jsonOf (structJ d)) = .ok d := by
+  rw [structJ, jsonOf_jobj_fields
+    (l' := [("fields", .arr (d.fields.map fun (f : Field) =>
+        jobj [("name", .str f.name), ("type", tyJ f.ty)])),
+      ("name", JVal.str d.name)])
+    (by simp [jobj, List.mergeSort])]
+  simp only [jsonOfFields]
+  show (do
+    let name ← jName (jsonOf (JVal.str d.name)) "a struct name"
+    let raw ← jArr (jsonOf (JVal.arr (d.fields.map fun (f : Field) =>
+      jobj [("name", .str f.name), ("type", tyJ f.ty)])))
+      "the fields of a struct"
+    let fields ← decodeStruct.go n raw
+    .ok (⟨name, fields⟩ : StructDecl)) = .ok d
+  rw [jName_str hc.1, ok_bind, jArr_arr, ok_bind,
+    decodeStruct_go n d.fields (by simp only [structDepth] at h; omega) hc.2]
+  rfl
+
+theorem decodeConstDecl_constDeclJ (n : Nat) (d : ConstDecl)
+    (h : constDeclDepth d ≤ n) (hc : d.Canonical) :
+    decodeConstDecl n (jsonOf (constDeclJ d)) = .ok d := by
+  rw [constDeclJ, jsonOf_jobj_fields (l' := [("name", JVal.str d.name),
+    ("type", tyJ d.ty), ("value", constJ d.value)])
+    (by simp [jobj, List.mergeSort])]
+  simp only [jsonOfFields]
+  show (do
+    let name ← jName (jsonOf (JVal.str d.name)) "a constant name"
+    let ty ← decodeTy n (jsonOf (tyJ d.ty))
+    let value ← decodeConst n (jsonOf (constJ d.value))
+    .ok (⟨name, ty, value⟩ : ConstDecl)) = .ok d
+  rw [jName_str hc.1, ok_bind,
+    decodeTy_tyJ n d.ty (by simp only [constDeclDepth] at h; omega) hc.2.1,
+    ok_bind,
+    decodeConst_constJ n d.value (by simp only [constDeclDepth] at h; omega)
+      hc.2.2]
+  rfl
+
+/-- A parameter's mode is the one field in the schema written from a `Bool`
+rather than from a constructor, so the clause splits on it and the two halves
+read back the two words. -/
+theorem decodeFunc_go (n : Nat) : ∀ (params : List Param),
+    paramsDepth params ≤ n → EachCanonical Param.Canonical params →
+    decodeFunc.go n (jsonOfList (params.map fun p =>
+      jobj [("name", .str p.name), ("type", tyJ p.ty),
+        ("mode", .str (if p.inout then "inout" else "in"))])) = .ok params
+  | [], _, _ => rfl
+  | ⟨pname, pty, false⟩ :: rest, h, hc => by
+      simp only [List.map_cons, jsonOfList]
+      rw [decodeFunc.go, jsonOf_jobj_fields
+        (l' := [("mode", JVal.str "in"), ("name", .str pname),
+          ("type", tyJ pty)]) (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let name ← jName (jsonOf (JVal.str pname)) "a parameter name"
+        let ty ← decodeTy n (jsonOf (tyJ pty))
+        let xs ← decodeFunc.go n (jsonOfList (rest.map fun (q : Param) =>
+          jobj [("name", .str q.name), ("type", tyJ q.ty),
+            ("mode", .str (if q.inout then "inout" else "in"))]))
+        .ok ((⟨name, ty, false⟩ : Param) :: xs))
+          = .ok (⟨pname, pty, false⟩ :: rest)
+      rw [jName_str hc.1.1, ok_bind,
+        decodeTy_tyJ n pty (by simp only [paramsDepth] at h; omega) hc.1.2,
+        ok_bind,
+        decodeFunc_go n rest (by simp only [paramsDepth] at h; omega) hc.2]
+      rfl
+  | ⟨pname, pty, true⟩ :: rest, h, hc => by
+      simp only [List.map_cons, jsonOfList]
+      rw [decodeFunc.go, jsonOf_jobj_fields
+        (l' := [("mode", JVal.str "inout"), ("name", .str pname),
+          ("type", tyJ pty)]) (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let name ← jName (jsonOf (JVal.str pname)) "a parameter name"
+        let ty ← decodeTy n (jsonOf (tyJ pty))
+        let xs ← decodeFunc.go n (jsonOfList (rest.map fun (q : Param) =>
+          jobj [("name", .str q.name), ("type", tyJ q.ty),
+            ("mode", .str (if q.inout then "inout" else "in"))]))
+        .ok ((⟨name, ty, true⟩ : Param) :: xs))
+          = .ok (⟨pname, pty, true⟩ :: rest)
+      rw [jName_str hc.1.1, ok_bind,
+        decodeTy_tyJ n pty (by simp only [paramsDepth] at h; omega) hc.1.2,
+        ok_bind,
+        decodeFunc_go n rest (by simp only [paramsDepth] at h; omega) hc.2]
+      rfl
+
+theorem decodeFunc_funcJ (n : Nat) (d : Func) (h : funcDepth d ≤ n)
+    (hc : d.Canonical) : decodeFunc n (jsonOf (funcJ d)) = .ok d := by
+  rw [funcJ, jsonOf_jobj_fields (l' := [("body", .arr (bodyJ d.body)),
+    ("name", JVal.str d.name), ("params", .arr (d.params.map fun (p : Param) =>
+      jobj [("name", .str p.name), ("type", tyJ p.ty),
+        ("mode", .str (if p.inout then "inout" else "in"))])),
+    ("ret", optTyJ d.ret)]) (by simp [jobj, List.mergeSort])]
+  simp only [jsonOfFields]
+  show (do
+    let name ← jName (jsonOf (JVal.str d.name)) "a function name"
+    let raw ← jArr (jsonOf (JVal.arr (d.params.map fun (p : Param) =>
+      jobj [("name", .str p.name), ("type", tyJ p.ty),
+        ("mode", .str (if p.inout then "inout" else "in"))])))
+      "the parameters of a function"
+    let ret ← optD (jsonOf (optTyJ d.ret)) (decodeTy n)
+    let ps ← decodeFunc.go n raw
+    let braw ← jArr (jsonOf (JVal.arr (bodyJ d.body))) "a function body"
+    let body ← decodeBody n braw
+    .ok (⟨name, ps, ret, body⟩ : Func)) = .ok d
+  rw [jName_str hc.1, ok_bind, jArr_arr, ok_bind,
+    optD_optTyJ n d.ret (by simp only [funcDepth] at h; omega) hc.2.2.1,
+    ok_bind, decodeFunc_go n d.params (by simp only [funcDepth] at h; omega) hc.2.1,
+    ok_bind, jArr_arr, ok_bind,
+    decodeBody_bodyJ n d.body (by simp only [funcDepth] at h; omega) hc.2.2.2]
+  rfl
+
+/-! ### The four lists, and the program -/
+
+theorem mapD_enumJ : ∀ (l : List EnumDecl), EachCanonical EnumDecl.Canonical l →
+    mapD decodeEnum (jsonOfList (l.map enumJ)) = .ok l
+  | [], _ => rfl
+  | d :: rest, hc => by
+      rw [List.map_cons, jsonOfList, mapD, decodeEnum_enumJ d hc.1, ok_bind,
+        mapD_enumJ rest hc.2]
+      rfl
+
+theorem mapD_structJ (n : Nat) : ∀ (l : List StructDecl),
+    structsDepth l ≤ n → EachCanonical StructDecl.Canonical l →
+    mapD (decodeStruct n) (jsonOfList (l.map structJ)) = .ok l
+  | [], _, _ => rfl
+  | d :: rest, h, hc => by
+      rw [List.map_cons, jsonOfList, mapD,
+        decodeStruct_structJ n d (by simp only [structsDepth] at h; omega) hc.1,
+        ok_bind,
+        mapD_structJ n rest (by simp only [structsDepth] at h; omega) hc.2]
+      rfl
+
+theorem mapD_constDeclJ (n : Nat) : ∀ (l : List ConstDecl),
+    constDeclsDepth l ≤ n → EachCanonical ConstDecl.Canonical l →
+    mapD (decodeConstDecl n) (jsonOfList (l.map constDeclJ)) = .ok l
+  | [], _, _ => rfl
+  | d :: rest, h, hc => by
+      rw [List.map_cons, jsonOfList, mapD,
+        decodeConstDecl_constDeclJ n d
+          (by simp only [constDeclsDepth] at h; omega) hc.1,
+        ok_bind,
+        mapD_constDeclJ n rest
+          (by simp only [constDeclsDepth] at h; omega) hc.2]
+      rfl
+
+theorem mapD_funcJ (n : Nat) : ∀ (l : List Func),
+    funcsDepth l ≤ n → EachCanonical Func.Canonical l →
+    mapD (decodeFunc n) (jsonOfList (l.map funcJ)) = .ok l
+  | [], _, _ => rfl
+  | d :: rest, h, hc => by
+      rw [List.map_cons, jsonOfList, mapD,
+        decodeFunc_funcJ n d (by simp only [funcsDepth] at h; omega) hc.1,
+        ok_bind, mapD_funcJ n rest (by simp only [funcsDepth] at h; omega) hc.2]
+      rfl
+
+/-- Gate 2's semantic half, whole: what the printer built, the decoder reads
+back. The schema number is written from `schema` and compared against it, so
+it costs the premise nothing; the four sorts are undone by the four ordering
+conditions; and everything else was proved in the four families above. -/
+theorem decodeProgram_programJ (n : Nat) (p : Program) (h : decodeDepth p ≤ n)
+    (hc : p.Canonical) : decodeProgram n (jsonOf (programJ p)) = .ok p := by
+  rw [programJ, sortBy_of_sortedNames hc.1.1, sortBy_of_sortedNames hc.2.1.1,
+    sortBy_of_sortedNames hc.2.2.1.1, sortBy_of_sortedNames hc.2.2.2.1,
+    jsonOf_jobj_fields (l' := [("consts", .arr (p.consts.map constDeclJ)),
+      ("enums", .arr (p.enums.map enumJ)), ("funcs", .arr (p.funcs.map funcJ)),
+      ("structs", .arr (p.structs.map structJ)), ("tir", JVal.int schema)])
+      (by simp [jobj, List.mergeSort])]
+  simp only [jsonOfFields]
+  show (do
+    let es ← jArr (jsonOf (JVal.arr (p.enums.map enumJ))) "enums"
+    let enums ← mapD decodeEnum es
+    let ss ← jArr (jsonOf (JVal.arr (p.structs.map structJ))) "structs"
+    let structs ← mapD (decodeStruct n) ss
+    let cs ← jArr (jsonOf (JVal.arr (p.consts.map constDeclJ))) "consts"
+    let consts ← mapD (decodeConstDecl n) cs
+    let fs ← jArr (jsonOf (JVal.arr (p.funcs.map funcJ))) "funcs"
+    let funcs ← mapD (decodeFunc n) fs
+    .ok (⟨enums, structs, consts, funcs⟩ : Program)) = .ok p
+  rw [jArr_arr, ok_bind, mapD_enumJ p.enums hc.1.2, ok_bind, jArr_arr, ok_bind,
+    mapD_structJ n p.structs (by simp only [decodeDepth] at h; omega) hc.2.1.2,
+    ok_bind, jArr_arr, ok_bind,
+    mapD_constDeclJ n p.consts (by simp only [decodeDepth] at h; omega)
+      hc.2.2.1.2,
+    ok_bind, jArr_arr, ok_bind,
+    mapD_funcJ n p.funcs (by simp only [decodeDepth] at h; omega) hc.2.2.2.2]
+  rfl
+
+/-! ### The predicate, on a program
+
+One declaration of each kind, and the lists that have to be ordered are in
+order while the lists that do not have to be are deliberately not: the
+struct's fields read `tag` before `kids`, the function's parameters `xs`
+before `acc`, and the enum's variants `red` before `blue`. All three come
+back as they went in, which is what "an array keeps what an object would have
+lost" means once it is checked rather than asserted.
+
+The depth is four, and the chain that sets it runs through a function rather
+than through any declaration of its own: `count`'s body, its `return`, the
+`len`, the `field`, and the `var` at the bottom, which is what runs out when
+the budget is three.
+
+What the ordering premise buys is worth showing rather than saying, so the
+next-to-last guard prints a program whose enums are in the wrong order and
+decodes it back. The round trip succeeds, and lands on a *different* program
+— the sorted one. That is the failure the premise rules out, and it is a
+silent failure: nothing errors, the answer is simply not what went in.
+
+The last guard is the other side, and it is where this predicate is
+knowingly stronger than the theorem needs. Two enums of one name survive the
+round trip intact, because a merge sort leaves equal keys where it found
+them, and `Program.Canonical` refuses them anyway. Ordering is what the sort
+needs; *strict* ordering is what the schema needs, since `Program.enum?`
+takes the first match and the second declaration is one nothing can reach.
+Saying which of the two premises is load-bearing is the point of having both
+guards. -/
+
+private def progSample : Program where
+  enums := [⟨"color", ["red", "blue"]⟩, ⟨"mode", ["fast"]⟩]
+  structs :=
+    [⟨"node", [⟨"tag", .enum "color"⟩, ⟨"kids", .vec (.struct "leaf") 4⟩]⟩]
+  consts := [⟨"limit", .int .u32, .int 7⟩,
+    ⟨"table", .vec (.int .u8) 2, .elems [.int 1, .int 2]⟩]
+  funcs := [
+    ⟨"count",
+      [⟨"xs", .vec (.struct "node") 8, false⟩, ⟨"acc", .int .counter, true⟩],
+      some (.int .u32),
+      [.returnS (some (.len (.field (.var "xs") "kids")))]⟩,
+    ⟨"reset", [], none, [.assign (.var "acc") (.litInt .u32 0)]⟩]
+
+#guard decodeDepth progSample == 4
+#guard (decodeProgram 3 (jsonOf (programJ progSample))).toOption.isNone
+
+example : progSample.Canonical := by decide
+
+example : ¬ Program.Canonical ⟨[⟨"b", []⟩, ⟨"a", []⟩], [], [], []⟩ := by decide
+
+example : ¬ Program.Canonical ⟨[⟨"not a name", []⟩], [], [], []⟩ := by decide
+
+example : ¬ Program.Canonical ⟨[⟨"a", ["not a variant"]⟩], [], [], []⟩ := by
+  decide
+
+example : ¬ Program.Canonical
+    ⟨[], [⟨"s", [⟨"f", .enum "not a name"⟩]⟩], [], []⟩ := by decide
+
+example : ¬ Program.Canonical
+    ⟨[], [], [], [⟨"f", [], none, [.letS "not a name" (.int .u8) none]⟩]⟩ := by
+  decide
+
+example : decodeProgram (decodeDepth progSample) (jsonOf (programJ progSample))
+    = .ok progSample :=
+  decodeProgram_programJ _ _ (Nat.le_refl _) (by decide)
+
+private def unsortedSample : Program := ⟨[⟨"b", []⟩, ⟨"a", []⟩], [], [], []⟩
+
+#guard match decodeProgram 1 (jsonOf (programJ unsortedSample)) with
+  | .ok q => q == ⟨[⟨"a", []⟩, ⟨"b", []⟩], [], [], []⟩
+  | .error _ => false
+
+private def duplicateSample : Program :=
+  ⟨[⟨"a", ["x"]⟩, ⟨"a", ["y"]⟩], [], [], []⟩
+
+example : ¬ duplicateSample.Canonical := by decide
+
+#guard match decodeProgram 1 (jsonOf (programJ duplicateSample)) with
+  | .ok q => q == duplicateSample
+  | .error _ => false
 
 end Pcrevera.Tir
