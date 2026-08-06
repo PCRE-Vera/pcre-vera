@@ -61,3 +61,5 @@ import Pcrevera.Tir.Decode
 import Pcrevera.Tir.Artifact
 import Pcrevera.Tir.Step
 import Pcrevera.Tir.Region
+import Pcrevera.Tir.RegionKids
+import Pcrevera.Tir.PikeTake

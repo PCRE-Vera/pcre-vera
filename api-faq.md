@@ -692,3 +692,65 @@ value.
 
 Copy the element into a local first and pass the local. It costs a `let` and
 it is what the caller meant anyway.
+
+## `rw` finishes with a weaker `rfl` than the `rfl` tactic
+
+A `rw` chain whose endpoint is definitionally equal but not syntactically
+equal — `List.map markVal #[].toList` against
+`List.map markVal (List.replicate 0 none32)`, or a `let`-bearing definition
+against its unfolding — can leave the goal open even though `rfl` closes it.
+`rw` tries its terminal `rfl` at reducible transparency; the tactic works at
+default transparency and unfolds plain `def`s. The fix is one explicit `rfl`
+line after the chain, not a change to the chain.
+
+## Tactic-block arguments elaborate before unification pins their goals
+
+`rw [evalExpr_subOne (by omega) (by omega) hst.i]` failed with omega staring
+at a goal about metavariables: the `(by omega)` side conditions are
+elaborated before the trailing hypothesis has told the elaborator what `k`
+is. Naming the instantiation — `evalExpr_subOne (k := m + 2) (by omega) …` —
+makes the side goals concrete before omega runs. Same story for any lemma
+whose implicit arguments are only determined by a later explicit one.
+
+## `do`-notation and explicit `.bind` are different terms
+
+`Res.ok_bind` is stated for `>>=`, so it does not rewrite
+`(readPlace …).bind fun _ => .ok ()` even though that is the same function:
+`resolvePlace` spells `Res.bind` directly. A `simp only [Res.bind,
+Res.ok_bind]` covers both spellings; either alone makes no progress on the
+other's term.
+
+## `by_contra` is not in core Lean or Batteries
+
+It is a Mathlib tactic, and this project depends on Batteries but not on
+Mathlib, so it is not available. The replacement is `rcases Nat.lt_or_ge a b with h | h` for an arithmetic
+trichotomy, or `Classical.byContradiction` spelled out where the goal is
+not decidable. Same for `omega`-adjacent conveniences: `omega` itself is
+core, `positivity` and friends are not.
+
+## `rw` closes goals at reducible transparency, and match motives are not reducible
+
+Two `match` expressions that print identically can still leave a goal open
+after `rw`, because they elaborate to different auxiliary matchers — one
+from unfolding the definition under proof, one from the `have` that states
+it. They are defeq only at default transparency, which is what the `rfl`
+tactic uses and what `rw`'s closing step does not. The fix is an explicit
+`rfl` line after the rewrite chain.
+
+## An `_` in `exact f _ x h` is solved from the goal, not from `h`
+
+`exact ih _ st' h` failed where `have hrest := ih _ st' h; exact hrest`
+succeeded. With an expected type in play, elaboration unifies the
+placeholder against the *goal* first, picks the wrong state, and then
+reports the mismatch on `h`. Elaborating the application without an
+expected type lets `h` determine it, and the final `exact` still gets to
+use definitional unfolding.
+
+## A lemma with a metavariable-typed side condition elaborates it too early
+
+`evalStmts_cons_abrupt (by simp) h` reports `⊢ ¬?f = Flow.normal`: the
+`(by simp)` runs before `h` has fixed which flow it is. Naming the implicit
+— `evalStmts_cons_abrupt (f := .ret (some (.int 4294967295))) (by simp) h`
+— makes the side goal concrete. The general rule is that tactic blocks in
+argument position are elaborated in argument order, so a `by` that depends
+on a later argument needs its implicit pinned.

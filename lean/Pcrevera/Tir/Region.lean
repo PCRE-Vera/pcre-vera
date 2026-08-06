@@ -57,10 +57,13 @@ have failed to satisfy it for no reason worth having. -/
 def RegionsAt (v : Value) (regions : Array Region) : Prop :=
   ∃ cap, v = .frozen (.seq marksMax (regions.toList.map regionValue) cap)
 
+/-- How one mark is spelled as a TIR value. -/
+def markVal (n : Nat) : Value := .int (Int.ofNat n)
+
 /-- One of the two mark arrays, related the same way and for the same
 reason. -/
 def MarksAt (v : Value) (marks : Array Nat) : Prop :=
-  ∃ cap, v = .seq marksMax (marks.toList.map fun (n : Nat) => Value.int (Int.ofNat n)) cap
+  ∃ cap, v = .seq marksMax (marks.toList.map markVal) cap
 
 theorem MarksAt.empty : MarksAt (.seq marksMax [] 0) (#[] : Array Nat) :=
   ⟨0, rfl⟩
@@ -69,8 +72,7 @@ theorem MarksAt.empty : MarksAt (.seq marksMax [] 0) (#[] : Array Nat) :=
 growth rule decided on. -/
 theorem MarksAt.push {v : Value} {marks : Array Nat} {n : Nat} {cap : Nat}
     (h : v = .seq marksMax
-      ((marks.toList.map fun (m : Nat) => Value.int (Int.ofNat m))
-        ++ [Value.int (Int.ofNat n)]) cap) :
+      (marks.toList.map markVal ++ [markVal n]) cap) :
     MarksAt v (marks.push n) := by
   refine ⟨cap, ?_⟩
   rw [h]
@@ -106,5 +108,39 @@ private def artifactFunc (name : String) : Option Func :=
         ⟨"sibs", .vec (.int .u32) marksMax, true⟩]
 
 #guard (artifactFunc "region_kids").map Func.ret == some none
+
+/-- `region_kids` as a term the kernel can reduce. The simulation proof has
+to step through the body, and the decoder's definitions are well-founded
+rather than structural, so the kernel cannot unfold the decoded artifact.
+The guard below holds this term to the artifact, so it is a transcription
+with a check, not a statement from memory. -/
+def regionKidsFunc : Func :=
+  { name := "region_kids"
+    params := [⟨"regions", .frozen (.vec (.struct "Region") marksMax), false⟩,
+               ⟨"kids", .vec (.int .u32) marksMax, true⟩,
+               ⟨"sibs", .vec (.int .u32) marksMax, true⟩]
+    ret := none
+    body := [
+      .letS "total" (.int .u32) (some (.len (.var "regions"))),
+      .letS "i" (.int .u32) (some (.litInt .u32 0)),
+      .whileS (.cmp .lt (.var "i") (.var "total"))
+        (.bin .sub (.cast (.int .counter) (.var "total"))
+          (.cast (.int .counter) (.var "i")))
+        [.push (.var "kids") (.litInt .u32 4294967295),
+         .push (.var "sibs") (.litInt .u32 4294967295),
+         .assign (.var "i") (.bin .add (.var "i") (.litInt .u32 1))],
+      .assign (.var "i") (.var "total"),
+      .whileS (.cmp .gt (.var "i") (.litInt .u32 1))
+        (.cast (.int .counter) (.var "i"))
+        [.assign (.var "i") (.bin .sub (.var "i") (.litInt .u32 1)),
+         .letS "tmp1" (.int .u32)
+           (some (.field (.index (.var "regions") (.var "i")) "parent")),
+         .assign (.index (.var "sibs") (.var "i"))
+           (.index (.var "kids") (.var "tmp1")),
+         .assign (.index (.var "kids") (.var "tmp1")) (.var "i")]] }
+
+-- The transcription is the artifact's function, byte for byte through the
+-- decoder, or the build stops here.
+#guard artifactFunc "region_kids" == some regionKidsFunc
 
 end Pcrevera.Tir

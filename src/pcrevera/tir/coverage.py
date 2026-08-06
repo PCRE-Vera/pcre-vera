@@ -54,7 +54,9 @@ PARSER_REASON = (
 
 # name -> the simulation theorem that discharges it, once it exists. Gate 5
 # fills this in; an empty value is work still owed.
-THEOREMS: dict[str, str] = {}
+THEOREMS: dict[str, str] = {
+    "region_kids": "Pcrevera.Tir.region_kids_simulates",
+}
 
 
 def callees(func: ir.Func) -> set[str]:

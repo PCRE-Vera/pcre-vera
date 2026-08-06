@@ -253,6 +253,56 @@ theorem get_set_read {n : String} {t : Ty} {v w : Value}
     readPlace p (env.set n w) (.var n) = .ok w :=
   readPlace_var (Env.get_set_self h)
 
+/-- A `let` puts its local in front, so the new name reads back what it was
+given... -/
+theorem Env.get_declare_self {n : String} {t : Ty} {v : Value} :
+    (env.declare n t v).get n = some ⟨t, v⟩ := by
+  simp [Env.declare, Env.get, getAssoc]
+
+/-- ...and every other name reads past it. A body that declares in a loop
+shadows the previous round's local rather than replacing it, which is why an
+invariant is stated over what `get` answers and not over the store's shape. -/
+theorem Env.get_declare_other {n m : String} {t : Ty} {v : Value}
+    (hne : m ≠ n) : (env.declare n t v).get m = env.get m := by
+  simp [Env.declare, Env.get, getAssoc, Ne.symm hne]
+
+/-- Reading through an index into a sequence held by a local: in bounds, it
+is the element. -/
+theorem readPlace_index_var {s : String} {e : Expr} {t : Ty} {m : Nat}
+    {items : List Value} {c : Nat} {k : Nat}
+    (hs : env.get s = some ⟨t, .seq m items c⟩)
+    (he : evalExpr p env e = .ok (.int k)) (hk : k < items.length) :
+    readPlace p env (.index (.var s) e) = .ok (items[k]!) := by
+  rw [readPlace]
+  rw [readPlace_var hs, Res.ok_bind, he]
+  simp only [Res.ok_bind, asSeq]
+  rw [if_pos ⟨Int.natCast_nonneg k, by simpa using hk⟩]
+  simp
+
+/-- Writing through one: in bounds, the local holds the sequence with that
+element replaced, and nothing else in the store moves. -/
+theorem writePlace_index_var {s : String} {e : Expr} {t : Ty} {m : Nat}
+    {items : List Value} {c : Nat} {k : Nat} {v : Value}
+    (hs : env.get s = some ⟨t, .seq m items c⟩)
+    (he : evalExpr p env e = .ok (.int k)) (hk : k < items.length) :
+    writePlace p env (.index (.var s) e) v
+      = .ok (env.set s (.seq m (items.set k v) c)) := by
+  rw [writePlace]
+  rw [readPlace_var hs, Res.ok_bind, he]
+  simp only [Res.ok_bind]
+  rw [if_pos ⟨Int.natCast_nonneg k, by simpa using hk⟩]
+  rw [writePlace_var hs]
+  simp
+
+/-- `u32` arithmetic that stays in range is arithmetic: the wrap does
+nothing. Every index bump in the artifact leans on this. -/
+theorem wrap_u32_eq {v : Int} (h0 : 0 ≤ v) (hlt : v < 4294967296) :
+    IntTy.wrap .u32 v = v := by
+  have hp : (2 : Int) ^ 32 = 4294967296 := by decide
+  simp only [IntTy.wrap, IntTy.width, IntTy.signed, hp,
+    Int.emod_eq_of_lt h0 hlt, Bool.false_and]
+  rw [if_neg (by simp), if_neg (by omega : ¬v < 0)]
+
 /-! ## Growing a sequence
 
 The one statement whose answer is not only the value it was handed: a push
@@ -279,6 +329,43 @@ theorem evalStmt_push {pl : Place} {e : Expr} {m : Nat}
   · exact absurd hfull (by omega)
   · rfl
 
+/-- A push into a sequence held by a local, all in one motion: the common
+case every write-heavy body is made of. -/
+theorem evalStmt_push_var {s : String} {t : Ty} {m : Nat} {items : List Value}
+    {c : Nat} {v : Value} {e : Expr}
+    (hs : env.get s = some ⟨t, .seq m items c⟩)
+    (hv : evalExpr p env e = .ok v) (hroom : items.length < m) :
+    evalStmt fuel p (.push (.var s) e) env
+      = some (.ok (env.set s (.seq m (items ++ [v])
+          (if items.length = c then grown m c else c)), .normal)) := by
+  rw [evalStmt_push (readPlace_var hs) hv hroom, writePlace_var hs]
+  rfl
+
+/-- An assignment to a local, likewise. -/
+theorem evalStmt_assign_var {s : String} {t : Ty} {cur v : Value} {e : Expr}
+    (hs : env.get s = some ⟨t, cur⟩) (hv : evalExpr p env e = .ok v) :
+    evalStmt fuel p (.assign (.var s) e) env
+      = some (.ok (env.set s v, .normal)) := by
+  rw [evalStmt_assign_ok (readPlace_var hs), hv, Res.ok_bind, writePlace_var hs]
+  rfl
+
+/-- An assignment through an index into a sequence held by a local: the
+destination resolves first, section 13's order, and in bounds the local ends
+up holding the sequence with one element replaced. -/
+theorem evalStmt_assign_index_var {s : String} {e ve : Expr} {t : Ty} {m : Nat}
+    {items : List Value} {c : Nat} {k : Nat} {val : Value}
+    (hs : env.get s = some ⟨t, .seq m items c⟩)
+    (he : evalExpr p env e = .ok (.int k)) (hk : k < items.length)
+    (hv : evalExpr p env ve = .ok val) :
+    evalStmt fuel p (.assign (.index (.var s) e) ve) env
+      = some (.ok (env.set s (.seq m (items.set k val) c), .normal)) := by
+  rw [evalStmt_assign, resolvePlace, readPlace_index_var hs he hk]
+  simp only [Res.bind, Res.ok_bind]
+  rw [hv]
+  simp only [Res.ok_bind]
+  rw [writePlace_index_var hs he hk]
+  rfl
+
 /-! ## Reading the store
 
 The other half of what a simulation proof spends: an expression is a read
@@ -300,6 +387,35 @@ theorem evalExpr_litBool {b : Bool} :
 theorem evalExpr_len {e : Expr} {m : Nat} {items : List Value} {c : Nat}
     (h : evalExpr p env e = .ok (.seq m items c)) :
     evalExpr p env (.len e) = .ok (.int items.length) := by
+  rw [evalExpr.eq_def]
+  simp only []
+  rw [h]
+  rfl
+
+/-- The same, through a freeze: `len` looks inside, because `asSeq` does. -/
+theorem evalExpr_len_frozen {e : Expr} {m : Nat} {items : List Value} {c : Nat}
+    (h : evalExpr p env e = .ok (.frozen (.seq m items c))) :
+    evalExpr p env (.len e) = .ok (.int items.length) := by
+  rw [evalExpr.eq_def]
+  simp only []
+  rw [h]
+  rfl
+
+/-- `cap` reads the room a sequence was given, which the reservation
+discipline makes part of the state a simulation tracks. -/
+theorem evalExpr_cap {e : Expr} {m : Nat} {items : List Value} {c : Nat}
+    (h : evalExpr p env e = .ok (.seq m items c)) :
+    evalExpr p env (.cap e) = .ok (.int c) := by
+  rw [evalExpr.eq_def]
+  simp only []
+  rw [h]
+  rfl
+
+/-- Boolean negation never needs the operand's type, so neither does the
+lemma. -/
+theorem evalExpr_not {e : Expr} {b : Bool}
+    (h : evalExpr p env e = .ok (.bool b)) :
+    evalExpr p env (.un .not e) = .ok (.bool !b) := by
   rw [evalExpr.eq_def]
   simp only []
   rw [h]
@@ -339,6 +455,20 @@ theorem evalExpr_index {b i : Expr} {m : Nat} {items : List Value} {c : Nat}
   rw [if_pos ⟨Int.natCast_nonneg k, by simpa using hk⟩]
   simp
 
+/-- Indexing a frozen sequence reads the element as it is stored: the freeze
+is on the container, and what wraps the element is decided at the read that
+follows, not here. -/
+theorem evalExpr_index_frozen {b i : Expr} {m : Nat} {items : List Value}
+    {c : Nat} {k : Nat} (hb : evalExpr p env b = .ok (.frozen (.seq m items c)))
+    (hi : evalExpr p env i = .ok (.int k)) (hk : k < items.length) :
+    evalExpr p env (.index b i) = .ok (items[k]!) := by
+  rw [evalExpr.eq_def]
+  simp only []
+  rw [hb, hi]
+  simp only [Res.ok_bind, asSeq]
+  rw [if_pos ⟨Int.natCast_nonneg k, by simpa using hk⟩]
+  simp
+
 theorem evalExpr_field {b : Expr} {t : String} {fs : List (String × Value)}
     {name : String} {v : Value} (hb : evalExpr p env b = .ok (.struct t fs))
     (hv : getAssoc name fs = some v) :
@@ -348,6 +478,30 @@ theorem evalExpr_field {b : Expr} {t : String} {fs : List (String × Value)}
   rw [hb]
   simp only [Res.ok_bind]
   rw [hv]
+
+/-- A pop from a sequence held by one local into another: the last element
+out, the sequence one shorter, its capacity kept. -/
+theorem evalStmt_pop_var {s d : String} {t td : Ty} {m : Nat}
+    {items : List Value} {c : Nat} {last cur : Value} (hne : d ≠ s)
+    (hs : env.get s = some ⟨t, .seq m items c⟩)
+    (hd : env.get d = some ⟨td, cur⟩)
+    (hlast : items.getLast? = some last) :
+    evalStmt fuel p (.pop (.var s) (.var d)) env
+      = some (.ok ((env.set s (.seq m items.dropLast c)).set d last,
+          .normal)) := by
+  rw [evalStmt.eq_def]
+  simp only []
+  rw [readPlace_var hs]
+  simp only [Res.ok_bind]
+  rw [resolvePlace, readPlace_var hd]
+  simp only [Res.bind, Res.ok_bind]
+  rw [hlast]
+  simp only [Res.ok_bind]
+  rw [writePlace_var hs]
+  simp only [Res.ok_bind]
+  rw [writePlace_var (show (env.set s _).get d = some ⟨td, cur⟩ by
+    rw [Env.get_set_other hne]; exact hd)]
+  rfl
 
 /-! ## Calls, and the judgment they compose in -/
 
@@ -378,5 +532,67 @@ theorem runs_of_body {fn : String} {args : List Value} {callee : Func}
   rw [hn]
   simp only [outsOf, returned]
   cases flow <;> rfl
+
+/-- The other direction, which a caller's proof steps with: a callee whose
+contract is known in `Runs` makes its `call` statement a store update. The
+callee's frame is abstracted into the outs it left — some frame produced
+them, and the write-back below reads nothing else out of it. The budget is
+existential, so no caller quotes the callee's. -/
+theorem evalStmt_call_runs {fn : String} {callee : Func} {args : List Arg}
+    {dest : Option Place} {argVals outs : List Value} {ret : Option Value}
+    (hf : p.func? fn = some callee)
+    (hargs : evalArgs p env callee.params args = .ok argVals)
+    (hr : Runs p fn argVals (outs, ret)) :
+    ∃ n inner, outsOf callee.params inner = outs ∧
+      evalStmt n p (.call fn args dest) env
+        = some (do
+            let env' ← writeBack p inner callee.params args env
+            match dest, ret with
+            | none, _ => .ok (env', .normal)
+            | some d, some v => do
+                let env'' ← writePlace p env' d v
+                .ok (env'', .normal)
+            | some _, none =>
+                .bug s!"{fn} returned nothing into a destination") := by
+  obtain ⟨n, hn⟩ := hr
+  match n with
+  | 0 => rw [callFunc.eq_def] at hn; exact absurd hn (by simp)
+  | k + 1 =>
+      rw [callFunc.eq_def] at hn
+      simp only [] at hn
+      rw [hf] at hn
+      simp only [] at hn
+      cases hb : evalStmts k p callee.body (bindParams callee.params argVals) with
+      | none => rw [hb] at hn; exact absurd hn (by simp)
+      | some res =>
+          rw [hb] at hn
+          match res with
+          | .trap c => exact absurd hn (by simp)
+          | .bug w => exact absurd hn (by simp)
+          | .ok (inner, flow) =>
+              simp only [Option.some.injEq, Res.ok.injEq, Prod.mk.injEq] at hn
+              obtain ⟨houts, hret⟩ := hn
+              refine ⟨k + 1, inner, houts, ?_⟩
+              rw [evalStmt.eq_def]
+              simp only []
+              rw [hf]
+              simp only []
+              rw [hargs]
+              simp only []
+              rw [hb]
+              cases flow <;> (subst hret; rfl)
+
+/-- Reading one out back as a slot: an out that is not the default tells
+you the callee's frame really held that name. Every integer-valued out
+qualifies, which is what the write-back cares about. -/
+theorem slot_of_out {env : Env} {n : String} {x : Int}
+    (h : (match env.get n with
+          | some s => s.value | none => Value.bool false) = .int x) :
+    ∃ t, env.get n = some ⟨t, .int x⟩ := by
+  cases he : env.get n with
+  | none => rw [he] at h; exact absurd h (by simp)
+  | some s =>
+      rw [he] at h
+      exact ⟨s.ty, by rw [← h]⟩
 
 end Pcrevera.Tir

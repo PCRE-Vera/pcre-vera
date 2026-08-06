@@ -1,0 +1,2320 @@
+{
+  "artifact": "d60df8a5600a4a0d4d1d1ea21e90883eab44d35a8f71e1d5450daf0a61b5dd1f",
+  "counts": {
+    "families": {
+      "accessors": 6,
+      "arithmetic": 11,
+      "backtracker": 3,
+      "certificate": 16,
+      "compiler": 19,
+      "context": 2,
+      "dispatch": 3,
+      "meter": 1,
+      "pike": 12,
+      "tables": 7
+    },
+    "owed": 80,
+    "proved": 1
+  },
+  "functions": [
+    {
+      "callees": [
+        "newline_at"
+      ],
+      "closure": [
+        "newline_at"
+      ],
+      "depth": 1,
+      "family": "tables",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "at_line_end",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 6,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "sat_add"
+      ],
+      "closure": [
+        "sat_add"
+      ],
+      "depth": 1,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "bound_add",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 8,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "sat_mul"
+      ],
+      "closure": [
+        "sat_mul"
+      ],
+      "depth": 1,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "bound_mul",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 8,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "bound_mul"
+      ],
+      "closure": [
+        "bound_mul",
+        "sat_mul"
+      ],
+      "depth": 2,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "bound_pow",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 1,
+        "ifs": 3,
+        "loops": 1,
+        "statements": 14,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "tables",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "bsr_at",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 6,
+        "loops": 0,
+        "statements": 15,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "bt_run"
+      ],
+      "closure": [
+        "at_line_end",
+        "bsr_at",
+        "bt_run",
+        "charge_grow",
+        "class_has",
+        "ct",
+        "newline_at",
+        "newline_before",
+        "push_bt",
+        "word_edge",
+        "write_reg"
+      ],
+      "depth": 3,
+      "family": "dispatch",
+      "modes": {
+        "in": 7,
+        "inout": 2
+      },
+      "name": "bt_match",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 0,
+        "loops": 0,
+        "statements": 6,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "at_line_end",
+        "bsr_at",
+        "class_has",
+        "newline_at",
+        "newline_before",
+        "push_bt",
+        "word_edge",
+        "write_reg"
+      ],
+      "closure": [
+        "at_line_end",
+        "bsr_at",
+        "charge_grow",
+        "class_has",
+        "ct",
+        "newline_at",
+        "newline_before",
+        "push_bt",
+        "word_edge",
+        "write_reg"
+      ],
+      "depth": 2,
+      "family": "backtracker",
+      "modes": {
+        "in": 7,
+        "inout": 5
+      },
+      "name": "bt_run",
+      "shape": {
+        "call_sites": 16,
+        "calls_in_loops": 16,
+        "ifs": 49,
+        "loops": 7,
+        "statements": 274,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "poly_value"
+      ],
+      "closure": [
+        "bound_add",
+        "bound_mul",
+        "bound_pow",
+        "poly_value",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 4,
+      "family": "certificate",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "cert_bound",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 19,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "price_alt",
+        "price_call",
+        "price_repeat",
+        "price_span",
+        "region_kids"
+      ],
+      "closure": [
+        "bound_mul",
+        "bound_pow",
+        "poly_add",
+        "poly_mul",
+        "poly_norm",
+        "price_alt",
+        "price_call",
+        "price_repeat",
+        "price_span",
+        "region_kids",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 4,
+      "family": "certificate",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "cert_build",
+      "shape": {
+        "call_sites": 7,
+        "calls_in_loops": 5,
+        "ifs": 7,
+        "loops": 2,
+        "statements": 59,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "cert_shape",
+        "charge_call",
+        "pike_check",
+        "poly_ge",
+        "region_kids",
+        "scan_alt",
+        "scan_repeat",
+        "scan_span"
+      ],
+      "closure": [
+        "bound_mul",
+        "bound_pow",
+        "cert_shape",
+        "charge_call",
+        "pike_check",
+        "pike_hollow",
+        "pike_ok",
+        "pike_price",
+        "pike_room",
+        "poly_add",
+        "poly_eq",
+        "poly_ge",
+        "poly_mul",
+        "poly_norm",
+        "region_kids",
+        "sat_add",
+        "sat_mul",
+        "scan_alt",
+        "scan_repeat",
+        "scan_span",
+        "shape_alt",
+        "shape_repeat",
+        "shape_span"
+      ],
+      "depth": 4,
+      "family": "certificate",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "cert_check",
+      "shape": {
+        "call_sites": 13,
+        "calls_in_loops": 9,
+        "ifs": 23,
+        "loops": 2,
+        "statements": 96,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "cert_build",
+        "cert_check",
+        "cert_shape",
+        "pike_price"
+      ],
+      "closure": [
+        "bound_mul",
+        "bound_pow",
+        "cert_build",
+        "cert_check",
+        "cert_shape",
+        "charge_call",
+        "pike_check",
+        "pike_hollow",
+        "pike_ok",
+        "pike_price",
+        "pike_room",
+        "poly_add",
+        "poly_eq",
+        "poly_ge",
+        "poly_mul",
+        "poly_norm",
+        "price_alt",
+        "price_call",
+        "price_repeat",
+        "price_span",
+        "region_kids",
+        "sat_add",
+        "sat_mul",
+        "scan_alt",
+        "scan_repeat",
+        "scan_span",
+        "shape_alt",
+        "shape_repeat",
+        "shape_span"
+      ],
+      "depth": 5,
+      "family": "certificate",
+      "modes": {
+        "in": 1,
+        "inout": 4
+      },
+      "name": "cert_install",
+      "shape": {
+        "call_sites": 5,
+        "calls_in_loops": 0,
+        "ifs": 7,
+        "loops": 0,
+        "statements": 27,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "region_kids",
+        "shape_alt",
+        "shape_repeat",
+        "shape_span"
+      ],
+      "closure": [
+        "region_kids",
+        "shape_alt",
+        "shape_repeat",
+        "shape_span"
+      ],
+      "depth": 2,
+      "family": "certificate",
+      "modes": {
+        "in": 1,
+        "inout": 0
+      },
+      "name": "cert_shape",
+      "shape": {
+        "call_sites": 6,
+        "calls_in_loops": 5,
+        "ifs": 11,
+        "loops": 3,
+        "statements": 54,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "poly_add",
+        "poly_eq",
+        "poly_ge",
+        "poly_mul"
+      ],
+      "closure": [
+        "poly_add",
+        "poly_eq",
+        "poly_ge",
+        "poly_mul",
+        "poly_norm",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 2,
+      "family": "certificate",
+      "modes": {
+        "in": 3,
+        "inout": 1
+      },
+      "name": "charge_call",
+      "shape": {
+        "call_sites": 21,
+        "calls_in_loops": 0,
+        "ifs": 7,
+        "loops": 0,
+        "statements": 66,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "meter",
+      "modes": {
+        "in": 6,
+        "inout": 3
+      },
+      "name": "charge_grow",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 7,
+        "loops": 0,
+        "statements": 23,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "count_regs"
+      ],
+      "closure": [
+        "count_regs"
+      ],
+      "depth": 1,
+      "family": "compiler",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "check_fit",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 8,
+        "loops": 0,
+        "statements": 19,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "tables",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "class_has",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 0,
+        "loops": 0,
+        "statements": 3,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "close_region",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 4,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "cert_install",
+        "count_regs",
+        "generate",
+        "pike_ok"
+      ],
+      "closure": [
+        "bound_mul",
+        "bound_pow",
+        "cert_build",
+        "cert_check",
+        "cert_install",
+        "cert_shape",
+        "charge_call",
+        "check_fit",
+        "close_region",
+        "count_regs",
+        "drop_empty_region",
+        "emit",
+        "generate",
+        "mark_seen",
+        "new_rep",
+        "open_region",
+        "pike_check",
+        "pike_hollow",
+        "pike_ok",
+        "pike_price",
+        "pike_room",
+        "plan_lowering",
+        "poly_add",
+        "poly_eq",
+        "poly_ge",
+        "poly_mul",
+        "poly_norm",
+        "price_alt",
+        "price_call",
+        "price_repeat",
+        "price_span",
+        "push_job",
+        "push_patch",
+        "region_kids",
+        "sat_add",
+        "sat_mul",
+        "scan_alt",
+        "scan_first",
+        "scan_repeat",
+        "scan_span",
+        "shape_alt",
+        "shape_repeat",
+        "shape_span",
+        "size_node",
+        "walk_alt",
+        "walk_lowered",
+        "walk_repeat"
+      ],
+      "depth": 6,
+      "family": "compiler",
+      "modes": {
+        "in": 4,
+        "inout": 1
+      },
+      "name": "compile",
+      "shape": {
+        "call_sites": 5,
+        "calls_in_loops": 0,
+        "ifs": 5,
+        "loops": 0,
+        "statements": 56,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "count_regs",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 0,
+        "loops": 0,
+        "statements": 1,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "tables",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "ct",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 0,
+        "loops": 0,
+        "statements": 1,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "pike_room",
+        "poly_value",
+        "re_mem",
+        "re_pick",
+        "sat_add",
+        "sat_mul"
+      ],
+      "closure": [
+        "bound_add",
+        "bound_mul",
+        "bound_pow",
+        "cert_bound",
+        "pike_room",
+        "poly_value",
+        "re_bound",
+        "re_mem",
+        "re_pick",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 7,
+      "family": "context",
+      "modes": {
+        "in": 6,
+        "inout": 1
+      },
+      "name": "ctx_create",
+      "shape": {
+        "call_sites": 14,
+        "calls_in_loops": 0,
+        "ifs": 11,
+        "loops": 0,
+        "statements": 101,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "bt_run",
+        "pike_run"
+      ],
+      "closure": [
+        "at_line_end",
+        "bsr_at",
+        "bt_run",
+        "charge_grow",
+        "class_has",
+        "ct",
+        "newline_at",
+        "newline_before",
+        "pike_add",
+        "pike_defer",
+        "pike_drop",
+        "pike_park",
+        "pike_run",
+        "pike_take",
+        "pike_write",
+        "push_bt",
+        "word_edge",
+        "write_reg"
+      ],
+      "depth": 5,
+      "family": "context",
+      "modes": {
+        "in": 5,
+        "inout": 3
+      },
+      "name": "ctx_match",
+      "shape": {
+        "call_sites": 2,
+        "calls_in_loops": 0,
+        "ifs": 5,
+        "loops": 0,
+        "statements": 17,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "drop_empty_region",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 5,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 3,
+        "inout": 1
+      },
+      "name": "emit",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 6,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "check_fit",
+        "close_region",
+        "drop_empty_region",
+        "emit",
+        "open_region",
+        "plan_lowering",
+        "push_job",
+        "scan_first",
+        "walk_alt",
+        "walk_repeat"
+      ],
+      "closure": [
+        "check_fit",
+        "close_region",
+        "count_regs",
+        "drop_empty_region",
+        "emit",
+        "mark_seen",
+        "new_rep",
+        "open_region",
+        "plan_lowering",
+        "push_job",
+        "push_patch",
+        "scan_first",
+        "size_node",
+        "walk_alt",
+        "walk_lowered",
+        "walk_repeat"
+      ],
+      "depth": 3,
+      "family": "compiler",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "generate",
+      "shape": {
+        "call_sites": 33,
+        "calls_in_loops": 25,
+        "ifs": 12,
+        "loops": 1,
+        "statements": 89,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "mark_seen",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 9,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "bt_match",
+        "pike_match"
+      ],
+      "closure": [
+        "at_line_end",
+        "bsr_at",
+        "bt_match",
+        "bt_run",
+        "charge_grow",
+        "class_has",
+        "ct",
+        "newline_at",
+        "newline_before",
+        "pike_add",
+        "pike_defer",
+        "pike_drop",
+        "pike_match",
+        "pike_park",
+        "pike_run",
+        "pike_take",
+        "pike_write",
+        "push_bt",
+        "word_edge",
+        "write_reg"
+      ],
+      "depth": 6,
+      "family": "dispatch",
+      "modes": {
+        "in": 8,
+        "inout": 2
+      },
+      "name": "match",
+      "shape": {
+        "call_sites": 2,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 11,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 0,
+        "inout": 1
+      },
+      "name": "new_rep",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 7,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "tables",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "newline_at",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 12,
+        "loops": 0,
+        "statements": 26,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "tables",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "newline_before",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 12,
+        "loops": 0,
+        "statements": 25,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 2,
+        "inout": 1
+      },
+      "name": "open_region",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 6,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "at_line_end",
+        "newline_at",
+        "newline_before",
+        "pike_defer",
+        "pike_drop",
+        "pike_park",
+        "pike_write",
+        "word_edge"
+      ],
+      "closure": [
+        "at_line_end",
+        "charge_grow",
+        "ct",
+        "newline_at",
+        "newline_before",
+        "pike_defer",
+        "pike_drop",
+        "pike_park",
+        "pike_take",
+        "pike_write",
+        "word_edge"
+      ],
+      "depth": 3,
+      "family": "pike",
+      "modes": {
+        "in": 12,
+        "inout": 9
+      },
+      "name": "pike_add",
+      "shape": {
+        "call_sites": 50,
+        "calls_in_loops": 49,
+        "ifs": 60,
+        "loops": 1,
+        "statements": 187,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "pike_ok",
+        "pike_price",
+        "poly_eq",
+        "poly_ge"
+      ],
+      "closure": [
+        "pike_hollow",
+        "pike_ok",
+        "pike_price",
+        "pike_room",
+        "poly_eq",
+        "poly_ge",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 3,
+      "family": "pike",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "pike_check",
+      "shape": {
+        "call_sites": 6,
+        "calls_in_loops": 0,
+        "ifs": 10,
+        "loops": 0,
+        "statements": 35,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "charge_grow"
+      ],
+      "closure": [
+        "charge_grow"
+      ],
+      "depth": 1,
+      "family": "pike",
+      "modes": {
+        "in": 4,
+        "inout": 4
+      },
+      "name": "pike_defer",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 6,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "charge_grow"
+      ],
+      "closure": [
+        "charge_grow"
+      ],
+      "depth": 1,
+      "family": "pike",
+      "modes": {
+        "in": 3,
+        "inout": 5
+      },
+      "name": "pike_drop",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 3,
+        "loops": 0,
+        "statements": 11,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "pike",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "pike_hollow",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 3,
+        "loops": 2,
+        "statements": 39,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "pike_run"
+      ],
+      "closure": [
+        "at_line_end",
+        "charge_grow",
+        "class_has",
+        "ct",
+        "newline_at",
+        "newline_before",
+        "pike_add",
+        "pike_defer",
+        "pike_drop",
+        "pike_park",
+        "pike_run",
+        "pike_take",
+        "pike_write",
+        "word_edge"
+      ],
+      "depth": 5,
+      "family": "dispatch",
+      "modes": {
+        "in": 7,
+        "inout": 2
+      },
+      "name": "pike_match",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 0,
+        "loops": 0,
+        "statements": 10,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "pike_hollow"
+      ],
+      "closure": [
+        "pike_hollow"
+      ],
+      "depth": 1,
+      "family": "pike",
+      "modes": {
+        "in": 1,
+        "inout": 0
+      },
+      "name": "pike_ok",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 1,
+        "ifs": 3,
+        "loops": 2,
+        "statements": 16,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "charge_grow"
+      ],
+      "closure": [
+        "charge_grow"
+      ],
+      "depth": 1,
+      "family": "pike",
+      "modes": {
+        "in": 4,
+        "inout": 4
+      },
+      "name": "pike_park",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 6,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "pike_room",
+        "sat_add",
+        "sat_mul"
+      ],
+      "closure": [
+        "pike_room",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 2,
+      "family": "pike",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "pike_price",
+      "shape": {
+        "call_sites": 12,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 1,
+        "statements": 49,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "sat_add",
+        "sat_mul"
+      ],
+      "closure": [
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 1,
+      "family": "pike",
+      "modes": {
+        "in": 1,
+        "inout": 2
+      },
+      "name": "pike_room",
+      "shape": {
+        "call_sites": 19,
+        "calls_in_loops": 0,
+        "ifs": 4,
+        "loops": 0,
+        "statements": 63,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "class_has",
+        "newline_at",
+        "pike_add",
+        "pike_drop",
+        "pike_take",
+        "pike_write"
+      ],
+      "closure": [
+        "at_line_end",
+        "charge_grow",
+        "class_has",
+        "ct",
+        "newline_at",
+        "newline_before",
+        "pike_add",
+        "pike_defer",
+        "pike_drop",
+        "pike_park",
+        "pike_take",
+        "pike_write",
+        "word_edge"
+      ],
+      "depth": 4,
+      "family": "pike",
+      "modes": {
+        "in": 7,
+        "inout": 9
+      },
+      "name": "pike_run",
+      "shape": {
+        "call_sites": 19,
+        "calls_in_loops": 19,
+        "ifs": 42,
+        "loops": 8,
+        "statements": 211,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "charge_grow"
+      ],
+      "closure": [
+        "charge_grow"
+      ],
+      "depth": 1,
+      "family": "pike",
+      "modes": {
+        "in": 3,
+        "inout": 6
+      },
+      "name": "pike_take",
+      "shape": {
+        "call_sites": 2,
+        "calls_in_loops": 1,
+        "ifs": 4,
+        "loops": 1,
+        "statements": 21,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "pike_take"
+      ],
+      "closure": [
+        "charge_grow",
+        "pike_take"
+      ],
+      "depth": 2,
+      "family": "pike",
+      "modes": {
+        "in": 5,
+        "inout": 7
+      },
+      "name": "pike_write",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 3,
+        "loops": 1,
+        "statements": 19,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "size_node"
+      ],
+      "closure": [
+        "size_node"
+      ],
+      "depth": 1,
+      "family": "compiler",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "plan_lowering",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 1,
+        "ifs": 14,
+        "loops": 4,
+        "statements": 72,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "poly_norm",
+        "sat_add"
+      ],
+      "closure": [
+        "poly_norm",
+        "sat_add"
+      ],
+      "depth": 1,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 1
+      },
+      "name": "poly_add",
+      "shape": {
+        "call_sites": 6,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 22,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "poly_eq",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 6,
+        "loops": 0,
+        "statements": 13,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "poly_ge",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 6,
+        "loops": 0,
+        "statements": 13,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "poly_norm",
+        "sat_add",
+        "sat_mul"
+      ],
+      "closure": [
+        "poly_norm",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 1,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 1
+      },
+      "name": "poly_mul",
+      "shape": {
+        "call_sites": 32,
+        "calls_in_loops": 0,
+        "ifs": 25,
+        "loops": 0,
+        "statements": 117,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "arithmetic",
+      "modes": {
+        "in": 1,
+        "inout": 0
+      },
+      "name": "poly_norm",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 3,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "bound_add",
+        "bound_mul",
+        "bound_pow"
+      ],
+      "closure": [
+        "bound_add",
+        "bound_mul",
+        "bound_pow",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 3,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "poly_value",
+      "shape": {
+        "call_sites": 15,
+        "calls_in_loops": 0,
+        "ifs": 9,
+        "loops": 0,
+        "statements": 51,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "poly_add"
+      ],
+      "closure": [
+        "poly_add",
+        "poly_norm",
+        "sat_add"
+      ],
+      "depth": 2,
+      "family": "certificate",
+      "modes": {
+        "in": 1,
+        "inout": 4
+      },
+      "name": "price_alt",
+      "shape": {
+        "call_sites": 7,
+        "calls_in_loops": 7,
+        "ifs": 1,
+        "loops": 1,
+        "statements": 34,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "poly_add",
+        "poly_mul"
+      ],
+      "closure": [
+        "poly_add",
+        "poly_mul",
+        "poly_norm",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 2,
+      "family": "certificate",
+      "modes": {
+        "in": 2,
+        "inout": 2
+      },
+      "name": "price_call",
+      "shape": {
+        "call_sites": 17,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 54,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "bound_pow",
+        "poly_add",
+        "poly_mul",
+        "price_span"
+      ],
+      "closure": [
+        "bound_mul",
+        "bound_pow",
+        "poly_add",
+        "poly_mul",
+        "poly_norm",
+        "price_span",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 3,
+      "family": "certificate",
+      "modes": {
+        "in": 5,
+        "inout": 4
+      },
+      "name": "price_repeat",
+      "shape": {
+        "call_sites": 17,
+        "calls_in_loops": 0,
+        "ifs": 14,
+        "loops": 0,
+        "statements": 89,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "poly_add",
+        "poly_mul"
+      ],
+      "closure": [
+        "poly_add",
+        "poly_mul",
+        "poly_norm",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 2,
+      "family": "certificate",
+      "modes": {
+        "in": 5,
+        "inout": 4
+      },
+      "name": "price_span",
+      "shape": {
+        "call_sites": 9,
+        "calls_in_loops": 9,
+        "ifs": 3,
+        "loops": 1,
+        "statements": 60,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "charge_grow"
+      ],
+      "closure": [
+        "charge_grow"
+      ],
+      "depth": 1,
+      "family": "backtracker",
+      "modes": {
+        "in": 6,
+        "inout": 4
+      },
+      "name": "push_bt",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 8,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 2,
+        "inout": 1
+      },
+      "name": "push_job",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 6,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "push_patch",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 6,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "cert_bound",
+        "re_pick"
+      ],
+      "closure": [
+        "bound_add",
+        "bound_mul",
+        "bound_pow",
+        "cert_bound",
+        "poly_value",
+        "re_pick",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 5,
+      "family": "accessors",
+      "modes": {
+        "in": 4,
+        "inout": 0
+      },
+      "name": "re_bound",
+      "shape": {
+        "call_sites": 2,
+        "calls_in_loops": 0,
+        "ifs": 4,
+        "loops": 0,
+        "statements": 14,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "re_pick"
+      ],
+      "closure": [
+        "re_pick"
+      ],
+      "depth": 1,
+      "family": "accessors",
+      "modes": {
+        "in": 1,
+        "inout": 0
+      },
+      "name": "re_class",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 14,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "re_bound"
+      ],
+      "closure": [
+        "bound_add",
+        "bound_mul",
+        "bound_pow",
+        "cert_bound",
+        "poly_value",
+        "re_bound",
+        "re_pick",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 6,
+      "family": "accessors",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "re_cost",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 0,
+        "loops": 0,
+        "statements": 3,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "re_bound"
+      ],
+      "closure": [
+        "bound_add",
+        "bound_mul",
+        "bound_pow",
+        "cert_bound",
+        "poly_value",
+        "re_bound",
+        "re_pick",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 6,
+      "family": "accessors",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "re_mem",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 0,
+        "loops": 0,
+        "statements": 3,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "accessors",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "re_pick",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 3,
+        "loops": 0,
+        "statements": 9,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "re_bound"
+      ],
+      "closure": [
+        "bound_add",
+        "bound_mul",
+        "bound_pow",
+        "cert_bound",
+        "poly_value",
+        "re_bound",
+        "re_pick",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 6,
+      "family": "accessors",
+      "modes": {
+        "in": 3,
+        "inout": 0
+      },
+      "name": "re_stack",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 0,
+        "loops": 0,
+        "statements": 3,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 1,
+        "inout": 2
+      },
+      "name": "region_kids",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 0,
+        "loops": 2,
+        "statements": 12,
+        "switches": 0
+      },
+      "theorem": "Pcrevera.Tir.region_kids_simulates"
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 1
+      },
+      "name": "sat_add",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 1,
+        "loops": 0,
+        "statements": 4,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "arithmetic",
+      "modes": {
+        "in": 2,
+        "inout": 1
+      },
+      "name": "sat_mul",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 6,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "poly_add"
+      ],
+      "closure": [
+        "poly_add",
+        "poly_norm",
+        "sat_add"
+      ],
+      "depth": 2,
+      "family": "certificate",
+      "modes": {
+        "in": 2,
+        "inout": 3
+      },
+      "name": "scan_alt",
+      "shape": {
+        "call_sites": 7,
+        "calls_in_loops": 7,
+        "ifs": 1,
+        "loops": 1,
+        "statements": 34,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "mark_seen"
+      ],
+      "closure": [
+        "mark_seen"
+      ],
+      "depth": 1,
+      "family": "compiler",
+      "modes": {
+        "in": 0,
+        "inout": 1
+      },
+      "name": "scan_first",
+      "shape": {
+        "call_sites": 21,
+        "calls_in_loops": 20,
+        "ifs": 5,
+        "loops": 2,
+        "statements": 51,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "bound_pow",
+        "poly_add",
+        "poly_mul",
+        "scan_span"
+      ],
+      "closure": [
+        "bound_mul",
+        "bound_pow",
+        "poly_add",
+        "poly_mul",
+        "poly_norm",
+        "sat_add",
+        "sat_mul",
+        "scan_span"
+      ],
+      "depth": 3,
+      "family": "certificate",
+      "modes": {
+        "in": 6,
+        "inout": 3
+      },
+      "name": "scan_repeat",
+      "shape": {
+        "call_sites": 17,
+        "calls_in_loops": 0,
+        "ifs": 14,
+        "loops": 0,
+        "statements": 89,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "poly_add",
+        "poly_mul"
+      ],
+      "closure": [
+        "poly_add",
+        "poly_mul",
+        "poly_norm",
+        "sat_add",
+        "sat_mul"
+      ],
+      "depth": 2,
+      "family": "certificate",
+      "modes": {
+        "in": 6,
+        "inout": 3
+      },
+      "name": "scan_span",
+      "shape": {
+        "call_sites": 9,
+        "calls_in_loops": 9,
+        "ifs": 3,
+        "loops": 1,
+        "statements": 60,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "certificate",
+      "modes": {
+        "in": 4,
+        "inout": 1
+      },
+      "name": "shape_alt",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 12,
+        "loops": 1,
+        "statements": 39,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "shape_span"
+      ],
+      "closure": [
+        "shape_span"
+      ],
+      "depth": 1,
+      "family": "certificate",
+      "modes": {
+        "in": 5,
+        "inout": 1
+      },
+      "name": "shape_repeat",
+      "shape": {
+        "call_sites": 2,
+        "calls_in_loops": 0,
+        "ifs": 10,
+        "loops": 0,
+        "statements": 35,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "certificate",
+      "modes": {
+        "in": 5,
+        "inout": 1
+      },
+      "name": "shape_span",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 5,
+        "loops": 1,
+        "statements": 37,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [],
+      "closure": [],
+      "depth": 0,
+      "family": "compiler",
+      "modes": {
+        "in": 1,
+        "inout": 1
+      },
+      "name": "size_node",
+      "shape": {
+        "call_sites": 0,
+        "calls_in_loops": 0,
+        "ifs": 18,
+        "loops": 2,
+        "statements": 159,
+        "switches": 1
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "close_region",
+        "emit",
+        "open_region",
+        "push_job",
+        "push_patch"
+      ],
+      "closure": [
+        "close_region",
+        "emit",
+        "open_region",
+        "push_job",
+        "push_patch"
+      ],
+      "depth": 1,
+      "family": "compiler",
+      "modes": {
+        "in": 3,
+        "inout": 1
+      },
+      "name": "walk_alt",
+      "shape": {
+        "call_sites": 9,
+        "calls_in_loops": 0,
+        "ifs": 10,
+        "loops": 1,
+        "statements": 50,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "close_region",
+        "emit",
+        "new_rep",
+        "open_region",
+        "push_job"
+      ],
+      "closure": [
+        "close_region",
+        "emit",
+        "new_rep",
+        "open_region",
+        "push_job"
+      ],
+      "depth": 1,
+      "family": "compiler",
+      "modes": {
+        "in": 3,
+        "inout": 1
+      },
+      "name": "walk_lowered",
+      "shape": {
+        "call_sites": 11,
+        "calls_in_loops": 1,
+        "ifs": 7,
+        "loops": 1,
+        "statements": 59,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "close_region",
+        "emit",
+        "new_rep",
+        "open_region",
+        "push_job",
+        "walk_lowered"
+      ],
+      "closure": [
+        "close_region",
+        "emit",
+        "new_rep",
+        "open_region",
+        "push_job",
+        "walk_lowered"
+      ],
+      "depth": 2,
+      "family": "compiler",
+      "modes": {
+        "in": 3,
+        "inout": 1
+      },
+      "name": "walk_repeat",
+      "shape": {
+        "call_sites": 13,
+        "calls_in_loops": 0,
+        "ifs": 13,
+        "loops": 0,
+        "statements": 73,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "ct"
+      ],
+      "closure": [
+        "ct"
+      ],
+      "depth": 1,
+      "family": "tables",
+      "modes": {
+        "in": 2,
+        "inout": 0
+      },
+      "name": "word_edge",
+      "shape": {
+        "call_sites": 2,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 8,
+        "switches": 0
+      },
+      "theorem": ""
+    },
+    {
+      "callees": [
+        "charge_grow"
+      ],
+      "closure": [
+        "charge_grow"
+      ],
+      "depth": 1,
+      "family": "backtracker",
+      "modes": {
+        "in": 5,
+        "inout": 5
+      },
+      "name": "write_reg",
+      "shape": {
+        "call_sites": 1,
+        "calls_in_loops": 0,
+        "ifs": 2,
+        "loops": 0,
+        "statements": 8,
+        "switches": 0
+      },
+      "theorem": ""
+    }
+  ],
+  "sample": {
+    "rule": "among unproved owed functions with calls_in_loops >= 1 and call_sites >= 2, minimize statements + 10*loops; tie-break by more distinct callees, then fewer ifs, then name",
+    "selected": "pike_take",
+    "universe": [
+      {
+        "name": "pike_take",
+        "score": 31
+      },
+      {
+        "name": "price_alt",
+        "score": 44
+      },
+      {
+        "name": "scan_alt",
+        "score": 44
+      },
+      {
+        "name": "walk_lowered",
+        "score": 69
+      },
+      {
+        "name": "price_span",
+        "score": 70
+      },
+      {
+        "name": "scan_span",
+        "score": 70
+      },
+      {
+        "name": "scan_first",
+        "score": 71
+      },
+      {
+        "name": "cert_build",
+        "score": 79
+      },
+      {
+        "name": "cert_shape",
+        "score": 84
+      },
+      {
+        "name": "generate",
+        "score": 99
+      },
+      {
+        "name": "cert_check",
+        "score": 116
+      },
+      {
+        "name": "pike_add",
+        "score": 197
+      },
+      {
+        "name": "pike_run",
+        "score": 291
+      },
+      {
+        "name": "bt_run",
+        "score": 344
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@
     "declared": 122,
     "parser": 42,
     "post_parse": 80,
-    "proved": 0,
+    "proved": 1,
     "reachable": 122,
     "unreachable": 0
   },
@@ -328,7 +328,7 @@
     },
     {
       "name": "region_kids",
-      "theorem": ""
+      "theorem": "Pcrevera.Tir.region_kids_simulates"
     },
     {
       "name": "sat_add",

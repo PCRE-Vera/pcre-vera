@@ -2030,3 +2030,47 @@ overclaim. The fix is mechanical: a restated status should be copied from
 the ledger's own words, never re-derived from memory, and any word like
 "in" or "done" in a summary should be checkable against a row that says the
 same thing.
+
+## A rewrite that hit the argument list as well as the result
+
+What I got wrong: the read-out at the end of a simulation proof is
+`rw [← houts]`, turning the goal's `takeArgs st …` back into
+`outsOf params env` so that `runs_of_body`'s conclusion matches. On the
+paths where the function changes nothing — the refusals — the argument
+list and the result list are the *same term*, so the rewrite fired twice
+and left a statement that says the call ran on its own output.
+
+It type-checked as a goal and failed only against the hypothesis, which is
+luck rather than safety. The habit: when the two sides of a statement can
+coincide, rewrite in the hypothesis and `exact` it, rather than rewriting
+the goal to meet the hypothesis. `rw … at h` can only touch what is in `h`.
+
+## A case-analysis proof that depended on how `simp` had normalised first
+
+What I got wrong: I proved the capacity a growth charge answers by
+unfolding `chargeGrow` with a `simp only` that also unfolded the two
+growth constants, then peeling the four `if`s with four `split`s. It
+worked in one call site and broke in the other, because the extra lemmas
+let `simp` decide a condition the first version had left alone, so the
+fourth `split` found nothing to split.
+
+The lesson is not "pass fewer simp lemmas". It is that a proof shaped like
+"unfold, then peel exactly four layers" encodes the *normal form simp
+happened to produce*, which is not a stable interface. The replacement is
+`chargeGrow_cap`: one lemma that states what a successful charge says
+about the capacity, proved once by explicit `by_cases` on the two
+conditions that matter, and used by both sites. It is also now reusable by
+the other four callers, which the brittle version never could have been.
+
+## Stating a loop invariant with the wrong witness for a flag
+
+What I got wrong: the fill loop's invariant carries "`tmp3` holds some
+boolean", and I instantiated the witness as `false` on the path where the
+charge had just *succeeded* and written `true`. The error surfaced far from
+the cause, as an unsolved goal at the end of a long `refine`.
+
+Where the time went is the tell: an existential over a flag hides which
+value it is, so a wrong witness is only caught when the proof needs the
+value. If the invariant had said `tmp3` holds exactly the flag the last
+charge answered, the mistake would have been a type error at the point I
+made it.

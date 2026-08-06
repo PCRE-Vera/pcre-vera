@@ -393,18 +393,17 @@ next person reads the state and the intent in one place.
     |        | a dependency, so `make verify` deletes that one module's     |
     |        | build products first.                                        |
     +--------+--------------------------------------------------------------+
-    | gate 4 | Underway, parked at the last step. `Tir/Step.lean` is the    |
-    |        | statement and expression automation, `Tir/Region.lean` the   |
-    |        | value encoding with its artifact-read guards, and the store  |
-    |        | algebra — local reads after writes, `writePlace`, push — is  |
-    |        | proved. Outstanding: the two `region_kids` loop invariants   |
-    |        | and the simulation theorem against `R.regionKids`, whose     |
-    |        | cost is the number this gate exists to measure.              |
+    | gate 4 | Done. `Tir/RegionKids.lean` holds both loop invariants and   |
+    |        | `region_kids_simulates`: the `Runs` statement against        |
+    |        | `R.regionKids` from related inputs, under the parent-order   |
+    |        | premise the checker's shape pass supplies and the size       |
+    |        | bound the declared vec maximum supplies. Section 8 records   |
+    |        | the pattern and the cost as the gate 5 template.             |
     +--------+--------------------------------------------------------------+
     | gate 5 | The ledger is in and checked: `conformance/layer-i.json`,    |
-    |        | 80 functions owed a lemma, 42 parser-exclusive, 0 proved.    |
-    |        | The lemmas themselves are the milestone's bulk and are all   |
-    |        | outstanding.                                                 |
+    |        | 80 functions owed a lemma, 42 parser-exclusive, 1 proved —   |
+    |        | gate 4's. The 79 others are the milestone's bulk and are     |
+    |        | still outstanding.                                           |
     +--------+--------------------------------------------------------------+
     | gate 6 | Not started, and it cannot start before gate 5 closes.       |
     +--------+--------------------------------------------------------------+
@@ -461,3 +460,136 @@ is:
    completed foundation and a later refinement milestone, or redesign the
    simulation automation — an 80-lemma manual treadmill is the one path
    this plan rules out.
+
+All four steps are now done. Gate 4 is closed and reviewed (section 8),
+the ledger is stratified and a second sample proved (section 9), and the
+go/no-go is written down there.
+
+## 8. Gate 4, measured
+
+The number the gate existed to produce. The whole of it — the guarded
+transcription, the automation it drew out of `Tir/Step.lean`, both
+invariants, the end-to-end theorem, the review — cost one working session
+and six compile iterations, none of which stalled on anything semantic:
+the errors were constructor-name ambiguity, elaboration order around
+tactic-block arguments, and one genuinely missing premise, the size bound,
+which the proof surfaced and the statement now carries. `Tir/RegionKids.lean`
+is ~550 lines; `Tir/Step.lean` grew 110 lines of automation that is not
+`region_kids`-shaped at all — whole-statement steps (`evalStmt_push_var`,
+`evalStmt_assign_var`, `evalStmt_assign_index_var`), reads through frozen
+sequences, the `declare`/`get` algebra, and the in-range `u32` wrap.
+
+The template, which is what gate 5 follows:
+
+1. Transcribe the function as a term and `#guard` it against the decoded
+   artifact — never state it from memory. The guard failing is the build
+   telling you the artifact moved.
+
+2. One invariant `structure` per loop, stated over what `Env.get` answers
+   rather than over the store's shape — a body that declares in a loop
+   shadows the previous round's local instead of replacing it. Capacities
+   are existential where pushes happen and parameters where nothing grows.
+
+3. One per-round lemma per loop under a universal budget (`∀ f`, since a
+   straight-line body spends none), one loop lemma under an existential
+   one, and `evalWhile_mono` to join loops under `max` at the very end.
+   No statement anywhere quotes a fuel bound, which is `Runs` doing its
+   job.
+
+4. Intermediate stores named by `obtain ⟨env1, henv1⟩ : ∃ e, _ = e`, every
+   fact about them derived through the `get_set`/`get_declare` algebra,
+   and value spellings kept syntactic — `markVal n`, not a raw cast — so
+   rewriting connects. The get-chains are the verbose part; they grow with
+   statements times live locals and are entirely mechanical.
+
+What this prices: `region_kids` is three parameters, three locals, seven
+statements, two loops — and cost ~550 lines plus reusable automation. For
+this one function, the mechanical get-chain portion tracked statements
+times live locals; whether other control-flow and call shapes behave the
+same is exactly what remains unmeasured. In particular it does not price
+call composition — `region_kids` calls nothing — so the
+`Runs`-transitivity story that gate 5's VM functions live on is still
+unmeasured, which is exactly why section 7's step 3 samples a call-heavy
+function before extrapolating.
+
+## 9. The second sample, and the go/no-go
+
+Gate 4 priced a loop-and-store function that calls nothing. The question it
+could not answer is what a *call* costs, since gate 5's bulk is call-heavy.
+So the 80 owed functions were stratified mechanically — `conformance/layer-i-strata.json`,
+regenerated and compared by `tests/test_strata.py`, one row per function with
+its shape, parameter modes, callees, dependency depth and transitive
+closure — and a sample was chosen by a rule recorded in the report rather
+than by feel: among unproved functions with at least one call inside a loop
+and at least two call sites, minimise statements plus ten per loop. That
+picked `pike_take` (21 statements, 1 loop, 2 call sites, 1 distinct callee)
+over the provisionally suggested `pike_add` (187 statements, 49 in-loop
+calls), which the rule ranks twelfth of fourteen.
+
+`Tir/PikeTake.lean` proves `pike_take_simulates` against `Ref.pikeTake`,
+*conditionally* on `ChargeGrowSim` — the `Runs`-shaped contract for its one
+callee, which gate 5 owes `charge_grow` anyway. The ledger still reads 1 of
+80 and must: a conditional lemma counts when its callee premises are
+discharged and not before. To keep the hypothesis from being a wish, the
+contract is also run against the artifact: seven `#guard`s interpret the
+decoded `charge_grow` and compare it to `Ref.chargeGrow`, one input per
+outcome the function has — reservation hit, growth at the floor, growth by
+doubling, memory refusal, cost refusal, the declared maximum, and the
+second call site's width. That is evidence, not the universally quantified
+contract, which stays gate 5's lemma. Swapping two fields of the out-list
+makes all seven fail, so they do discriminate.
+
+What it measured:
+
+    +--------------------------------+---------------+------------------+
+    |                                | `region_kids` | `pike_take`      |
+    +--------------------------------+---------------+------------------+
+    | statements / loops / calls     | 7 / 2 / 0     | 21 / 1 / 2       |
+    | proof lines, sample-specific   | ~550          | ~1240            |
+    | lines per statement            | ~79           | ~59              |
+    | reusable automation added      | 110           | 106 + ~85        |
+    | store get-chain steps          | ~40           | 78               |
+    | write-back expansions          | 0             | 4                |
+    +--------------------------------+---------------+------------------+
+
+The shape generalises: nothing about the call was hard, `Runs` composed by
+transitivity exactly as gate 1 designed it, no lemma quotes a fuel bound,
+and `evalStmt_call_runs` turned each call into a store update in one step.
+The per-statement cost did not grow — it fell slightly, because a call
+statement is cheaper than a loop.
+
+The cost does not generalise, and that is the finding. Per-statement cost
+is roughly constant at 60 to 80 lines, and the artifact's owed functions
+hold 3052 statements. Linear extrapolation puts gate 5 near two hundred
+thousand lines of proof. No schedule survives that, and it is not a
+question of effort: the same two mechanical patterns are what fill the
+lines. Seventy-eight get-chain steps in one function, each a rewrite that
+says a name survived a write to another name. Four write-back expansions,
+one per call site per callee outcome, each thirty-five lines of the same
+plumbing — and the ledger holds 448 call sites.
+
+So: **no-go for gate 5 as a manual campaign, go for an automation-first
+redesign.** Concretely, before any further per-function lemma:
+
+1. A store normaliser: a tactic that answers `Env.get n` against any chain
+   of `set` and `declare` by walking the chain, instead of one rewrite per
+   step. This is syntax-directed and decidable — the names are string
+   literals — and it is where most of both proofs went.
+
+2. A call-site tactic: given the callee's contract, discharge argument
+   evaluation and write-back in one step rather than expanding them per
+   outcome. `evalStmt_call_runs` already provides the semantic content;
+   what is missing is the plumbing around it.
+
+3. Re-measure on these same two functions. If the two together do not cut
+   per-statement cost by roughly an order of magnitude, M7 splits: this
+   foundation closes as its own milestone and the refinement of section 1
+   becomes a later one, with THEOREMS.md stating plainly that layer I
+   covers the interpreter, the decoder, the pinned artifact and two
+   simulation lemmas rather than the composed theorem.
+
+The endpoint of section 1 is not weakened by any of this. What changed is
+the estimate of what reaching it costs, which is what the two samples were
+built to find out — and finding it out before the campaign rather than a
+third of the way through it is the whole reason the gates were ordered
+this way.

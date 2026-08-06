@@ -99,7 +99,8 @@ check: oracle-verify generate-verify test lean go js js-lint
 # the simulation lemmas that would say the program means what layer R means
 # are gate 5's, and are not written.
 verify: generate-verify
-	$(UV) run pytest tests/test_freeze.py tests/test_coverage.py tests/test_lean_pin.py
+	$(UV) run pytest tests/test_freeze.py tests/test_coverage.py \
+	    tests/test_strata.py tests/test_lean_pin.py
 	rm -f lean/.lake/build/lib/lean/Pcrevera/Tir/Artifact.olean \
 	      lean/.lake/build/lib/lean/Pcrevera/Tir/Artifact.trace
 	$(MAKE) lean
