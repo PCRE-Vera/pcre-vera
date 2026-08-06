@@ -6,7 +6,7 @@ UV ?= uv
 .NOTPARALLEL:
 
 .PHONY: help setup test oracle oracle-verify corpus generate generate-verify \
-        sweep lean go js js-lint check clean distclean
+        sweep lean go js js-lint check verify clean distclean
 
 help:
 	@echo "setup            install the Python environment"
@@ -22,6 +22,7 @@ help:
 	@echo "js               node --test on the generated JavaScript"
 	@echo "js-lint          eslint on the generated JavaScript (needs npm)"
 	@echo "check            all of the above"
+	@echo "verify           the generated files, the freeze record, and the proofs"
 	@echo "clean            remove build trees, keep the downloaded tarball"
 	@echo "distclean        remove the download cache too"
 
@@ -81,6 +82,27 @@ js-lint: gen/js/node_modules
 	cd gen/js && npm run --silent lint
 
 check: oracle-verify generate-verify test lean go js js-lint
+
+# M7's gate. It fails on: the artifact or another generated file drifting from
+# the generator, a hash drifting from the freeze record, the coverage ledger
+# drifting from the call graph, the artifact failing to decode inside Lean or
+# to print back to its own bytes, and a broken proof.
+#
+# The two Artifact build products are removed first on purpose. `include_str`
+# embeds the artifact at elaboration time, but lake does not know that file is
+# an input, so a changed artifact with an unchanged `.lean` would be answered
+# from a stale `.olean` — the check would pass without having run. Deleting
+# them costs one module's elaboration and buys the guarantee.
+#
+# What it still does not do is bind the *proofs* to the artifact: the decode
+# and the round trip say the bytes are the program the Lean side names, and
+# the simulation lemmas that would say the program means what layer R means
+# are gate 5's, and are not written.
+verify: generate-verify
+	$(UV) run pytest tests/test_freeze.py tests/test_coverage.py tests/test_lean_pin.py
+	rm -f lean/.lake/build/lib/lean/Pcrevera/Tir/Artifact.olean \
+	      lean/.lake/build/lib/lean/Pcrevera/Tir/Artifact.trace
+	$(MAKE) lean
 
 clean:
 	rm -rf tmp/oracle/pcre2-* lean/.lake .pytest_cache

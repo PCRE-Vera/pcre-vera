@@ -211,14 +211,17 @@ quantifies over spec ASTs, and the step from pattern text to AST is a tested
 link — the oracle corpus, the sweep and pcre2 itself — not a proved one.
 Wherever coverage is described, that sentence goes with it.
 
-The quantifier lowering of DESIGN.md section 4.3 is inside that link, and
-naming it is the point of saying so: the tree the theorems are about is the
-one the code generator walked, which for a lowered pattern is the rewritten
-one, and the rewrite itself carries no theorem. What holds it is the corpus
-replay, which compiles the exported tree and compares the bytecode, the
-region tree, the ovector and the usage to the engine's, plus the sweep's
-comparison with pcre2. Section 6 says what moving the rewrite inside
-`R.compile` would cost and why it was not done here.
+The quantifier lowering of DESIGN.md section 4.3 is still inside that link,
+and naming it is the point of saying so: the tree the theorems are about is
+the one the code generator walked, which for a lowered pattern is the
+rewritten one. The rewrite itself is no longer untheorised — L-1 to L-3 of
+section 6 are proved, and `Matches_lower` says the lowered tree answers what
+the written one answers — but the *pipeline* still relies on the bridge
+handing `R.compile` the rewritten tree rather than on `R.compile` doing the
+rewrite, so the link is as wide as it was. Narrowing it is L-4 and L-5, and
+until they land what holds this step is the corpus replay, which compiles the
+exported tree and compares the bytecode, the region tree, the ovector and the
+usage to the engine's, plus the sweep's comparison with pcre2.
 
 The generated Go and JavaScript are tested links too, and stay that way. The
 proofs cover the TIR artifact under the TIR semantics; the printers are kept
@@ -676,12 +679,14 @@ makes 116 more of the 334 patterns the corpora pin eligible, none fewer.
     |               |                        | corpora, 0 disagreements      |
     +---------------+------------------------+-------------------------------+
 
-The alternative — moving the rewrite inside `R.compile` — is priced rather
-than done, and it is the honest outstanding work of this change. It wants
-four things, and the first two are the substance:
+The alternative — moving the rewrite inside `R.compile` — was priced here
+and is now half done, as M7's prelude. It wanted four things; the first and
+the third are proved, `Covered` by derivation rather than by a preservation
+lemma of its own, and what they came to is recorded after the list.
 
-- `Matches (lower a) = Matches a`: that the lowered tree matches the same
-  strings with the same captures in the same preference order. A theorem
+- `Matches (lower a) = Matches a`, for a tree the lowering is sound on: that
+  the lowered tree matches the same strings with the same captures in the
+  same preference order. A theorem
   about the specification alone, with no VM and no certificate in it, and the
   one that carries the whole claim. The shape is settled — `x{m,n}` at count
   k is the optional chain at `n - k`, and past the minimum an unbounded
@@ -697,6 +702,45 @@ four things, and the first two are the substance:
   `Covered`, `maxGroup`, and `crWalk` for the bumpalong bit.
 - The definitional follow-through in `Ref/Compile.lean`, `RepCompile.lean`
   and the two refinement files, which is mechanical once the above exist.
+
+What is proved, as of M7's gate 0:
+
+    +------+----------------------------------------------------------------+
+    | L-1  | `Spec.lower`, `Nullable` and `LowerSafe`: the rewrite as a     |
+    |      | function on `Ast`, transcribed from `lowered.py`, with the     |
+    |      | condition under which it preserves the search. That condition  |
+    |      | is the proof's, not the engine's: the engine also refuses a    |
+    |      | pattern holding \R, declines when nothing needs unrolling,     |
+    |      | and falls back when the unrolled form would not fit. None of   |
+    |      | those change what the rewrite means.                           |
+    +------+----------------------------------------------------------------+
+    | L-2  | `lower_searchEq`: a tree and its lowered form return the same  |
+    |      | ordered thread list, end positions and capture registers       |
+    |      | alike, from every position. `Matches_lower` lifts it to the    |
+    |      | public answer. The fuel side is an implication, each tree      |
+    |      | reading the search at its own sufficient fuel.                 |
+    +------+----------------------------------------------------------------+
+    | L-2a | the bounded splice, `evRep_bounded` and its tail: a finite     |
+    |      | induction needing no semantic hypothesis. `x{5,2}` works out   |
+    |      | too, since the count reaches the minimum before the high       |
+    |      | stops it.                                                      |
+    +------+----------------------------------------------------------------+
+    | L-2b | the unbounded splice, `evRep_unbounded`, over                  |
+    |      | `searchRep_count_free`: past the minimum the count is read in  |
+    |      | two places and both have stopped caring, so the tail can be a  |
+    |      | star whose count restarts at zero. It is also where the body   |
+    |      | has to consume, which is `LB_NULLABLE`'s semantic reason.      |
+    +------+----------------------------------------------------------------+
+    | L-3  | `maxGroup_lower`, `crWalk_lower`, `wfAst_lower`,               |
+    |      | `capsBelow_lower`, gathered at the pattern as `wf_lowered`.    |
+    |      | `Covered` is `covered_lower`, which reads it off `WfAst`       |
+    |      | rather than preserving it structurally: nothing asks           |
+    |      | `Covered` of a tree that is not well formed.                   |
+    +------+----------------------------------------------------------------+
+
+L-4 and L-5 are outstanding, which is why section 4 still calls the lowering
+part of the tested link: the theorems exist, and the pipeline does not use
+them yet.
 
 Nothing in that list is a research question, and none of it blocks the
 guarantee being stated honestly with the carve-outs in place. It is the piece

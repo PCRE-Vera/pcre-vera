@@ -23,6 +23,7 @@ from ..engine.program import program
 from ..oracle import conformance
 from ..paths import GEN_DIR
 from ..sweep import shard
+from ..tir import coverage
 from . import go, js, lowering
 
 GO_PATH = GEN_DIR / "go" / "internal" / "engine" / "engine.go"
@@ -84,6 +85,9 @@ def generate() -> tuple[str, list[Output]]:
         Output(certificate_corpus.PATH, certificate_corpus.corpus_text()),
         Output(shard.PATH, shard.corpus_text()),
         Output(migration.PATH, migration.corpus_text()),
+        # What M7's gate 5 still owes, computed from the artifact's own call
+        # graph rather than counted by hand.
+        Output(coverage.PATH, coverage.render(coverage.ledger(built, sha256))),
         # The AST bridge is a function of the two corpora it feeds the Lean
         # replay of, computed from the same fresh texts so that verifying it
         # never depends on what happens to be on disk.

@@ -1946,3 +1946,71 @@ Twice in one session now: an assertion missing an entry, then a digest missing
 a field. Both times the reference was in front of me — the plan's list, the
 struct definition — and both times I enumerated from memory instead. When the
 claim is "all of X", the list has to come from wherever X is defined.
+
+## Theorem statements quoted from their slogans (the M7 plan)
+
+Two of PLAN-M7.md's central statements were written from my summary of what
+a function is *for* instead of from its signature. The endpoint said the
+decoded TIR compile function agrees with `R.compile` on every AST — but the
+artifact's `compile` entry takes pattern bytes and parses internally, while
+`R.compile` takes a `Pat`, so with the parser proof deferred the two cannot
+be equated at all; the honest statement splits at a work-area relation and
+leaves the exported entry as a corollary conditional on the parse. And L-2
+was written `Matches (lower a) = Matches a` and glossed "same preference
+order", but `Matches` exposes only the final `MatchAnswer`, `scan` having
+already picked the first surviving thread; the order lives in `search`'s
+thread lists, so the equality I wrote was the corollary and the theorem
+was the stronger list equivalence I had not stated.
+
+The mistake is the same in both: a plan is exactly the place where slogans
+get frozen into obligations, so the statement has to be transcribed from
+the definition it will be proved about, signature first, even when the
+prose around it is right about the idea.
+
+## A done-when the tag makes impossible (the M7 plan)
+
+Gate 7 said `make verify` passes on the tagged state. The tag is
+`wave1-frozen`, it stays on the freeze commit for all of M7, and `make
+verify` is built by M7's last gate — so the tagged state can never contain
+the gate, and the criterion was unsatisfiable as written. Same family as
+gate 3, which nearly asked the freeze test to hold the tag to a Lean pin
+file that postdates the tag. A completion criterion has to be checkable at
+the commit where it is claimed, and anything pinned in the past can only
+be *read from*, never asked to contain what came later.
+
+## The destination is resolved first (gate 1's interpreter)
+
+What I got wrong: I wrote the TIR interpreter's `assign`, `take`, `copy`,
+`freeze` and `pop` so that the source was evaluated before the destination
+place was resolved. TIR-SPEC.md section 13 pins the opposite order — the
+destination place first, its index expressions left to right and each
+bounds-checked as it is resolved, then the value, then the store — and
+`tir/interp.py` follows it.
+
+Why it matters: it is observable. When both sides would trap, the order
+decides which trap the program answers with, and a `pop` from an empty
+sequence into an out-of-bounds destination should answer T-01 and not T-02.
+An interpreter that got this backwards would have made every gate 5
+simulation lemma about a language slightly different from the one the
+backends implement, and the corpus would not have caught it, because the
+corpus does not drive the engine into two competing traps.
+
+The lesson is narrower than "read the spec": I transcribed the *effects* of
+each statement carefully and skipped the paragraph that says in which order
+they happen, because effects look like the content and order looks like
+detail. In a language whose observable outcomes include which check failed
+first, order is content.
+
+## `git checkout` on a file I had not committed
+
+What I got wrong: while inducing failure modes for `make verify`, I edited
+`THEOREMS.md` to fake a wrong hash and then restored it with `git checkout
+THEOREMS.md`. The file also held twenty minutes of uncommitted documentation
+work, which that command discarded along with the fake.
+
+The habit that would have prevented it is not "check `git status` first" —
+I had, and the file was listed as modified, which I read as "the fake is
+there" rather than "the real edit is there too". It is: when a check needs a
+file temporarily wrong, copy it aside and restore from the copy, or commit
+first. `git checkout` restores from the index, and the index does not know
+which of my changes I meant.

@@ -1,0 +1,395 @@
+{
+  "artifact": "d60df8a5600a4a0d4d1d1ea21e90883eab44d35a8f71e1d5450daf0a61b5dd1f",
+  "counts": {
+    "declared": 122,
+    "parser": 42,
+    "post_parse": 80,
+    "proved": 0,
+    "reachable": 122,
+    "unreachable": 0
+  },
+  "entries": [
+    "compile",
+    "match",
+    "ctx_create",
+    "ctx_match",
+    "re_class",
+    "re_cost",
+    "re_mem",
+    "re_stack"
+  ],
+  "parser": {
+    "functions": [
+      "add_char",
+      "add_child",
+      "alloc_node",
+      "apply_quant",
+      "attach_atom",
+      "attach_escape",
+      "check_possess",
+      "class_after_set",
+      "class_element",
+      "class_from_set",
+      "class_skip",
+      "close_group",
+      "hex_value",
+      "identity_of",
+      "name_taken",
+      "named_group",
+      "new_branch",
+      "new_class",
+      "note_element",
+      "note_ref",
+      "open_group",
+      "parse",
+      "parse_class",
+      "posix_end",
+      "posix_item",
+      "posix_set",
+      "push_frame",
+      "quantifier",
+      "read_braces",
+      "read_digit_escape",
+      "read_escape",
+      "read_gk",
+      "read_hex",
+      "read_octal_brace",
+      "read_ref_number",
+      "read_ucp",
+      "ref_number_ahead",
+      "set_add",
+      "set_range",
+      "set_union",
+      "skip_blanks",
+      "skip_gaps"
+    ],
+    "reason": "the pattern-text-to-AST step is a tested link until M10, so the parser and what the public API cannot reach except through it carry no simulation lemma in M7; a function the parser shares with anything after it is owed one anyway and stays in post_parse",
+    "shared_with_post_parse": [
+      "ct",
+      "newline_at"
+    ]
+  },
+  "post_parse": [
+    {
+      "name": "at_line_end",
+      "theorem": ""
+    },
+    {
+      "name": "bound_add",
+      "theorem": ""
+    },
+    {
+      "name": "bound_mul",
+      "theorem": ""
+    },
+    {
+      "name": "bound_pow",
+      "theorem": ""
+    },
+    {
+      "name": "bsr_at",
+      "theorem": ""
+    },
+    {
+      "name": "bt_match",
+      "theorem": ""
+    },
+    {
+      "name": "bt_run",
+      "theorem": ""
+    },
+    {
+      "name": "cert_bound",
+      "theorem": ""
+    },
+    {
+      "name": "cert_build",
+      "theorem": ""
+    },
+    {
+      "name": "cert_check",
+      "theorem": ""
+    },
+    {
+      "name": "cert_install",
+      "theorem": ""
+    },
+    {
+      "name": "cert_shape",
+      "theorem": ""
+    },
+    {
+      "name": "charge_call",
+      "theorem": ""
+    },
+    {
+      "name": "charge_grow",
+      "theorem": ""
+    },
+    {
+      "name": "check_fit",
+      "theorem": ""
+    },
+    {
+      "name": "class_has",
+      "theorem": ""
+    },
+    {
+      "name": "close_region",
+      "theorem": ""
+    },
+    {
+      "name": "compile",
+      "theorem": ""
+    },
+    {
+      "name": "count_regs",
+      "theorem": ""
+    },
+    {
+      "name": "ct",
+      "theorem": ""
+    },
+    {
+      "name": "ctx_create",
+      "theorem": ""
+    },
+    {
+      "name": "ctx_match",
+      "theorem": ""
+    },
+    {
+      "name": "drop_empty_region",
+      "theorem": ""
+    },
+    {
+      "name": "emit",
+      "theorem": ""
+    },
+    {
+      "name": "generate",
+      "theorem": ""
+    },
+    {
+      "name": "mark_seen",
+      "theorem": ""
+    },
+    {
+      "name": "match",
+      "theorem": ""
+    },
+    {
+      "name": "new_rep",
+      "theorem": ""
+    },
+    {
+      "name": "newline_at",
+      "theorem": ""
+    },
+    {
+      "name": "newline_before",
+      "theorem": ""
+    },
+    {
+      "name": "open_region",
+      "theorem": ""
+    },
+    {
+      "name": "pike_add",
+      "theorem": ""
+    },
+    {
+      "name": "pike_check",
+      "theorem": ""
+    },
+    {
+      "name": "pike_defer",
+      "theorem": ""
+    },
+    {
+      "name": "pike_drop",
+      "theorem": ""
+    },
+    {
+      "name": "pike_hollow",
+      "theorem": ""
+    },
+    {
+      "name": "pike_match",
+      "theorem": ""
+    },
+    {
+      "name": "pike_ok",
+      "theorem": ""
+    },
+    {
+      "name": "pike_park",
+      "theorem": ""
+    },
+    {
+      "name": "pike_price",
+      "theorem": ""
+    },
+    {
+      "name": "pike_room",
+      "theorem": ""
+    },
+    {
+      "name": "pike_run",
+      "theorem": ""
+    },
+    {
+      "name": "pike_take",
+      "theorem": ""
+    },
+    {
+      "name": "pike_write",
+      "theorem": ""
+    },
+    {
+      "name": "plan_lowering",
+      "theorem": ""
+    },
+    {
+      "name": "poly_add",
+      "theorem": ""
+    },
+    {
+      "name": "poly_eq",
+      "theorem": ""
+    },
+    {
+      "name": "poly_ge",
+      "theorem": ""
+    },
+    {
+      "name": "poly_mul",
+      "theorem": ""
+    },
+    {
+      "name": "poly_norm",
+      "theorem": ""
+    },
+    {
+      "name": "poly_value",
+      "theorem": ""
+    },
+    {
+      "name": "price_alt",
+      "theorem": ""
+    },
+    {
+      "name": "price_call",
+      "theorem": ""
+    },
+    {
+      "name": "price_repeat",
+      "theorem": ""
+    },
+    {
+      "name": "price_span",
+      "theorem": ""
+    },
+    {
+      "name": "push_bt",
+      "theorem": ""
+    },
+    {
+      "name": "push_job",
+      "theorem": ""
+    },
+    {
+      "name": "push_patch",
+      "theorem": ""
+    },
+    {
+      "name": "re_bound",
+      "theorem": ""
+    },
+    {
+      "name": "re_class",
+      "theorem": ""
+    },
+    {
+      "name": "re_cost",
+      "theorem": ""
+    },
+    {
+      "name": "re_mem",
+      "theorem": ""
+    },
+    {
+      "name": "re_pick",
+      "theorem": ""
+    },
+    {
+      "name": "re_stack",
+      "theorem": ""
+    },
+    {
+      "name": "region_kids",
+      "theorem": ""
+    },
+    {
+      "name": "sat_add",
+      "theorem": ""
+    },
+    {
+      "name": "sat_mul",
+      "theorem": ""
+    },
+    {
+      "name": "scan_alt",
+      "theorem": ""
+    },
+    {
+      "name": "scan_first",
+      "theorem": ""
+    },
+    {
+      "name": "scan_repeat",
+      "theorem": ""
+    },
+    {
+      "name": "scan_span",
+      "theorem": ""
+    },
+    {
+      "name": "shape_alt",
+      "theorem": ""
+    },
+    {
+      "name": "shape_repeat",
+      "theorem": ""
+    },
+    {
+      "name": "shape_span",
+      "theorem": ""
+    },
+    {
+      "name": "size_node",
+      "theorem": ""
+    },
+    {
+      "name": "walk_alt",
+      "theorem": ""
+    },
+    {
+      "name": "walk_lowered",
+      "theorem": ""
+    },
+    {
+      "name": "walk_repeat",
+      "theorem": ""
+    },
+    {
+      "name": "word_edge",
+      "theorem": ""
+    },
+    {
+      "name": "write_reg",
+      "theorem": ""
+    }
+  ],
+  "unreachable": []
+}
