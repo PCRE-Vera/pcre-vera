@@ -1842,3 +1842,107 @@ cap witness wants checking against the arbiter before it is written down, not
 after. And the failure was loud in a useful way: thirty-three findings on one
 case is the shape of a case that should not exist rather than of an engine
 that is wrong, and reading the count that way saved chasing an ovector.
+
+## Refusing to compile the one case the assertion was built for
+
+The compiler's dry run predicts what the emitter will produce, and after
+emission the emitter asserts the two vectors match. The assertion is the whole
+point of the design — two calculations of one number drift exactly at the cap
+boundary, which is where the fallback decision lives — and it only ever runs
+on a program that was emitted.
+
+So the one place it had to be exercised was the fitting side of a boundary,
+and that is the one place I did not go. Laying out thirty thousand copies is
+past the reference interpreter's default step budget, so the boundary test
+asked the dry run about both sides and compiled only the declining one. The
+budget is a harness safety net rather than a limit of the engine, and raising
+it for one test costs thirteen seconds; I wrote a paragraph explaining why the
+fitting side was out of reach instead.
+
+There was a bug there, and it was in the emitter rather than in the dry run.
+The walk's fuel counter is decremented at the top of each turn and the
+exhaustion test read `fuel == 0`, so a walk that needed *exactly* WALK_FUEL
+turns finished on its last one, left the counter at zero, and was refused as
+if it had run out — an internal error for a program the generator had just
+laid out correctly. The dry run, which allows the cap itself, was right; the
+test that would have shown it was the one I had argued myself out of.
+
+The lesson is not about fuel. An assertion that only runs on the expensive
+path is an assertion nobody has run, and "this case is too slow to test" is
+the sentence to distrust: thirteen seconds was the actual price.
+
+## An entry-by-entry assertion with an entry missing
+
+The dry run prices seven things, refuses the lowering when any one of them is
+over its cap, and the emitter is then held to the prediction entry by entry.
+That is how the design is written down in three documents. It priced seven and
+compared six.
+
+The missing one was the registers, and it is the only entry with no array of
+its own: captures and repetition counters are turned into a register count
+after the walk, by a formula that lived in `program.py` while the dry run's
+copy of it lived in `compiler.py`. Two spellings of one formula, one of them
+inside the gate and one outside it. Nothing was wrong today — repetition
+counts are compared, captures do not move, so the two agreed — which is
+exactly what makes it the kind of gap that survives a review: the number was
+right, the claim about how it was checked was not.
+
+The fix is smaller than the finding. One TIR function computes the count,
+`check_fit` compares the dry run's prediction against what that function says
+about the finished program, and the final allocation calls the same function.
+
+What I would do differently is read the assertion against the *list* rather
+than against the code around it. I had the list — it is in the plan, in
+DESIGN.md and in the docstring — and I checked that every comparison was
+right instead of checking that every entry had one.
+
+## Numbers written down at the moment they were measured
+
+Three documents carried a count of the cases the Lean corpus replay walks, and
+they carried three different numbers: 248 in one paragraph, 315 in another and
+in the LOG. The executable said 331. Each had been true when written, and the
+corpus grew afterwards.
+
+A count copied into prose is a fact with no owner. The hashes in the freeze
+record have a test that reads the file; these had nothing, and there is no
+sensible test for a sentence. The habit that would have caught it is cheaper
+than a test: when a run's output is quoted anywhere, grep for the previous
+quotation of the same output before writing the new one.
+
+## Tests that compare two files and call it a compile
+
+The census's non-regression half needed a before-state, so I recorded what the
+old engine said and joined it to the migration report. The join was between
+`oracle/corpus/pre-lowering.json` and `conformance/migration.json` — two
+committed files — while the docstring said the rows were recomputed and three
+documents repeated it. A separate test in the same module does hold the
+committed report to the generator, so the chain is sound when the whole file
+runs; but the test that made the claim did not make the check, and running it
+alone proves nothing.
+
+The fix is one line of structure: generate the report at import and let every
+test read that, with one test holding the committed copy to it. The direction
+matters — the file keeps up with the engine, never the other way round.
+
+The habit to keep: when a test's name says "still answers", find where the
+answer comes from before writing the docstring. A fixture on both sides of a
+comparison is a tautology with good manners.
+
+## A digest of the program that left out half the program
+
+Answering a review that the "same program" check compared only conclusions, I
+hashed the compiled pattern: bytecode, region tree, repetition table, capture
+and register counts. That reads like the whole thing and is not. An instruction
+naming a character class carries an *index* into a table the hash never
+touched, so `[a]` and `[b]` came out identical, and so did `^a` under LF and
+under CRLF, since the newline convention is a scalar field I had not listed.
+
+The mistake is the shape of the list, not any one entry. I wrote down the parts
+of the program I had been thinking about all week — the parts the lowering
+touches — and called that the program. The fix was to read `Re` field by field
+and take everything a matcher reads.
+
+Twice in one session now: an assertion missing an entry, then a digest missing
+a field. Both times the reference was in front of me — the plan's list, the
+struct definition — and both times I enumerated from memory instead. When the
+claim is "all of X", the list has to come from wherever X is defined.

@@ -3,11 +3,12 @@
 PLAN-POST-M6.md asks for a machine-checked migration report beside the
 regenerated certificate corpus, and for its columns to stay orthogonal: one
 answer per question, each naming the program and the analysis it describes,
-never recombined. So a row here carries six of them.
+never recombined. So a row here carries seven of them.
 
     blockers      what the pre-check found on the *original* AST, all of it
     lowering      lowered, not needed, declined (blockers), declined (cap)
     pike          `pike_ok` on the *emitted* program, whichever form it is
+    program       the compiled pattern, every field of it, hashed
     analysis      the backtracking analyzer's verdict, recorded even where
                   the lockstep path is the one selected
     certificate   which configuration's certificate the pattern carries,
@@ -35,18 +36,37 @@ compiler, never a formatting difference to smooth over.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from typing import Any
 
 from ..leanexport import bridge
-from ..paths import CONFORMANCE_DIR
+from ..paths import CONFORMANCE_DIR, CORPUS_DIR
 from . import lowered, spec
 from .driver import Engine, InternalError, items, variant_of
 
 PATH = CONFORMANCE_DIR / "migration.json"
 
 SCHEMA = "pcrevera-migration-1"
+
+BEFORE = CORPUS_DIR / "pre-lowering.json"
+"""The same patterns as the engine classified them before the lowering.
+
+Half of the census PLAN-POST-M6.md asks for is a statement about one engine and
+this module computes it. The other half — that no pattern's class regressed —
+compares two, and the earlier one cannot be rebuilt from this checkout, so its
+answers are recorded there and joined to the report by
+`tests/test_migration.py`. A measurement rather than a contract, kept for the
+same reason `oracle/corpus/sweep-regressions.json` is: nothing generates it
+twice."""
+
+BEFORE_SCHEMA = "pcrevera-pre-lowering-1"
+
+CLASS_ORDER = {None: 0, spec.CLASS_NOT_PROVEN_LINEAR: 1, spec.CLASS_LINEAR: 2}
+"""How much a certificate claims, as an order. No certificate at all says
+least, and the class column is the census's subject, so a comparison of two
+engines needs the three answers on one scale."""
 
 AT = 1000
 """Where the accessors are read.
@@ -97,6 +117,55 @@ def emitted_blockers(engine: Engine, built) -> int:
 
 def names(mask: int) -> list[str]:
     return [name for bit, name in BLOCKERS if mask & bit]
+
+
+def digest(built) -> str:
+    """The compiled pattern as one hash. Every field of it, and no other.
+
+    What the census's non-regression half needs from a pattern the lowering
+    left alone is that it still compiles to the same thing, and "the same
+    thing" is worth being literal about. A row that agreed about the class and
+    disagreed about a jump target would say nothing about the lowering and
+    everything about something else, so the comparison is over the program
+    rather than over what was concluded from it.
+
+    Which means every field a matcher reads has to be in here, not just the
+    interesting ones: an instruction naming a character class carries an index
+    into a table this would otherwise not hash, so `[a]` and `[b]` would come
+    out the same. The two decisions the lowering itself writes down are left
+    out on purpose — they are separate columns of the report, and one of them
+    is what selects the rows this is compared over.
+
+    Rendered as text and hashed because the recording is a JSON file somebody
+    reads: three hundred programs spelled out would bury the columns that are
+    the point of it.
+    """
+    re = built.re.fields
+    scalars = ("ncap", "nname", "nregs", "opts", "nltype", "bsr", "hascrlf", "crfirst")
+    lines = [" ".join(f"{name} {re[name]}" for name in scalars)]
+    lines.append(f"pike {int(re['pike'])}")
+    for inst in items(re["code"]):
+        lines.append(
+            f"i {variant_of(inst.fields['op'])} {inst.fields['arg']} "
+            f"{inst.fields['alt']}"
+        )
+    lines.append("c " + bytes(items(re["classes"])).hex())
+    for region in items(re["regions"]):
+        lines.append(
+            f"g {variant_of(region.fields['kind'])} {region.fields['parent']} "
+            f"{region.fields['lo']} {region.fields['hi']}"
+        )
+    for rep in items(re["reps"]):
+        lines.append(
+            f"r {rep.fields['lo']} {rep.fields['hi']} {int(rep.fields['greedy'])} "
+            f"{rep.fields['head']} {rep.fields['body']} {rep.fields['after']}"
+        )
+    lines.append("n " + bytes(items(re["names"])).hex())
+    for ent in items(re["nameents"]):
+        lines.append(
+            f"e {ent.fields['off']} {ent.fields['nlen']} {ent.fields['grp']}"
+        )
+    return hashlib.sha256("\n".join(lines).encode()).hexdigest()
 
 
 # --- the report ---
@@ -206,6 +275,7 @@ def row(engine: Engine, subject: Subject) -> dict[str, Any] | None:
         "lowering": DECISIONS[decision],
         "fits": bool(built.re.fields["lowfits"]),
         "pike": pike,
+        "program": digest(built),
         "analysis": "accepted" if verdict == "ArOk" else verdict,
         "certificate": {
             "config": config if carried else None,
@@ -296,3 +366,18 @@ def load(path=PATH) -> dict[str, Any]:
     if built.get("schema") != SCHEMA:
         raise ValueError(f"{path.name} has schema {built.get('schema')!r}, not {SCHEMA}")
     return built
+
+
+def before(path=BEFORE) -> dict[str, Any]:
+    built = json.loads(path.read_text())
+    if built.get("schema") != BEFORE_SCHEMA:
+        raise ValueError(
+            f"{path.name} has schema {built.get('schema')!r}, not {BEFORE_SCHEMA}"
+        )
+    return built
+
+
+def key(row: dict[str, Any]) -> tuple:
+    """What identifies a pattern in either file. The two are generated by
+    different engines and joined by this, so it is spelled once."""
+    return (row["pattern"], tuple(row["options"]), row["newline"], row["bsr"])

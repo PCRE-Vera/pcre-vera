@@ -21,8 +21,8 @@ of the frozen artifact is written down.
 
     +--------------------------+------------------------------------------+
     | the artifact             | gen/engine.tir.json                      |
-    | the artifact sha256      | 4b51962c6539c56954e5165f1abd3f7f7648bc87 |
-    |                          | 055b50e7e44e84729100a3a5                 |
+    | the artifact sha256      | d60df8a5600a4a0d4d1d1ea21e90883eab44d35a |
+    |                          | 8f71e1d5450daf0a61b5dd1f                 |
     | the commit               | the one tagged wave1-frozen              |
     | the pcre2 version        | 10.47                                    |
     | the pcre2 tarball sha256 | 47fe8c99461250d42f89e6e8fdaeba9da057855d |
@@ -32,6 +32,15 @@ of the frozen artifact is written down.
     |                          | fc2d89897dbe27c48d130e1a                 |
     +--------------------------+------------------------------------------+
 
+The commit row is the only line in this document that no file can contradict,
+so it has a check of its own. The tag moves onto whichever commit lands the
+hashes above, and from then on `tests/test_freeze.py` requires it to hold that
+artifact: a tag left pointing at the previous freeze is the same silent
+staleness the hashes exist to prevent, and worse, since the record would be
+true of the working tree and wrong for anyone who followed it. While a refreeze
+is still only in the working tree there is nothing to compare and the test says
+so rather than passing quietly.
+
 The corpora the artifact is held to, by content hash:
 
     +--------------------------------------+------------------------------------------+
@@ -39,17 +48,31 @@ The corpora the artifact is held to, by content hash:
     |                                      | 80caf1cf925b496648f1a714                 |
     | oracle/corpus/sweep-regressions.json | 815d58542aba14629d859b0f9978627c3293d3ee |
     |                                      | ddba3c0fc4e2b367a9f954bf                 |
+    | oracle/corpus/pre-lowering.json      | c792f47491acc1da164579210f52b144f326144e |
+    |                                      | 4ba0a4da7b65d0e2dd53b2c8                 |
     | conformance/corpus.json              | a7349f418f8fbd2c139d5a487284686f1111cd4c |
     |                                      | 13b600736dde421acd518092                 |
     | conformance/certificates.json        | 587da12e186553d784d813e0d99a13bc6c1423c5 |
     |                                      | 3b7cf4f76083d92ca9ac3daf                 |
     | conformance/lowering.json            | 88f537fcd39b5c718b12167fdbdc85e9782383eb |
     |                                      | 872dc432b7637ad9ac369748                 |
-    | conformance/migration.json           | faa0e484687fe010d30fd79a5a68175d34696e37 |
-    |                                      | df68becdbe6e55ba18955dbc                 |
-    | conformance/sweep.json               | 76a127d06afab56706269f18e7e014589fb1459f |
-    |                                      | 14c7cd35d645a69a3d122c71                 |
+    | conformance/migration.json           | 71134fb9e29a5cfafbf9e930c3150b9482fc0505 |
+    |                                      | 962207f8280e212fccc7b182                 |
+    | conformance/sweep.json               | ee48262d0088ea45caf8d6f7f603c724f3b2afa0 |
+    |                                      | cbae2b062647a232f4994a75                 |
     +--------------------------------------+------------------------------------------+
+
+One of those is not a corpus this artifact answers.
+`oracle/corpus/pre-lowering.json` is what the engine of the commit named in it
+said about the same 334 patterns, which is the half of the quantifier
+lowering's census that compares two engines rather than describing one. It is
+hashed here with the rest because it is evidence a test reads, and a
+measurement nobody can take again is exactly the kind of file that goes stale
+without anyone noticing. Most of it is not taken on trust either: 218 of those
+patterns were left alone by the lowering, and `tests/test_migration.py` asks
+this engine to reproduce every column the recording holds about them, the hash
+of the emitted program included. They compile to what they always compiled to.
+The 116 the lowering rewrote are the part only the recording can speak for.
 
 And the campaign that refroze the artifact after the quantifier lowering,
 which is reproducible rather than kept:
@@ -58,7 +81,7 @@ which is reproducible rather than kept:
         --subjects 32 --jobs 8 --out tmp/sweep-post-m6"
 
     manifest sha256
-      2590e179eab030796c83a5c9f78cf78d62456e6997cde0cce492892cb5a58a72
+      424981106c7c589964c25bb766b8c6f150b86e6481d7af1eff99f8c9fe5b82e3
 
 The LOG entry carries its counts. A rerun of that command on this
 artifact reproduces the manifest hash exactly — the test rebuilds the manifest
@@ -314,11 +337,15 @@ construct — literals, classes, the dot, `\R`, every anchor, groups,
 alternation and every quantifier. The lockstep half is stated over the same
 patterns but carries one side condition the other does not: the program is
 eligible. That is the hypothesis `(compile p).pike = true`, and it is a real
-restriction rather than a formality — `pike_ok` refuses `\R`, every bounded
-quantifier, and any star whose body can finish an iteration without
-consuming. It sits in the statement rather than in the conclusion because an
-ineligible program is one the matcher declines at the door, for a reason the
-specification has no opinion about. The argument is four layers deep — the
+restriction rather than a formality — `pike_ok` refuses a program holding
+`\R`, a repetition that is not a pure star, or a star whose body can finish an
+iteration without consuming a byte. That is a condition on the program rather
+than on the spelling, and since the quantifier lowering a counted repetition
+usually compiles to copies and a star, the patterns it leaves out are the
+three carve-outs of DESIGN.md section 2.1. It sits in the statement rather
+than in the conclusion because an ineligible program is one the matcher
+declines at the door, for a reason the specification has no opinion about.
+The argument is four layers deep — the
 epsilon closure against the backtracking mirror, one position's thread list
 against the merge of the attempts still running, one position's seed, and
 the position loop against `Spec.scan` — and the middle layers are where the
@@ -354,11 +381,11 @@ discharged from the pattern by `compile_reRules` rather than asserted.
 The widening is not theoretical. `a*b*`, `(a|b)*c` and every other eligible
 pattern with a star in it were outside the old statement and are inside this
 one; the intersection had been almost exactly the optional items.
-Eligibility itself is unchanged and is still a real restriction — `pike_ok`
-refuses `\R`, every bounded quantifier, and any star whose body can finish
-an iteration without consuming — so `a{2,5}b` is still outside S-12, and
-outside it for the reason it always was: there is no second run to agree
-with. Its backtracking bound is proved.
+Eligibility itself is unchanged as a predicate and is still a real
+restriction, though the lowering moved which patterns meet it: `a{2,5}b`
+compiles to copies and a star now and is inside S-12, while `a+\R` and
+`(?:a?)+b` are outside it for the reason bounded quantifiers used to be —
+there is no second run to agree with. Their backtracking bounds are proved.
 
 The backtracking half of R-6, R-7, R-8, R-9's no-allocation clause and S-10
 was for a long time proved only for the patterns whose constructs are
@@ -578,7 +605,7 @@ ovector window. Until M10 proves the parser that is a claim to be tested
 rather than assumed, so `Proofs/WfDecide.lean` decides it and the corpus
 replay asks it of every tree the engine's own parser produced, along with
 the `PatFits` size clauses the lockstep bounds read the program through.
-All 248 replayed patterns satisfy both.
+All 331 replayed patterns satisfy both.
 
 Those two, with the subject cap, are the whole list. There used to be a
 third, `suffFuel s.size p.root < none32`, and it was an overclaim in the
@@ -627,9 +654,9 @@ by exactly one transformation. Section 4 says so.
 What the link is tested by is not weak. `lake exe corpuscheck` compiles the
 exported tree with `R.compile`, runs it with `R.run`, and holds the bytecode,
 the region tree, the outcome, the ovector and the observed cost, stack and
-memory to the engine's numbers, case by case — 315 replayed cases, every one
+memory to the engine's numbers, case by case — 331 replayed cases, every one
 of them well formed for the refinement theorems. Beside it, the differential
-sweep compares 47,683 answers to pcre2 with full ovector equality and 38,412
+sweep compares 51,198 answers to pcre2 with full ovector equality and 41,043
 of them across both matchers. A rewrite that disagreed with the compiler by
 one instruction, or with pcre2 by one capture, fails a build.
 

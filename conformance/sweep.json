@@ -43858,7 +43858,7 @@
             "outcome": 1,
             "usage": {
               "cost": 44,
-              "mem": 3679312,
+              "mem": 3677184,
               "stack": 0
             }
           },
@@ -43866,7 +43866,7 @@
             "outcome": 1,
             "usage": {
               "cost": 44,
-              "mem": 3679312,
+              "mem": 3677184,
               "stack": 0
             }
           },
@@ -43874,7 +43874,7 @@
             "outcome": 1,
             "usage": {
               "cost": 64,
-              "mem": 3679312,
+              "mem": 3677184,
               "stack": 0
             }
           },
@@ -43882,7 +43882,7 @@
             "outcome": 1,
             "usage": {
               "cost": 44,
-              "mem": 3679312,
+              "mem": 3677184,
               "stack": 0
             }
           },
@@ -43890,7 +43890,7 @@
             "outcome": 1,
             "usage": {
               "cost": 44,
-              "mem": 3679312,
+              "mem": 3677184,
               "stack": 0
             }
           },
@@ -43898,7 +43898,7 @@
             "outcome": 1,
             "usage": {
               "cost": 44,
-              "mem": 3679312,
+              "mem": 3677184,
               "stack": 0
             }
           },
@@ -43906,7 +43906,7 @@
             "outcome": 1,
             "usage": {
               "cost": 64,
-              "mem": 3679312,
+              "mem": 3677184,
               "stack": 0
             }
           },
@@ -43914,13 +43914,13 @@
             "outcome": 1,
             "usage": {
               "cost": 44,
-              "mem": 3679312,
+              "mem": 3677184,
               "stack": 0
             }
           }
         ],
         "edges": 0,
-        "memcap": 3679312,
+        "memcap": 3677184,
         "status": 0
       },
       "family": "quant",
@@ -43928,15 +43928,15 @@
       "index": 973,
       "maxlen": 17,
       "newline": 4,
-      "pattern": "617b33323834387d62",
+      "pattern": "617b33323832397d62",
       "pike": false,
       "seed": 20260803,
       "trials": [
         {
           "bound": {
-            "cost": 6044557,
-            "mem": 3679312,
-            "stack": 32849
+            "cost": 6041061,
+            "mem": 3677184,
+            "stack": 32830
           },
           "edges": true,
           "matchFlags": 1,
@@ -43951,9 +43951,9 @@
         },
         {
           "bound": {
-            "cost": 6570162,
-            "mem": 3679312,
-            "stack": 32849
+            "cost": 6566362,
+            "mem": 3677184,
+            "stack": 32830
           },
           "matchFlags": 2,
           "outcome": 1,
@@ -43967,9 +43967,9 @@
         },
         {
           "bound": {
-            "cost": 7095767,
-            "mem": 3679312,
-            "stack": 32849
+            "cost": 7091663,
+            "mem": 3677184,
+            "stack": 32830
           },
           "edges": true,
           "matchFlags": 4,
@@ -43984,9 +43984,9 @@
         },
         {
           "bound": {
-            "cost": 7095767,
-            "mem": 3679312,
-            "stack": 32849
+            "cost": 7091663,
+            "mem": 3677184,
+            "stack": 32830
           },
           "matchFlags": 8,
           "outcome": 1,
@@ -44000,14 +44000,14 @@
         },
         {
           "bound": {
-            "cost": 7621372,
-            "mem": 3679312,
-            "stack": 32849
+            "cost": 7616964,
+            "mem": 3677184,
+            "stack": 32830
           },
           "matchFlags": 16,
           "outcome": 1,
           "start": 0,
-          "subject": "343434",
+          "subject": "393939",
           "usage": {
             "cost": 44,
             "mem": 24,
@@ -44016,9 +44016,9 @@
         },
         {
           "bound": {
-            "cost": 6570162,
-            "mem": 3679312,
-            "stack": 32849
+            "cost": 6566362,
+            "mem": 3677184,
+            "stack": 32830
           },
           "matchFlags": 0,
           "outcome": 1,
@@ -44032,9 +44032,9 @@
         },
         {
           "bound": {
-            "cost": 7095767,
-            "mem": 3679312,
-            "stack": 32849
+            "cost": 7091663,
+            "mem": 3677184,
+            "stack": 32830
           },
           "matchFlags": 1,
           "outcome": 1,
@@ -44048,9 +44048,9 @@
         },
         {
           "bound": {
-            "cost": 14979842,
-            "mem": 3679312,
-            "stack": 32849
+            "cost": 14971178,
+            "mem": 3677184,
+            "stack": 32830
           },
           "matchFlags": 2,
           "outcome": 1,
@@ -46066,7 +46066,7 @@
     }
   },
   "hostile": 64,
-  "manifest": "f28bb90630bfec8e3105933fabed5a010c46c58b394802a2ad420595245c8083",
+  "manifest": "9087d4ceefbc7f6d993b00d600305062959c2534b04ba2375923ef23feb0b0f1",
   "note": "The answers of one differential sweep, one entry per case of the manifest named by hash below. Every implementation of the engine must give exactly these answers: the same compile outcome, the same ovector, the same certified bounds, the same observed cost, stack and memory, the same answer from the other matcher, and the same reservation from a preallocated context. An outcome is a match outcome ordinal (0 matched, 1 no match, 2 ResourceExceeded, 3 BadInput); a bound of null is the ExceedsBudget of DESIGN.md section 2.4, and a trial marked edges is one whose three limits are re-run at the observed value and one below. This is the committed shard: one case in every seven of a small population, generated from the engine alone so that regenerating it needs no build of pcre2. What pcre2 says about the same cases is a test, not a file. The regressions section holds the same answers for the cases the sweep has actually found and a reducer has shrunk, which are kept in oracle/corpus/sweep-regressions.json rather than generated; every runner replays them exactly as it replays the generated ones, since what they guard is an invariant rather than an answer.",
   "regressions": [
     {

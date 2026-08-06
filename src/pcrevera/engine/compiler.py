@@ -415,6 +415,11 @@ def _decide(L: Layout) -> None:
         f.set(code, code + counter(1))
     regions = tmp(f, counter, root.field("regions") + counter(1))
     reps = tmp(f, counter, root.field("reps"))
+    # The one entry of the vector the emitter does not hold in an array of its
+    # own: registers are allocated after the walk, from the capture and
+    # repetition counts. Priced here in saturating arithmetic because a
+    # candidate the caps are about to refuse can want more of them than a u32
+    # holds.
     regs = tmp(
         f,
         counter,
@@ -423,6 +428,7 @@ def _decide(L: Layout) -> None:
     f.set(w.field("fitcode"), code)
     f.set(w.field("fitregion"), regions)
     f.set(w.field("fitrep"), reps)
+    f.set(w.field("fitregs"), regs)
     f.set(w.field("fitvisit"), root.field("visits"))
     f.set(w.field("fitjobs"), root.field("depth"))
     f.set(w.field("fitpatch"), root.field("patches"))
@@ -481,13 +487,24 @@ def _fit(L: Layout) -> None:
     of one number drift exactly at the cap boundary, and that is where the
     fallback decision lives.
     """
+    # Captures take the low registers, in ovector order; each counted
+    # repetition takes two above them, a count and the position its current
+    # iteration started at. Written once and called from both places that need
+    # it, since the dry run approving a candidate the register allocation then
+    # refuses is exactly the drift the fit vector exists to catch.
+    f = L.func("count_regs", params=[("ncap", u32), ("nrep", u32)], ret=u32)
+    f.ret((f["ncap"] + u32(1)) * u32(2) + f["nrep"] * u32(2))
+
     f = L.func("check_fit", params=[("w", L.Work, "inout"), ("used", counter)])
     w = f["w"]
     bad = tmp(f, boolean, boolean(False))
+    allocated = tmp(f, u32, u32(0))
+    f.call("count_regs", [w.field("ncap"), w.field("nrep")], dest=allocated)
     for field, actual in (
         ("fitcode", w.field("code").len().cast(counter)),
         ("fitregion", w.field("regions").len().cast(counter)),
         ("fitrep", w.field("nrep").cast(counter)),
+        ("fitregs", allocated.cast(counter)),
         ("fitvisit", f["used"]),
     ):
         with f.if_(w.field(field) != actual):
@@ -615,7 +632,11 @@ def _walk(L: Layout) -> None:
 
     with f.if_(w.field("err") != u32(0)):
         f.ret()
-    with f.if_(fuel == counter(0)):
+    # A walk that ran out of fuel is one with jobs still on the stack, which is
+    # the thing to test: a walk needing exactly WALK_FUEL turns finishes on its
+    # last one and leaves the counter at zero, and reading that as exhaustion
+    # would refuse a program the generator had just finished emitting.
+    with f.if_(w.field("jobs").len() > u32(0)):
         f.set(w.field("err"), u32(spec.E_INTERNAL))
         f.ret()
     with f.if_(f["endanchored"]):

@@ -35,15 +35,19 @@ M6 and M7 target.
 The wave 1 guarantee holds with three named carve-outs, and they are the ones
 DESIGN.md section 2.1 lists: a counted repetition whose lowered form exceeds a
 program-size cap, a star whose body can finish an iteration without consuming
-a byte, and `\R` until it compiles as an alternation. Everything else runs on
-the Pike VM. Counted repetitions are lowered to star form at compilation to
-get there — `a+` is `aa*`, `a{2,4}` is `aa(a(a)?)?`. Against the engine that
-came before it, over the 334 patterns the corpora pin and both compile: 116
-moved onto the lockstep path, 39 from `notProvenLinear` to `linear` and 7 more
-from no certificate at all, and none moved the other way.
-`conformance/migration.json` is that census, pattern by pattern. Which matcher
-runs is not the class, though: the class comes off the shape of the certified
-bound, so `a{2}` and `\R` classify linear on the backtracking path too.
+a byte, and a `\R` the program emits, until `\R` compiles as an alternation.
+Everything else runs on the Pike VM. Counted repetitions are lowered to star
+form at compilation to get there — `a+` is `aa*`, `a{2,4}` is `aa(a(a)?)?`.
+Against the engine that came before it, over the 334 patterns the corpora pin
+and both compile: 116 moved onto the lockstep path, 39 from `notProvenLinear`
+to `linear` and 7 more from no certificate at all, and none moved the other
+way. `conformance/migration.json` is that census, pattern by pattern, and
+what the older engine said is beside it in `oracle/corpus/pre-lowering.json` —
+it cannot be asked again, so the comparison is a test that compiles all 334
+patterns and joins the result to the recording, rather than a number somebody
+once ran. Which matcher runs is not the class, though: the class comes off the
+shape of the certified bound, so `a{2}` and `\R` classify linear on the
+backtracking path too.
 
 One piece of that change is deliberately not proved. The lowering is a rewrite
 on the tree, and it sits ahead of the Lean reference compiler rather than

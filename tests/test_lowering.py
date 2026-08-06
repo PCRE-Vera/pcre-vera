@@ -122,17 +122,20 @@ def _boundary(spelling: bytes) -> int:
     return low
 
 
-BOUNDARY_SPELLING = b"(?:a*){%d}"
+BOUNDARY_SPELLING = b"(?:a*){%d}b"
 """What the repetition-table bisection walks: a copy carries a counter."""
 
-FUEL_SPELLING = b"a{%d}"
+FUEL_SPELLING = b"a{%d}b"
 """And what the walk-fuel one walks.
 
 A one-instruction body costs the code array one cell per copy and the code
 generator two job visits — the copy and the repeat job's own — and the fuel is
 twice the code array, so this reaches the fuel first. Which cap a family
 reaches is a fact about the compiler rather than a choice; what the test does
-is name it and then ask the dry run where it is."""
+is name it and then ask the dry run where it is.
+
+Both are spelled with the trailing literal the sweep's cells carry, so the
+counts this finds are the counts that go in them."""
 
 
 @pytest.mark.parametrize(
@@ -162,6 +165,46 @@ def test_the_cap_boundary_is_where_the_dry_run_says_it_is(
 def test_the_two_families_stop_at_different_caps() -> None:
     """Which is what makes them two witnesses rather than one written twice."""
     assert _boundary(BOUNDARY_SPELLING) != _boundary(FUEL_SPELLING)
+
+
+def _compiled_at(pattern: bytes, budget: int) -> tuple[int, int, bool]:
+    """Compile with the interpreter's step budget raised, and report the
+    error, the code length and the routing.
+
+    The budget is the harness's safety net rather than a limit of the engine,
+    and laying out tens of thousands of copies is past the default. The other
+    two backends have no such net; this is what stands in for them.
+    """
+    from pcrevera.engine.driver import _blob
+    from pcrevera.engine.program import program
+    from pcrevera.tir.interp import Cell, Interpreter
+    from pcrevera.tir.types import StructType
+
+    interp = Interpreter(program(), fuel=budget)
+    out = Cell(interp.zero(StructType("Out")))
+    interp.call("compile", [_blob(pattern), 0, 0, 0, out])
+    re = out.value.fields["re"]
+    return (
+        out.value.fields["err"],
+        len(re.fields["code"].inner.items),
+        bool(re.fields["pike"]),
+    )
+
+
+def test_a_candidate_exactly_at_a_cap_is_emitted() -> None:
+    """The fitting side of a boundary, really compiled.
+
+    This is the expensive test in the file and it is the one that earns its
+    keep: the emitter asserts its own output against the dry run's prediction,
+    and that assertion only ever runs on a program that was emitted. A
+    boundary nobody compiled is a boundary where the two calculations were free
+    to disagree — which is exactly where they did, once.
+    """
+    edge = _boundary(FUEL_SPELLING)
+    err, length, pike = _compiled_at(FUEL_SPELLING % edge, 400_000_000)
+    assert err == 0, err
+    assert pike
+    assert length == edge + 2  # a copy each, the trailing literal, the accept
 
 
 @pytest.mark.parametrize(
@@ -206,6 +249,66 @@ def test_a_lowering_well_inside_the_cap_is_emitted() -> None:
     assert built.re.fields["lowdec"] == spec.LOW_LOWERED
     assert built.re.fields["pike"]
     assert len(built.re.fields["reps"].inner.items) == 400
+
+
+FIT_SUBJECTS = [
+    rb"abc",
+    rb"a+",
+    rb"a{2,}",
+    rb"a{2,4}",
+    rb"(a)(b)+(?<c>c){2,3}",
+    rb"(?:(a)|(b)){3}",
+    EMAIL,
+    rb"(?:a*)+b",
+    rb"a+\R",
+]
+"""Lowered and not, captured and not, blocked and not. What the vector has to
+describe is the program that came out, whichever form that is."""
+
+
+@pytest.mark.parametrize("pattern", FIT_SUBJECTS)
+def test_the_predicted_vector_describes_the_program_that_came_out(
+    pattern: bytes,
+) -> None:
+    """The dry run's prediction against the finished program, from outside.
+
+    The compiler makes this comparison itself and refuses a program that fails
+    it, which is a check with nobody watching: both halves of it are the same
+    walk's opinion of itself. So the four entries that survive compilation are
+    held to the compiled pattern here — and the registers among them, since
+    those are the one entry with no array of their own and the easiest to let
+    drift.
+
+    Four of seven, and the other three have no witness to offer. The peak job
+    depth, the peak patch count and the fuel the walk spent are properties of a
+    walk that is over: nothing but the emitter's own counters ever saw them, so
+    a test out here could only ask the emitter what it counted and compare that
+    to what it counted. Those three stay where they are checkable, inside
+    `check_fit`.
+
+    A pattern the pre-check sent back to counter form is priced for a candidate
+    nobody emitted, so what is asserted about it is the other thing: that the
+    prediction was not used.
+    """
+    built = compiled(pattern)
+    fit = ENGINE.lowering_fit(pattern)
+    if built.re.fields["lowdec"] in (spec.LOW_BLOCKED, spec.LOW_CAPPED):
+        assert not built.re.fields["pike"]
+        return
+    assert fit["code"] == len(built.re.fields["code"].inner.items)
+    assert fit["region"] == len(built.re.fields["regions"].inner.items)
+    assert fit["rep"] == len(built.re.fields["reps"].inner.items)
+    assert fit["regs"] == built.re.fields["nregs"]
+    assert fit["regs"] == 2 * (built.re.fields["ncap"] + 1) + 2 * fit["rep"]
+
+
+def test_the_register_cap_is_slack_by_construction() -> None:
+    """Which is why the register entry is an anti-drift check rather than a
+    decision. MAX_REGS is the ovector plus two per repetition, and both of its
+    inputs are capped below that, so nothing can be refused for registers that
+    was not already refused for repetitions or captures."""
+    assert spec.MAX_REGS == spec.MAX_OVEC + 2 * spec.MAX_REPS
+    assert 2 * (spec.MAX_GROUPS + 1) + 2 * spec.MAX_REPS <= spec.MAX_REGS
 
 
 # --- the shape the lowering emits ---
@@ -315,3 +418,12 @@ def test_the_named_facts_the_census_says_must_survive() -> None:
 
     nested = compiled(rb"(?:a*)*")
     assert ENGINE.complexity_class(nested)[0] == spec.EXCEEDS_BUDGET
+
+
+def test_the_sweeps_over_cap_cells_are_one_past_their_boundaries() -> None:
+    """The matrix carries the far side of two caps, and they have to stay the
+    far side. A cap that moved would leave those cells merely large."""
+    from pcrevera.sweep.population import QUANT_OVER_CAP
+
+    for cell, spelling in zip(QUANT_OVER_CAP, (BOUNDARY_SPELLING, FUEL_SPELLING)):
+        assert cell.encode() == spelling % (_boundary(spelling) + 1)

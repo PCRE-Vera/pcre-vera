@@ -89,7 +89,7 @@ def _counts() -> tuple[str, ...]:
 
 QUANT_COUNTS = _counts()
 
-QUANT_OVER_CAP = ("(?:a*){4097}b", "a{32848}b")
+QUANT_OVER_CAP = ("(?:a*){4097}b", "a{32829}b")
 """The far side of two of the compiler's caps: the repetition table, one
 counter per copy, and the code generator's walk fuel, which for a body of one
 instruction runs out before the code array does — two visits per copy against
@@ -103,6 +103,10 @@ generated is not a cell. The fitting side is asserted instead in
 `tests/test_lowering.py`, off the dry run's own report, and what is here is
 what the fallback has to do: compile in counter form, answer what pcre2
 answers, and not become PatternTooLarge.
+
+Both counts are exactly one past their cap, and `tests/test_lowering.py` holds
+them there: a cap that moved would leave these merely large rather than
+adjacent, which is the difference between a boundary witness and a big number.
 
 Both reach their cap through a one-instruction body, which is not decoration.
 pcre2 replicates a bounded quantifier and refuses at its own compiled size, so

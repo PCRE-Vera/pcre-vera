@@ -2,8 +2,12 @@
 
 `generate` is the whole pipeline in one function: build the engine, serialize
 it canonically, hash that text, and print both backends against that hash.
-Every output is a function of the program alone, so building and verifying are
-the same computation asked either to write the files or to compare them.
+Every output is a function of its inputs and nothing else: the program for the
+artifact and the two backends; the program and the pattern populations for the
+conformance files and the migration report; the two corpora this run has just
+generated for the Lean bridge. So building and verifying are the same
+computation asked either to write the files or to compare them, and neither
+reads a generated file back.
 """
 
 from __future__ import annotations

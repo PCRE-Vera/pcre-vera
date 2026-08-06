@@ -899,21 +899,17 @@ class Engine:
         found = variant_of(interp.call("cert_build", [built.re, cand]))
         return found, _read_cert(cand.value) if found == "ArOk" else None
 
-    def lowering_plan(
-        self,
-        pattern: bytes,
-        *,
-        options: Sequence[str] = (),
-        newline: str = "LF",
-    ) -> tuple[int, int, bool]:
-        """The blockers, the decision and the fit, with nothing emitted.
+    def _planned(
+        self, pattern: bytes, options: Sequence[str], newline: str
+    ) -> StructValue:
+        """The work area after the dry run, with nothing emitted.
 
-        `plan_lowering` is the compiler's dry run and it prices the lowered
-        candidate in closed form, so asking it on its own costs a walk of the
-        parsed tree however large the candidate would be. That is what the
-        cap-adjacent witnesses of PLAN-POST-M6.md are found with: the boundary
-        is read off the dry run's own report rather than guessed at, and only
-        the two patterns either side of it are ever compiled.
+        `plan_lowering` prices the lowered candidate in closed form, so asking
+        it on its own costs a walk of the parsed tree however large the
+        candidate would be. That is what the cap-adjacent witnesses of
+        PLAN-POST-M6.md are found with: the boundary is read off the dry run's
+        own report rather than guessed at, and only the two patterns either
+        side of it are ever compiled.
         """
         bits = _options(options, spec.COMPILE_OPTIONS, "a compile option")
         assert bits is not None, options
@@ -931,11 +927,44 @@ class Engine:
         )
         value = work.value
         assert isinstance(value, StructValue)
+        return value
+
+    def lowering_plan(
+        self,
+        pattern: bytes,
+        *,
+        options: Sequence[str] = (),
+        newline: str = "LF",
+    ) -> tuple[int, int, bool]:
+        """The blockers, the decision and the fit."""
+        planned = self._planned(pattern, options, newline)
         return (
-            value.fields["blockers"],
-            value.fields["lowdec"],
-            bool(value.fields["lowfits"]),
+            planned.fields["blockers"],
+            planned.fields["lowdec"],
+            bool(planned.fields["lowfits"]),
         )
+
+    def lowering_fit(
+        self,
+        pattern: bytes,
+        *,
+        options: Sequence[str] = (),
+        newline: str = "LF",
+    ) -> dict[str, int]:
+        """The whole vector the dry run predicts, entry by entry.
+
+        The compiler compares this against what it emitted and refuses the
+        program when the two differ, which makes it the one number in the
+        engine that is checked against itself. So it is also readable from
+        outside, where a test can hold the entries it can see — the code, the
+        regions, the repetitions and the registers they imply — to the finished
+        program rather than to the other half of the same walk.
+        """
+        planned = self._planned(pattern, options, newline)
+        return {
+            name: planned.fields[f"fit{name}"]
+            for name in ("code", "region", "rep", "regs", "visit", "jobs", "patch")
+        }
 
     def check_shape(self, built: CompiledPattern) -> str:
         """The checker's verdict on the region tree alone, named.

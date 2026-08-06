@@ -309,7 +309,8 @@ LB_NULLABLE = 1 << 0
 consuming — the `(a?)*` problem, which survives any amount of lowering."""
 
 LB_BSR = 1 << 1
-"""A `\\R`, which consumes a variable number of bytes."""
+"""A `\\R` the program would emit, which consumes a variable number of bytes.
+One under a `{0}` repetition compiles to nothing and is not a blocker."""
 
 # --- complexity classes ---
 #

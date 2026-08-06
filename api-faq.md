@@ -673,3 +673,22 @@ rewriting.
 Writing the clause once as `∀ (u : Inst → Nat) (c : Nat → Nat), repCost re u n
 ways c pc regs pos = …` and instantiating it at each pricing is shorter than
 restating it per unit, and it keeps the three instances sharing their atoms.
+
+## V-022 refuses `f(inout w, w.vec[i])`, not just two inout arguments
+
+The rule reads "every inout argument's access path is provably disjoint from
+every other argument's", and the natural reading is that it is about two
+`inout`s aliasing each other. It is not: a by-value argument counts too, so
+passing a work area by reference and one of its own elements by value in the
+same call is refused —
+
+    f.call("size_node", [inout(w), w.field("order").at(j)])
+
+comes back as "argument 1 of 'size_node' may overlap argument 2: w against
+w.order[?]". The reason is the one TIR-SPEC.md section 6 gives for the whole
+family: an argument is evaluated where the callee reads it, so a by-value
+argument read out of a place the callee is also mutating has no well-defined
+value.
+
+Copy the element into a local first and pass the local. It costs a `let` and
+it is what the caller meant anyway.

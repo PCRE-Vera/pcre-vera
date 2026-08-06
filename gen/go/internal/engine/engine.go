@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   4b51962c6539c56954e5165f1abd3f7f7648bc87055b50e7e44e84729100a3a5
+//   d60df8a5600a4a0d4d1d1ea21e90883eab44d35a8f71e1d5450daf0a61b5dd1f
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -18,7 +18,7 @@ package engine
 
 // ArtifactSHA256 is the SHA-256 of the TIR artifact this package was printed
 // from.
-const ArtifactSHA256 = "4b51962c6539c56954e5165f1abd3f7f7648bc87055b50e7e44e84729100a3a5"
+const ArtifactSHA256 = "d60df8a5600a4a0d4d1d1ea21e90883eab44d35a8f71e1d5450daf0a61b5dd1f"
 
 // Tir_Trap is what a checked operation panics with, per TIR-SPEC.md section 12.
 type Tir_Trap struct {
@@ -586,6 +586,7 @@ type Work struct {
 	fitcode uint64
 	fitregion uint64
 	fitrep uint64
+	fitregs uint64
 	fitvisit uint64
 	fitjobs uint32
 	fitpatch uint32
@@ -1956,6 +1957,9 @@ func charge_grow(oldcap uint32, lenv uint32, esize uint32, maxv uint32, mem *uin
 
 func check_fit(w *Work, used uint64) {
 	var tmp1 bool = false
+	var tmp2 uint32 = uint32(0)
+	tir_t1 := count_regs((*w).ncap, (*w).nrep)
+	tmp2 = tir_t1
 	if ((*w).fitcode != uint64(uint32(len((*w).code)))) {
 		tmp1 = true
 	}
@@ -1963,6 +1967,9 @@ func check_fit(w *Work, used uint64) {
 		tmp1 = true
 	}
 	if ((*w).fitrep != uint64((*w).nrep)) {
+		tmp1 = true
+	}
+	if ((*w).fitregs != uint64(tmp2)) {
 		tmp1 = true
 	}
 	if ((*w).fitvisit != used) {
@@ -2313,7 +2320,9 @@ func compile(pat []byte, popts uint32, nltype uint32, bsr uint32, out *Out) {
 		(*out).erroff = w.erroff
 		return
 	}
-	var tmp3 uint32 = (((w.ncap + uint32(1)) * uint32(2)) + (w.nrep * uint32(2)))
+	var tmp3 uint32 = uint32(0)
+	tir_t1 := count_regs(w.ncap, w.nrep)
+	tmp3 = tir_t1
 	if (tmp3 > uint32(8704)) {
 		(*out).err = uint32(1002)
 		return
@@ -2342,16 +2351,16 @@ func compile(pat []byte, popts uint32, nltype uint32, bsr uint32, out *Out) {
 	(*out).re.nameents = w.nameents
 	w.nameents = nil
 	var tmp4 bool = false
-	tir_t1 := pike_ok((*out).re)
-	tmp4 = tir_t1
+	tir_t2 := pike_ok((*out).re)
+	tmp4 = tir_t2
 	(*out).re.pike = tmp4
 	var cand Cert
 	var tmp5 bool = false
 	var pcand Cert
 	var tmp6 bool = false
 	var tmp7 Cr = CrOk
-	tir_t2 := cert_install((*out).re, &cand, &tmp5, &pcand, &tmp6)
-	tmp7 = tir_t2
+	tir_t3 := cert_install((*out).re, &cand, &tmp5, &pcand, &tmp6)
+	tmp7 = tir_t3
 	if (tmp7 != CrOk) {
 		(*out).err = uint32(1003)
 		return
@@ -2360,6 +2369,10 @@ func compile(pat []byte, popts uint32, nltype uint32, bsr uint32, out *Out) {
 	(*out).re.hascert = tmp5
 	(*out).re.pikecert = pcand
 	(*out).re.haspikecert = tmp6
+}
+
+func count_regs(ncap uint32, nrep uint32) uint32 {
+	return (((ncap + uint32(1)) * uint32(2)) + (nrep * uint32(2)))
 }
 
 func ct(c uint8, bit uint8) bool {
@@ -2696,7 +2709,7 @@ func generate(w *Work, endanchored bool) {
 	if ((*w).err != uint32(0)) {
 		return
 	}
-	if (tmp3 == uint64(0)) {
+	if (uint32(len((*w).jobs)) > uint32(0)) {
 		(*w).err = uint32(1003)
 		return
 	}
@@ -4748,6 +4761,7 @@ func plan_lowering(w *Work, endanchored bool) {
 	(*w).fitcode = tmp10
 	(*w).fitregion = tmp11
 	(*w).fitrep = tmp12
+	(*w).fitregs = tmp13
 	(*w).fitvisit = tmp9.visits
 	(*w).fitjobs = tmp9.depth
 	(*w).fitpatch = tmp9.patches
@@ -7953,6 +7967,10 @@ func Tir_compile(pat []byte, popts uint32, nltype uint32, bsr uint32, out *Out) 
 	compile(pat, popts, nltype, bsr, out)
 }
 
+func Tir_count_regs(ncap uint32, nrep uint32) uint32 {
+	return count_regs(ncap, nrep)
+}
+
 func Tir_ct(c uint8, bit uint8) bool {
 	return ct(c, bit)
 }
@@ -8491,6 +8509,7 @@ func (v *Work) Tir_predicted() bool { return v.predicted }
 func (v *Work) Tir_fitcode() uint64 { return v.fitcode }
 func (v *Work) Tir_fitregion() uint64 { return v.fitregion }
 func (v *Work) Tir_fitrep() uint64 { return v.fitrep }
+func (v *Work) Tir_fitregs() uint64 { return v.fitregs }
 func (v *Work) Tir_fitvisit() uint64 { return v.fitvisit }
 func (v *Work) Tir_fitjobs() uint32 { return v.fitjobs }
 func (v *Work) Tir_fitpatch() uint32 { return v.fitpatch }

@@ -562,6 +562,7 @@ class Layout:
                 ("fitcode", counter),
                 ("fitregion", counter),
                 ("fitrep", counter),
+                ("fitregs", counter),
                 ("fitvisit", counter),
                 ("fitjobs", u32),
                 ("fitpatch", u32),

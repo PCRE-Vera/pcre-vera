@@ -118,9 +118,10 @@ agrees with Python, and Go and JavaScript agree with the file.
 contract. Every pattern the three files above name gets a row saying what the
 quantifier lowering of DESIGN.md section 4.3 did to it — the blockers the
 pre-check found on the original tree, the decision they led to, whether
-`pike_ok` accepted the emitted program, what the backtracking analyzer answered
-about it whichever path was selected, which certificate the pattern carries and
-the class it claims, and the three accessors at a thousand bytes. The columns
+`pike_ok` accepted the emitted program and a hash of that program, what the
+backtracking analyzer answered about it whichever path was selected, which
+certificate the pattern carries and the class it claims, and the three
+accessors at a thousand bytes. The columns
 are deliberately not recombined: a pattern can be Pike-selected and linear
 while the backtracking analyzer answers `ArOverflow` for the same program, and
 a schema with one certificate column would have to record that as a
@@ -133,6 +134,20 @@ the counter form left behind by a decline has been found to show the blockers
 the pre-check named. `tests/test_migration.py` then reads the census off the
 columns. A decision the derivation cannot reproduce fails generation rather
 than appearing in the file.
+
+Half of that census is about two engines rather than one — that no pattern's
+class regressed — and only one of them exists here. What the engine before the
+lowering said about the same patterns was measured once and committed as
+`oracle/corpus/pre-lowering.json`, which is why that file sits in the oracle's
+corpus directory beside the sweep regressions rather than here: nothing
+generates it, and nothing can generate it again. The same test joins the two by
+pattern and recomputes the movement — and asks this engine to reproduce the
+recording wherever it still can, which is the 218 patterns the lowering left
+alone. Those compile to what they always compiled to, and the program hash is
+what says so: every field of the compiled pattern a matcher reads — the
+bytecode, the class bitmaps it indexes, the region tree, the repetition table,
+the group names and the scalars — rendered the same way on both sides of an
+engine that changed underneath them.
 
 The runners, one row per file and one column per language:
 

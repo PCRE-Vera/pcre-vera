@@ -1,7 +1,7 @@
 // Code generated from engine.tir.json. DO NOT EDIT.
 //
 // Artifact SHA-256:
-//   4b51962c6539c56954e5165f1abd3f7f7648bc87055b50e7e44e84729100a3a5
+//   d60df8a5600a4a0d4d1d1ea21e90883eab44d35a8f71e1d5450daf0a61b5dd1f
 //
 // The wave 1 pcre-vera engine as printed from its TIR artifact: the pattern
 // parser, the bytecode compiler, and the backtracking matcher. The public
@@ -15,7 +15,7 @@
 // loudly instead of reading undefined off the end of a typed array.
 
 /** SHA-256 of the TIR artifact this module was printed from. */
-export const artifactSha256 = "4b51962c6539c56954e5165f1abd3f7f7648bc87055b50e7e44e84729100a3a5";
+export const artifactSha256 = "d60df8a5600a4a0d4d1d1ea21e90883eab44d35a8f71e1d5450daf0a61b5dd1f";
 
 /** What a checked operation throws, per TIR-SPEC.md section 12. */
 export class tir_Trap extends Error {
@@ -1149,6 +1149,7 @@ export class Work {
     this.fitcode = 0;
     this.fitregion = 0;
     this.fitrep = 0;
+    this.fitregs = 0;
     this.fitvisit = 0;
     this.fitjobs = 0;
     this.fitpatch = 0;
@@ -1157,7 +1158,7 @@ export class Work {
   }
 }
 
-function tir_new_Work(nodes, frames, classes, names, nameents, code, reps, regions, jobs, patches, ncap, nname, nclass, nrep, opts, err, erroff, root, refs, hascrlf, crfirst, nltype, clselems, clsrange, clscrlf, pending, seen, sizes, order, lowering, lowdec, blockers, lowfits, predicted, fitcode, fitregion, fitrep, fitvisit, fitjobs, fitpatch, peakjobs, peakpatch) {
+function tir_new_Work(nodes, frames, classes, names, nameents, code, reps, regions, jobs, patches, ncap, nname, nclass, nrep, opts, err, erroff, root, refs, hascrlf, crfirst, nltype, clselems, clsrange, clscrlf, pending, seen, sizes, order, lowering, lowdec, blockers, lowfits, predicted, fitcode, fitregion, fitrep, fitregs, fitvisit, fitjobs, fitpatch, peakjobs, peakpatch) {
   const o = new Work();
   o.nodes = nodes;
   o.frames = frames;
@@ -1196,6 +1197,7 @@ function tir_new_Work(nodes, frames, classes, names, nameents, code, reps, regio
   o.fitcode = fitcode;
   o.fitregion = fitregion;
   o.fitrep = fitrep;
+  o.fitregs = fitregs;
   o.fitvisit = fitvisit;
   o.fitjobs = fitjobs;
   o.fitpatch = fitpatch;
@@ -2545,6 +2547,9 @@ export function charge_grow(oldcap, lenv, esize, maxv, mem, peak, cost, memlimit
 
 export function check_fit(w, used) {
   let tmp1 = false;
+  let tmp2 = 0;
+  const tir_t1 = count_regs(w.v.ncap, w.v.nrep);
+  tmp2 = tir_t1;
   if ((w.v.fitcode !== (w.v.code.n))) {
     tmp1 = true;
   }
@@ -2552,6 +2557,9 @@ export function check_fit(w, used) {
     tmp1 = true;
   }
   if ((w.v.fitrep !== (w.v.nrep))) {
+    tmp1 = true;
+  }
+  if ((w.v.fitregs !== (tmp2))) {
     tmp1 = true;
   }
   if ((w.v.fitvisit !== used)) {
@@ -2909,7 +2917,9 @@ export function compile(pat, popts, nltype, bsr, out) {
     out.v.erroff = w.erroff;
     return;
   }
-  let tmp3 = ((((Math.imul(((w.ncap + 1) >>> 0), 2)) >>> 0) + ((Math.imul(w.nrep, 2)) >>> 0)) >>> 0);
+  let tmp3 = 0;
+  const tir_t3 = count_regs(w.ncap, w.nrep);
+  tmp3 = tir_t3;
   if ((tmp3 > 8704)) {
     out.v.err = 1002;
     return;
@@ -2938,24 +2948,24 @@ export function compile(pat, popts, nltype, bsr, out) {
   out.v.re.nameents = w.nameents;
   w.nameents = new tir_Seq(tir_EMPTY_OBJ, 0);
   let tmp4 = false;
-  const tir_t3 = pike_ok(out.v.re.tir_clone());
-  tmp4 = tir_t3;
+  const tir_t4 = pike_ok(out.v.re.tir_clone());
+  tmp4 = tir_t4;
   out.v.re.pike = tmp4;
   let cand = new Cert();
   let tmp5 = false;
   let pcand = new Cert();
   let tmp6 = false;
   let tmp7 = CrOk;
-  const tir_t4 = tir_cell(cand);
-  const tir_t5 = tir_cell(tmp5);
-  const tir_t6 = tir_cell(pcand);
-  const tir_t7 = tir_cell(tmp6);
-  const tir_t8 = cert_install(out.v.re.tir_clone(), tir_t4, tir_t5, tir_t6, tir_t7);
-  cand = tir_t4.v;
-  tmp5 = tir_t5.v;
-  pcand = tir_t6.v;
-  tmp6 = tir_t7.v;
-  tmp7 = tir_t8;
+  const tir_t5 = tir_cell(cand);
+  const tir_t6 = tir_cell(tmp5);
+  const tir_t7 = tir_cell(pcand);
+  const tir_t8 = tir_cell(tmp6);
+  const tir_t9 = cert_install(out.v.re.tir_clone(), tir_t5, tir_t6, tir_t7, tir_t8);
+  cand = tir_t5.v;
+  tmp5 = tir_t6.v;
+  pcand = tir_t7.v;
+  tmp6 = tir_t8.v;
+  tmp7 = tir_t9;
   if ((tmp7 !== CrOk)) {
     out.v.err = 1003;
     return;
@@ -2964,6 +2974,10 @@ export function compile(pat, popts, nltype, bsr, out) {
   out.v.re.hascert = tmp5;
   out.v.re.pikecert = pcand.tir_clone();
   out.v.re.haspikecert = tmp6;
+}
+
+export function count_regs(ncap, nrep) {
+  return ((((Math.imul(((ncap + 1) >>> 0), 2)) >>> 0) + ((Math.imul(nrep, 2)) >>> 0)) >>> 0);
 }
 
 export function ct(c, bit) {
@@ -3333,7 +3347,7 @@ export function generate(w, endanchored) {
   if ((w.v.err !== 0)) {
     return;
   }
-  if ((tmp3 === 0)) {
+  if ((w.v.jobs.n > 0)) {
     w.v.err = 1003;
     return;
   }
@@ -5493,6 +5507,7 @@ export function plan_lowering(w, endanchored) {
   w.v.fitcode = tmp10;
   w.v.fitregion = tmp11;
   w.v.fitrep = tmp12;
+  w.v.fitregs = tmp13;
   w.v.fitvisit = tmp9.visits;
   w.v.fitjobs = tmp9.depth;
   w.v.fitpatch = tmp9.patches;

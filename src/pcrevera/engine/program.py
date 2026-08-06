@@ -68,14 +68,12 @@ def _entry(L: Layout) -> None:
         f.set(out.field("erroff"), w.field("erroff"))
         f.ret()
 
-    # Captures take the low registers, in ovector order; each counted
-    # repetition takes two above them, a count and the position its current
-    # iteration started at.
-    nregs = parser.tmp(
-        f,
-        u32,
-        (w.field("ncap") + u32(1)) * u32(2) + w.field("nrep") * u32(2),
-    )
+    # The registers, from the same count the dry run priced against MAX_REGS
+    # before deciding whether to lower. A pattern that reaches here has already
+    # had the two calculations compared, so this refusal is left for the
+    # programs nobody predicted — the ones that kept their counters.
+    nregs = parser.tmp(f, u32, u32(0))
+    f.call("count_regs", [w.field("ncap"), w.field("nrep")], dest=nregs)
     with f.if_(nregs > u32(spec.MAX_REGS)):
         f.set(out.field("err"), u32(spec.E_PATTERN_TOO_LARGE))
         f.ret()

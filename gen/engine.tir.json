@@ -16546,6 +16546,45 @@
           }
         },
         {
+          "let": {
+            "init": {
+              "u32": 0
+            },
+            "name": "tmp2",
+            "type": "u32"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "w"
+                    },
+                    "name": "ncap"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "w"
+                    },
+                    "name": "nrep"
+                  }
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp2"
+            },
+            "fn": "count_regs"
+          }
+        },
+        {
           "if": {
             "cond": {
               "cmp": {
@@ -16657,6 +16696,44 @@
                         },
                         "name": "nrep"
                       }
+                    },
+                    "type": "counter"
+                  }
+                }
+              }
+            },
+            "else": [],
+            "then": [
+              {
+                "assign": {
+                  "place": {
+                    "var": "tmp1"
+                  },
+                  "value": {
+                    "bool": true
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "cond": {
+              "cmp": {
+                "left": {
+                  "field": {
+                    "base": {
+                      "var": "w"
+                    },
+                    "name": "fitregs"
+                  }
+                },
+                "op": "ne",
+                "right": {
+                  "cast": {
+                    "arg": {
+                      "var": "tmp2"
                     },
                     "type": "counter"
                   }
@@ -21208,52 +21285,40 @@
         {
           "let": {
             "init": {
-              "bin": {
-                "left": {
-                  "bin": {
-                    "left": {
-                      "bin": {
-                        "left": {
-                          "field": {
-                            "base": {
-                              "var": "w"
-                            },
-                            "name": "ncap"
-                          }
-                        },
-                        "op": "add",
-                        "right": {
-                          "u32": 1
-                        }
-                      }
-                    },
-                    "op": "mul",
-                    "right": {
-                      "u32": 2
-                    }
-                  }
-                },
-                "op": "add",
-                "right": {
-                  "bin": {
-                    "left": {
-                      "field": {
-                        "base": {
-                          "var": "w"
-                        },
-                        "name": "nrep"
-                      }
-                    },
-                    "op": "mul",
-                    "right": {
-                      "u32": 2
-                    }
-                  }
-                }
-              }
+              "u32": 0
             },
             "name": "tmp3",
             "type": "u32"
+          }
+        },
+        {
+          "call": {
+            "args": [
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "w"
+                    },
+                    "name": "ncap"
+                  }
+                }
+              },
+              {
+                "in": {
+                  "field": {
+                    "base": {
+                      "var": "w"
+                    },
+                    "name": "nrep"
+                  }
+                }
+              }
+            ],
+            "dest": {
+              "var": "tmp3"
+            },
+            "fn": "count_regs"
           }
         },
         {
@@ -21993,6 +22058,63 @@
         }
       ],
       "ret": null
+    },
+    {
+      "body": [
+        {
+          "return": {
+            "value": {
+              "bin": {
+                "left": {
+                  "bin": {
+                    "left": {
+                      "bin": {
+                        "left": {
+                          "var": "ncap"
+                        },
+                        "op": "add",
+                        "right": {
+                          "u32": 1
+                        }
+                      }
+                    },
+                    "op": "mul",
+                    "right": {
+                      "u32": 2
+                    }
+                  }
+                },
+                "op": "add",
+                "right": {
+                  "bin": {
+                    "left": {
+                      "var": "nrep"
+                    },
+                    "op": "mul",
+                    "right": {
+                      "u32": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "count_regs",
+      "params": [
+        {
+          "mode": "in",
+          "name": "ncap",
+          "type": "u32"
+        },
+        {
+          "mode": "in",
+          "name": "nrep",
+          "type": "u32"
+        }
+      ],
+      "ret": "u32"
     },
     {
       "body": [
@@ -26327,11 +26449,18 @@
             "cond": {
               "cmp": {
                 "left": {
-                  "var": "tmp3"
+                  "len": {
+                    "field": {
+                      "base": {
+                        "var": "w"
+                      },
+                      "name": "jobs"
+                    }
+                  }
                 },
-                "op": "eq",
+                "op": "gt",
                 "right": {
-                  "counter": 0
+                  "u32": 0
                 }
               }
             },
@@ -53822,6 +53951,21 @@
             },
             "value": {
               "var": "tmp12"
+            }
+          }
+        },
+        {
+          "assign": {
+            "place": {
+              "field": {
+                "base": {
+                  "var": "w"
+                },
+                "name": "fitregs"
+              }
+            },
+            "value": {
+              "var": "tmp13"
             }
           }
         },
@@ -96005,6 +96149,10 @@
         },
         {
           "name": "fitrep",
+          "type": "counter"
+        },
+        {
+          "name": "fitregs",
           "type": "counter"
         },
         {

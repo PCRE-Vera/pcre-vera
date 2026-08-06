@@ -33,7 +33,7 @@ patterns by them says what the fix reaches and what it deliberately leaves:
     |                              | [A-Z]{2,8}               | form fits the caps             |
     | nullable unbounded bodies    | (?:a?)*  (?:a|)*         | still backtracking             |
     |                              | (?:a*)*  (?:^)*          |                                |
-    | \R anywhere                  | \R  a\Rb  (?:\R)*        | still backtracking, until \R   |
+    | a \R the program emits       | \R  a\Rb  (?:\R)*        | still backtracking, until \R   |
     |                              |                          | compiles as an alternation     |
     | lowered form over a cap      | a large enough {m,n}     | backtracking, by design        |
     +------------------------------+--------------------------+--------------------------------+
@@ -256,11 +256,15 @@ The constraints that make this more than a syntax rewrite:
 - Lower only when it can pay. Lowering cannot make a nullable unbounded
   body eligible — `(?:a?)+` lowers to `(?:a?)(?:a?)*` and the trailing star
   still has a nullable body, which is the exact thing pc-keyed
-  deduplication cannot honor — and it cannot help a pattern containing
+  deduplication cannot honor — and it cannot help a pattern that emits a
   `\R`. An AST pre-check for either obstacle keeps such patterns in
   counter form, which is more compact and is what the section 4.4 pricing
-  rule already handles. The `\R` half of that is deliberately coarse and
-  says so: Pike refuses `\R` because it consumes a variable number of
+  rule already handles. Emits rather than contains, which this plan first
+  said and the implementation sharpened: the pre-check reads the tree the
+  way the emitter walks it, so a `{0}` body is skipped for both obstacles.
+  Nothing under it is compiled, so nothing under it can route the pattern
+  anywhere, and `(?:\R){0}a+` lowers. The `\R` half is otherwise deliberately
+  coarse and says so: Pike refuses `\R` because it consumes a variable number of
   bytes, not because the opcode is inconvenient, and keeping the whole
   pattern in counter form means the `a+` inside `a+\R` is not lowered
   even though it could be — a whole-program routing policy, consistent

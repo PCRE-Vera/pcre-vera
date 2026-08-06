@@ -71,8 +71,9 @@ backtracking matcher instead:
 - a star whose body can complete an iteration without consuming a byte,
   which is the `(a?)*` capture-preference problem of section 4.3 — semantic,
   and no amount of lowering removes it;
-- `\R`, until it compiles as an alternation, because it consumes a variable
-  number of bytes.
+- a `\R` the program emits, until `\R` compiles as an alternation, because
+  it consumes a variable number of bytes. Emits, not mentions: a `\R` inside
+  a `{0}` repetition compiles to nothing and carves nothing out.
 
 All three say which matcher runs and nothing about the class. The two are
 not the same question and do not coincide: `\R` routes to the backtracking
@@ -620,8 +621,11 @@ Two things keep it from applying everywhere. A star whose body can complete
 an iteration without consuming a byte stays ineligible however it is
 spelled — that is the `(a?)*` capture-preference problem, and lowering
 `(?:a?)+` to `(?:a?)(?:a?)*` leaves the same nullable body behind — and `\R`
-consumes a variable number of bytes, so a pattern containing one is left in
-counter form until `\R` compiles as an alternation. Those are the two
+consumes a variable number of bytes, so a pattern that emits one is left in
+counter form until `\R` compiles as an alternation. The pre-check reads both
+off the tree the way the emitter will walk it, which is why a `{0}` body is
+skipped for either: nothing under it is compiled, so nothing under it can
+route the pattern anywhere. Those are the two
 semantic carve-outs of section 2.1, decided by a pre-check on the AST before
 anything is emitted; the third is size. The lowered form is measured against
 the compiler's storage caps by a dry run that computes closed-form counts
@@ -641,9 +645,9 @@ exactly on the wave 1 subset is a proof obligation (the section 6
 refinement theorem for the Pike configuration) and a standing test
 obligation (section 8), not an
 assumption. The accurate statement of the wave 1 guarantee, carve-outs
-included: a wave 1 pattern with no `\R`, no star whose body can finish
-emptily, and a lowered form inside the caps runs on the Pike VM, which in
-practice is nearly all of them. Which matcher runs is not the class,
+included: a wave 1 pattern that emits no `\R`, has no star whose body can
+finish emptily, and whose lowered form is inside the caps runs on the Pike VM,
+which in practice is nearly all of them. Which matcher runs is not the class,
 though, and section 5 is where the class comes from: it is read off the
 shape of the certified cost bound, whatever the path, so `a{2}` and `\R`
 classify linear on the backtracking matcher because their certified bounds
