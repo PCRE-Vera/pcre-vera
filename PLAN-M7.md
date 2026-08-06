@@ -402,16 +402,18 @@ next person reads the state and the intent in one place.
     |        | determinism, `Tir/Toy.lean` four programs run against known  |
     |        | answers at elaboration time.                                 |
     +--------+--------------------------------------------------------------+
-    | gate 2 | Checks in, theorem started. `Tir/Print.lean` is the          |
-    |        | canonical printer, `Tir/Decode.lean` the audited decoder,    |
-    |        | and `Tir/PrintCheck.lean` holds the printer to               |
-    |        | `serialize.dumps` byte for byte and runs the round trip both |
-    |        | ways on the toy programs, with negative cases for the schema |
-    |        | number, an unknown key and a non-object. `Tir/RoundTrip.lean`|
-    |        | is the theorem, and section 11 says how far it goes: the     |
-    |        | bridge to `Lean.Json` is proved, and one of the five decoder |
-    |        | families is inverted. Four remain, and the step from printed |
-    |        | text to a parsed value is named rather than proved.          |
+    | gate 2 | Checks in, theorem started. `Tir/Print.lean` is the canonical|
+    |        | printer, `Tir/Decode.lean` the audited decoder, and          |
+    |        | `Tir/PrintCheck.lean` holds the printer to `serialize.dumps` |
+    |        | byte for byte and runs the round trip both ways on the toy   |
+    |        | programs, with negative cases for the schema number, an      |
+    |        | unknown key and a non-object. `Tir/RoundTrip.lean` is the    |
+    |        | theorem, and section 11 says how far it goes: the bridge to  |
+    |        | `Lean.Json` is proved, and four of the five decoder families |
+    |        | are inverted — the types, the constants, the expressions and |
+    |        | places, and the statements. The declarations and the program |
+    |        | remain, and the step from printed text to a parsed value is  |
+    |        | named rather than proved.                                    |
     +--------+--------------------------------------------------------------+
     | gate 3 | In. `Tir/Artifact.lean` embeds the 2.8 megabytes of          |
     |        | `gen/engine.tir.json` with `include_str`, decodes them, and  |
@@ -842,13 +844,29 @@ What landed:
   `right` — so the sorted list has to be computed rather than read off the
   printer, which `simp [jobj, List.mergeSort]` does even where the values are
   variables.
+* `decodeStmt_stmtJ`, `decodeBody_bodyJ` and `decodeArms_armsJ`, with
+  `decodeArg_argJ` and `decodeArgs_argsJ` beside them: the fourth family, and
+  the first whose recursion has three layers rather than two. The three
+  mutual proofs carry the decoder's own `(fuel, kind, length)` measure, a
+  body outranking the statements in it and an arm list the bodies in it; the
+  two argument proofs sit outside the block, because an argument holds an
+  expression or a place and never a statement. The arms carry no ordering
+  premise, since the printer writes them as an array and does not sort it;
+* `optD_optExprJ` and `optD_optPlaceJ`, for the optional fields. `optD` reads
+  `null` as absent, so each of these has an absent half that is `rfl` and a
+  present half that needs to know the printer wrote something other than
+  `null` there — which is a fact about the printer rather than about the
+  program, and is proved once for an object and once for an array. The switch
+  default is the one occurrence spelled out where it stands instead, because
+  its body belongs to the mutual induction and a lemma outside the block
+  could not mention it;
 
-What that cost, because the remaining two want an estimate rather than a
-guess: 222 code lines at the type-family checkpoint, of which 80 are the
-seven type clauses and the rest is shared; 269 with the two constant
-prerequisites added; 436 with the constants family in; and 867 with
-expressions and places in and the type family's own evidence beside it.
-Every clause spends the shared part rather than growing it. Almost every
+What that cost, because what is left wants an estimate rather than a guess:
+222 code lines at the type-family checkpoint, of which 80 are the seven type
+clauses and the rest is shared; 269 with the two constant prerequisites
+added; 436 with the constants family in; 867 with expressions and places in
+and the type family's own evidence beside it; and 1387 with the statements
+in. Every clause spends the shared part rather than growing it. Almost every
 object the printer builds has the schema's own keys rather than a program's,
 so `jobj`'s sort and the map's order both *compute* — `simp [jobj,
 List.mergeSort]` runs them, and the `closed`/`need` chain after that is
@@ -868,19 +886,33 @@ single payload; most expression forms are a two- or three-member object, and
 every member is a line of the `show` that spells out what the decoder's step
 left and a rewrite that discharges it.
 
-By that unit, statements are the wider of the two that remain, not the
-narrower. The scope, written down now so the measurement afterwards has a
-denominator nobody has to reconstruct: seventeen `Stmt` constructors plus
-`decodeStmt`'s exhausted-fuel branch; companion inversions for a statement
-body, a switch-arm list, a call argument and an argument list, of which the
-last two sit outside the mutual block because an argument holds an
-expression or a place and never a statement; and four optional-field
-occurrences — `let.init`, `switch.default`, `return.value` and `call.dest` —
-across three `optD` shapes, since `init` and `value` are both `Option Expr`.
-The measure is new as well: `decodeStmt`, `decodeBody` and `decodeArms`
-order their recursion by `(fuel, kind, length)` where the two families
-proved so far used two components, so the induction mirrors that rather than
-the shape it has been mirroring.
+Statements were predicted to be the wider of the two that remained, and they
+were. Measured against the denominator this section wrote down beforehand,
+the family came to 520 code lines: 248 for the nineteen `decodeStmt_stmtJ`
+clauses, 10 for the body companion and 22 for the arm-list one, 25 for the
+two argument inversions, 149 for the scaffolding — depths, canonicality
+predicates and decision procedures, seven shapes of each — 34 for the
+optional-field lemmas and the two not-null facts underneath them, 8 for
+`stmtDepth_pos`, and 24 for the evidence.
+
+Nineteen clauses rather than the eighteen the denominator counted, because
+the switch splits on whether it has a default; that is what lets `stmtDepth`
+and `Stmt.Canonical` stay structural instead of reaching through an
+`Option`. At thirteen lines a clause that is the expression figure again,
+one line up, and it holds for the same reason: a clause costs what its
+object has members. What did *not* repeat is the scaffolding, 149 lines
+against expressions' hundred, because the family has seven shapes where
+expressions had two and each wants a depth, a predicate and a decision
+procedure — and the decision procedures alone are 66 lines of
+`instDecidableAnd` with nothing to say.
+
+Two things came in under the estimate. The three-component measure was
+expected to be the hard part and was not: `(n, 0, 0)`, `(n, 1, body.length)`
+and `(n, 2, arms.length)` transcribed off the decoder are what Lean wanted,
+and nothing about the fuel needed proving. And the four optional fields cost
+34 lines rather than a clause apiece, because three of the four go through
+one of two lemmas and only the switch default, whose body belongs to the
+mutual induction, had to be spelled out where it stands.
 
 The declarations and the program are fewer forms but bring one genuinely new
 obligation — `programJ` sorts the four declaration lists by name, so
@@ -892,5 +924,5 @@ artifact rather than merely stated of it, and if the kernel cannot reduce
 `decide` over 2.8 MB the check stays a `#guard` — which is the interpreter
 and not the kernel, and has to be written down as such wherever the result
 is quoted. Then `decodeDepth`, the composed theorem, and the artifact check.
-Statements are next. Gate 2 is started and is not closed, and M7 does not
+That is what is left. Gate 2 is started and is not closed, and M7 does not
 get its tag until it is.

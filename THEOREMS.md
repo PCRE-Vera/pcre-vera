@@ -332,8 +332,8 @@ say is what they say and nothing beyond it.
     |      |                        | programs both ways, with negative    |
     |      |                        | cases. Tir/RoundTrip.lean proves the |
     |      |                        | Json.mkObj bridge and inverts the    |
-    |      |                        | type, constant, expression and place |
-    |      |                        | decoders; the statements, the        |
+    |      |                        | type, constant, expression, place    |
+    |      |                        | and statement decoders; the          |
     |      |                        | declarations and the program are     |
     |      |                        | outstanding. The step from printed   |
     |      |                        | text to a parsed value stays a check |

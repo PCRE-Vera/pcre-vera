@@ -880,3 +880,17 @@ mention `o'`, which the branch binds. `simp only` rewrites under binders and
 does not care. The cheaper fix is usually to not need it — rewrite the two
 `decodeExpr` calls directly and let the trailing `cases op <;> rfl` do the
 bind reduction along with the match.
+
+## `show` cannot re-associate a bind, because the monad law is not definitional
+
+`optD j f` is `if j.isNull then .ok none else do let v ← f j; .ok (some
+v)`, and when `j` is one of the printer's objects the `if` reduces, so
+`show` can spell out the rest. What `show` cannot do is flatten it: the
+goal is `(f j >>= fun v => .ok (some v)) >>= k` and the tempting spelling
+is `f j >>= fun v => k (some v)`. Those are equal by the third monad law
+and *not* by `rfl`, because `Except.bind` matches on its first argument and
+`f j` is stuck on a recursive call. The fix is to leave the `optD` where it
+is in the `show` and rewrite it with an equation proved separately — which
+is what `optD_optExprJ` and `optD_optPlaceJ` are, and what the `have` in
+the switch clause does for the one occurrence whose decoder argument is a
+lambda.

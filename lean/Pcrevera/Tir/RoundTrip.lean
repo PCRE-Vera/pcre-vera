@@ -7,10 +7,10 @@ import Pcrevera.Tir.Decode
 `Tir/PrintCheck.lean` runs the round trip on the programs there happen to be,
 and gate 3 runs it on the artifact. This file is where that becomes a theorem
 about every canonical program — and it is under way rather than finished.
-What is here is the bridge to `Lean.Json` and the first three of the five
-decoder families: the types, the constants, and the expressions and places.
-The statements and the declarations and the program itself are outstanding,
-and PLAN-M7.md section 11 says what they are expected to cost.
+What is here is the bridge to `Lean.Json` and the first four of the five
+decoder families: the types, the constants, the expressions and places, and
+the statements. The declarations and the program itself are outstanding, and
+PLAN-M7.md section 11 says what they are expected to cost.
 
 What the finished theorem will not cover either, and this is the honest
 boundary, is the step from the printed text to a `Json` value. `decode` calls
@@ -1142,5 +1142,654 @@ example : ¬ (Place.index (.var "grid") (.var "not a name")).Canonical := by
 example : decodePlace (placeDepth placeSample) (jsonOf (placeJ placeSample))
     = .ok placeSample :=
   decodePlace_placeJ _ _ (Nat.le_refl _) (by decide)
+
+/-! ## Statements
+
+The fourth family, and the first whose recursion has three layers rather than
+two: a statement holds bodies, a body holds statements, and a switch arm holds
+a body of its own. `decodeStmt`, `decodeBody` and `decodeArms` say so with a
+three-component measure, and the induction here mirrors it component for
+component — a body outranks the statements in it, an arm list outranks the
+bodies in it, and the fuel outranks everything.
+
+Call arguments sit outside that block on purpose. An argument holds an
+expression or a place and never a statement, so `decodeArg` and `decodeArgs`
+are ordinary structural functions; their inversions are proved before the
+mutual block and spent inside it.
+
+What is new about the clauses is the optional fields. Four of them —
+`let.init`, `switch.default`, `return.value` and `call.dest` — are written
+`null` when they are absent and read back through `optD`, and three shapes
+cover the four because `init` and `value` are both `Option Expr`. The two
+expression ones and the place one go through a lemma apiece. The switch
+default is spelled out where it stands instead, since its body belongs to the
+mutual induction and a lemma outside the block could not mention it.
+
+One thing that is *not* here is an ordering premise on the arms. The printer
+writes them as an array and does not sort it, so a switch reads its arms back
+in the order they were written — an array keeps what an object would have
+lost. -/
+
+/-- The budget a call argument costs. `decodeArg` spends none of its own — it
+reads the mode off the tag and hands the payload straight on — so an argument
+is worth exactly what it holds. -/
+def argDepth : Arg → Nat
+  | .inArg e => exprDepth e
+  | .inoutArg p => placeDepth p
+
+def argsDepth : List Arg → Nat
+  | [] => 0
+  | a :: rest => max (argDepth a) (argsDepth rest)
+
+/-- An absent optional field costs nothing: the decoder reads `null` and stops
+without spending any budget on it. -/
+def optExprDepth : Option Expr → Nat
+  | none => 0
+  | some e => exprDepth e
+
+def optPlaceDepth : Option Place → Nat
+  | none => 0
+  | some p => placeDepth p
+
+mutual
+
+/-- The budget a statement costs, decrementing where `decodeStmt` does. A
+`let` pays for its type as well as its initializer, since the decoder spends
+the same budget on both, and a switch pays for its arms and for the default it
+may not have. -/
+def stmtDepth : Stmt → Nat
+  | .letS _ t init => max (tyDepth t) (optExprDepth init) + 1
+  | .assign p v => max (placeDepth p) (exprDepth v) + 1
+  | .take d s => max (placeDepth d) (placeDepth s) + 1
+  | .swap a b => max (placeDepth a) (placeDepth b) + 1
+  | .copy d s => max (placeDepth d) (exprDepth s) + 1
+  | .freeze d s => max (placeDepth d) (placeDepth s) + 1
+  | .push s v => max (placeDepth s) (exprDepth v) + 1
+  | .pop s d => max (placeDepth s) (placeDepth d) + 1
+  | .truncate s l => max (placeDepth s) (exprDepth l) + 1
+  | .reserve s c => max (placeDepth s) (exprDepth c) + 1
+  | .ifS c t e => max (exprDepth c) (max (bodyDepth t) (bodyDepth e)) + 1
+  | .whileS c v b => max (exprDepth c) (max (exprDepth v) (bodyDepth b)) + 1
+  | .switchS v arms none => max (exprDepth v) (armsDepth arms) + 1
+  | .switchS v arms (some b) =>
+      max (exprDepth v) (max (armsDepth arms) (bodyDepth b)) + 1
+  | .breakS => 1
+  | .continueS => 1
+  | .returnS v => optExprDepth v + 1
+  | .call _ args dest => max (argsDepth args) (optPlaceDepth dest) + 1
+
+def bodyDepth : List Stmt → Nat
+  | [] => 0
+  | s :: rest => max (stmtDepth s) (bodyDepth rest)
+
+def armsDepth : List (String × List Stmt) → Nat
+  | [] => 0
+  | (_, b) :: rest => max (bodyDepth b) (armsDepth rest)
+
+end
+
+def Arg.Canonical : Arg → Prop
+  | .inArg e => e.Canonical
+  | .inoutArg p => p.Canonical
+
+def ArgsCanonical : List Arg → Prop
+  | [] => True
+  | a :: rest => a.Canonical ∧ ArgsCanonical rest
+
+def OptExprCanonical : Option Expr → Prop
+  | none => True
+  | some e => e.Canonical
+
+def OptPlaceCanonical : Option Place → Prop
+  | none => True
+  | some p => p.Canonical
+
+mutual
+
+/-- What a statement has to satisfy to survive the round trip. A statement
+owns three kinds of name — the local a `let` introduces, the function a `call`
+names, and the variant a switch arm selects — and inherits every other
+condition from the family it holds. -/
+def Stmt.Canonical : Stmt → Prop
+  | .letS n t init =>
+      isIdentifier n = true ∧ t.Canonical ∧ OptExprCanonical init
+  | .assign p v => p.Canonical ∧ v.Canonical
+  | .take d s => d.Canonical ∧ s.Canonical
+  | .swap a b => a.Canonical ∧ b.Canonical
+  | .copy d s => d.Canonical ∧ s.Canonical
+  | .freeze d s => d.Canonical ∧ s.Canonical
+  | .push s v => s.Canonical ∧ v.Canonical
+  | .pop s d => s.Canonical ∧ d.Canonical
+  | .truncate s l => s.Canonical ∧ l.Canonical
+  | .reserve s c => s.Canonical ∧ c.Canonical
+  | .ifS c t e => c.Canonical ∧ BodyCanonical t ∧ BodyCanonical e
+  | .whileS c v b => c.Canonical ∧ v.Canonical ∧ BodyCanonical b
+  | .switchS v arms none => v.Canonical ∧ ArmsCanonical arms
+  | .switchS v arms (some b) =>
+      v.Canonical ∧ ArmsCanonical arms ∧ BodyCanonical b
+  | .breakS => True
+  | .continueS => True
+  | .returnS v => OptExprCanonical v
+  | .call fn args dest =>
+      isIdentifier fn = true ∧ ArgsCanonical args ∧ OptPlaceCanonical dest
+
+def BodyCanonical : List Stmt → Prop
+  | [] => True
+  | s :: rest => s.Canonical ∧ BodyCanonical rest
+
+def ArmsCanonical : List (String × List Stmt) → Prop
+  | [] => True
+  | (v, b) :: rest =>
+      isIdentifier v = true ∧ BodyCanonical b ∧ ArmsCanonical rest
+
+end
+
+instance decArgCanonical : (a : Arg) → Decidable a.Canonical
+  | .inArg e => decExprCanonical e
+  | .inoutArg p => decPlaceCanonical p
+
+instance decArgsCanonical : (args : List Arg) → Decidable (ArgsCanonical args)
+  | [] => isTrue trivial
+  | a :: rest =>
+      @instDecidableAnd _ _ (decArgCanonical a) (decArgsCanonical rest)
+
+instance decOptExprCanonical :
+    (o : Option Expr) → Decidable (OptExprCanonical o)
+  | none => isTrue trivial
+  | some e => decExprCanonical e
+
+instance decOptPlaceCanonical :
+    (o : Option Place) → Decidable (OptPlaceCanonical o)
+  | none => isTrue trivial
+  | some p => decPlaceCanonical p
+
+mutual
+
+instance decStmtCanonical : (s : Stmt) → Decidable s.Canonical
+  | .letS _ t init =>
+      @instDecidableAnd _ _ inferInstance
+        (@instDecidableAnd _ _ (decTyCanonical t) (decOptExprCanonical init))
+  | .assign p v =>
+      @instDecidableAnd _ _ (decPlaceCanonical p) (decExprCanonical v)
+  | .take d s =>
+      @instDecidableAnd _ _ (decPlaceCanonical d) (decPlaceCanonical s)
+  | .swap a b =>
+      @instDecidableAnd _ _ (decPlaceCanonical a) (decPlaceCanonical b)
+  | .copy d s =>
+      @instDecidableAnd _ _ (decPlaceCanonical d) (decExprCanonical s)
+  | .freeze d s =>
+      @instDecidableAnd _ _ (decPlaceCanonical d) (decPlaceCanonical s)
+  | .push s v =>
+      @instDecidableAnd _ _ (decPlaceCanonical s) (decExprCanonical v)
+  | .pop s d =>
+      @instDecidableAnd _ _ (decPlaceCanonical s) (decPlaceCanonical d)
+  | .truncate s l =>
+      @instDecidableAnd _ _ (decPlaceCanonical s) (decExprCanonical l)
+  | .reserve s c =>
+      @instDecidableAnd _ _ (decPlaceCanonical s) (decExprCanonical c)
+  | .ifS c t e =>
+      @instDecidableAnd _ _ (decExprCanonical c)
+        (@instDecidableAnd _ _ (decBodyCanonical t) (decBodyCanonical e))
+  | .whileS c v b =>
+      @instDecidableAnd _ _ (decExprCanonical c)
+        (@instDecidableAnd _ _ (decExprCanonical v) (decBodyCanonical b))
+  | .switchS v arms none =>
+      @instDecidableAnd _ _ (decExprCanonical v) (decArmsCanonical arms)
+  | .switchS v arms (some b) =>
+      @instDecidableAnd _ _ (decExprCanonical v)
+        (@instDecidableAnd _ _ (decArmsCanonical arms) (decBodyCanonical b))
+  | .breakS | .continueS => isTrue trivial
+  | .returnS v => decOptExprCanonical v
+  | .call _ args dest =>
+      @instDecidableAnd _ _ inferInstance
+        (@instDecidableAnd _ _ (decArgsCanonical args)
+          (decOptPlaceCanonical dest))
+
+instance decBodyCanonical : (body : List Stmt) → Decidable (BodyCanonical body)
+  | [] => isTrue trivial
+  | s :: rest =>
+      @instDecidableAnd _ _ (decStmtCanonical s) (decBodyCanonical rest)
+
+instance decArmsCanonical :
+    (arms : List (String × List Stmt)) → Decidable (ArmsCanonical arms)
+  | [] => isTrue trivial
+  | (_, b) :: rest =>
+      @instDecidableAnd _ _ inferInstance
+        (@instDecidableAnd _ _ (decBodyCanonical b) (decArmsCanonical rest))
+
+end
+
+/-! ### Optional fields
+
+`optD` reads `null` as absent and anything else as present, so an optional
+field's round trip has two halves: the absent one is `rfl`, and the present
+one needs to know that what the printer wrote there is not `null`. Every
+value that can stand in one of these four fields is an object or an array, so
+that is a fact about the printer rather than about the program. -/
+
+private theorem isNull_jsonOf_jobj {l : List (String × JVal)} :
+    (jsonOf (jobj l)).isNull = false := by
+  rw [show jobj l = JVal.obj (l.mergeSort fun a b => a.1 ≤ b.1) from rfl,
+    jsonOf_obj]
+  rfl
+
+private theorem isNull_jsonOf_arr {items : List JVal} :
+    (jsonOf (.arr items)).isNull = false := by rw [jsonOf.eq_def]; rfl
+
+private theorem isNull_jsonOf_exprJ {e : Expr} :
+    (jsonOf (exprJ e)).isNull = false := by
+  cases e <;> exact isNull_jsonOf_jobj
+
+private theorem isNull_jsonOf_placeJ {p : Place} :
+    (jsonOf (placeJ p)).isNull = false := by
+  cases p <;> exact isNull_jsonOf_jobj
+
+private theorem optD_some {α : Type} {j : Json} {f : Json → D α} {a : α}
+    (hnull : j.isNull = false) (h : f j = .ok a) :
+    optD j f = .ok (some a) := by
+  rw [optD, if_neg (by simp [hnull]), h]
+  rfl
+
+/-- A `let`'s initializer and a `return`'s value, which are the same shape. -/
+theorem optD_optExprJ (n : Nat) : ∀ (o : Option Expr),
+    optExprDepth o ≤ n → OptExprCanonical o →
+    optD (jsonOf (optExprJ o)) (decodeExpr n) = .ok o
+  | none, _, _ => rfl
+  | some e, h, hc => by
+      rw [optExprJ]
+      exact optD_some isNull_jsonOf_exprJ
+        (decodeExpr_exprJ n e (by simp only [optExprDepth] at h; omega) hc)
+
+/-- A `call`'s destination. -/
+theorem optD_optPlaceJ (n : Nat) : ∀ (o : Option Place),
+    optPlaceDepth o ≤ n → OptPlaceCanonical o →
+    optD (jsonOf (optPlaceJ o)) (decodePlace n) = .ok o
+  | none, _, _ => rfl
+  | some p, h, hc => by
+      rw [optPlaceJ]
+      exact optD_some isNull_jsonOf_placeJ
+        (decodePlace_placeJ n p (by simp only [optPlaceDepth] at h; omega) hc)
+
+/-! ### Call arguments
+
+Outside the statement induction, because they hold no statements. -/
+
+theorem decodeArg_argJ (n : Nat) : ∀ (a : Arg),
+    argDepth a ≤ n → a.Canonical → decodeArg n (jsonOf (argJ a)) = .ok a
+  | .inArg e, h, hc => by
+      rw [argJ, decodeArg, tagged_one]
+      show (do
+        let v ← decodeExpr n (jsonOf (exprJ e))
+        .ok (Arg.inArg v)) = .ok (.inArg e)
+      rw [decodeExpr_exprJ n e (by simp only [argDepth] at h; omega) hc]
+      rfl
+  | .inoutArg p, h, hc => by
+      rw [argJ, decodeArg, tagged_one]
+      show (do
+        let v ← decodePlace n (jsonOf (placeJ p))
+        .ok (Arg.inoutArg v)) = .ok (.inoutArg p)
+      rw [decodePlace_placeJ n p (by simp only [argDepth] at h; omega) hc]
+      rfl
+
+theorem decodeArgs_argsJ (n : Nat) : ∀ (args : List Arg),
+    argsDepth args ≤ n → ArgsCanonical args →
+    decodeArgs n (jsonOfList (argsJ args)) = .ok args
+  | [], _, _ => by rw [argsJ, jsonOfList, decodeArgs]
+  | a :: rest, h, hc => by
+      rw [argsJ, jsonOfList, decodeArgs,
+        decodeArg_argJ n a (by simp only [argsDepth] at h; omega) hc.1,
+        decodeArgs_argsJ n rest (by simp only [argsDepth] at h; omega) hc.2]
+      rfl
+
+/-! ### The inversion
+
+Every statement spends a level, so the exhausted-budget clause is a
+contradiction rather than a case; that is what `stmtDepth_pos` is for. The
+rest run the same recipe as the expressions did — unfold one step, say in
+`show` what it left, spend the lemma it was waiting on — with the sorted key
+list handed to `jsonOf_jobj_fields`, since two thirds of the statement forms
+print their members out of key order. -/
+
+private theorem stmtDepth_pos (s : Stmt) : 0 < stmtDepth s := by
+  match s with
+  | .switchS _ _ none | .switchS _ _ (some _) => simp only [stmtDepth]; omega
+  | .letS .. | .assign .. | .take .. | .swap .. | .copy .. | .freeze ..
+  | .push .. | .pop .. | .truncate .. | .reserve .. | .ifS .. | .whileS ..
+  | .breakS | .continueS | .returnS .. | .call .. =>
+      simp only [stmtDepth]; omega
+
+mutual
+
+theorem decodeStmt_stmtJ : ∀ (n : Nat) (s : Stmt),
+    stmtDepth s ≤ n → s.Canonical →
+    decodeStmt n (jsonOf (stmtJ s)) = .ok s
+  | 0, s, h, _ => by have := stmtDepth_pos s; omega
+  | n + 1, .letS m t init, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("init", optExprJ init), ("name", .str m),
+          ("type", tyJ t)]) (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let i ← optD (jsonOf (optExprJ init)) (decodeExpr n)
+        let s ← jName (jsonOf (JVal.str m)) "a local name"
+        let u ← decodeTy n (jsonOf (tyJ t))
+        .ok (Stmt.letS s u i)) = .ok (.letS m t init)
+      rw [optD_optExprJ n init (by simp only [stmtDepth] at h; omega) hc.2.2,
+        ok_bind, jName_str hc.1, ok_bind,
+        decodeTy_tyJ n t (by simp only [stmtDepth] at h; omega) hc.2.1]
+      rfl
+  | n + 1, .assign p v, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("place", placeJ p), ("value", exprJ v)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let a ← decodePlace n (jsonOf (placeJ p))
+        let b ← decodeExpr n (jsonOf (exprJ v))
+        .ok (Stmt.assign a b)) = .ok (.assign p v)
+      rw [decodePlace_placeJ n p (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodeExpr_exprJ n v (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .take d s, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("dest", placeJ d), ("src", placeJ s)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let a ← decodePlace n (jsonOf (placeJ d))
+        let b ← decodePlace n (jsonOf (placeJ s))
+        .ok (Stmt.take a b)) = .ok (.take d s)
+      rw [decodePlace_placeJ n d (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodePlace_placeJ n s (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .swap a b, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("a", placeJ a), ("b", placeJ b)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let x ← decodePlace n (jsonOf (placeJ a))
+        let y ← decodePlace n (jsonOf (placeJ b))
+        .ok (Stmt.swap x y)) = .ok (.swap a b)
+      rw [decodePlace_placeJ n a (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodePlace_placeJ n b (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .copy d s, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("dest", placeJ d), ("src", exprJ s)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let a ← decodePlace n (jsonOf (placeJ d))
+        let b ← decodeExpr n (jsonOf (exprJ s))
+        .ok (Stmt.copy a b)) = .ok (.copy d s)
+      rw [decodePlace_placeJ n d (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodeExpr_exprJ n s (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .freeze d s, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("dest", placeJ d), ("src", placeJ s)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let a ← decodePlace n (jsonOf (placeJ d))
+        let b ← decodePlace n (jsonOf (placeJ s))
+        .ok (Stmt.freeze a b)) = .ok (.freeze d s)
+      rw [decodePlace_placeJ n d (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodePlace_placeJ n s (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .push s v, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("seq", placeJ s), ("value", exprJ v)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let a ← decodePlace n (jsonOf (placeJ s))
+        let b ← decodeExpr n (jsonOf (exprJ v))
+        .ok (Stmt.push a b)) = .ok (.push s v)
+      rw [decodePlace_placeJ n s (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodeExpr_exprJ n v (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .pop s d, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("dest", placeJ d), ("seq", placeJ s)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let a ← decodePlace n (jsonOf (placeJ s))
+        let b ← decodePlace n (jsonOf (placeJ d))
+        .ok (Stmt.pop a b)) = .ok (.pop s d)
+      rw [decodePlace_placeJ n s (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodePlace_placeJ n d (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .truncate s l, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("len", exprJ l), ("seq", placeJ s)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let a ← decodePlace n (jsonOf (placeJ s))
+        let b ← decodeExpr n (jsonOf (exprJ l))
+        .ok (Stmt.truncate a b)) = .ok (.truncate s l)
+      rw [decodePlace_placeJ n s (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodeExpr_exprJ n l (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .reserve s c, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("cap", exprJ c), ("seq", placeJ s)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let a ← decodePlace n (jsonOf (placeJ s))
+        let b ← decodeExpr n (jsonOf (exprJ c))
+        .ok (Stmt.reserve a b)) = .ok (.reserve s c)
+      rw [decodePlace_placeJ n s (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodeExpr_exprJ n c (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .ifS c t e, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("cond", exprJ c), ("else", .arr (bodyJ e)),
+          ("then", .arr (bodyJ t))]) (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let x ← decodeExpr n (jsonOf (exprJ c))
+        let a ← jArr (jsonOf (JVal.arr (bodyJ t))) "an if body"
+        let u ← decodeBody n a
+        let b ← jArr (jsonOf (JVal.arr (bodyJ e))) "an if body"
+        let w ← decodeBody n b
+        .ok (Stmt.ifS x u w)) = .ok (.ifS c t e)
+      rw [decodeExpr_exprJ n c (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind, jArr_arr, ok_bind,
+        decodeBody_bodyJ n t (by simp only [stmtDepth] at h; omega) hc.2.1,
+        ok_bind, jArr_arr, ok_bind,
+        decodeBody_bodyJ n e (by simp only [stmtDepth] at h; omega) hc.2.2]
+      rfl
+  | n + 1, .whileS c v b, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("body", .arr (bodyJ b)), ("cond", exprJ c),
+          ("variant", exprJ v)]) (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let x ← decodeExpr n (jsonOf (exprJ c))
+        let y ← decodeExpr n (jsonOf (exprJ v))
+        let a ← jArr (jsonOf (JVal.arr (bodyJ b))) "a while body"
+        let u ← decodeBody n a
+        .ok (Stmt.whileS x y u)) = .ok (.whileS c v b)
+      rw [decodeExpr_exprJ n c (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind,
+        decodeExpr_exprJ n v (by simp only [stmtDepth] at h; omega) hc.2.1,
+        ok_bind, jArr_arr, ok_bind,
+        decodeBody_bodyJ n b (by simp only [stmtDepth] at h; omega) hc.2.2]
+      rfl
+  | n + 1, .switchS v arms none, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("arms", .arr (armsJ arms)),
+          ("default", .null), ("value", exprJ v)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let x ← decodeExpr n (jsonOf (exprJ v))
+        let a ← jArr (jsonOf (JVal.arr (armsJ arms))) "switch arms"
+        let u ← decodeArms n a
+        .ok (Stmt.switchS x u none)) = .ok (.switchS v arms none)
+      rw [decodeExpr_exprJ n v (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind, jArr_arr, ok_bind,
+        decodeArms_armsJ n arms (by simp only [stmtDepth] at h; omega) hc.2]
+      rfl
+  | n + 1, .switchS v arms (some b), h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("arms", .arr (armsJ arms)),
+          ("default", .arr (bodyJ b)), ("value", exprJ v)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let d ← optD (jsonOf (JVal.arr (bodyJ b))) (fun j => do
+          let a ← jArr j "a switch default"
+          decodeBody n a)
+        let x ← decodeExpr n (jsonOf (exprJ v))
+        let a ← jArr (jsonOf (JVal.arr (armsJ arms))) "switch arms"
+        let u ← decodeArms n a
+        .ok (Stmt.switchS x u d)) = .ok (.switchS v arms (some b))
+      have hd : optD (jsonOf (JVal.arr (bodyJ b))) (fun j => do
+          let a ← jArr j "a switch default"
+          decodeBody n a) = .ok (some b) :=
+        optD_some isNull_jsonOf_arr
+          (show (do
+              let a ← jArr (jsonOf (JVal.arr (bodyJ b))) "a switch default"
+              decodeBody n a) = .ok b by
+            rw [jArr_arr, ok_bind,
+              decodeBody_bodyJ n b
+                (by simp only [stmtDepth] at h; omega) hc.2.2])
+      rw [hd, ok_bind,
+        decodeExpr_exprJ n v (by simp only [stmtDepth] at h; omega) hc.1,
+        ok_bind, jArr_arr, ok_bind,
+        decodeArms_armsJ n arms (by simp only [stmtDepth] at h; omega) hc.2.1]
+      rfl
+  | _ + 1, .breakS, _, _ => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := []) (by simp [jobj])]
+      rfl
+  | _ + 1, .continueS, _, _ => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := []) (by simp [jobj])]
+      rfl
+  | n + 1, .returnS v, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("value", optExprJ v)]) (by simp [jobj])]
+      simp only [jsonOfFields]
+      show (do
+        let x ← optD (jsonOf (optExprJ v)) (decodeExpr n)
+        .ok (Stmt.returnS x)) = .ok (.returnS v)
+      rw [optD_optExprJ n v (by simp only [stmtDepth] at h; omega) hc]
+      rfl
+  | n + 1, .call fn args dest, h, hc => by
+      rw [stmtJ, decodeStmt, tagged_one,
+        jsonOf_jobj_fields (l' := [("args", .arr (argsJ args)),
+          ("dest", optPlaceJ dest), ("fn", .str fn)])
+          (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let d ← optD (jsonOf (optPlaceJ dest)) (decodePlace n)
+        let s ← jName (jsonOf (JVal.str fn)) "a function name"
+        let a ← jArr (jsonOf (JVal.arr (argsJ args))) "call arguments"
+        let u ← decodeArgs n a
+        .ok (Stmt.call s u d)) = .ok (.call fn args dest)
+      rw [optD_optPlaceJ n dest (by simp only [stmtDepth] at h; omega) hc.2.2,
+        ok_bind, jName_str hc.1, ok_bind, jArr_arr, ok_bind,
+        decodeArgs_argsJ n args (by simp only [stmtDepth] at h; omega) hc.2.1]
+      rfl
+termination_by n _ _ _ => (n, 0, 0)
+
+theorem decodeBody_bodyJ : ∀ (n : Nat) (body : List Stmt),
+    bodyDepth body ≤ n → BodyCanonical body →
+    decodeBody n (jsonOfList (bodyJ body)) = .ok body
+  | _, [], _, _ => by rw [bodyJ, jsonOfList, decodeBody]
+  | n, s :: rest, h, hc => by
+      rw [bodyJ, jsonOfList, decodeBody,
+        decodeStmt_stmtJ n s (by simp only [bodyDepth] at h; omega) hc.1,
+        decodeBody_bodyJ n rest (by simp only [bodyDepth] at h; omega) hc.2]
+      rfl
+termination_by n body _ _ => (n, 1, body.length)
+
+theorem decodeArms_armsJ : ∀ (n : Nat) (arms : List (String × List Stmt)),
+    armsDepth arms ≤ n → ArmsCanonical arms →
+    decodeArms n (jsonOfList (armsJ arms)) = .ok arms
+  | _, [], _, _ => by rw [armsJ, jsonOfList, decodeArms]
+  | n, (v, b) :: rest, h, hc => by
+      rw [armsJ, jsonOfList, decodeArms,
+        jsonOf_jobj_fields (l' := [("body", .arr (bodyJ b)),
+          ("variant", .str v)]) (by simp [jobj, List.mergeSort])]
+      simp only [jsonOfFields]
+      show (do
+        let x ← jName (jsonOf (JVal.str v)) "a variant name"
+        let a ← jArr (jsonOf (JVal.arr (bodyJ b))) "a switch arm"
+        let u ← decodeBody n a
+        let more ← decodeArms n (jsonOfList (armsJ rest))
+        .ok ((x, u) :: more)) = .ok ((v, b) :: rest)
+      rw [jName_str hc.1, ok_bind, jArr_arr, ok_bind,
+        decodeBody_bodyJ n b (by simp only [armsDepth] at h; omega) hc.2.1,
+        ok_bind,
+        decodeArms_armsJ n rest (by simp only [armsDepth] at h; omega) hc.2.2]
+      rfl
+termination_by n arms _ _ => (n, 2, arms.length)
+
+end
+
+/-! ### The predicate, on a statement
+
+The widest sample of the four, because a statement is where the families meet:
+an `if` whose branches hold a `let` with an initializer and a `while`, a
+`switch` with two arms and a default, and a `call` carrying both argument
+modes and a destination. Between them the four optional fields all appear, in
+five occurrences of which four are present and one is absent — `return.value`
+is the one written both ways — and the recursion runs through every level of
+the three-component measure.
+
+The guards are the pair every family carries, and the one-short failure is
+worth reading here rather than only counting: what runs out at five is the
+place inside the `inout` argument of the call inside the first switch arm,
+five levels down, which is precisely the chain `stmtDepth` has to add up. -/
+
+private def stmtSample : Stmt :=
+  .ifS (.cmp .lt (.var "i") (.len (.var "xs")))
+    [.letS "t" (.int .u32) (some (.index (.var "xs") (.var "i"))),
+     .whileS (.var "go") (.var "fuel")
+       [.switchS (.var "tag")
+          [("red",
+            [.call "step" [.inArg (.var "t"),
+              .inoutArg (.field (.var "acc") "n")] (some (.var "out"))]),
+           ("blue", [.breakS])]
+          (some [.returnS (some (.litInt .u32 0))])]]
+    [.returnS none]
+
+#guard stmtDepth stmtSample == 6
+#guard (decodeStmt 5 (jsonOf (stmtJ stmtSample))).toOption.isNone
+
+example : stmtSample.Canonical := by decide
+
+example : ¬ (Stmt.letS "not a name" (.int .u8) none).Canonical := by decide
+
+example : ¬ (Stmt.switchS (.var "t") [("not a name", [])] none).Canonical := by
+  decide
+
+example : ¬ (Stmt.letS "t" (.enum "not a name") none).Canonical := by decide
+
+example : ¬ (Stmt.assign (.var "p") (.var "not a name")).Canonical := by decide
+
+example : ¬ (Stmt.copy (.var "not a name") (.litBool true)).Canonical := by
+  decide
+
+example : decodeStmt (stmtDepth stmtSample) (jsonOf (stmtJ stmtSample))
+    = .ok stmtSample :=
+  decodeStmt_stmtJ _ _ (Nat.le_refl _) (by decide)
 
 end Pcrevera.Tir
