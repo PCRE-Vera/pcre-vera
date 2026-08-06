@@ -37,14 +37,16 @@ inductive JVal where
   | obj (fields : List (String × JVal))
 deriving Repr, Inhabited
 
-private def hexDigit (n : Nat) : Char :=
+/-- One lowercase hex digit. Public because the round trip of gate 2 is
+about it, not only about the string it ends up in. -/
+def hexDigit (n : Nat) : Char :=
   if n < 10 then Char.ofNat (0x30 + n) else Char.ofNat (0x61 + (n - 10))
 
 private def hex4 (n : Nat) : String :=
   [hexDigit (n / 4096 % 16), hexDigit (n / 256 % 16),
     hexDigit (n / 16 % 16), hexDigit (n % 16)]  |> String.ofList
 
-private def hex2 (n : Nat) : String :=
+def hex2 (n : Nat) : String :=
   [hexDigit (n / 16 % 16), hexDigit (n % 16)]  |> String.ofList
 
 /-- One character, as the canonical encoding spells it. -/

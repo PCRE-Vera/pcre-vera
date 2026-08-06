@@ -92,6 +92,20 @@ def pikeTakeFunc : Func :=
 
 theorem pikeTakeFunc_body : pikeTakeFunc.body = pikeTakeBody := rfl
 
+/-- The parameter row on its own, so that reading the outs back does not
+drag the body through `simp` with it. -/
+theorem pikeTakeFunc_params :
+    pikeTakeFunc.params =
+      [⟨"pool", .vec (.int .u32) 134549508, true⟩,
+       ⟨"rc", .vec (.int .u32) 262796, true⟩,
+       ⟨"free", .vec (.int .u32) 262796, true⟩,
+       ⟨"novec", .int .u32, false⟩,
+       ⟨"mem", .int .counter, true⟩,
+       ⟨"peak", .int .counter, true⟩,
+       ⟨"cost", .int .counter, true⟩,
+       ⟨"memlimit", .int .counter, false⟩,
+       ⟨"costlimit", .int .counter, false⟩] := rfl
+
 private def artifactFunc (name : String) : Option Func :=
   match artifact with
   | .ok p => p.func? name
@@ -186,6 +200,16 @@ private def cgAgrees (oldcap len esize maxv : Nat) (m : Meter)
 
 -- The pool site's own width, which is the other call this file makes.
 #guard cgAgrees 0 0 4 134549508 ⟨0, 0, 0⟩ ⟨1000, 0, 1000⟩
+
+/-- The contract's out list never hides a lost name. `charge_grow`'s three
+`inout` parameters are the meter's counters, so the outs `OutsPresent` asks
+about are integers and never the `false` that `outsOf` also answers for a
+name the callee dropped. Settled once for all six callers rather than at
+each call site. -/
+theorem cgOuts_present {oldcap lenv esize maxv : Nat} {m : Meter}
+    {lim : Limits} :
+    OutsPresent chargeGrowParams (cgOuts oldcap lenv esize maxv m lim) := by
+  simp [OutsPresent, chargeGrowParams, cgOuts, markVal]
 
 /-- What a successful growth charge says about the capacity it answers,
 which is the whole of what a caller's push needs to know about the callee.
@@ -285,7 +309,11 @@ structure FillSt (env : Env) (st : PikeSt) (rcv freev t2 : Value)
 /-- The loop leaves behind exactly what `pikeTake.fill` computes: every
 round is one unfolding of the fuel, a refused charge is the early return,
 and the budget the callee spends each round stays behind the existential.
-This lemma is the measurement the sample exists to take. -/
+
+This lemma is the measurement the sample exists to take, and the section 10
+automation is what it now reads through: one `evalStmt_call_outs` per call
+site instead of a write-back walked component by component, and one `store`
+per store fact. -/
 theorem fillLoop {p : Program} {cg : Func}
     (hcg : ChargeGrowSim p)
     (hcgf : p.func? "charge_grow" = some cg)
@@ -318,6 +346,7 @@ theorem fillLoop {p : Program} {cg : Func}
       exact ⟨1, env, evalWhile_done hc, i, hst⟩
   | succ k ih =>
       intro i st env rcv freev t2 hk hsz hcap hst
+      obtain ⟨b0, htmp3⟩ := hst.tmp3
       -- The condition says go round.
       have hc : evalExpr p env takeCond = .ok (.bool true) := by
         show evalExpr p env (.cmp .lt (.var "tmp4") (.var "novec")) = _
@@ -343,173 +372,71 @@ theorem fillLoop {p : Program} {cg : Func}
       have hrun := hcg st.poolCap st.pool.size Pcrevera.Ref.regSize
         Pcrevera.Ref.maxPool st.m lim hcap (by decide) (by decide)
         (by decide) hmem hcost
+      have hml : (st.pool.toList.map u32Val).length = st.pool.size := by simp
+      have hpm : Pcrevera.Ref.maxPool = 134549508 := by decide
       match hgrow : chargeGrow st.poolCap st.pool.size Pcrevera.Ref.regSize
           Pcrevera.Ref.maxPool st.m lim with
       | some (m', newcap) =>
           rw [hgrow] at hrun
-          obtain ⟨nc, inner, houts, hcall⟩ :=
-            evalStmt_call_runs (dest := some (.var "tmp3")) hcgf hargs hrun
-          -- The write-back, component by component.
-          rw [hcgp] at houts
-          simp only [chargeGrowParams, outsOf, List.map_cons, List.map_nil,
-            cgOuts, List.cons.injEq, and_true] at houts
-          obtain ⟨-, -, -, -, hom, hop, hoc, -, -⟩ := houts
-          obtain ⟨tm, him⟩ := slot_of_out (x := Int.ofNat m'.mem) hom
-          obtain ⟨tp, hip⟩ := slot_of_out (x := Int.ofNat m'.peak) hop
-          obtain ⟨tc, hic⟩ := slot_of_out (x := Int.ofNat m'.cost) hoc
-          rw [hcgp] at hcall
-          simp only [chargeGrowParams, writeBack, him, hip, hic] at hcall
-          rw [writePlace_var hst.mem] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show (env.set "mem" _).get "peak" = _ by
-            rw [Env.get_set_other (by decide)]; exact hst.peak)] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show ((env.set "mem" _).set "peak" _).get "cost"
-              = _ by
-            rw [Env.get_set_other (by decide), Env.get_set_other (by decide)]
-            exact hst.cost)] at hcall
-          simp only [Res.ok_bind] at hcall
-          obtain ⟨b0, htmp3⟩ := hst.tmp3
-          rw [writePlace_var (show (((env.set "mem" _).set "peak" _).set
-              "cost" _).get "tmp3" = _ by
-            rw [Env.get_set_other (by decide), Env.get_set_other (by decide),
-              Env.get_set_other (by decide)]
-            exact htmp3)] at hcall
-          simp only [Res.ok_bind] at hcall
-          -- The store after the call, named.
           obtain ⟨env4, henv4⟩ : ∃ e : Env,
-              ((((env.set "mem" (.int (Int.ofNat m'.mem))).set "peak"
-                (.int (Int.ofNat m'.peak))).set "cost"
-                (.int (Int.ofNat m'.cost))).set "tmp3" (.bool true)) = e :=
-            ⟨_, rfl⟩
-          rw [henv4] at hcall
-          -- The store facts of `env4`, one `get` at a time.
-          have g4 : ∀ (n : String), n ≠ "mem" → n ≠ "peak" → n ≠ "cost" →
-              n ≠ "tmp3" → env4.get n = env.get n := by
-            intro n h1 h2 h3 h4
-            rw [← henv4, Env.get_set_other h4, Env.get_set_other h3,
-              Env.get_set_other h2, Env.get_set_other h1]
+              ((((env.set "mem" (markVal m'.mem)).set "peak"
+                (markVal m'.peak)).set "cost" (markVal m'.cost)).set "tmp3"
+                (.bool true)) = e := ⟨_, rfl⟩
+          obtain ⟨nc, hcall⟩ := evalStmt_call_outs (dest := some (.var "tmp3"))
+            hcgf hargs hrun (hcgp ▸ cgOuts_present)
+          store [hcgp, chargeGrowParams, writeOuts, cgOuts, hst.mem, hst.peak,
+            hst.cost, htmp3, henv4] at hcall
           have h4tmp3 : env4.get "tmp3" = some ⟨.bool, .bool true⟩ := by
-            rw [← henv4]
-            exact Env.get_set_self (show (((env.set "mem" _).set "peak"
-                _).set "cost" _).get "tmp3" = some ⟨.bool, .bool b0⟩ by
-              rw [Env.get_set_other (by decide), Env.get_set_other (by decide),
-                Env.get_set_other (by decide)]
-              exact htmp3)
-          have h4mem : env4.get "mem"
-              = some ⟨.int .counter, markVal m'.mem⟩ := by
-            rw [← henv4, Env.get_set_other (by decide),
-              Env.get_set_other (by decide), Env.get_set_other (by decide)]
-            exact Env.get_set_self hst.mem
-          have h4peak : env4.get "peak"
-              = some ⟨.int .counter, markVal m'.peak⟩ := by
-            rw [← henv4, Env.get_set_other (by decide),
-              Env.get_set_other (by decide)]
-            exact Env.get_set_self (show (env.set "mem" _).get "peak"
-                = some ⟨.int .counter, markVal st.m.peak⟩ by
-              rw [Env.get_set_other (by decide)]; exact hst.peak)
-          have h4cost : env4.get "cost"
-              = some ⟨.int .counter, markVal m'.cost⟩ := by
-            rw [← henv4, Env.get_set_other (by decide)]
-            exact Env.get_set_self (show ((env.set "mem" _).set "peak"
-                _).get "cost" = some ⟨.int .counter, markVal st.m.cost⟩ by
-              rw [Env.get_set_other (by decide), Env.get_set_other (by decide)]
-              exact hst.cost)
-          -- Nothing failed, so the round continues: no return, one push,
-          -- one bump.
-          have hnot : evalExpr p env4 (.un .not (.var "tmp3"))
-              = .ok (.bool false) :=
-            evalExpr_not (b := true) (evalExpr_var h4tmp3)
+            store [← henv4, htmp3]
           have h4pool : env4.get "pool" = some ⟨.vec (.int .u32) 134549508,
               .seq 134549508 (st.pool.toList.map u32Val) st.poolCap⟩ := by
-            rw [g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.pool
+            store [← henv4, hst.pool]
           -- The push stays under the declared maximum, because the charge
           -- that succeeded said so — and the two growth rules agree on the
           -- new capacity, which is the reservation discipline under test.
-          have hml : (st.pool.toList.map u32Val).length = st.pool.size := by
-            simp
-          have hpm : Pcrevera.Ref.maxPool = 134549508 := by decide
           have hgrown := chargeGrow_cap hsz (by rw [hpm]; exact hcap) hgrow
           rw [hpm] at hgrown
-          have hcapif : (if (st.pool.toList.map u32Val).length = st.poolCap
-              then grown 134549508 st.poolCap else st.poolCap) = newcap := by
-            rw [hml]; exact hgrown.2.2.2
-          have hpushed : (st.pool.push Pcrevera.unset32).toList.map u32Val
-              = st.pool.toList.map u32Val ++ [Value.int 4294967295] := by
-            simp [u32Val, Pcrevera.unset32]
           obtain ⟨env5, henv5⟩ : ∃ e : Env, env4.set "pool"
               (.seq 134549508
                 ((st.pool.push Pcrevera.unset32).toList.map u32Val)
                 newcap) = e := ⟨_, rfl⟩
-          have hpush : ∀ f, evalStmt f p
-              (.push (.var "pool") (.litInt .u32 4294967295)) env4
-              = some (.ok (env5, .normal)) := by
-            intro f
-            rw [evalStmt_push_var h4pool
-                (evalExpr_lit (t := .u32) (v := 4294967295))
-                (by rw [hml]; exact hgrown.1),
-              hcapif, ← hpushed, henv5]
           have h5tmp4 : env5.get "tmp4" = some ⟨.int .u32, markVal i⟩ := by
-            rw [← henv5, Env.get_set_other (by decide),
-              g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.tmp4
-          have hbump : ∀ f, evalStmt f p
-              (.assign (.var "tmp4") (.bin .add (.var "tmp4")
-                (.litInt .u32 1))) env5
-              = some (.ok (env5.set "tmp4" (.int (i + 1 : Nat)),
-                  .normal)) := fun f =>
-            evalStmt_assign_var h5tmp4
-              (evalExpr_addOne (k := i) (by omega) h5tmp4)
+            store [← henv5, ← henv4, hst.tmp4]
           obtain ⟨env6, henv6⟩ : ∃ e : Env,
               env5.set "tmp4" (.int (i + 1 : Nat)) = e := ⟨_, rfl⟩
-          have hif : ∀ f, evalStmt f p
-              (.ifS (.un .not (.var "tmp3"))
-                [.returnS (some (.litInt .u32 4294967295))] []) env4
-              = some (.ok (env4, .normal)) := fun f => by
-            rw [evalStmt_if_false hnot, evalStmts_nil]
+          have hbody : ∀ f, evalStmts (max nc f) p takeBody env
+              = some (.ok (env6, .normal)) := fun f => by
+            unfold takeBody
+            rw [evalStmts_cons (evalStmt_mono hcall (Nat.le_max_left _ _)),
+              evalStmts_cons (show evalStmt (max nc f) p
+                  (.ifS (.un .not (.var "tmp3"))
+                    [.returnS (some (.litInt .u32 4294967295))] []) env4
+                  = some (.ok (env4, .normal)) by
+                rw [evalStmt_if_false (evalExpr_not (b := true)
+                  (evalExpr_var h4tmp3)), evalStmts_nil]),
+              evalStmts_cons (evalStmt_push_var h4pool
+                (evalExpr_lit (t := .u32) (v := 4294967295))
+                (by rw [hml]; exact hgrown.1)),
+              show (if (st.pool.toList.map u32Val).length = st.poolCap
+                  then grown 134549508 st.poolCap else st.poolCap) = newcap by
+                rw [hml]; exact hgrown.2.2.2,
+              show st.pool.toList.map u32Val ++ [Value.int 4294967295]
+                  = (st.pool.push Pcrevera.unset32).toList.map u32Val by
+                simp [u32Val, Pcrevera.unset32],
+              henv5,
+              evalStmts_cons (evalStmt_assign_var (t := .int .u32)
+                (cur := markVal i) h5tmp4
+                (evalExpr_addOne (k := i) (by omega) h5tmp4)),
+              henv6, evalStmts_nil]
           -- The store after the round satisfies the invariant at `i + 1`,
           -- against the state layer R recurses with.
           obtain ⟨st1, hst1⟩ : ∃ s : PikeSt, ({ st with m := m', poolCap := newcap, pool := st.pool.push Pcrevera.unset32 } : PikeSt) = s := ⟨_, rfl⟩
-          have g5 : ∀ (n : String), n ≠ "pool" → env5.get n = env4.get n := by
-            intro n h1
-            rw [← henv5, Env.get_set_other h1]
-          have g6 : ∀ (n : String), n ≠ "tmp4" → env6.get n = env5.get n := by
-            intro n h1
-            rw [← henv6, Env.get_set_other h1]
           have hst6 : FillSt env6 st1 rcv freev t2 novec (i + 1) lim := by
             rw [← hst1]
-            refine ⟨?_, ⟨true, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-            · rw [← henv6]
-              exact Env.get_set_self h5tmp4
-            · rw [g6 _ (by decide), g5 _ (by decide)]
-              exact h4tmp3
-            · rw [g6 _ (by decide), g5 _ (by decide),
-                g4 _ (by decide) (by decide) (by decide) (by decide)]
-              exact hst.nov
-            · rw [g6 _ (by decide), ← henv5]
-              exact Env.get_set_self h4pool
-            · rw [g6 _ (by decide), g5 _ (by decide),
-                g4 _ (by decide) (by decide) (by decide) (by decide)]
-              exact hst.rc
-            · rw [g6 _ (by decide), g5 _ (by decide),
-                g4 _ (by decide) (by decide) (by decide) (by decide)]
-              exact hst.free
-            · rw [g6 _ (by decide), g5 _ (by decide),
-                g4 _ (by decide) (by decide) (by decide) (by decide)]
-              exact hst.tmp2
-            · rw [g6 _ (by decide), g5 _ (by decide)]
-              exact h4mem
-            · rw [g6 _ (by decide), g5 _ (by decide)]
-              exact h4peak
-            · rw [g6 _ (by decide), g5 _ (by decide)]
-              exact h4cost
-            · rw [g6 _ (by decide), g5 _ (by decide),
-                g4 _ (by decide) (by decide) (by decide) (by decide)]
-              exact hst.meml
-            · rw [g6 _ (by decide), g5 _ (by decide),
-                g4 _ (by decide) (by decide) (by decide) (by decide)]
-              exact hst.costl
+            refine ⟨?_, ⟨true, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+              store [← henv6, ← henv5, ← henv4, markVal, hst.tmp4, htmp3,
+                hst.nov, hst.pool, hst.rc, hst.free, hst.tmp2, hst.mem,
+                hst.peak, hst.cost, hst.meml, hst.costl] <;> rfl
           have hih := ih (i + 1) st1 env6 rcv freev t2 (by omega)
             (by rw [← hst1]
                 have hlt' := hgrown.2.1
@@ -525,127 +452,46 @@ theorem fillLoop {p : Program} {cg : Func}
           | .ok st2 =>
               rw [hfill] at hih
               obtain ⟨n, env', hrun, hinv⟩ := hih
-              refine ⟨max nc n + 1, env', ?_, hinv⟩
-              have hbody : evalStmts (max nc n) p takeBody env
-                  = some (.ok (env6, .normal)) := by
-                unfold takeBody
-                rw [evalStmts_cons (evalStmt_mono hcall (Nat.le_max_left _ _)),
-                  evalStmts_cons (hif _), evalStmts_cons (hpush _),
-                  evalStmts_cons (by rw [hbump, henv6]), evalStmts_nil]
-              rw [evalWhile_step hc hbody]
-              exact evalWhile_mono hrun (Nat.le_max_right _ _)
+              exact ⟨max nc n + 1, env', by
+                rw [evalWhile_step hc (hbody n)]
+                exact evalWhile_mono hrun (Nat.le_max_right _ _), hinv⟩
           | .error st2 =>
               rw [hfill] at hih
               obtain ⟨n, env', hrun, hinv⟩ := hih
-              refine ⟨max nc n + 1, env', ?_, hinv⟩
-              have hbody : evalStmts (max nc n) p takeBody env
-                  = some (.ok (env6, .normal)) := by
-                unfold takeBody
-                rw [evalStmts_cons (evalStmt_mono hcall (Nat.le_max_left _ _)),
-                  evalStmts_cons (hif _), evalStmts_cons (hpush _),
-                  evalStmts_cons (by rw [hbump, henv6]), evalStmts_nil]
-              rw [evalWhile_step hc hbody]
-              exact evalWhile_mono hrun (Nat.le_max_right _ _)
+              exact ⟨max nc n + 1, env', by
+                rw [evalWhile_step hc (hbody n)]
+                exact evalWhile_mono hrun (Nat.le_max_right _ _), hinv⟩
       | none =>
           rw [hgrow] at hrun
-          obtain ⟨nc, inner, houts, hcall⟩ :=
-            evalStmt_call_runs (dest := some (.var "tmp3")) hcgf hargs hrun
-          rw [hcgp] at houts
-          simp only [chargeGrowParams, outsOf, List.map_cons, List.map_nil,
-            cgOuts, List.cons.injEq, and_true] at houts
-          obtain ⟨-, -, -, -, hom, hop, hoc, -, -⟩ := houts
-          obtain ⟨tm, him⟩ := slot_of_out (x := Int.ofNat st.m.mem) hom
-          obtain ⟨tp, hip⟩ := slot_of_out (x := Int.ofNat st.m.peak) hop
-          obtain ⟨tc, hic⟩ := slot_of_out (x := Int.ofNat st.m.cost) hoc
-          rw [hcgp] at hcall
-          simp only [chargeGrowParams, writeBack, him, hip, hic] at hcall
-          rw [writePlace_var hst.mem] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show (env.set "mem" _).get "peak" = _ by
-            rw [Env.get_set_other (by decide)]; exact hst.peak)] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show ((env.set "mem" _).set "peak" _).get "cost"
-              = _ by
-            rw [Env.get_set_other (by decide), Env.get_set_other (by decide)]
-            exact hst.cost)] at hcall
-          simp only [Res.ok_bind] at hcall
-          obtain ⟨b0, htmp3⟩ := hst.tmp3
-          rw [writePlace_var (show (((env.set "mem" _).set "peak" _).set
-              "cost" _).get "tmp3" = _ by
-            rw [Env.get_set_other (by decide), Env.get_set_other (by decide),
-              Env.get_set_other (by decide)]
-            exact htmp3)] at hcall
-          simp only [Res.ok_bind] at hcall
           obtain ⟨env4, henv4⟩ : ∃ e : Env,
-              ((((env.set "mem" (.int (Int.ofNat st.m.mem))).set "peak"
-                (.int (Int.ofNat st.m.peak))).set "cost"
-                (.int (Int.ofNat st.m.cost))).set "tmp3" (.bool false)) = e :=
-            ⟨_, rfl⟩
-          rw [henv4] at hcall
-          have g4 : ∀ (n : String), n ≠ "mem" → n ≠ "peak" → n ≠ "cost" →
-              n ≠ "tmp3" → env4.get n = env.get n := by
-            intro n h1 h2 h3 h4
-            rw [← henv4, Env.get_set_other h4, Env.get_set_other h3,
-              Env.get_set_other h2, Env.get_set_other h1]
+              ((((env.set "mem" (markVal st.m.mem)).set "peak"
+                (markVal st.m.peak)).set "cost" (markVal st.m.cost)).set "tmp3"
+                (.bool false)) = e := ⟨_, rfl⟩
+          obtain ⟨nc, hcall⟩ := evalStmt_call_outs (dest := some (.var "tmp3"))
+            hcgf hargs hrun (hcgp ▸ cgOuts_present)
+          store [hcgp, chargeGrowParams, writeOuts, cgOuts, hst.mem, hst.peak,
+            hst.cost, htmp3, henv4] at hcall
           have h4tmp3 : env4.get "tmp3" = some ⟨.bool, .bool false⟩ := by
-            rw [← henv4]
-            exact Env.get_set_self (show (((env.set "mem" _).set "peak"
-                _).set "cost" _).get "tmp3" = some ⟨.bool, .bool b0⟩ by
-              rw [Env.get_set_other (by decide), Env.get_set_other (by decide),
-                Env.get_set_other (by decide)]
-              exact htmp3)
-          have hnot : evalExpr p env4 (.un .not (.var "tmp3"))
-              = .ok (.bool true) :=
-            evalExpr_not (b := false) (evalExpr_var h4tmp3)
+            store [← henv4, htmp3]
           -- The refused charge is the early return, climbing out of the
           -- loop with the store exactly as the charges left it.
-          have hifret : evalStmt nc p
-              (.ifS (.un .not (.var "tmp3"))
-                [.returnS (some (.litInt .u32 4294967295))] []) env4
-              = some (.ok (env4, .ret (some (.int 4294967295)))) := by
-            rw [evalStmt_if_true hnot,
-              evalStmts_cons_abrupt (by simp)
-                (evalStmt_return_some
-                  (evalExpr_lit (t := .u32) (v := 4294967295)))]
           have hbody : evalStmts nc p takeBody env
               = some (.ok (env4, .ret (some (.int 4294967295)))) := by
             unfold takeBody
-            rw [evalStmts_cons hcall,
-              evalStmts_cons_abrupt (by simp) hifret]
+            rw [evalStmts_cons hcall]
+            refine evalStmts_cons_abrupt (by simp) ?_
+            rw [evalStmt_if_true (evalExpr_not (b := false)
+                (evalExpr_var h4tmp3)),
+              evalStmts_cons_abrupt (by simp)
+                (evalStmt_return_some
+                  (evalExpr_lit (t := .u32) (v := 4294967295)))]
           simp only [pikeTake.fill]
           rw [hgrow]
           refine ⟨nc + 1, env4, evalWhile_return hc hbody, i, ?_, ⟨false, ?_⟩,
-            ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-          · rw [g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.tmp4
-          · exact h4tmp3
-          · rw [g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.nov
-          · rw [g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.pool
-          · rw [g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.rc
-          · rw [g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.free
-          · rw [g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.tmp2
-          · rw [← henv4, Env.get_set_other (by decide),
-              Env.get_set_other (by decide), Env.get_set_other (by decide)]
-            exact Env.get_set_self hst.mem
-          · rw [← henv4, Env.get_set_other (by decide),
-              Env.get_set_other (by decide)]
-            exact Env.get_set_self (show (env.set "mem" _).get "peak"
-                = some ⟨.int .counter, markVal st.m.peak⟩ by
-              rw [Env.get_set_other (by decide)]; exact hst.peak)
-          · rw [← henv4, Env.get_set_other (by decide)]
-            exact Env.get_set_self (show ((env.set "mem" _).set "peak"
-                _).get "cost" = some ⟨.int .counter, markVal st.m.cost⟩ by
-              rw [Env.get_set_other (by decide), Env.get_set_other (by decide)]
-              exact hst.cost)
-          · rw [g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.meml
-          · rw [g4 _ (by decide) (by decide) (by decide) (by decide)]
-            exact hst.costl
+            ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+            store [← henv4, hst.tmp4, htmp3, hst.nov, hst.pool, hst.rc,
+              hst.free, hst.tmp2, hst.mem, hst.peak, hst.cost, hst.meml,
+              hst.costl]
 
 /-! ## The theorem: `pike_take` against `Ref.pikeTake`, conditionally -/
 
@@ -779,45 +625,26 @@ theorem pike_take_simulates {p : Program} {cg : Func}
         Array.length_toList]; omega)]
     obtain ⟨env1, henv1⟩ : ∃ e : Env,
         env0.declare "tmp1" (.int .u32) (.int 0) = e := ⟨_, rfl⟩
-    have h1free : env1.get "free" = some ⟨.vec (.int .u32) 262796,
-        .seq 262796 (st.free.toList.map markVal) st.freeCap⟩ := by
-      rw [← henv1, Env.get_declare_other (by decide)]; exact h0free
-    have h1tmp1 : env1.get "tmp1" = some ⟨.int .u32, .int 0⟩ := by
-      rw [← henv1]; exact Env.get_declare_self
     obtain ⟨env2, henv2⟩ : ∃ e : Env,
         (env1.set "free" (.seq 262796 (st.free.pop.toList.map markVal)
           st.freeCap)).set "tmp1" (markVal st.free.back!) = e := ⟨_, rfl⟩
-    have hpop : ∀ f, evalStmt f p (.pop (.var "free") (.var "tmp1")) env1
-        = some (.ok (env2, .normal)) := by
-      intro f
-      rw [evalStmt_pop_var (by decide) h1free h1tmp1
-        (getLast?_toList_map hpos), dropLast_toList_map, henv2]
-    have h2rc : env2.get "rc" = some ⟨.vec (.int .u32) 262796,
-        .seq 262796 (st.rc.toList.map markVal) st.rcCap⟩ := by
-      rw [← henv2, Env.get_set_other (by decide),
-        Env.get_set_other (by decide), ← henv1,
-        Env.get_declare_other (by decide)]
-      exact h0rc
-    have h2tmp1 : env2.get "tmp1"
-        = some ⟨.int .u32, markVal st.free.back!⟩ := by
-      rw [← henv2]
-      exact Env.get_set_self (show (env1.set "free" _).get "tmp1"
-          = some ⟨.int .u32, .int 0⟩ by
-        rw [Env.get_set_other (by decide)]; exact h1tmp1)
     obtain ⟨env3, henv3⟩ : ∃ e : Env, env2.set "rc"
         (.seq 262796 ((st.rc.set! st.free.back! 1).toList.map markVal)
           st.rcCap) = e := ⟨_, rfl⟩
-    have hwrite : ∀ f, evalStmt f p
-        (.assign (.index (.var "rc") (.var "tmp1")) (.litInt .u32 1)) env2
-        = some (.ok (env3, .normal)) := by
-      intro f
-      rw [evalStmt_assign_index_var h2rc (evalExpr_var h2tmp1)
-        (by simp only [List.length_map, Array.length_toList]; omega)
-        (evalExpr_lit (t := .u32) (v := 1))]
-      rw [show (Value.int 1) = markVal 1 from rfl, ← toList_map_set!, henv3]
+    have h1free : env1.get "free" = some ⟨.vec (.int .u32) 262796,
+        .seq 262796 (st.free.toList.map markVal) st.freeCap⟩ := by
+      store [← henv1, h0free]
+    have h1tmp1 : env1.get "tmp1" = some ⟨.int .u32, .int 0⟩ := by
+      store [← henv1]
+    have h2rc : env2.get "rc" = some ⟨.vec (.int .u32) 262796,
+        .seq 262796 (st.rc.toList.map markVal) st.rcCap⟩ := by
+      store [← henv2, ← henv1, h0rc]
+    have h2tmp1 : env2.get "tmp1"
+        = some ⟨.int .u32, markVal st.free.back!⟩ := by
+      store [← henv2, h1tmp1]
     have h3tmp1 : env3.get "tmp1"
         = some ⟨.int .u32, markVal st.free.back!⟩ := by
-      rw [← henv3, Env.get_set_other (by decide)]; exact h2tmp1
+      store [← henv3, h2tmp1]
     have hbody : ∀ f, evalStmts f p pikeTakeFunc.body env0
         = some (.ok (env3, .ret (some (markVal st.free.back!)))) := by
       intro f
@@ -825,9 +652,15 @@ theorem pike_take_simulates {p : Program} {cg : Func}
       unfold pikeTakeBody
       refine evalStmts_cons_abrupt (by simp) ?_
       rw [evalStmt_if_true hc1,
-        evalStmts_cons (evalStmt_let (evalExpr_lit (t := .u32) (v := 0))
-          |>.trans (by rw [henv1])),
-        evalStmts_cons (hpop f), evalStmts_cons (hwrite f),
+        evalStmts_cons (evalStmt_let (evalExpr_lit (t := .u32) (v := 0))),
+        henv1,
+        evalStmts_cons (evalStmt_pop_var (by decide) h1free h1tmp1
+          (getLast?_toList_map hpos)),
+        dropLast_toList_map, henv2,
+        evalStmts_cons (evalStmt_assign_index_var h2rc (evalExpr_var h2tmp1)
+          (by simp only [List.length_map, Array.length_toList]; omega)
+          (evalExpr_lit (t := .u32) (v := 1))),
+        show (Value.int 1) = markVal 1 from rfl, ← toList_map_set!, henv3,
         evalStmts_cons_abrupt (by simp)
           (evalStmt_return_some (evalExpr_var h3tmp1))]
     have hruns := runs_of_body hf (inner := env3)
@@ -835,47 +668,9 @@ theorem pike_take_simulates {p : Program} {cg : Func}
       ⟨1, by rw [henv0]; exact hbody 1⟩
     have houts : outsOf pikeTakeFunc.params env3
         = takeArgs stF novec lim := by
-      rw [← hstF]
-      have g3 : ∀ (n : String), n ≠ "rc" → n ≠ "free" → n ≠ "tmp1" →
-          env3.get n = env0.get n := by
-        intro n h1 h2 h3
-        rw [← henv3, Env.get_set_other h1, ← henv2, Env.get_set_other h3,
-          Env.get_set_other h2, ← henv1, Env.get_declare_other h3]
-      have h3rc : env3.get "rc" = some ⟨.vec (.int .u32) 262796,
-          .seq 262796 ((st.rc.set! st.free.back! 1).toList.map markVal)
-            st.rcCap⟩ := by
-        rw [← henv3]; exact Env.get_set_self h2rc
-      have h3free : env3.get "free" = some ⟨.vec (.int .u32) 262796,
-          .seq 262796 (st.free.pop.toList.map markVal) st.freeCap⟩ := by
-        rw [← henv3, Env.get_set_other (by decide), ← henv2,
-          Env.get_set_other (by decide)]
-        exact Env.get_set_self h1free
-      show [(match env3.get "pool" with
-              | some s => s.value | none => Value.bool false),
-            (match env3.get "rc" with
-              | some s => s.value | none => Value.bool false),
-            (match env3.get "free" with
-              | some s => s.value | none => Value.bool false),
-            (match env3.get "novec" with
-              | some s => s.value | none => Value.bool false),
-            (match env3.get "mem" with
-              | some s => s.value | none => Value.bool false),
-            (match env3.get "peak" with
-              | some s => s.value | none => Value.bool false),
-            (match env3.get "cost" with
-              | some s => s.value | none => Value.bool false),
-            (match env3.get "memlimit" with
-              | some s => s.value | none => Value.bool false),
-            (match env3.get "costlimit" with
-              | some s => s.value | none => Value.bool false)] = _
-      rw [g3 _ (by decide) (by decide) (by decide), h0pool, h3rc, h3free,
-        g3 _ (by decide) (by decide) (by decide), h0nov,
-        g3 _ (by decide) (by decide) (by decide), h0mem,
-        g3 _ (by decide) (by decide) (by decide), h0peak,
-        g3 _ (by decide) (by decide) (by decide), h0cost,
-        g3 _ (by decide) (by decide) (by decide), h0meml,
-        g3 _ (by decide) (by decide) (by decide), h0costl]
-      rfl
+      store [outsOf, pikeTakeFunc_params, takeArgs, List.map_cons,
+        List.map_nil, ← hstF, ← henv3, ← henv2, ← henv1, h0pool, h0rc,
+        h0free, h0nov, h0mem, h0peak, h0cost, h0meml, h0costl]
     have hred : pikeTake st novec lim = .ok (stF, st.free.back!) := by
       simp only [pikeTake]
       rw [if_pos hpos, hstF]
@@ -902,23 +697,17 @@ theorem pike_take_simulates {p : Program} {cg : Func}
            .returnS (some (.var "tmp1"))] []) env0
         = some (.ok (env0, .normal)) := fun f => by
       rw [evalStmt_if_false hc1, evalStmts_nil]
-    have hlen2 : evalExpr p env0 (.len (.var "rc"))
-        = .ok (.int (st.rc.size : Nat)) := by
-      rw [evalExpr_len (evalExpr_var h0rc)]
-      simp
     obtain ⟨env1, henv1⟩ : ∃ e : Env,
         env0.declare "tmp2" (.int .u32) (.int (st.rc.size : Nat)) = e :=
       ⟨_, rfl⟩
     have h1 : ∀ f, evalStmt f p
         (.letS "tmp2" (.int .u32) (some (.len (.var "rc")))) env0
         = some (.ok (env1, .normal)) := fun f => by
-      rw [evalStmt_let hlen2, henv1]
+      rw [evalStmt_let (show evalExpr p env0 (.len (.var "rc"))
+          = .ok (.int (st.rc.size : Nat)) by
+        rw [evalExpr_len (evalExpr_var h0rc)]; simp), henv1]
     have h1tmp2 : env1.get "tmp2"
-        = some ⟨.int .u32, .int (st.rc.size : Nat)⟩ := by
-      rw [← henv1]; exact Env.get_declare_self
-    have g1 : ∀ (n : String), n ≠ "tmp2" → env1.get n = env0.get n := by
-      intro n h
-      rw [← henv1, Env.get_declare_other h]
+        = some ⟨.int .u32, .int (st.rc.size : Nat)⟩ := by store [← henv1]
     have hmb : Pcrevera.Ref.maxBlocks = 262796 := by decide
     by_cases hbig : st.rc.size ≥ 262796
     · -- The block table is at its declared maximum: both sides refuse.
@@ -946,30 +735,9 @@ theorem pike_take_simulates {p : Program} {cg : Func}
         ⟨1, by rw [henv0]; exact hbody 1⟩
       have houts : outsOf pikeTakeFunc.params env1
           = takeArgs st novec lim := by
-        show [(match env1.get "pool" with
-                | some s => s.value | none => Value.bool false),
-              (match env1.get "rc" with
-                | some s => s.value | none => Value.bool false),
-              (match env1.get "free" with
-                | some s => s.value | none => Value.bool false),
-              (match env1.get "novec" with
-                | some s => s.value | none => Value.bool false),
-              (match env1.get "mem" with
-                | some s => s.value | none => Value.bool false),
-              (match env1.get "peak" with
-                | some s => s.value | none => Value.bool false),
-              (match env1.get "cost" with
-                | some s => s.value | none => Value.bool false),
-              (match env1.get "memlimit" with
-                | some s => s.value | none => Value.bool false),
-              (match env1.get "costlimit" with
-                | some s => s.value | none => Value.bool false)] = _
-        rw [g1 _ (by decide), h0pool, g1 _ (by decide), h0rc,
-          g1 _ (by decide), h0free, g1 _ (by decide), h0nov,
-          g1 _ (by decide), h0mem, g1 _ (by decide), h0peak,
-          g1 _ (by decide), h0cost, g1 _ (by decide), h0meml,
-          g1 _ (by decide), h0costl]
-        rfl
+        store [outsOf, pikeTakeFunc_params, takeArgs, List.map_cons,
+          List.map_nil, ← henv1, h0pool, h0rc, h0free, h0nov, h0mem, h0peak,
+          h0cost, h0meml, h0costl]
       have hred : pikeTake st novec lim = .error st := by
         simp only [pikeTake]
         rw [if_neg hpos, if_pos (by omega : st.rc.size ≥ Pcrevera.Ref.maxBlocks)]
@@ -998,29 +766,26 @@ theorem pike_take_simulates {p : Program} {cg : Func}
           (.letS "tmp3" .bool (some (.litBool false))) env1
           = some (.ok (env2, .normal)) := fun f => by
         rw [evalStmt_let evalExpr_litBool, henv2]
-      have g2 : ∀ (n : String), n ≠ "tmp3" → env2.get n = env1.get n := by
-        intro n h
-        rw [← henv2, Env.get_declare_other h]
       have h2rc : env2.get "rc" = some ⟨.vec (.int .u32) 262796,
           .seq 262796 (st.rc.toList.map markVal) st.rcCap⟩ := by
-        rw [g2 _ (by decide), g1 _ (by decide)]; exact h0rc
+        store [← henv2, ← henv1, h0rc]
       have h2mem : env2.get "mem"
           = some ⟨.int .counter, markVal st.m.mem⟩ := by
-        rw [g2 _ (by decide), g1 _ (by decide)]; exact h0mem
+        store [← henv2, ← henv1, h0mem]
       have h2peak : env2.get "peak"
           = some ⟨.int .counter, markVal st.m.peak⟩ := by
-        rw [g2 _ (by decide), g1 _ (by decide)]; exact h0peak
+        store [← henv2, ← henv1, h0peak]
       have h2cost : env2.get "cost"
           = some ⟨.int .counter, markVal st.m.cost⟩ := by
-        rw [g2 _ (by decide), g1 _ (by decide)]; exact h0cost
+        store [← henv2, ← henv1, h0cost]
+      have h2tmp3 : env2.get "tmp3" = some ⟨.bool, .bool false⟩ := by
+        store [← henv2]
       have h2meml : env2.get "memlimit"
           = some ⟨.int .counter, markVal lim.mem⟩ := by
-        rw [g2 _ (by decide), g1 _ (by decide)]; exact h0meml
+        store [← henv2, ← henv1, h0meml]
       have h2costl : env2.get "costlimit"
           = some ⟨.int .counter, markVal lim.cost⟩ := by
-        rw [g2 _ (by decide), g1 _ (by decide)]; exact h0costl
-      have h2tmp3 : env2.get "tmp3" = some ⟨.bool, .bool false⟩ := by
-        rw [← henv2]; exact Env.get_declare_self
+        store [← henv2, ← henv1, h0costl]
       have hargs : evalArgs p env2 cg.params
           [.inArg (.cap (.var "rc")), .inArg (.len (.var "rc")),
            .inArg (.litInt .u32 4), .inArg (.litInt .u32 262796),
@@ -1043,54 +808,16 @@ theorem pike_take_simulates {p : Program} {cg : Func}
       | none =>
           -- The charge refused; nothing moved, and both sides say no.
           rw [hgrow] at hrun
-          obtain ⟨nc, inner, houts', hcall⟩ :=
-            evalStmt_call_runs (dest := some (.var "tmp3")) hcgf hargs hrun
-          rw [hcgp] at houts'
-          simp only [chargeGrowParams, outsOf, List.map_cons, List.map_nil,
-            cgOuts, List.cons.injEq, and_true] at houts'
-          obtain ⟨-, -, -, -, hom, hop, hoc, -, -⟩ := houts'
-          obtain ⟨tm, him⟩ := slot_of_out (x := Int.ofNat st.m.mem) hom
-          obtain ⟨tp, hip⟩ := slot_of_out (x := Int.ofNat st.m.peak) hop
-          obtain ⟨tc, hic⟩ := slot_of_out (x := Int.ofNat st.m.cost) hoc
-          rw [hcgp] at hcall
-          simp only [chargeGrowParams, writeBack, him, hip, hic] at hcall
-          rw [writePlace_var h2mem] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show (env2.set "mem" _).get "peak" = _ by
-            rw [Env.get_set_other (by decide)]; exact h2peak)] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show ((env2.set "mem" _).set "peak" _).get
-              "cost" = _ by
-            rw [Env.get_set_other (by decide), Env.get_set_other (by decide)]
-            exact h2cost)] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show (((env2.set "mem" _).set "peak" _).set
-              "cost" _).get "tmp3" = _ by
-            rw [Env.get_set_other (by decide), Env.get_set_other (by decide),
-              Env.get_set_other (by decide)]
-            exact h2tmp3)] at hcall
-          simp only [Res.ok_bind] at hcall
           obtain ⟨env3, henv3⟩ : ∃ e : Env,
-              ((((env2.set "mem" (.int (Int.ofNat st.m.mem))).set "peak"
-                (.int (Int.ofNat st.m.peak))).set "cost"
-                (.int (Int.ofNat st.m.cost))).set "tmp3" (.bool false)) = e :=
-            ⟨_, rfl⟩
-          rw [henv3] at hcall
-          have g3 : ∀ (n : String), n ≠ "mem" → n ≠ "peak" → n ≠ "cost" →
-              n ≠ "tmp3" → env3.get n = env2.get n := by
-            intro n h1' h2' h3' h4'
-            rw [← henv3, Env.get_set_other h4', Env.get_set_other h3',
-              Env.get_set_other h2', Env.get_set_other h1']
+              ((((env2.set "mem" (markVal st.m.mem)).set "peak"
+                (markVal st.m.peak)).set "cost" (markVal st.m.cost)).set "tmp3"
+                (.bool false)) = e := ⟨_, rfl⟩
+          obtain ⟨nc, hcall⟩ := evalStmt_call_outs (dest := some (.var "tmp3"))
+            hcgf hargs hrun (hcgp ▸ cgOuts_present)
+          store [hcgp, chargeGrowParams, writeOuts, cgOuts, h2mem, h2peak,
+            h2cost, h2tmp3, henv3] at hcall
           have h3tmp3 : env3.get "tmp3" = some ⟨.bool, .bool false⟩ := by
-            rw [← henv3]
-            exact Env.get_set_self (show (((env2.set "mem" _).set "peak"
-                _).set "cost" _).get "tmp3" = some ⟨.bool, .bool false⟩ by
-              rw [Env.get_set_other (by decide), Env.get_set_other (by decide),
-                Env.get_set_other (by decide)]
-              exact h2tmp3)
-          have hnot : evalExpr p env3 (.un .not (.var "tmp3"))
-              = .ok (.bool true) :=
-            evalExpr_not (b := false) (evalExpr_var h3tmp3)
+            store [← henv3, h2tmp3]
           have hbody : evalStmts nc p pikeTakeFunc.body env0
               = some (.ok (env3, .ret (some (.int 4294967295)))) := by
             rw [pikeTakeFunc_body]
@@ -1099,7 +826,8 @@ theorem pike_take_simulates {p : Program} {cg : Func}
               evalStmts_cons (hif2 nc), evalStmts_cons (h2 nc),
               evalStmts_cons hcall]
             refine evalStmts_cons_abrupt (by simp) ?_
-            rw [evalStmt_if_true hnot,
+            rw [evalStmt_if_true (evalExpr_not (b := false)
+                (evalExpr_var h3tmp3)),
               evalStmts_cons_abrupt (by simp)
                 (evalStmt_return_some
                   (evalExpr_lit (t := .u32) (v := 4294967295)))]
@@ -1108,54 +836,9 @@ theorem pike_take_simulates {p : Program} {cg : Func}
             ⟨nc, by rw [henv0]; exact hbody⟩
           have houts : outsOf pikeTakeFunc.params env3
               = takeArgs st novec lim := by
-            show [(match env3.get "pool" with
-                    | some s => s.value | none => Value.bool false),
-                  (match env3.get "rc" with
-                    | some s => s.value | none => Value.bool false),
-                  (match env3.get "free" with
-                    | some s => s.value | none => Value.bool false),
-                  (match env3.get "novec" with
-                    | some s => s.value | none => Value.bool false),
-                  (match env3.get "mem" with
-                    | some s => s.value | none => Value.bool false),
-                  (match env3.get "peak" with
-                    | some s => s.value | none => Value.bool false),
-                  (match env3.get "cost" with
-                    | some s => s.value | none => Value.bool false),
-                  (match env3.get "memlimit" with
-                    | some s => s.value | none => Value.bool false),
-                  (match env3.get "costlimit" with
-                    | some s => s.value | none => Value.bool false)] = _
-            rw [g3 _ (by decide) (by decide) (by decide) (by decide),
-              g2 _ (by decide), g1 _ (by decide), h0pool,
-              g3 _ (by decide) (by decide) (by decide) (by decide), h2rc,
-              g3 _ (by decide) (by decide) (by decide) (by decide),
-              g2 _ (by decide), g1 _ (by decide), h0free,
-              g3 _ (by decide) (by decide) (by decide) (by decide),
-              g2 _ (by decide), g1 _ (by decide), h0nov]
-            rw [show env3.get "mem"
-                = some ⟨.int .counter, markVal st.m.mem⟩ by
-              rw [← henv3, Env.get_set_other (by decide),
-                Env.get_set_other (by decide), Env.get_set_other (by decide)]
-              exact Env.get_set_self h2mem]
-            rw [show env3.get "peak"
-                = some ⟨.int .counter, markVal st.m.peak⟩ by
-              rw [← henv3, Env.get_set_other (by decide),
-                Env.get_set_other (by decide)]
-              exact Env.get_set_self (show (env2.set "mem" _).get "peak"
-                  = some ⟨.int .counter, markVal st.m.peak⟩ by
-                rw [Env.get_set_other (by decide)]; exact h2peak)]
-            rw [show env3.get "cost"
-                = some ⟨.int .counter, markVal st.m.cost⟩ by
-              rw [← henv3, Env.get_set_other (by decide)]
-              exact Env.get_set_self (show ((env2.set "mem" _).set "peak"
-                  _).get "cost" = some ⟨.int .counter, markVal st.m.cost⟩ by
-                rw [Env.get_set_other (by decide),
-                  Env.get_set_other (by decide)]
-                exact h2cost)]
-            rw [g3 _ (by decide) (by decide) (by decide) (by decide), h2meml,
-              g3 _ (by decide) (by decide) (by decide) (by decide), h2costl]
-            rfl
+            store [outsOf, pikeTakeFunc_params, takeArgs, List.map_cons,
+              List.map_nil, ← henv3, ← henv2, ← henv1, h0pool, h0rc, h0free,
+              h0nov, h0mem, h0peak, h0cost, h0meml, h0costl]
           have hred : pikeTake st novec lim = .error st := by
             simp only [pikeTake]
             rw [if_neg hpos, if_neg (by omega :
@@ -1168,94 +851,31 @@ theorem pike_take_simulates {p : Program} {cg : Func}
       | some pr =>
           obtain ⟨m1, rcCap1⟩ := pr
           rw [hgrow] at hrun
-          obtain ⟨nc, inner, houts', hcall⟩ :=
-            evalStmt_call_runs (dest := some (.var "tmp3")) hcgf hargs hrun
-          rw [hcgp] at houts'
-          simp only [chargeGrowParams, outsOf, List.map_cons, List.map_nil,
-            cgOuts, List.cons.injEq, and_true] at houts'
-          obtain ⟨-, -, -, -, hom, hop, hoc, -, -⟩ := houts'
-          obtain ⟨tm, him⟩ := slot_of_out (x := Int.ofNat m1.mem) hom
-          obtain ⟨tp, hip⟩ := slot_of_out (x := Int.ofNat m1.peak) hop
-          obtain ⟨tc, hic⟩ := slot_of_out (x := Int.ofNat m1.cost) hoc
-          rw [hcgp] at hcall
-          simp only [chargeGrowParams, writeBack, him, hip, hic] at hcall
-          rw [writePlace_var h2mem] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show (env2.set "mem" _).get "peak" = _ by
-            rw [Env.get_set_other (by decide)]; exact h2peak)] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show ((env2.set "mem" _).set "peak" _).get
-              "cost" = _ by
-            rw [Env.get_set_other (by decide), Env.get_set_other (by decide)]
-            exact h2cost)] at hcall
-          simp only [Res.ok_bind] at hcall
-          rw [writePlace_var (show (((env2.set "mem" _).set "peak" _).set
-              "cost" _).get "tmp3" = _ by
-            rw [Env.get_set_other (by decide), Env.get_set_other (by decide),
-              Env.get_set_other (by decide)]
-            exact h2tmp3)] at hcall
-          simp only [Res.ok_bind] at hcall
           obtain ⟨env3, henv3⟩ : ∃ e : Env,
-              ((((env2.set "mem" (.int (Int.ofNat m1.mem))).set "peak"
-                (.int (Int.ofNat m1.peak))).set "cost"
-                (.int (Int.ofNat m1.cost))).set "tmp3" (.bool true)) = e :=
-            ⟨_, rfl⟩
-          rw [henv3] at hcall
-          have g3 : ∀ (n : String), n ≠ "mem" → n ≠ "peak" → n ≠ "cost" →
-              n ≠ "tmp3" → env3.get n = env2.get n := by
-            intro n h1' h2' h3' h4'
-            rw [← henv3, Env.get_set_other h4', Env.get_set_other h3',
-              Env.get_set_other h2', Env.get_set_other h1']
+              ((((env2.set "mem" (markVal m1.mem)).set "peak"
+                (markVal m1.peak)).set "cost" (markVal m1.cost)).set "tmp3"
+                (.bool true)) = e := ⟨_, rfl⟩
+          obtain ⟨nc, hcall⟩ := evalStmt_call_outs (dest := some (.var "tmp3"))
+            hcgf hargs hrun (hcgp ▸ cgOuts_present)
+          store [hcgp, chargeGrowParams, writeOuts, cgOuts, h2mem, h2peak,
+            h2cost, h2tmp3, henv3] at hcall
           have h3tmp3 : env3.get "tmp3" = some ⟨.bool, .bool true⟩ := by
-            rw [← henv3]
-            exact Env.get_set_self (show (((env2.set "mem" _).set "peak"
-                _).set "cost" _).get "tmp3" = some ⟨.bool, .bool false⟩ by
-              rw [Env.get_set_other (by decide), Env.get_set_other (by decide),
-                Env.get_set_other (by decide)]
-              exact h2tmp3)
-          have hnot : evalExpr p env3 (.un .not (.var "tmp3"))
-              = .ok (.bool false) :=
-            evalExpr_not (b := true) (evalExpr_var h3tmp3)
+            store [← henv3, h2tmp3]
           have hif3 : ∀ f, evalStmt f p
               (.ifS (.un .not (.var "tmp3"))
                 [.returnS (some (.litInt .u32 4294967295))] []) env3
               = some (.ok (env3, .normal)) := fun f => by
-            rw [evalStmt_if_false hnot, evalStmts_nil]
-          have h3mem : env3.get "mem"
-              = some ⟨.int .counter, markVal m1.mem⟩ := by
-            rw [← henv3, Env.get_set_other (by decide),
-              Env.get_set_other (by decide), Env.get_set_other (by decide)]
-            exact Env.get_set_self h2mem
-          have h3peak : env3.get "peak"
-              = some ⟨.int .counter, markVal m1.peak⟩ := by
-            rw [← henv3, Env.get_set_other (by decide),
-              Env.get_set_other (by decide)]
-            exact Env.get_set_self (show (env2.set "mem" _).get "peak"
-                = some ⟨.int .counter, markVal st.m.peak⟩ by
-              rw [Env.get_set_other (by decide)]; exact h2peak)
-          have h3cost : env3.get "cost"
-              = some ⟨.int .counter, markVal m1.cost⟩ := by
-            rw [← henv3, Env.get_set_other (by decide)]
-            exact Env.get_set_self (show ((env2.set "mem" _).set "peak"
-                _).get "cost" = some ⟨.int .counter, markVal st.m.cost⟩ by
-              rw [Env.get_set_other (by decide), Env.get_set_other (by decide)]
-              exact h2cost)
+            rw [evalStmt_if_false (evalExpr_not (b := true)
+              (evalExpr_var h3tmp3)), evalStmts_nil]
           have h3rc : env3.get "rc" = some ⟨.vec (.int .u32) 262796,
               .seq 262796 (st.rc.toList.map markVal) st.rcCap⟩ := by
-            rw [g3 _ (by decide) (by decide) (by decide) (by decide)]
-            exact h2rc
+            store [← henv3, h2rc]
           -- The push onto `rc` stays under the branch's own check, and the
           -- two growth rules agree on the capacity it leaves.
           have hml : (st.rc.toList.map markVal).length = st.rc.size := by
             simp
           have hgrownRc := chargeGrow_cap hrc (by rw [hmb]; exact hrcap) hgrow
           rw [hmb] at hgrownRc
-          have hgrown : (if (st.rc.toList.map markVal).length = st.rcCap
-              then grown 262796 st.rcCap else st.rcCap) = rcCap1 := by
-            rw [hml]; exact hgrownRc.2.2.2
-          have hpushed : (st.rc.push 1).toList.map markVal
-              = st.rc.toList.map markVal ++ [Value.int 1] := by
-            simp [markVal]
           obtain ⟨env4, henv4⟩ : ∃ e : Env, env3.set "rc"
               (.seq 262796 ((st.rc.push 1).toList.map markVal) rcCap1) = e :=
             ⟨_, rfl⟩
@@ -1265,61 +885,28 @@ theorem pike_take_simulates {p : Program} {cg : Func}
             intro f
             rw [evalStmt_push_var h3rc (evalExpr_lit (t := .u32) (v := 1))
                 (by rw [hml]; omega),
-              hgrown, ← hpushed, henv4]
-          have g4 : ∀ (n : String), n ≠ "rc" → env4.get n = env3.get n := by
-            intro n h
-            rw [← henv4, Env.get_set_other h]
+              show (if (st.rc.toList.map markVal).length = st.rcCap
+                  then grown 262796 st.rcCap else st.rcCap) = rcCap1 by
+                rw [hml]; exact hgrownRc.2.2.2,
+              show st.rc.toList.map markVal ++ [Value.int 1]
+                  = (st.rc.push 1).toList.map markVal by simp [markVal],
+              henv4]
           obtain ⟨env5, henv5⟩ : ∃ e : Env,
               env4.declare "tmp4" (.int .u32) (.int 0) = e := ⟨_, rfl⟩
           have h5 : ∀ f, evalStmt f p
               (.letS "tmp4" (.int .u32) (some (.litInt .u32 0))) env4
               = some (.ok (env5, .normal)) := fun f => by
             rw [evalStmt_let (evalExpr_lit (t := .u32) (v := 0)), henv5]
-          have g5 : ∀ (n : String), n ≠ "tmp4" → env5.get n = env4.get n := by
-            intro n h
-            rw [← henv5, Env.get_declare_other h]
           obtain ⟨st1, hst1⟩ : ∃ s : PikeSt, ({ st with m := m1, rcCap := rcCap1, rc := st.rc.push 1 } : PikeSt) = s := ⟨_, rfl⟩
           have hst5 : FillSt env5 st1
             (.seq 262796 ((st.rc.push 1).toList.map markVal) rcCap1)
             (.seq 262796 (st.free.toList.map markVal) st.freeCap)
             (.int (st.rc.size : Nat)) novec 0 lim := by
             rw [← hst1]
-            refine ⟨?_, ⟨true, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-            · rw [← henv5]; exact Env.get_declare_self
-            · rw [g5 _ (by decide), g4 _ (by decide)]
-              exact h3tmp3
-            · rw [g5 _ (by decide), g4 _ (by decide),
-                g3 _ (by decide) (by decide) (by decide) (by decide),
-                g2 _ (by decide), g1 _ (by decide)]
-              exact h0nov
-            · rw [g5 _ (by decide), g4 _ (by decide),
-                g3 _ (by decide) (by decide) (by decide) (by decide),
-                g2 _ (by decide), g1 _ (by decide)]
-              exact h0pool
-            · rw [g5 _ (by decide), ← henv4]
-              exact Env.get_set_self h3rc
-            · rw [g5 _ (by decide), g4 _ (by decide),
-                g3 _ (by decide) (by decide) (by decide) (by decide),
-                g2 _ (by decide), g1 _ (by decide)]
-              exact h0free
-            · rw [g5 _ (by decide), g4 _ (by decide),
-                g3 _ (by decide) (by decide) (by decide) (by decide),
-                g2 _ (by decide)]
-              exact h1tmp2
-            · rw [g5 _ (by decide), g4 _ (by decide)]
-              exact h3mem
-            · rw [g5 _ (by decide), g4 _ (by decide)]
-              exact h3peak
-            · rw [g5 _ (by decide), g4 _ (by decide)]
-              exact h3cost
-            · rw [g5 _ (by decide), g4 _ (by decide),
-                g3 _ (by decide) (by decide) (by decide) (by decide),
-                g2 _ (by decide), g1 _ (by decide)]
-              exact h0meml
-            · rw [g5 _ (by decide), g4 _ (by decide),
-                g3 _ (by decide) (by decide) (by decide) (by decide),
-                g2 _ (by decide), g1 _ (by decide)]
-              exact h0costl
+            refine ⟨?_, ⟨true, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+              store [← henv5, ← henv4, ← henv3, ← henv2, ← henv1, markVal,
+                h3tmp3, h0nov, h0pool, h0rc, h0free, h1tmp2, h0mem, h0peak,
+                h0cost, h0meml, h0costl] <;> rfl
           have hloop := fillLoop hcg hcgf hcgp hmem hcost hnovec novec 0 st1
             env5 _ _ _ (by omega)
             (by rw [← hst1]; exact hpool) (by rw [← hst1]; exact hpcap) hst5
@@ -1357,28 +944,10 @@ theorem pike_take_simulates {p : Program} {cg : Func}
                 ⟨max nc n, by rw [henv0]; exact hbody⟩
               have houts : outsOf pikeTakeFunc.params env'
                   = takeArgs st2 novec lim := by
-                show [(match env'.get "pool" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "rc" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "free" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "novec" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "mem" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "peak" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "cost" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "memlimit" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "costlimit" with
-                        | some s => s.value | none => Value.bool false)] = _
-                rw [hstF.pool, hstF.rc, hstF.free, hstF.nov, hstF.mem,
-                  hstF.peak, hstF.cost, hstF.meml, hstF.costl]
-                simp only [takeArgs, hframe.1, hframe.2.1, hframe.2.2.1,
-                  hframe.2.2.2, ← hst1]
+                store [outsOf, pikeTakeFunc_params, takeArgs, List.map_cons,
+                  List.map_nil, hstF.pool, hstF.rc, hstF.free, hstF.nov,
+                  hstF.mem, hstF.peak, hstF.cost, hstF.meml, hstF.costl,
+                  hframe.1, hframe.2.1, hframe.2.2.1, hframe.2.2.2, ← hst1]
               rw [hred0, hfill]
               show Runs p "pike_take" (takeArgs st novec lim)
                 (takeArgs st2 novec lim, some (markVal st.rc.size))
@@ -1406,28 +975,10 @@ theorem pike_take_simulates {p : Program} {cg : Func}
                 ⟨max nc n, by rw [henv0]; exact hbody⟩
               have houts : outsOf pikeTakeFunc.params env'
                   = takeArgs st2 novec lim := by
-                show [(match env'.get "pool" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "rc" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "free" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "novec" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "mem" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "peak" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "cost" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "memlimit" with
-                        | some s => s.value | none => Value.bool false),
-                      (match env'.get "costlimit" with
-                        | some s => s.value | none => Value.bool false)] = _
-                rw [hstF.pool, hstF.rc, hstF.free, hstF.nov, hstF.mem,
-                  hstF.peak, hstF.cost, hstF.meml, hstF.costl]
-                simp only [takeArgs, hframe.1, hframe.2.1, hframe.2.2.1,
-                  hframe.2.2.2, ← hst1]
+                store [outsOf, pikeTakeFunc_params, takeArgs, List.map_cons,
+                  List.map_nil, hstF.pool, hstF.rc, hstF.free, hstF.nov,
+                  hstF.mem, hstF.peak, hstF.cost, hstF.meml, hstF.costl,
+                  hframe.1, hframe.2.1, hframe.2.2.1, hframe.2.2.2, ← hst1]
               rw [hred0, hfill]
               show Runs p "pike_take" (takeArgs st novec lim)
                 (takeArgs st2 novec lim, some (.int 4294967295))

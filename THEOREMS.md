@@ -313,6 +313,65 @@ below depends on nothing beyond Lean's own three axioms.
     | R-10 | proved by running      | lean/CorpusCheck.lean                |
     +------+------------------------+--------------------------------------+
 
+Layer I is the deep embedding of the artifact's own IR and what has been
+proved about it. It is a *foundation* and not the refinement: the composed
+statement PLAN-M7.md section 1 writes down is not proved, and the reason it
+is not is measured rather than guessed — PLAN-M7.md section 10 prices the
+per-function simulation campaign at roughly 110,000 lines of proof after
+automation, and splits the milestone on that number. What the entries below
+say is what they say and nothing beyond it.
+
+    +------+------------------------+--------------------------------------+
+    | I-1  | proved                 | Tir/Syntax.lean, Tir/Interp.lean,    |
+    |      |                        | Tir/Exec.lean; Tir/Stable.lean,      |
+    |      |                        | runs_stable and runs_unique          |
+    | I-2  | checked; the theorem   | Tir/Print.lean, Tir/Decode.lean;     |
+    |      | started, not finished  | Tir/PrintCheck.lean holds the        |
+    |      |                        | printer to serialize.dumps byte for  |
+    |      |                        | byte and round-trips the toy         |
+    |      |                        | programs both ways, with negative    |
+    |      |                        | cases. Tir/RoundTrip.lean proves the |
+    |      |                        | Json.mkObj bridge and inverts the    |
+    |      |                        | type decoder; the other four decoder |
+    |      |                        | families are outstanding, and the    |
+    |      |                        | step from printed text to a parsed   |
+    |      |                        | value stays a check rather than a    |
+    |      |                        | theorem. PLAN-M7.md section 11       |
+    | I-3  | proved by elaborating  | Tir/Artifact.lean: the 2.8 MB of     |
+    |      |                        | gen/engine.tir.json decode and print |
+    |      |                        | back to the same bytes, and the      |
+    |      |                        | sha256 beside them is the one        |
+    |      |                        | tests/test_lean_pin.py reads off the |
+    |      |                        | file                                 |
+    | I-4  | proved                 | Tir/RegionKids.lean,                 |
+    |      |                        | region_kids_simulates, against       |
+    |      |                        | Ref.regionKids                       |
+    | I-5  | not started            | see PLAN-M7.md section 10            |
+    | I-6  | not started            | see PLAN-M7.md section 10            |
+    | I-7  | one function, and      | Tir/PikeTake.lean,                   |
+    |      | conditionally: proved  | pike_take_simulates, the pool        |
+    |      | given a contract for   | allocator. It assumes ChargeGrowSim, |
+    |      | charge_grow, which is  | the Runs contract the campaign owes  |
+    |      | itself unproved        | charge_grow anyway. Seven #guards    |
+    |      |                        | run the decoded charge_grow against  |
+    |      |                        | Ref.chargeGrow, which is evidence    |
+    |      |                        | for the hypothesis and not a proof   |
+    |      |                        | of it. The coverage ledger does not  |
+    |      |                        | count this theorem                   |
+    | I-8  | not started            | see PLAN-M7.md section 10            |
+    | I-9  | not started            | see PLAN-M7.md section 10            |
+    | I-10 | not started; it is the | see PLAN-M7.md section 1 for the     |
+    |      | composition of I-5 to  | statement it would be                |
+    |      | I-9 and cannot precede |                                      |
+    |      | them                   |                                      |
+    +------+------------------------+--------------------------------------+
+
+So the artifact is pinned, audited into Lean, and read back to its own
+bytes, and one of its eighty post-parse functions is proved to mean what
+layer R means. The engine the backends consume is still tied to layers S
+and R by the corpus replay and the sweep rather than by a theorem, which is
+the fallback DESIGN.md section 10 documents, and it is the one in force.
+
 No entry carries a class of patterns any more. What every theorem with a
 backtracking run in it does carry is `ReRules`, the six rules listed at the
 end of this section: properties of the compiler's output that `cert_check`

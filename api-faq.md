@@ -754,3 +754,77 @@ use definitional unfolding.
 — makes the side goal concrete. The general rule is that tactic blocks in
 argument position are elaborated in argument order, so a `by` that depends
 on a later argument needs its implicit pinned.
+
+## `simp only` does not bring the literal simprocs with it
+
+`simp only [myLemma]` will not reduce `if "kids" = "sibs" then _ else _`,
+even though plain `simp` reduces it instantly. The simprocs that decide
+string-literal equality and then pick the branch are `String.reduceEq` and
+`reduceIte`, and `simp only` uses exactly the list it is given. A tactic
+built on `simp only` has to name them, which is why `store` carries them.
+
+## `cases h : e` generalizes only the occurrences it can see
+
+`cases hg : inner.get pname` rewrote the goal's visible occurrence and left
+the one buried inside an unreduced `writeBack` application alone, so the
+following `rw [hg]` reported "did not find an occurrence". The definition
+has to be unfolded first — or, more robustly, a `show` written that spells
+the reduced form — so that every occurrence is on the surface before the
+case split.
+
+## `simp only` will not close a goal against a metavariable
+
+`store [hst.i]` normalises `env.get "i"` to `some ⟨.int .u32, .int k⟩` and
+then stops, because the goal's right-hand side is `some ⟨?t, ?v⟩` and
+`simp`'s closing `rfl` does not assign metavariables. Two fixes, both at
+the call site: pin the implicit — `evalStmt_assign_var (t := .int .u32)
+(cur := .int (k : Nat)) (by store [...])` — or give the existential witness
+explicitly instead of `⟨_, by store [...]⟩`. This is the single most common
+friction in using a `simp`-based tactic to discharge a lemma's hypothesis.
+
+## `rw [f]` on overlapping clauses generates "no earlier pattern matched" goals
+
+Rewriting with a function whose patterns overlap — `writeBack`'s
+`par :: ps, a :: as` clause and its catch-all — leaves side goals of the
+form `∀ pl, par.inout = true → a = Arg.inoutArg pl → False`. Doing the case
+analysis on the discriminants *first*, so the patterns are literal when the
+rewrite happens, avoids them entirely.
+
+## A `{ x with ... }` update cannot be split across lines
+
+Lean 4.32.2 accepts a plain structure instance written over several lines,
+with or without commas, as long as the continuation is indented past the
+`{`. The `with` form accepts neither: `{ st with m := m',` followed by a
+newline is "unexpected identifier; expected '}'", whatever the indentation.
+Record updates stay on one line, however long.
+
+## `List.mergeSort` does not reduce definitionally
+
+It is defined with `termination_by`, so `rfl` will not evaluate it even on a
+list of literals — the same wall `#guard` hits with well-founded
+definitions. `simp [List.mergeSort]` does evaluate it, through the equation
+lemmas, and that is what makes the printer's literal-key objects computable
+in a proof.
+
+## `simp only []` is not a no-op
+
+It still iota-reduces, so `simp only []` after a rewrite collapses a `match`
+on a constructor that the rewrite has just exposed. The unused-argument
+linter is what makes this visible: `simp only [bind, Except.bind]` reported
+*both* arguments unused and yet removing the call broke the proof, because
+the work was the reduction and not the rewriting.
+
+## A `match` on `Json.mkObj` will not reduce until `mkObj` is unfolded
+
+`Json.mkObj` is a `def` wrapping the `Json.obj` constructor, so a `match` on
+it is stuck until `simp only [Json.mkObj]` exposes the constructor. Its
+`Std.TreeMap.Raw` argument then computes fine — `jFields (Json.mkObj [(k,
+v)]) = some [(k, v)]` is `rfl` even for a variable key, and for literal keys
+the map's sort computes too.
+
+## `private` is per-module, so a proof in another file cannot name the helper
+
+`Decode.lean`'s `allPresent` and `allIn` are private, so a proof in
+`RoundTrip.lean` cannot pass them to `simp`. What works instead is to state
+the whole enclosing call as a `show ... from rfl`: the private helpers are
+still *reducible*, only not nameable, so the computation goes through.

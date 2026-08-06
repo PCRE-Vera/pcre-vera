@@ -25,6 +25,10 @@ types: the region vector is declared at the mark arrays' width, a value
 cannot outgrow its declared maximum, and T-05 is what enforces that on
 every push. `RegionsAt` does not carry that bound itself, so a caller's
 simulation threads `hsize` explicitly rather than deriving it here.
+
+Every store fact below is one `store` call. That is the whole of what the
+section 10 automation changed here: the reasoning is the same, and the
+walking back past writes it used to be spelled in is gone.
 -/
 
 namespace Pcrevera.Tir
@@ -137,52 +141,29 @@ theorem initRound {p : Program} {env : Env} {tr tk ts : Ty} {rv : Value}
       = List.map markVal (List.replicate (k + 1) none32) := by
     rw [← hL, List.replicate_succ', List.map_append]
     rfl
-  obtain ⟨env1, henv1⟩ : ∃ e : Env, env.set "kids"
-      (.seq marksMax (L ++ [Value.int 4294967295])
-        (if L.length = ck then grown marksMax ck else ck)) = e := ⟨_, rfl⟩
-  have hkids1 : env1.get "kids" = some ⟨tk, .seq marksMax
-      (L ++ [Value.int 4294967295])
-      (if L.length = ck then grown marksMax ck else ck)⟩ := by
-    rw [← henv1]; exact Env.get_set_self hkids
-  have hsibs1 : env1.get "sibs" = some ⟨ts, .seq marksMax L cs⟩ := by
-    rw [← henv1, Env.get_set_other (by decide)]; exact hsibs
-  obtain ⟨env2, henv2⟩ : ∃ e : Env, env1.set "sibs"
-      (.seq marksMax (L ++ [Value.int 4294967295])
-        (if L.length = cs then grown marksMax cs else cs)) = e := ⟨_, rfl⟩
-  have hsibs2 : env2.get "sibs" = some ⟨ts, .seq marksMax
-      (L ++ [Value.int 4294967295])
-      (if L.length = cs then grown marksMax cs else cs)⟩ := by
-    rw [← henv2]; exact Env.get_set_self hsibs1
-  have hi2 : env2.get "i" = some ⟨.int .u32, .int (k : Nat)⟩ := by
-    rw [← henv2, Env.get_set_other (by decide), ← henv1,
-      Env.get_set_other (by decide)]
-    exact hst.i
-  refine ⟨env2.set "i" (.int (k + 1 : Nat)), fun f => ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · have h1 : evalStmt f p (.push (.var "kids") (.litInt .u32 4294967295)) env
-        = some (.ok (env1, .normal)) := by
-      rw [evalStmt_push_var hkids (evalExpr_lit (t := .u32) (v := 4294967295))
-        hroom, henv1]
-    have h2 : evalStmt f p (.push (.var "sibs") (.litInt .u32 4294967295)) env1
-        = some (.ok (env2, .normal)) := by
-      rw [evalStmt_push_var hsibs1 (evalExpr_lit (t := .u32) (v := 4294967295))
-        hroom, henv2]
-    have h3 : evalStmt f p
-        (.assign (.var "i") (.bin .add (.var "i") (.litInt .u32 1))) env2
-        = some (.ok (env2.set "i" (.int (k + 1 : Nat)), .normal)) :=
-      evalStmt_assign_var hi2 (evalExpr_addOne (by omega) hi2)
-    unfold initBody
-    rw [evalStmts_cons h1, evalStmts_cons h2, evalStmts_cons h3, evalStmts_nil]
-  · exact Env.get_set_self hi2
-  · rw [Env.get_set_other (by decide), ← henv2, Env.get_set_other (by decide),
-      ← henv1, Env.get_set_other (by decide)]
-    exact hst.tot
-  · rw [Env.get_set_other (by decide), ← henv2, Env.get_set_other (by decide),
-      ← henv1, Env.get_set_other (by decide)]
-    exact hst.regions
-  · exact ⟨_, by
-      rw [Env.get_set_other (by decide), ← henv2, Env.get_set_other (by decide),
-        hkids1, hgrow]⟩
-  · exact ⟨_, by rw [Env.get_set_other (by decide), hsibs2, hgrow]⟩
+  obtain ⟨env', henv'⟩ : ∃ e : Env,
+      (((env.set "kids" (.seq marksMax (L ++ [Value.int 4294967295])
+              (if L.length = ck then grown marksMax ck else ck))).set "sibs"
+            (.seq marksMax (L ++ [Value.int 4294967295])
+              (if L.length = cs then grown marksMax cs else cs))).set "i"
+          (.int (k + 1 : Nat))) = e := ⟨_, rfl⟩
+  refine ⟨env', fun f => ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · unfold initBody
+    rw [evalStmts_cons (evalStmt_push_var hkids
+        (evalExpr_lit (t := .u32) (v := 4294967295)) hroom),
+      evalStmts_cons (evalStmt_push_var (t := ts) (items := L) (c := cs)
+        (by store [hsibs]) (evalExpr_lit (t := .u32) (v := 4294967295)) hroom),
+      evalStmts_cons (evalStmt_assign_var (t := .int .u32)
+        (cur := .int (k : Nat)) (by store [hst.i])
+        (evalExpr_addOne (k := k) (by omega) (by store [hst.i]))),
+      evalStmts_nil, henv']
+  · store [← henv', hst.i]
+  · store [← henv', hst.tot]
+  · store [← henv', hst.regions]
+  · exact ⟨if L.length = ck then grown marksMax ck else ck,
+      by store [← henv', hkids, hgrow]⟩
+  · exact ⟨if L.length = cs then grown marksMax cs else cs,
+      by store [← henv', hsibs, hgrow]⟩
 
 /-- The initialization loop, whole: from `k` sentinels to `total` of them,
 by induction on what is left to push. -/
@@ -248,11 +229,18 @@ theorem walkRound {p : Program} {env : Env} {tr tk ts : Ty}
         (B.set! (m + 1) (A[(regions[m + 1]!).parent]!)) (m + 1) := by
   obtain ⟨env1, henv1⟩ : ∃ e : Env,
       env.set "i" (.int (m + 1 : Nat)) = e := ⟨_, rfl⟩
-  have hi1 : env1.get "i" = some ⟨.int .u32, .int (m + 1 : Nat)⟩ := by
-    rw [← henv1]; exact Env.get_set_self hst.i
+  obtain ⟨env2, henv2⟩ : ∃ e : Env, env1.declare "tmp1" (.int .u32)
+      (.int (((regions[m + 1]!).parent : Nat) : Int)) = e := ⟨_, rfl⟩
+  obtain ⟨env3, henv3⟩ : ∃ e : Env, env2.set "sibs"
+      (.seq marksMax
+        ((B.set! (m + 1) (A[(regions[m + 1]!).parent]!)).toList.map markVal)
+        cs) = e := ⟨_, rfl⟩
   have hreg1 : env1.get "regions" = some ⟨tr,
       .frozen (.seq marksMax (regions.toList.map regionValue) capR)⟩ := by
-    rw [← henv1, Env.get_set_other (by decide)]; exact hst.regions_
+    store [← henv1, hst.regions_]
+  have hi1 : env1.get "i" = some ⟨.int .u32, .int (m + 1 : Nat)⟩ := by
+    store [← henv1, hst.i]
+  -- The parent of the entry this round files, off the frozen vector.
   have hfield : evalExpr p env1
       (.field (.index (.var "regions") (.var "i")) "parent")
       = .ok (.int (((regions[m + 1]!).parent : Nat) : Int)) := by
@@ -262,45 +250,32 @@ theorem walkRound {p : Program} {env : Env} {tr tk ts : Ty}
     rw [getElem!_toList_map (by omega)] at hidx
     simp only [regionValue] at hidx
     exact evalExpr_field hidx (by simp [getAssoc])
-  obtain ⟨env2, henv2⟩ : ∃ e : Env, env1.declare "tmp1" (.int .u32)
-      (.int (((regions[m + 1]!).parent : Nat) : Int)) = e := ⟨_, rfl⟩
-  have htmp2 : env2.get "tmp1"
-      = some ⟨.int .u32, .int (((regions[m + 1]!).parent : Nat) : Int)⟩ := by
-    rw [← henv2]; exact Env.get_declare_self
   have hi2 : env2.get "i" = some ⟨.int .u32, .int (m + 1 : Nat)⟩ := by
-    rw [← henv2, Env.get_declare_other (by decide)]; exact hi1
+    store [← henv2, hi1]
   have hkids2 : env2.get "kids"
       = some ⟨tk, .seq marksMax (A.toList.map markVal) ck⟩ := by
-    rw [← henv2, Env.get_declare_other (by decide), ← henv1,
-      Env.get_set_other (by decide)]
-    exact hst.kids
+    store [← henv2, ← henv1, hst.kids]
   have hsibs2 : env2.get "sibs"
       = some ⟨ts, .seq marksMax (B.toList.map markVal) cs⟩ := by
-    rw [← henv2, Env.get_declare_other (by decide), ← henv1,
-      Env.get_set_other (by decide)]
-    exact hst.sibs
+    store [← henv2, ← henv1, hst.sibs]
+  have htmp2 : env2.get "tmp1"
+      = some ⟨.int .u32, .int (((regions[m + 1]!).parent : Nat) : Int)⟩ := by
+    store [← henv2]
+  -- What the parent's slot in `kids` holds, which the sibling link takes.
   have hread : evalExpr p env2 (.index (.var "kids") (.var "tmp1"))
       = .ok (markVal (A[(regions[m + 1]!).parent]!)) := by
     have h := evalExpr_index (p := p) (evalExpr_var hkids2)
       (evalExpr_var htmp2) (k := (regions[m + 1]!).parent)
       (by simp only [List.length_map, Array.length_toList]; omega)
     rwa [getElem!_toList_map (by omega)] at h
-  obtain ⟨env3, henv3⟩ : ∃ e : Env, env2.set "sibs"
-      (.seq marksMax
-        ((B.set! (m + 1) (A[(regions[m + 1]!).parent]!)).toList.map markVal)
-        cs) = e := ⟨_, rfl⟩
-  have hsibs3 : env3.get "sibs" = some ⟨ts, .seq marksMax
-      ((B.set! (m + 1) (A[(regions[m + 1]!).parent]!)).toList.map markVal)
-      cs⟩ := by
-    rw [← henv3]; exact Env.get_set_self hsibs2
   have hkids3 : env3.get "kids"
       = some ⟨tk, .seq marksMax (A.toList.map markVal) ck⟩ := by
-    rw [← henv3, Env.get_set_other (by decide)]; exact hkids2
+    store [← henv3, hkids2]
   have htmp3 : env3.get "tmp1"
       = some ⟨.int .u32, .int (((regions[m + 1]!).parent : Nat) : Int)⟩ := by
-    rw [← henv3, Env.get_set_other (by decide)]; exact htmp2
+    store [← henv3, htmp2]
   have hi3 : env3.get "i" = some ⟨.int .u32, markVal (m + 1)⟩ := by
-    rw [← henv3, Env.get_set_other (by decide)]; exact hi2
+    store [← henv3, hi2, markVal] <;> rfl
   refine ⟨env3.set "kids"
       (.seq marksMax
         ((A.set! (regions[m + 1]!).parent (m + 1)).toList.map markVal) ck),
@@ -309,40 +284,20 @@ theorem walkRound {p : Program} {env : Env} {tr tk ts : Ty}
         = .ok (.int (m + 1 : Nat)) := by
       rw [evalExpr_subOne (k := m + 2) (by omega) (by omega) hst.i,
         show (m + 2 - 1 : Nat) = m + 1 by omega]
-    have h1 : evalStmt f p
-        (.assign (.var "i") (.bin .sub (.var "i") (.litInt .u32 1))) env
-        = some (.ok (env1, .normal)) := by
-      rw [evalStmt_assign_var hst.i hsub, henv1]
-    have h2 : evalStmt f p
-        (.letS "tmp1" (.int .u32)
-          (some (.field (.index (.var "regions") (.var "i")) "parent"))) env1
-        = some (.ok (env2, .normal)) := by
-      rw [evalStmt_let hfield, henv2]
-    have h3 : evalStmt f p
-        (.assign (.index (.var "sibs") (.var "i"))
-          (.index (.var "kids") (.var "tmp1"))) env2
-        = some (.ok (env3, .normal)) := by
-      rw [evalStmt_assign_index_var hsibs2 (evalExpr_var hi2)
-        (by simp only [List.length_map, Array.length_toList]; omega) hread,
-        ← toList_map_set!, henv3]
-    have h4 : evalStmt f p
-        (.assign (.index (.var "kids") (.var "tmp1")) (.var "i")) env3
-        = some (.ok (env3.set "kids"
-            (.seq marksMax
-              ((A.set! (regions[m + 1]!).parent (m + 1)).toList.map markVal)
-              ck), .normal)) := by
-      rw [evalStmt_assign_index_var hkids3 (evalExpr_var htmp3)
-        (by simp only [List.length_map, Array.length_toList]; omega)
-        (evalExpr_var hi3), ← toList_map_set!]
     unfold walkBody
-    rw [evalStmts_cons h1, evalStmts_cons h2, evalStmts_cons h3,
-      evalStmts_cons h4, evalStmts_nil]
-  · rw [Env.get_set_other (by decide)]; exact hi3
-  · rw [Env.get_set_other (by decide), ← henv3, Env.get_set_other (by decide),
-      ← henv2, Env.get_declare_other (by decide)]
-    exact hreg1
-  · exact Env.get_set_self hkids3
-  · rw [Env.get_set_other (by decide)]; exact hsibs3
+    rw [evalStmts_cons (evalStmt_assign_var hst.i hsub), henv1,
+      evalStmts_cons (evalStmt_let hfield), henv2,
+      evalStmts_cons (evalStmt_assign_index_var hsibs2 (evalExpr_var hi2)
+        (by simp only [List.length_map, Array.length_toList]; omega) hread),
+      ← toList_map_set!, henv3,
+      evalStmts_cons (evalStmt_assign_index_var hkids3 (evalExpr_var htmp3)
+        (by simp only [List.length_map, Array.length_toList]; omega)
+        (evalExpr_var hi3)),
+      ← toList_map_set!, evalStmts_nil]
+  · store [hi3, markVal] <;> rfl
+  · store [← henv3, ← henv2, hreg1]
+  · store [hkids3]
+  · store [← henv3, hsibs2]
 
 /-- The walk, whole: from `i = j` the loop leaves behind exactly what
 `Ref.regionKidsGo` computes from fuel `j - 1`. Descending induction, one
@@ -440,112 +395,70 @@ theorem region_kids_simulates {p : Program}
   obtain ⟨env0, henv0⟩ : ∃ e : Env,
       bindParams regionKidsFunc.params [vr, vk, vs] = e := ⟨_, rfl⟩
   have hreg0 : env0.get "regions"
-      = some ⟨.frozen (.vec (.struct "Region") marksMax), vr⟩ := by
-    rw [← henv0]; rfl
-  have hkids0 : env0.get "kids"
-      = some ⟨.vec (.int .u32) marksMax, vk⟩ := by
-    rw [← henv0]; rfl
-  have hsibs0 : env0.get "sibs"
-      = some ⟨.vec (.int .u32) marksMax, vs⟩ := by
-    rw [← henv0]; rfl
-  have hreg0' : env0.get "regions"
       = some ⟨.frozen (.vec (.struct "Region") marksMax),
         .frozen (.seq marksMax (regions.toList.map regionValue) capR)⟩ := by
-    rw [hreg0, hvr]
-  -- The two `let`s at the top of the body.
+    rw [← henv0, ← hvr]; rfl
   have hlen0 : evalExpr p env0 (.len (.var "regions"))
       = .ok (.int (regions.size : Nat)) := by
-    rw [evalExpr_len_frozen (evalExpr_var hreg0')]
+    rw [evalExpr_len_frozen (evalExpr_var hreg0)]
     simp
-  obtain ⟨env1, henv1⟩ : ∃ e : Env,
-      env0.declare "total" (.int .u32) (.int (regions.size : Nat)) = e :=
-    ⟨_, rfl⟩
-  have h1 : ∀ f, evalStmt f p
-      (.letS "total" (.int .u32) (some (.len (.var "regions")))) env0
-      = some (.ok (env1, .normal)) := fun f => by
-    rw [evalStmt_let hlen0, henv1]
+  -- The two `let`s at the top of the body.
   obtain ⟨env2, henv2⟩ : ∃ e : Env,
-      env1.declare "i" (.int .u32) (.int 0) = e := ⟨_, rfl⟩
-  have h2 : ∀ f, evalStmt f p
-      (.letS "i" (.int .u32) (some (.litInt .u32 0))) env1
-      = some (.ok (env2, .normal)) := fun f => by
-    rw [evalStmt_let (evalExpr_lit (t := .u32) (v := 0)), henv2]
+      (env0.declare "total" (.int .u32) (.int (regions.size : Nat))).declare
+        "i" (.int .u32) (.int 0) = e := ⟨_, rfl⟩
   -- The initialization loop, from nothing pushed to all of it.
   have hst2 : InitSt env2 (.frozen (.vec (.struct "Region") marksMax))
       (.vec (.int .u32) marksMax) (.vec (.int .u32) marksMax) vr 0
       regions.size := by
     refine ⟨?_, ?_, ?_, ⟨ck0, ?_⟩, ⟨cs0, ?_⟩⟩
-    · rw [← henv2]; exact Env.get_declare_self
-    · rw [← henv2, Env.get_declare_other (by decide), ← henv1]
-      exact Env.get_declare_self
-    · rw [← henv2, Env.get_declare_other (by decide), ← henv1,
-        Env.get_declare_other (by decide)]
-      exact hreg0
-    · rw [← henv2, Env.get_declare_other (by decide), ← henv1,
-        Env.get_declare_other (by decide), hkids0, hvk]
+    · store [← henv2] <;> rfl
+    · store [← henv2]
+    · store [← henv2, ← henv0, hvr]
       rfl
-    · rw [← henv2, Env.get_declare_other (by decide), ← henv1,
-        Env.get_declare_other (by decide), hsibs0, hvs]
+    · store [← henv2, ← henv0, hvk]
+      rfl
+    · store [← henv2, ← henv0, hvs]
       rfl
   obtain ⟨n1, envA, hw1, hstA⟩ := initLoop hsize regions.size 0 env2
     (by omega) hst2
-  -- `i := total`, between the loops.
-  obtain ⟨envB, henvB⟩ : ∃ e : Env,
-      envA.set "i" (.int (regions.size : Nat)) = e := ⟨_, rfl⟩
-  have h4 : ∀ f, evalStmt f p (.assign (.var "i") (.var "total")) envA
-      = some (.ok (envB, .normal)) := fun f => by
-    rw [evalStmt_assign_var hstA.i (evalExpr_var hstA.tot), henvB]
-  -- The backward walk, from two fresh sentinel arrays.
+  -- `i := total`, between the loops, and the backward walk after it.
   obtain ⟨ckA, hkidsA⟩ := hstA.kids
   obtain ⟨csA, hsibsA⟩ := hstA.sibs
-  have hstB : WalkSt envB (.frozen (.vec (.struct "Region") marksMax))
+  have hstB : WalkSt (envA.set "i" (.int (regions.size : Nat)))
+      (.frozen (.vec (.struct "Region") marksMax))
       (.vec (.int .u32) marksMax) (.vec (.int .u32) marksMax) regions capR
       ckA csA (Array.replicate regions.size none32)
       (Array.replicate regions.size none32) regions.size := by
     refine ⟨?_, ?_, ?_, ?_⟩
-    · rw [← henvB]; exact Env.get_set_self hstA.i
-    · rw [← henvB, Env.get_set_other (by decide), hstA.regions, hvr]
-    · rw [← henvB, Env.get_set_other (by decide), hkidsA,
-        Array.toList_replicate]
-    · rw [← henvB, Env.get_set_other (by decide), hsibsA,
-        Array.toList_replicate]
+    · store [hstA.i]
+    · store [hstA.regions, hvr]
+    · store [hkidsA, Array.toList_replicate]
+    · store [hsibsA, Array.toList_replicate]
   obtain ⟨n2, envC, hw2, hregC, hkidsC, hsibsC⟩ := walkLoop hsize hord
-    regions.size (Nat.le_refl _) _ _ envB (by simp) (by simp) hstB
+    regions.size (Nat.le_refl _) _ _ _ (by simp) (by simp) hstB
   -- The whole body, under one budget.
-  have hwhile1 : evalStmt (max n1 n2) p (.whileS initCond
-      (.bin .sub (.cast (.int .counter) (.var "total"))
-        (.cast (.int .counter) (.var "i"))) initBody) env2
-      = some (.ok (envA, .normal)) := by
-    rw [evalStmt_while]
-    exact evalWhile_mono hw1 (Nat.le_max_left _ _)
-  have hwhile2 : evalStmt (max n1 n2) p
-      (.whileS walkCond (.cast (.int .counter) (.var "i")) walkBody) envB
-      = some (.ok (envC, .normal)) := by
-    rw [evalStmt_while]
-    exact evalWhile_mono hw2 (Nat.le_max_right _ _)
   have hbody : evalStmts (max n1 n2) p regionKidsFunc.body env0
       = some (.ok (envC, .normal)) := by
-    rw [regionKidsFunc_body, evalStmts_cons (h1 _), evalStmts_cons (h2 _),
-      evalStmts_cons hwhile1, evalStmts_cons (h4 _), evalStmts_cons hwhile2,
+    rw [regionKidsFunc_body,
+      evalStmts_cons (evalStmt_let hlen0),
+      evalStmts_cons (evalStmt_let (evalExpr_lit (t := .u32) (v := 0))),
+      henv2,
+      evalStmts_cons (by
+        rw [evalStmt_while]
+        exact evalWhile_mono hw1 (Nat.le_max_left _ _)),
+      evalStmts_cons (evalStmt_assign_var hstA.i (evalExpr_var hstA.tot)),
+      evalStmts_cons (by
+        rw [evalStmt_while]
+        exact evalWhile_mono hw2 (Nat.le_max_right _ _)),
       evalStmts_nil]
   have hcall := runs_of_body hf ⟨max n1 n2, by rw [henv0]; exact hbody⟩
-  -- Reading the three parameters back out.
-  have hregC' : envC.get "regions"
-      = some ⟨.frozen (.vec (.struct "Region") marksMax), vr⟩ := by
-    rw [hregC, ← hvr]
   refine ⟨_, _, ?_, ⟨ckA, rfl⟩, ⟨csA, rfl⟩⟩
   have houts : outsOf regionKidsFunc.params envC
       = [vr,
          .seq marksMax ((regionKids regions).1.toList.map markVal) ckA,
          .seq marksMax ((regionKids regions).2.toList.map markVal) csA] := by
-    show [(match envC.get "regions" with
-            | some s => s.value | none => Value.bool false),
-          (match envC.get "kids" with
-            | some s => s.value | none => Value.bool false),
-          (match envC.get "sibs" with
-            | some s => s.value | none => Value.bool false)] = _
-    rw [hregC', hkidsC, hsibsC]
-    rfl
+    store [outsOf, regionKidsFunc, List.map_cons, List.map_nil,
+      hregC, hkidsC, hsibsC, ← hvr] <;> rfl
   rw [← houts]
   exact hcall
 

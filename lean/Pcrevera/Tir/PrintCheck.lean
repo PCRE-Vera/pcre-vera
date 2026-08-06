@@ -31,11 +31,14 @@ def sumCanonical : String :=
 
 /-! ## The round trip
 
-I-2's equation, checked here on the programs there are and proved on none:
-`decode (print p) = ok p`. The decoder is the audited item and the printer is
-exact, so what this catches is the two disagreeing about a constructor —
-which is the only way a transcription of two documents into two functions
-usually goes wrong.
+`decode (print p) = ok p`, checked here on the programs there are. This is
+the whole round trip, text and all, which is more than I-2's theorem states:
+`Tir/RoundTrip.lean` proves the decoder inverts the printer's *tree*, and
+the step from the tree to its text is what these checks and gate 3's byte
+comparison cover. The decoder is the audited item and the printer is exact,
+so what this catches is the two disagreeing about a constructor — which is
+the only way a transcription of two documents into two functions usually
+goes wrong.
 
 Printing then decoding is checked on each toy program; decoding text a second
 implementation wrote is checked on the one text there is of that kind, which

@@ -1243,13 +1243,32 @@ chase a moving target while M8 lands features. Done when: `lake build`
 proves the theorems, and the Lean reference engine (via #eval or
 extraction) agrees with pcre2 on the conformance corpus.
 
-M7, Lean layer I. TIR embedding, the Lean-side artifact decoder with its
-round-trip self-check, refinement proof for the frozen wave 1 engine, hash
-pinning in CI. Engine changes after the freeze re-open
-proofs deliberately and visibly: the pinned hash moves only together with
-the proof increment that covers the change. Done when: `make verify` fails
-if anyone edits the engine without re-proving. This is the riskiest
-milestone; see section 10.
+M7, Lean layer I foundation. TIR embedding with its definitional
+interpreter, the Lean-side artifact decoder with its round-trip self-check,
+hash pinning in CI, and the proof automation the refinement will spend.
+Engine changes after the freeze re-open proofs deliberately and visibly,
+as far as there are proofs to re-open: a moved hash fails the build and
+every existing proof is rebuilt against the new bytes. The stronger rule —
+the pinned hash moves only together with the proof increment that covers
+the change — needs a lemma per function before it can withhold anything,
+so it arrives with M7R. Done when: `make verify` fails on a generated file
+drifting from its generator, on a hash drifting from the freeze record, on the
+coverage ledger drifting from the call graph, on the artifact failing to
+decode inside Lean or to print back to its own bytes, and on any proof that
+no longer builds. Binding the artifact's *meaning* to layer R is not part of
+that gate and is M7R's; until then a changed engine is caught as drift and
+by rebuilding what is already proved, which is a narrower promise and the
+one the target actually keeps.
+
+M7R, the artifact refinement. The per-function simulation campaign and the
+composed theorem PLAN-M7.md section 1 states, scheduled after M8. This is
+where the milestone's risk went and it is why it was split off: PLAN-M7.md
+section 10 prices the campaign at roughly 110,000 lines of Lean *after* the
+automation built to avoid exactly that, and records the two samples the
+number comes from. Done when: the composed refinement of PLAN-M7.md section
+1 is proved and `make verify` checks it. Until then the fallback below is
+the one in force, and THEOREMS.md section 5 states layer I's coverage in
+those terms. See section 10.
 
 M8, engine wave 2. Backrefs, lookaround, atomic groups, possessive
 quantifiers in engine + analyzer (bounds updated) + tests; extend spec and
@@ -1279,8 +1298,9 @@ allowUnproved; parser correctness proof; release documentation stating the
 exact theorem coverage. Done when: every feature reachable without allowUnproved has its
 full S/R/I chain proved, and 1.0 is tagged with that correctness statement.
 
-Rough effort ranking, largest first: M7, M6, M8, M3, M5, the rest. If M7
-stalls, the fallback that keeps releases honest is documented in section 10.
+Rough effort ranking, largest first: M7R, M7, M6, M8, M3, M5, the rest. If
+M7R stalls, the fallback that keeps releases honest is documented in
+section 10.
 One consequence of the section 6 gating rule is worth spelling out: a
 milestone can ship working, tested, fuzzed features early, they just sit
 behind allowUnproved until their proofs land, so proof pace throttles the
@@ -1288,8 +1308,9 @@ default surface, never the engineering.
 
 ## 10. Risks and fallbacks
 
-The refinement proof (M7) is the schedule risk. Deeply embedded imperative
-proofs are workable but slow. Mitigations: TIR is intentionally tiny, the
+The refinement proof (M7R) is the schedule risk, and splitting it out of M7
+is what section 9 does about it. Deeply embedded imperative proofs are
+workable but slow. Mitigations: TIR is intentionally tiny, the
 engine and Layer R are written in lockstep to make simulation lemmas
 mechanical, and we build proof automation as we go. Fallback if it stalls:
 keep releasing as 0.x with layers S and R proved and layer I covered by

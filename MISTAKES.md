@@ -2074,3 +2074,44 @@ value it is, so a wrong witness is only caught when the proof needs the
 value. If the invariant had said `tmp3` holds exactly the flag the last
 charge answered, the mistake would have been a type error at the point I
 made it.
+
+## Extrapolating a cost breakdown from the lines I happened to notice
+
+What I got wrong: PLAN-M7.md section 9 said the two samples' proof lines
+were filled by two mechanical patterns — the store get-chains and the
+write-back expansions — and recommended automating exactly those. Built,
+they eliminated both patterns completely, and the proofs got 1.45 times
+shorter rather than the order of magnitude the recommendation implied.
+
+The patterns were the lines I had *noticed*, because they are the ones that
+are visually repetitive. Measured, they were about a third of the proof.
+The rest is the part that does not look repetitive and therefore did not
+register: every intermediate store fact has to be stated with a full type
+and value before a step lemma will take it, and each of a function's exit
+paths re-steps the body prefix in front of it.
+
+The lesson is that "where the lines go" is a measurement, not an
+impression, and it was cheap to take: counting the lemma applications per
+category in the two files took a few minutes and would have changed the
+recommendation from "build two tactics" to "build a symbolic executor, and
+expect three-ish". The recommendation was still worth following — the tools
+are real and they are keepers — but the number attached to it was invented
+rather than counted, and it was the number the go/no-go turned on.
+
+## Counting statements one way in the plan and another in the ledger
+
+What I got wrong: PLAN-M7.md section 9 recorded `region_kids` as holding
+seven statements. The strata report — the file that supplies the 3052 the
+whole extrapolation divides into — counts twelve, because it walks loop
+bodies. Section 10 then inherited the seven, so both sections' per-statement
+figures and both extrapolations were off by the same wrong denominator, and
+one sentence of interpretation ("the per-statement cost fell slightly") was
+backwards as a result.
+
+The numbers are corrected in place and the conclusion did not move: a
+hundred and sixty thousand lines is as unaffordable as the two hundred
+thousand I had written. But the go/no-go turned on a ratio, and a ratio
+whose numerator and denominator come from two different counting
+conventions is not a measurement. When a document quotes a number that a generated artifact also
+holds, it should read it from the artifact rather than count it again by
+hand.

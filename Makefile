@@ -97,7 +97,8 @@ check: oracle-verify generate-verify test lean go js js-lint
 # What it still does not do is bind the *proofs* to the artifact: the decode
 # and the round trip say the bytes are the program the Lean side names, and
 # the simulation lemmas that would say the program means what layer R means
-# are gate 5's, and are not written.
+# are M7R's, and are not written. So a changed engine is caught here as drift
+# and by rebuilding what is already proved, and not by a missing lemma.
 verify: generate-verify
 	$(UV) run pytest tests/test_freeze.py tests/test_coverage.py \
 	    tests/test_strata.py tests/test_lean_pin.py

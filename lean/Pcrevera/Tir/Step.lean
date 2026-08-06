@@ -503,6 +503,92 @@ theorem evalStmt_pop_var {s d : String} {t td : Ty} {m : Nat}
     rw [Env.get_set_other hne]; exact hd)]
   rfl
 
+/-! ## Normalising a chain of writes
+
+The two samples spent most of their lines here, one rewrite per write, and
+the shape was always the same: a body writes a few locals, and every later
+fact about the store has to walk back past those writes to the one that
+answers. So say what a write answers *unconditionally* — an `if` on the two
+names rather than a lemma per case — and the walk becomes a `simp only`,
+because both names are string literals and the condition decides itself.
+
+`store` is that call, with the base facts of the frame passed in. It is not
+deep: it is the difference between forty lines and one. -/
+
+/-- Reading a local after a write to one, whichever it was. -/
+theorem Env.get_set {n m : String} {v : Value} :
+    (env.set n v).get m =
+      if m = n then (env.get n).map (fun s => ⟨s.ty, v⟩) else env.get m := by
+  split <;> rename_i h
+  · subst h
+    cases hg : env.get m with
+    | none => rw [Env.set, hg]; simp [hg]
+    | some s => rw [Env.get_set_self hg]; simp
+  · exact Env.get_set_other h
+
+/-- The same for a declaration, which shadows rather than replaces. -/
+theorem Env.get_declare {n m : String} {t : Ty} {v : Value} :
+    (env.declare n t v).get m = if m = n then some ⟨t, v⟩ else env.get m := by
+  simp only [Env.declare, Env.get, getAssoc]
+  split <;> rename_i h
+  · rw [if_pos h.symm]
+  · rw [if_neg (fun hh => h hh.symm)]
+
+/-- Reading through a local place, without knowing yet that the local is
+there: the answer is whatever the store says, and normalising the store
+decides it. -/
+theorem readPlace_var_eq {n : String} :
+    readPlace p env (.var n)
+      = match env.get n with
+        | some s => .ok s.value
+        | none => .bug s!"no local named {n}" := by
+  rw [readPlace.eq_def]
+  simp only []
+  cases env.get n <;> rfl
+
+theorem evalExpr_var_eq {n : String} :
+    evalExpr p env (.var n)
+      = match env.get n with
+        | some s => .ok s.value
+        | none => .bug s!"no local named {n}" := by
+  rw [evalExpr.eq_def]
+  simp only []
+  cases env.get n <;> rfl
+
+/-- Writing to a local that is there. Stated on `isSome` rather than on the
+slot so that normalising the store discharges it. -/
+theorem writePlace_var_isSome {n : String} {v : Value}
+    (h : (env.get n).isSome = true) :
+    writePlace p env (.var n) v = .ok (env.set n v) := by
+  cases hg : env.get n with
+  | none => rw [hg] at h; exact absurd h (by simp)
+  | some s => exact writePlace_var hg
+
+/-- Answer `Env.get` through a chain of writes, and the reads and writes that
+walk it. The bracket takes whatever the frame's base facts are — the
+parameter bindings, or the previous round's invariant — and the names of the
+intermediate stores, spelled `← henv3` when a proof has named them. -/
+syntax "store" (" [" Lean.Parser.Tactic.simpLemma,* "]")?
+  (Lean.Parser.Tactic.location)? : tactic
+
+macro_rules
+  | `(tactic| store) =>
+      `(tactic| simp only [Env.get_set, Env.get_declare, Option.map_some,
+          Option.isSome_some, String.reduceEq, reduceIte, writePlace_var_isSome,
+          readPlace_var_eq, evalExpr_var_eq, Res.ok_bind])
+  | `(tactic| store $loc:location) =>
+      `(tactic| simp only [Env.get_set, Env.get_declare, Option.map_some,
+          Option.isSome_some, String.reduceEq, reduceIte, writePlace_var_isSome,
+          readPlace_var_eq, evalExpr_var_eq, Res.ok_bind] $loc)
+  | `(tactic| store [$xs,*]) =>
+      `(tactic| simp only [Env.get_set, Env.get_declare, Option.map_some,
+          Option.isSome_some, String.reduceEq, reduceIte, writePlace_var_isSome,
+          readPlace_var_eq, evalExpr_var_eq, Res.ok_bind, $xs,*])
+  | `(tactic| store [$xs,*] $loc:location) =>
+      `(tactic| simp only [Env.get_set, Env.get_declare, Option.map_some,
+          Option.isSome_some, String.reduceEq, reduceIte, writePlace_var_isSome,
+          readPlace_var_eq, evalExpr_var_eq, Res.ok_bind, $xs,*] $loc)
+
 /-! ## Calls, and the judgment they compose in -/
 
 /-- What a call to `fn` does, in the judgment gate 5 states everything in.
@@ -582,17 +668,115 @@ theorem evalStmt_call_runs {fn : String} {callee : Func} {args : List Arg}
               rw [hb]
               cases flow <;> (subst hret; rfl)
 
-/-- Reading one out back as a slot: an out that is not the default tells
-you the callee's frame really held that name. Every integer-valued out
-qualifies, which is what the write-back cares about. -/
-theorem slot_of_out {env : Env} {n : String} {x : Int}
-    (h : (match env.get n with
-          | some s => s.value | none => Value.bool false) = .int x) :
-    ∃ t, env.get n = some ⟨t, .int x⟩ := by
-  cases he : env.get n with
-  | none => rw [he] at h; exact absurd h (by simp)
-  | some s =>
-      rw [he] at h
-      exact ⟨s.ty, by rw [← h]⟩
+/-- Where a call leaves the caller's store, said in terms of the values the
+callee left rather than the frame it left them in: each `inout` argument's
+place takes the matching out, in declaration order. Same recursion as
+`writeBack`, and the point of it is that a caller's proof can normalise this
+with `store` while `writeBack` keeps a frame it knows nothing about. -/
+def writeOuts (p : Program) :
+    List Param → List Arg → List Value → Env → Res Env
+  | [], [], _, env => .ok env
+  | par :: ps, a :: as, v :: vs, env =>
+      match par.inout, a with
+      | true, .inoutArg pl => do
+          let env' ← writePlace p env pl v
+          writeOuts p ps as vs env'
+      | _, _ => writeOuts p ps as vs env
+  | _, _, _, _ => .bug "a call was given the wrong number of arguments"
+
+/-- The one thing an out list does not say by itself. `outsOf` answers
+`false` both for a parameter the callee left holding `false` and for one the
+callee somehow lost, and `writeBack` treats those two differently. Nothing
+in TIR loses a name, but proving that is a walk over the whole interpreter,
+so the caller carries this instead.
+
+Read this as the non-`false` fast path rather than as a presence witness.
+It is free exactly when the values landing in `inout` position cannot be
+`false` — integers, which is what every meter and every size is — and it is
+*unavailable* for a callee that legitimately writes `false` back through a
+boolean `inout` parameter. Fourteen of the eighty functions the gate 5
+ledger owes have one, `sat_add`, `charge_call` and `cert_install` among
+them, so the general case wants either the name-preservation theorem or a
+call step stated over the callee's frame rather than over its outs. -/
+def OutsPresent : List Param → List Value → Prop
+  | [], _ => True
+  | par :: ps, v :: vs =>
+      (par.inout = true → v ≠ .bool false) ∧ OutsPresent ps vs
+  | _ :: _, [] => False
+
+theorem writeBack_eq_writeOuts {inner : Env} :
+    ∀ (params : List Param) (args : List Arg) (env : Env),
+      OutsPresent params (outsOf params inner) →
+      writeBack p inner params args env
+        = writeOuts p params args (outsOf params inner) env := by
+  intro params
+  induction params with
+  | nil => intro args env _; cases args <;> rfl
+  | cons par ps ih =>
+      obtain ⟨pname, pty, pinout⟩ := par
+      intro args env hp
+      match args with
+      | [] => rfl
+      | a :: as =>
+          have houts : outsOf (⟨pname, pty, pinout⟩ :: ps) inner
+              = (match inner.get pname with
+                 | some s => s.value
+                 | none => Value.bool false) :: outsOf ps inner := rfl
+          rw [houts] at hp ⊢
+          simp only [OutsPresent] at hp
+          obtain ⟨hp1, hp2⟩ := hp
+          match pinout, a with
+          | false, .inArg _ => exact ih as env hp2
+          | false, .inoutArg _ => exact ih as env hp2
+          | true, .inArg _ => exact ih as env hp2
+          | true, .inoutArg pl =>
+              show (match inner.get pname with
+                    | none => Res.bug s!"the callee lost {pname}"
+                    | some s => do
+                        let e ← writePlace p env pl s.value
+                        writeBack p inner ps as e)
+                 = (do
+                     let e ← writePlace p env pl
+                       (match inner.get pname with
+                        | some s => s.value
+                        | none => Value.bool false)
+                     writeOuts p ps as (outsOf ps inner) e)
+              cases hg : inner.get pname with
+              | none =>
+                  exact absurd (show (match inner.get pname with
+                    | some s => s.value
+                    | none => Value.bool false) = Value.bool false by rw [hg])
+                    (hp1 rfl)
+              | some s =>
+                  simp only []
+                  cases hw : writePlace p env pl s.value with
+                  | ok e => simp only [Res.ok_bind]; exact ih as e hp2
+                  | trap c => rfl
+                  | bug w => rfl
+
+/-- A call, stepped. Given the callee's contract in `Runs`, the statement is
+the write-back of the outs and then the destination — and nothing of the
+callee's frame survives into the conclusion, which is what lets the caller's
+proof stay inside the store algebra `store` normalises. -/
+theorem evalStmt_call_outs {fn : String} {callee : Func} {args : List Arg}
+    {dest : Option Place} {argVals outs : List Value} {ret : Option Value}
+    (hf : p.func? fn = some callee)
+    (hargs : evalArgs p env callee.params args = .ok argVals)
+    (hr : Runs p fn argVals (outs, ret))
+    (hpres : OutsPresent callee.params outs) :
+    ∃ n, evalStmt n p (.call fn args dest) env
+      = some (do
+          let env' ← writeOuts p callee.params args outs env
+          match dest, ret with
+          | none, _ => .ok (env', .normal)
+          | some d, some v => do
+              let env'' ← writePlace p env' d v
+              .ok (env'', .normal)
+          | some _, none =>
+              .bug s!"{fn} returned nothing into a destination") := by
+  obtain ⟨n, inner, houts, hcall⟩ := evalStmt_call_runs hf hargs hr
+  refine ⟨n, ?_⟩
+  rw [hcall, writeBack_eq_writeOuts (inner := inner) callee.params args env
+    (by rw [houts]; exact hpres), houts]
 
 end Pcrevera.Tir

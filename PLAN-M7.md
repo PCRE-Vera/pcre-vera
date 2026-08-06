@@ -3,20 +3,30 @@
 DESIGN.md section 6 gives Layer I its shape: TIR syntax as inductive types
 with a definitional interpreter, a Lean-side decoder that reads the canonical
 `gen/engine.tir.json` bytes directly, a round-trip self-check, refinement
-theorems against layer R, and a `make verify` gate that fails when anyone
-edits the engine without re-proving. Section 10 calls it the schedule risk
-and the largest milestone. This plan is where it gets sequenced, and where
-its first decision gets made rather than inherited.
+theorems against layer R, and a `make verify` gate that fails on a moved
+hash, a drifted generated file, a failed decode or round trip, and any proof
+that no longer builds. The stronger reading of that gate — that an engine
+edit cannot land without the proof increment covering it — needs a lemma
+per function before it has anything to withhold, so section 10 below
+reschedules it to M7R, and the schedule risk goes with it. This plan is
+where the milestone gets sequenced, and where its first decision gets made
+rather than inherited.
 
 The target is the artifact the `wave1-frozen` tag pins, sha256 `d60df8a5…`.
 It does not move during M7. An engine change after the freeze re-opens
-proofs deliberately and visibly: the pinned hash moves only together with
-the proof increment that covers the change, which after gate 3 below is
-enforced by the build rather than by discipline.
+proofs deliberately and visibly, and gate 3 below is what makes that a
+property of the build rather than of discipline — but only as far as the
+proofs there are: a moved hash fails the build, and every proof that exists
+is rebuilt against the new bytes. What it cannot yet do is refuse a change
+to a function no lemma covers, because the lemmas are M7R's. The stronger
+rule — the hash moves only together with the proof increment that covers
+the change — becomes true when M7R closes, and section 10 is where that
+was rescheduled.
 
 ## 1. The endpoint, stated first
 
-When M7 closes, this sentence is provable and `make verify` checks it:
+This is the sentence the refinement exists to make provable, and `make
+verify` is what will check it:
 
     The engine artifact the backends consume, read through the audited
     Lean decoder, refines layer R: from related compile arguments and
@@ -39,6 +49,13 @@ item, the decoder's constructor-per-constructor schema mapping, and
 DESIGN.md section 6 already states why the round-trip self-check pins
 losslessness without being the semantic argument. The Go and JS printers
 stay tested links, as THEOREMS.md section 4 says they remain.
+
+Section 10 moved the milestone boundary but not this sentence. It is M7R's
+endpoint now rather than M7's, and M7 closes instead on the foundation the
+gates below actually built: the embedding and its interpreter, the printer
+and the audited decoder, the pinned artifact, the `make verify` gate, the
+two simulation samples and the proof automation. Where each of those stands
+is section 6; what the split cost and why is section 10.
 
 ## 2. The first decision: where the lowering proof boundary sits
 
@@ -199,14 +216,22 @@ auditability against the M2 spec document, since the mapping is a
 trusted-base item next to the layer S spec. The round trip is stated as a
 theorem over the type, not over one file:
 
-    decode (print p) = some p          for every well-formed `p : Program`
+    decodeProgram n (jsonOf (programJ p)) = .ok p
 
+for every canonical `p : Program` and every budget past its nesting depth,
 which is the direction that says the decoder loses nothing the printer
 knows. Its converse holds only on canonical bytes and is gate 3's job.
-Done when: that equation is proved by structural induction (or
-`native_decide`-checked where a table makes induction pointless), and both
-directions have negative tests for the malformed cases the validator
-rejects.
+
+The statement starts at the printer's tree rather than at its text on
+purpose, and section 11 is where that boundary is argued: `decode` parses
+before it decodes, and relating `renderJ` to `Lean.Json.parse` is a
+parser-correctness development rather than a structural induction. What
+covers the parse step is gate 3's byte comparison, on the artifact, and
+`PrintCheck`'s on the toy programs.
+
+Done when: that equation is proved by structural induction over all five
+decoder families, the artifact is checked to be canonical, and there are
+negative tests for the malformed cases the validator rejects.
 
 Gate 3, the artifact, decoded and pinned. Where gate 2 quantifies over
 programs, gate 3 quantifies over nothing: it is one closed equation about
@@ -308,8 +333,10 @@ gate 5 ledger, not this table, that fixes who belongs to each:
     | I-1  | the deep TIR syntax and the definitional interpreter,   gate 1 |
     |      | total by construction, with `Runs` stable under fuel and       |
     |      | deterministic (definitions plus two lemmas, like S-1 and S-5)  |
-    | I-2  | `decode (print p) = some p` for every well-formed       gate 2 |
-    |      | program, with negative tests for what the validator rejects    |
+    | I-2  | `decodeProgram n (jsonOf (programJ p)) = .ok p` for     gate 2 |
+    |      | every canonical program at a sufficient budget, with negative  |
+    |      | tests for what the validator rejects; the parse step stays     |
+    |      | gate 3's byte comparison, per section 11                       |
     | I-3  | the frozen bytes decode and print back to themselves,   gate 3 |
     |      | and their sha256 is pinned in Lean source                      |
     | I-4  | `region_kids` simulates `R.regionKids`, the template    gate 4 |
@@ -334,9 +361,11 @@ hash drift, decode failure, round-trip failure, broken proof. Done when:
 `make verify` passes in the completed M7 checkout against the artifact
 `wave1-frozen` pins — the tag stays on the freeze commit, so the tagged
 state cannot be asked to contain the gate that checks it — and each of
-those five failure modes has been induced once and observed to fail. From then on the
-DESIGN.md rule — the hash moves only with its proof increment — is a
-property of the build.
+those five failure modes has been induced once and observed to fail. From
+then on a moved hash cannot pass unnoticed and no existing proof can go
+stale against it. The stronger DESIGN.md rule — the hash moves only with the
+proof increment that covers the change — needs a lemma per function to have
+anything to withhold, so it arrives with M7R and not here.
 
 ## 5. What M7 does not do
 
@@ -373,15 +402,16 @@ next person reads the state and the intent in one place.
     |        | determinism, `Tir/Toy.lean` four programs run against known  |
     |        | answers at elaboration time.                                 |
     +--------+--------------------------------------------------------------+
-    | gate 2 | In, as checks rather than as theorems. `Tir/Print.lean` is   |
-    |        | the canonical printer, `Tir/Decode.lean` the audited decoder,|
+    | gate 2 | Checks in, theorem started. `Tir/Print.lean` is the          |
+    |        | canonical printer, `Tir/Decode.lean` the audited decoder,    |
     |        | and `Tir/PrintCheck.lean` holds the printer to               |
     |        | `serialize.dumps` byte for byte and runs the round trip both |
     |        | ways on the toy programs, with negative cases for the schema |
-    |        | number, an unknown key and a non-object. What is outstanding |
-    |        | is the *theorem*: `decode (print p) = ok p` for every well-  |
-    |        | formed `p`, by structural induction, rather than on the      |
-    |        | programs there happen to be.                                 |
+    |        | number, an unknown key and a non-object. `Tir/RoundTrip.lean`|
+    |        | is the theorem, and section 11 says how far it goes: the     |
+    |        | bridge to `Lean.Json` is proved, and one of the five decoder |
+    |        | families is inverted. Four remain, and the step from printed |
+    |        | text to a parsed value is named rather than proved.          |
     +--------+--------------------------------------------------------------+
     | gate 3 | In. `Tir/Artifact.lean` embeds the 2.8 megabytes of          |
     |        | `gen/engine.tir.json` with `include_str`, decodes them, and  |
@@ -402,10 +432,12 @@ next person reads the state and the intent in one place.
     +--------+--------------------------------------------------------------+
     | gate 5 | The ledger is in and checked: `conformance/layer-i.json`,    |
     |        | 80 functions owed a lemma, 42 parser-exclusive, 1 proved —   |
-    |        | gate 4's. The 79 others are the milestone's bulk and are     |
-    |        | still outstanding.                                           |
+    |        | gate 4's. `pike_take` is proved conditionally on its callee  |
+    |        | and does not count. The 79 others are the milestone's bulk,  |
+    |        | and section 10 moves them to the refinement milestone.       |
     +--------+--------------------------------------------------------------+
-    | gate 6 | Not started, and it cannot start before gate 5 closes.       |
+    | gate 6 | Not started, and it cannot start before gate 5 closes, so    |
+    |        | it moves with gate 5.                                        |
     +--------+--------------------------------------------------------------+
     | gate 7 | The verification infrastructure is complete: `make verify`   |
     |        | fails on generator drift, freeze-record drift, ledger        |
@@ -421,6 +453,9 @@ next person reads the state and the intent in one place.
 The artifact hash has not moved, which is the one invariant the whole plan
 rests on: everything above deepens the Lean account of the frozen engine
 and changes nothing the backends consume.
+
+Sections 8 to 10 are what those rows cost to find out, and section 10 is
+where the milestone splits.
 
 ## 7. The checkpoint, and the order the next session opens in
 
@@ -502,8 +537,9 @@ The template, which is what gate 5 follows:
    rewriting connects. The get-chains are the verbose part; they grow with
    statements times live locals and are entirely mechanical.
 
-What this prices: `region_kids` is three parameters, three locals, seven
-statements, two loops — and cost ~550 lines plus reusable automation. For
+What this prices: `region_kids` is three parameters, three locals, twelve
+statements counted the way the gate 5 ledger counts them, two loops — and
+cost ~550 lines plus reusable automation. For
 this one function, the mechanical get-chain portion tracked statements
 times live locals; whether other control-flow and call shapes behave the
 same is exactly what remains unmeasured. In particular it does not price
@@ -544,9 +580,9 @@ What it measured:
     +--------------------------------+---------------+------------------+
     |                                | `region_kids` | `pike_take`      |
     +--------------------------------+---------------+------------------+
-    | statements / loops / calls     | 7 / 2 / 0     | 21 / 1 / 2       |
+    | statements / loops / calls     | 12 / 2 / 0    | 21 / 1 / 2       |
     | proof lines, sample-specific   | ~550          | ~1240            |
-    | lines per statement            | ~79           | ~59              |
+    | lines per statement            | ~46           | ~59              |
     | reusable automation added      | 110           | 106 + ~85        |
     | store get-chain steps          | ~40           | 78               |
     | write-back expansions          | 0             | 4                |
@@ -555,12 +591,14 @@ What it measured:
 The shape generalises: nothing about the call was hard, `Runs` composed by
 transitivity exactly as gate 1 designed it, no lemma quotes a fuel bound,
 and `evalStmt_call_runs` turned each call into a store update in one step.
-The per-statement cost did not grow — it fell slightly, because a call
-statement is cheaper than a loop.
+Per statement the call-heavy function costs somewhat more than the
+loop-heavy one, and what it costs it on is branching rather than calling:
+`pike_take` has five exit paths and each re-steps the body in front of
+it.
 
 The cost does not generalise, and that is the finding. Per-statement cost
-is roughly constant at 60 to 80 lines, and the artifact's owed functions
-hold 3052 statements. Linear extrapolation puts gate 5 near two hundred
+sits between 45 and 60 lines, and the artifact's owed functions hold 3052
+statements. Linear extrapolation puts gate 5 near a hundred and sixty
 thousand lines of proof. No schedule survives that, and it is not a
 question of effort: the same two mechanical patterns are what fill the
 lines. Seventy-eight get-chain steps in one function, each a rewrite that
@@ -593,3 +631,206 @@ the estimate of what reaching it costs, which is what the two samples were
 built to find out — and finding it out before the campaign rather than a
 third of the way through it is the whole reason the gates were ordered
 this way.
+
+Two numbers above were corrected after the fact. `region_kids` holds twelve
+statements by the strata report's own count, not seven, and since that
+report is where the 3052 comes from the two have to be counted the same
+way; the per-statement figures and the extrapolation here are the corrected
+ones. The claim about *where* the lines go was wrong too, at least across these
+two functions, which is what section 10 measured rather than argued.
+
+## 10. The automation, measured, and the split
+
+Section 9 named two tools and a rule: build them, re-measure the same two
+samples, and if together they do not cut per-statement cost by roughly an
+order of magnitude, M7 splits. Both are built, both do what they were
+supposed to do, and the rule fires anyway.
+
+### What was built
+
+`Tir/Step.lean` grew by 131 lines, in two pieces.
+
+The store normaliser is four unconditional lemmas and a tactic. `Env.get_set`
+and `Env.get_declare` say what a write answers for *any* name — an `if` on
+the two names rather than a lemma per case — and since every name in the
+artifact is a string literal, the condition decides itself. `readPlace_var_eq`
+and `evalExpr_var_eq` do the same for a read, and `writePlace_var_isSome`
+states a write's precondition on `Option.isSome` so that normalising the
+store discharges it. `store [...]` is the `simp only` that runs all of them,
+with the frame's base facts in the bracket and `← henv3` for whatever
+intermediate stores the proof has named.
+
+The call-site tool is `writeOuts`, `writeBack_eq_writeOuts` and
+`evalStmt_call_outs`. The last is what a caller steps a call with now: given
+the callee's contract in `Runs`, it gives the statement's effect in terms of
+the out list alone, with no trace of the callee's frame left in it — so the
+write-back is a chain of `set`s that `store` normalises like any other. The
+one thing an out list cannot say by itself is whether a `false` in an `inout`
+position is a value the callee left or a name the callee lost, which
+`writeBack` tells apart. `OutsPresent` carries that, and it costs one `simp`
+per callee — `cgOuts_present` here — because `charge_grow` writes back the
+meter's three counters and an integer is never `false`.
+
+That is a fast path and not a general answer, which is worth naming before
+M7R leans on it. Fourteen of the eighty owed functions take a boolean
+`inout` parameter — `sat_add`, `charge_call`, `cert_install`, both `poly_`
+functions, both `sat_` ones, the four `price_` ones, the three `scan_` ones
+and `pike_room` — and for a callee that legitimately answers `false`
+through one, `OutsPresent` is not merely inconvenient but false. What that
+case wants is either the name-preservation theorem, that no TIR statement
+removes a binding, which is a walk over the whole interpreter about the
+size of `Tir/Stable.lean`, or a call step stated over the callee's frame
+instead of over its outs. Either way it is M7R's, and it is on the list
+before the campaign rather than during it.
+
+### What it removed
+
+Every explicit walk past a write: 143 uses of `Env.get_set_other` and
+`Env.get_declare_other` between the two files, now none, in favour of 63
+`store` calls. The four write-back expansions: 16 `writePlace_var`
+applications and 12 `slot_of_out` applications, now none, one `store` line
+each. The five out-list read-outs, twenty hand-written lines apiece, now one
+`store` call each. The two mechanical patterns section 9 named are not
+reduced; they are gone.
+
+### What it measured
+
+Code lines, comments and blanks stripped, which is why these baselines are
+smaller than the raw-line figures in section 8.
+
+    +-----------------------------+---------------+------------------+
+    |                             | `region_kids` | `pike_take`      |
+    +-----------------------------+---------------+------------------+
+    | statements                  | 12            | 21               |
+    | proof lines before          | 455           | 1293             |
+    | proof lines after           | 364           | 836              |
+    | lines per statement, before | 38            | 62               |
+    | lines per statement, after  | 30            | 40               |
+    | store-fact `have`s, before  | 19            | 37               |
+    | store-fact `have`s, after   | 10            | 29               |
+    +-----------------------------+---------------+------------------+
+
+Together the two samples fell from 1748 lines to 1200, against 131 lines of
+shared automation. Over the 33 statements they hold — counted the way the
+strata report counts the 3052 the ledger owes, which section 9 did not do
+for `region_kids` — that is 53 lines per statement down to 36, a factor of
+1.45.
+
+### Why so little
+
+Because the estimate section 9 rested on was wrong, and that is the part
+worth writing down. It said the two mechanical patterns "are what fill the
+lines". Removing them completely took out about a third of the proof. The
+rest was never the walking. It is the *saying*.
+
+What is left, largest first. The statements themselves: thirty-nine `have`s
+that spell out what the store holds at some intermediate point, each with a
+full type and value, because the step lemma wants it as a typed hypothesis
+and because `simp only` will not close a goal against a metavariable — so
+the implicits get pinned by hand at the call site instead. Then the branch
+plumbing: `pike_take` has five exit paths and each one re-steps the prefix
+of the body that precedes it, which no lemma about a single statement can
+share. Then the step applications themselves, one per statement per path.
+And last the genuine side conditions — the bounds, the `omega`s,
+`chargeGrow_cap` — which are the semantic content and are supposed to be
+there.
+
+A third tool would go after the first of those: a symbolic executor that
+reads the step lemma off the statement's head, computes the store it leaves,
+discharges the preconditions with `store`, and hands back only the real side
+conditions as goals. On these two samples that looks worth another factor of
+two or three. It is worth having. It is not an order of magnitude either,
+and the honest reason is that the second and third items on that list do not
+move for it.
+
+### The decision
+
+Thirty-six lines per statement over the 3052 statements the ledger owes is
+about 110,000 lines, down from 162,000. Section 9's rule fires: **M7
+splits.**
+
+What that means, concretely:
+
+* M7 closes as the layer I *foundation*: the deep embedding and its
+  interpreter, stability and determinism, the printer and the audited
+  decoder with their checks, the pinned artifact, the `make verify` harness,
+  two loop-invariant samples — one proved outright, one conditional on its
+  callee — and the automation this section measured. THEOREMS.md section 5
+  now carries a layer I inventory saying exactly that and no more.
+* The refinement of section 1 becomes its own milestone — M7R in DESIGN.md
+  section 9 — scheduled after M8 rather than in front of it. Its first task
+  is the symbolic executor, not the next per-function lemma. Gate 0's L-4
+  and L-5 travel with it, since what they exist for is the compiler
+  simulation lemma; gate 2's round-trip theorem stays with the foundation,
+  where it belongs.
+* Nothing in section 1's endpoint is weakened or withdrawn. What changed is
+  when it arrives, and the estimate of what it costs.
+* Until it does arrive, the fallback DESIGN.md section 10 already documents
+  is the one in force: releases stay 0.x, with layers S and R proved and
+  layer I covered by the decoder, the pin, the round trip and the corpus
+  replay — stated as such, which THEOREMS.md now does.
+
+The artifact hash still has not moved.
+
+## 11. Gate 2, decomposed
+
+`decode` is `Lean.Json.parse` and then `decodeProgram`, so `decode (print p)
+= ok p` is two theorems and not one, and they are not the same size.
+
+The *syntactic* half — `Json.parse (renderJ v 0 ++ "\n") = ok (jsonOf v)` —
+relates the renderer to a parser this repository did not write and Lean does
+not give a compositional account of. That is a parser-correctness
+development, not a structural induction, and it is not what gate 2 was
+scoped as. It stays covered the way it is covered today: gate 3 prints what
+it decoded and compares bytes, on the artifact, and `PrintCheck` does the
+same on the toy programs.
+
+The *semantic* half is the one being proved, and it starts one step in:
+
+    decodeProgram n (jsonOf (programJ p)) = .ok p
+
+for `p` canonical and `n` past its nesting depth. `jsonOf` is the bridge —
+the same `Json.mkObj` a parser would have built from a canonical document,
+so nothing in the statement is invented to make the proof easier.
+
+What landed:
+
+* the map fact everything rests on. The decoder reads an object as the list
+  `Std.TreeMap.Raw.toList` hands back, so the round trip needs that building
+  a map from a strictly key-sorted list and reading it back is the identity.
+  `jFields_mkObj` is that, over `Std`'s own `ordered_keys_toList` and a
+  thirty-line lemma that two sorted lists with the same members are the same
+  list;
+* `jsonOf` and the leaf readers, and the one-key-object step every tagged
+  form goes through;
+* `decodeTy_tyJ`: the first of the five decoder families, with `tyDepth` for
+  the budget and `Ty.Canonical` for the premise — which for a type is only
+  that the names it carries are names;
+* the hex round trip, `hexToBytes_hexBytes`, which a constant's bytes need
+  and which holds of every byte list rather than of a canonical one, so it
+  is proved outright instead of assumed;
+* `jFields_mkObj_perm`, the map bridge generalised to a permutation, since
+  what the printer hands the map for a constant's fields or a struct value's
+  is the sorted list and what the canonicality premise talks about is the
+  original.
+
+What that cost, because the remaining four want an estimate rather than a
+guess: 222 code lines at the type-family checkpoint, of which 80 are the
+seven type clauses and the rest is shared, and 269 with the two constant
+prerequisites added. Every clause after this one spends the shared part
+rather than growing it. Every object the printer builds has literal keys, so
+`jobj`'s sort and the map's own order both *compute* —
+`simp [jobj, List.mergeSort]` runs them, and the `closed`/`need` chain is
+`rfl`. The two clauses whose
+keys are not literal, a constant's fields and a struct value's, are where
+`jFields_mkObj` will be spent and where `Canonical` will have to say the
+keys are sorted and distinct.
+
+So the four remaining families — constants, expressions, places and
+statements, then the declarations and the program — are roughly eleven,
+eighteen, three and eighteen clauses at the eleven lines a clause the first
+family came to, plus `decodeDepth`, `Program.Canonical` and the artifact
+check. Constants are next and their two prerequisites are in; what that
+family still wants is its own depth and canonicality definitions and a
+mutual induction shaped like `decodeConst`'s own. Gate 2 is started and is
+not closed, and M7 does not get its tag until it is.
