@@ -2014,3 +2014,19 @@ there" rather than "the real edit is there too". It is: when a check needs a
 file temporarily wrong, copy it aside and restore from the copy, or commit
 first. `git checkout` restores from the index, and the index does not know
 which of my changes I meant.
+
+## "Gates 0 through 3 in" in a tag annotation
+
+What I got wrong: the first annotation of `m7-foundation-20260806` said
+"gates 0 through 3 in" when gate 0 still owes L-4 and L-5 and gate 2 still
+owes its universal round-trip theorem — facts I had just finished writing
+carefully into the very ledger the tag points at.
+
+The failure mode is summarization drift: a status that is precise in the
+document gets rounded up the moment it is restated somewhere small, because
+a tag message feels like a headline rather than a claim. But an annotation
+is exactly where a future reader looks first, so it is the worst place to
+overclaim. The fix is mechanical: a restated status should be copied from
+the ledger's own words, never re-derived from memory, and any word like
+"in" or "done" in a summary should be checkable against a row that says the
+same thing.

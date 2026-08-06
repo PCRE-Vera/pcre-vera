@@ -393,7 +393,13 @@ next person reads the state and the intent in one place.
     |        | a dependency, so `make verify` deletes that one module's     |
     |        | build products first.                                        |
     +--------+--------------------------------------------------------------+
-    | gate 4 | Not started: `region_kids` against `R.regionKids`.           |
+    | gate 4 | Underway, parked at the last step. `Tir/Step.lean` is the    |
+    |        | statement and expression automation, `Tir/Region.lean` the   |
+    |        | value encoding with its artifact-read guards, and the store  |
+    |        | algebra — local reads after writes, `writePlace`, push — is  |
+    |        | proved. Outstanding: the two `region_kids` loop invariants   |
+    |        | and the simulation theorem against `R.regionKids`, whose     |
+    |        | cost is the number this gate exists to measure.              |
     +--------+--------------------------------------------------------------+
     | gate 5 | The ledger is in and checked: `conformance/layer-i.json`,    |
     |        | 80 functions owed a lemma, 42 parser-exclusive, 0 proved.    |
@@ -402,15 +408,56 @@ next person reads the state and the intent in one place.
     +--------+--------------------------------------------------------------+
     | gate 6 | Not started, and it cannot start before gate 5 closes.       |
     +--------+--------------------------------------------------------------+
-    | gate 7 | In. `make verify` fails on generator drift, freeze-record    |
-    |        | drift, ledger drift, a decode failure, a round-trip failure  |
-    |        | and a broken proof. Each has been induced once and observed  |
-    |        | to fail. What it still does not do is bind the *proofs* to   |
-    |        | the artifact — the decode says the bytes are the program the |
-    |        | Lean side names, and the lemmas that would say the program   |
-    |        | means what layer R means are gate 5's.                       |
+    | gate 7 | The verification infrastructure is complete: `make verify`   |
+    |        | fails on generator drift, freeze-record drift, ledger        |
+    |        | drift, a decode failure, a round-trip failure and a broken   |
+    |        | proof, each induced once and observed to fail. It does not   |
+    |        | yet bind the *proofs* to the artifact — the decode says the  |
+    |        | bytes are the program the Lean side names, and the lemmas    |
+    |        | that would say the program means what layer R means are      |
+    |        | gate 5's — so this row is the harness in place, not the      |
+    |        | proof gate closed.                                           |
     +--------+--------------------------------------------------------------+
 
 The artifact hash has not moved, which is the one invariant the whole plan
 rests on: everything above deepens the Lean account of the frozen engine
 and changes nothing the backends consume.
+
+## 7. The checkpoint, and the order the next session opens in
+
+Commit `53068bd` is the verified handoff: `make verify` passes there end to
+end — 26 verification tests, the full Lean build, the corpus replay at 331
+cases and 0 disagreements — on a clean tree. This closeout commit on top of
+it changes documentation only, and the annotated tag `m7-foundation-20260806`
+marks it; `wave1-frozen` does not move, for the reason gate 3 already gave.
+The endpoint of section 1 has not been weakened anywhere. M7 stops here
+because it is incomplete and too large to finish responsibly in one
+stretch, not because anything is blocked — that distinction matters, and it
+is why this is a checkpoint rather than a fallback.
+
+The next proof session should not open with L-4. L-4 is owed eventually,
+but it reveals nothing about whether the 80-function simulation campaign is
+affordable, and that affordability is the decision the project currently
+lacks. Gate 4 was designed as exactly that measurement point, so the order
+is:
+
+1. Prove gate 4's two `region_kids` loop invariants and the simulation
+   theorem. Everything under them — the encoding, the artifact-read
+   guards, the store algebra, `Tir/Step.lean` — is already in the build.
+
+2. Review gate 4 the moment its statement, invariants and final lemma
+   land, at that semantic boundary rather than per edit or eight commits
+   late. Record the proof's size, the effort it took, what automation came
+   out reusable, and how brittle it is.
+
+3. Before scheduling gate 5, stratify the 80 owed functions by proof shape
+   and dependency depth. `region_kids` exercises loops and the mutable
+   store, not call-heavy VM composition; sample at least one function from
+   that harder class before extrapolating a completion estimate.
+
+4. Decide, explicitly. If the gate 4 pattern generalizes, close gate 2's
+   theorem, then L-4 and L-5, then run gate 5 in reviewed dependency
+   slices. If it does not, keep the endpoint but split M7 into this
+   completed foundation and a later refinement milestone, or redesign the
+   simulation automation — an 80-lemma manual treadmill is the one path
+   this plan rules out.

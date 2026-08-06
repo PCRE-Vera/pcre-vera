@@ -45,13 +45,36 @@ def regionValue (r : Region) : Value :=
     [("kind", .tag "Rk" (rkName r.kind)), ("parent", .int (Int.ofNat r.parent)),
      ("lo", .int (Int.ofNat r.lo)), ("hi", .int (Int.ofNat r.hi))]
 
-/-- A frozen vector of regions, as the parameter arrives. -/
-def regionsValue (regions : Array Region) : Value :=
-  .frozen (.seq marksMax (regions.toList.map regionValue) regions.size)
+/-- A frozen vector of regions, as the parameter arrives.
 
-/-- One of the two mark arrays. -/
-def marksValue (marks : Array Nat) : Value :=
-  .seq marksMax (marks.toList.map fun (n : Nat) => Value.int (Int.ofNat n)) marks.size
+A relation rather than a function, and the capacity is why. Layer R's arrays
+have a length and nothing else, while a TIR sequence also remembers how much
+room it was given — and a push grows that room by doubling, so the capacity a
+loop leaves behind is a fact about how many pushes happened rather than about
+what the answer is. Relating the two by a function would have pinned a number
+the specification does not fix, and the first loop of `region_kids` would
+have failed to satisfy it for no reason worth having. -/
+def RegionsAt (v : Value) (regions : Array Region) : Prop :=
+  ∃ cap, v = .frozen (.seq marksMax (regions.toList.map regionValue) cap)
+
+/-- One of the two mark arrays, related the same way and for the same
+reason. -/
+def MarksAt (v : Value) (marks : Array Nat) : Prop :=
+  ∃ cap, v = .seq marksMax (marks.toList.map fun (n : Nat) => Value.int (Int.ofNat n)) cap
+
+theorem MarksAt.empty : MarksAt (.seq marksMax [] 0) (#[] : Array Nat) :=
+  ⟨0, rfl⟩
+
+/-- Which is the shape a push leaves: one more element, and whatever room the
+growth rule decided on. -/
+theorem MarksAt.push {v : Value} {marks : Array Nat} {n : Nat} {cap : Nat}
+    (h : v = .seq marksMax
+      ((marks.toList.map fun (m : Nat) => Value.int (Int.ofNat m))
+        ++ [Value.int (Int.ofNat n)]) cap) :
+    MarksAt v (marks.push n) := by
+  refine ⟨cap, ?_⟩
+  rw [h]
+  simp
 
 /-! ## What the artifact has to say for the encoding to mean anything -/
 

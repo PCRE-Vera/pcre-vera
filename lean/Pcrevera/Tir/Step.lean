@@ -190,6 +190,95 @@ theorem evalWhile_return {c : Expr} {body : List Stmt} {env' : Env}
   simp only []
   rw [hb]
 
+/-! ## The store itself
+
+A local read after a local write, which is the algebra every loop invariant
+is carried in. Writing keeps the slot's declared type, because the width
+rules read it and nothing may change it. -/
+
+theorem Env.get_set_self {n : String} {v : Value} {s : Slot}
+    (h : env.get n = some s) :
+    (env.set n v).get n = some { s with value := v } := by
+  rw [Env.set, h]
+  simp only []
+  induction env with
+  | nil => simp [Env.get, getAssoc] at h
+  | cons e rest ih =>
+      obtain ⟨k, slot⟩ := e
+      simp only [Env.get, getAssoc] at h ⊢
+      rw [setAssoc]
+      split at h <;> rename_i hk
+      · subst hk
+        simp only [Option.some.injEq] at h
+        subst h
+        simp [getAssoc]
+      · simp only [if_neg hk, getAssoc]
+        exact ih h
+
+private theorem getAssoc_setAssoc_other {α : Type} {n m : String} {v : α}
+    (hne : m ≠ n) : ∀ l : List (String × α),
+      getAssoc m (setAssoc n v l) = getAssoc m l
+  | [] => rfl
+  | (k, x) :: rest => by
+      rw [setAssoc]
+      split <;> rename_i hk
+      · subst hk
+        simp only [getAssoc, if_neg (Ne.symm hne)]
+      · simp only [getAssoc]
+        split
+        · rfl
+        · exact getAssoc_setAssoc_other hne rest
+
+theorem Env.get_set_other {n m : String} {v : Value} (hne : m ≠ n) :
+    (env.set n v).get m = env.get m := by
+  rw [Env.set]
+  cases env.get n with
+  | none => rfl
+  | some s => exact getAssoc_setAssoc_other hne env
+
+theorem readPlace_var {n : String} {t : Ty} {v : Value}
+    (h : env.get n = some ⟨t, v⟩) : readPlace p env (.var n) = .ok v := by
+  rw [readPlace, h]
+
+theorem writePlace_var {n : String} {v : Value} {s : Slot}
+    (h : env.get n = some s) :
+    writePlace p env (.var n) v = .ok (env.set n v) := by
+  rw [writePlace, h]
+
+/-- A local written and then read back, which is one round of any loop
+invariant: the value is the one written and the declared type is the one the
+slot always had. -/
+theorem get_set_read {n : String} {t : Ty} {v w : Value}
+    (h : env.get n = some ⟨t, v⟩) :
+    readPlace p (env.set n w) (.var n) = .ok w :=
+  readPlace_var (Env.get_set_self h)
+
+/-! ## Growing a sequence
+
+The one statement whose answer is not only the value it was handed: a push
+appends, and grows the room if the room ran out. Whether it grew is not a
+fact about what the program computed, which is why a sequence is *related* to
+an array rather than computed from one. -/
+
+theorem evalStmt_push {pl : Place} {e : Expr} {m : Nat}
+    {items : List Value} {c : Nat} {v : Value}
+    (ht : readPlace p env pl = .ok (.seq m items c))
+    (hv : evalExpr p env e = .ok v) (hroom : items.length < m) :
+    evalStmt fuel p (.push pl e) env =
+      some (do
+        let env' ← writePlace p env pl
+          (.seq m (items ++ [v]) (if items.length = c then grown m c else c))
+        .ok (env', .normal)) := by
+  rw [evalStmt.eq_def]
+  simp only []
+  rw [ht]
+  simp only [Res.ok_bind]
+  rw [hv]
+  simp only [Res.ok_bind]
+  split <;> rename_i hfull
+  · exact absurd hfull (by omega)
+  · rfl
+
 /-! ## Reading the store
 
 The other half of what a simulation proof spends: an expression is a read
