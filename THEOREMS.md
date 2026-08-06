@@ -332,11 +332,13 @@ say is what they say and nothing beyond it.
     |      |                        | programs both ways, with negative    |
     |      |                        | cases. Tir/RoundTrip.lean proves the |
     |      |                        | Json.mkObj bridge and inverts the    |
-    |      |                        | type decoder; the other four decoder |
-    |      |                        | families are outstanding, and the    |
-    |      |                        | step from printed text to a parsed   |
-    |      |                        | value stays a check rather than a    |
-    |      |                        | theorem. PLAN-M7.md section 11       |
+    |      |                        | type, constant, expression and place |
+    |      |                        | decoders; the statements, the        |
+    |      |                        | declarations and the program are     |
+    |      |                        | outstanding. The step from printed   |
+    |      |                        | text to a parsed value stays a check |
+    |      |                        | rather than a theorem. PLAN-M7.md    |
+    |      |                        | section 11                           |
     | I-3  | proved by elaborating  | Tir/Artifact.lean: the 2.8 MB of     |
     |      |                        | gen/engine.tir.json decode and print |
     |      |                        | back to the same bytes, and the      |

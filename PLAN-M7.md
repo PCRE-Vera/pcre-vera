@@ -812,25 +812,85 @@ What landed:
 * `jFields_mkObj_perm`, the map bridge generalised to a permutation, since
   what the printer hands the map for a constant's fields or a struct value's
   is the sorted list and what the canonicality premise talks about is the
-  original.
+  original;
+* `decodeConst_constJ` and its two list companions: the second family, and
+  the first one whose premise says something about order. A constant's
+  fields are printed as an object, an object hands its members back sorted,
+  so `ConstValue.Canonical` requires the entries to be in that order
+  already. `SortedKeys` is that condition, and `jFields_constEntries` is
+  where `jFields_mkObj_perm` gets spent;
+* a decision procedure for every canonicality predicate. This was not on the
+  list for the constants step, and it is here because the artifact's premise
+  has to be discharged by reduction rather than by hand: a `Canonical` no
+  machine can settle is a premise that can only be stated. `by decide`
+  settles it now on every family proved so far, and each family carries the
+  same three checks: the predicate on a sample, the inversion instantiated at
+  exactly the depth its `*Depth` function gives, and a guard that one unit
+  less fails. The types were the family that had the theorem but not the
+  evidence, and a review is what found that;
+* `decodeExpr_exprJ`, `decodeExprFields_exprEntries` and
+  `decodePlace_placeJ`: the third family. A struct value's members are the
+  second and last place in the schema where the keys are a program's own
+  names, so `SortedKeys` and `jFields_mkObj_perm` come back unchanged; a
+  `cast` carries a type, so its clause spends `decodeTy_tyJ` and the premise
+  reaches back into the first family; and the operators cost the premise
+  nothing, since they are written from a closed table and read back through
+  its inverse;
+* `jsonOf_jobj_fields`, the bridge for a form with more than one key. This is
+  where `jobj`'s sort stops being a formality: expressions are the first
+  family that prints members out of key order — `op` before `left` and
+  `right` — so the sorted list has to be computed rather than read off the
+  printer, which `simp [jobj, List.mergeSort]` does even where the values are
+  variables.
 
-What that cost, because the remaining four want an estimate rather than a
+What that cost, because the remaining two want an estimate rather than a
 guess: 222 code lines at the type-family checkpoint, of which 80 are the
-seven type clauses and the rest is shared, and 269 with the two constant
-prerequisites added. Every clause after this one spends the shared part
-rather than growing it. Every object the printer builds has literal keys, so
-`jobj`'s sort and the map's own order both *compute* —
-`simp [jobj, List.mergeSort]` runs them, and the `closed`/`need` chain is
-`rfl`. The two clauses whose
-keys are not literal, a constant's fields and a struct value's, are where
-`jFields_mkObj` will be spent and where `Canonical` will have to say the
-keys are sorted and distinct.
+seven type clauses and the rest is shared; 269 with the two constant
+prerequisites added; 436 with the constants family in; and 867 with
+expressions and places in and the type family's own evidence beside it.
+Every clause spends the shared part rather than growing it. Almost every
+object the printer builds has the schema's own keys rather than a program's,
+so `jobj`'s sort and the map's order both *compute* — `simp [jobj,
+List.mergeSort]` runs them, and the `closed`/`need` chain after that is
+`rfl`. The two clauses whose keys are a program's own — a constant's fields
+and a struct value's — are where `jFields_mkObj_perm` is spent, and they are
+the only two the schema has.
 
-So the four remaining families — constants, expressions, places and
-statements, then the declarations and the program — are roughly eleven,
-eighteen, three and eighteen clauses at the eleven lines a clause the first
-family came to, plus `decodeDepth`, `Program.Canonical` and the artifact
-check. Constants are next and their two prerequisites are in; what that
-family still wants is its own depth and canonicality definitions and a
-mutual induction shaped like `decodeConst`'s own. Gate 2 is started and is
-not closed, and M7 does not get its tag until it is.
+The constants figure, seven lines to a clause on sixty of scaffolding,
+turned out to be the wrong unit and it is worth saying why before it is used
+again. Expressions and places cost 420 lines: 229 for the nineteen
+expression clauses and the exhausted-budget one, 14 for the list companion
+that walks a struct value's members, 100 for the scaffolding, 52 for places
+and 25 for the evidence. That is about twelve lines a clause rather than
+seven, and the reason is that a clause costs roughly what its object has
+members, not what its family has forms. Most constant forms are a leaf or a
+single payload; most expression forms are a two- or three-member object, and
+every member is a line of the `show` that spells out what the decoder's step
+left and a rewrite that discharges it.
+
+By that unit, statements are the wider of the two that remain, not the
+narrower. The scope, written down now so the measurement afterwards has a
+denominator nobody has to reconstruct: seventeen `Stmt` constructors plus
+`decodeStmt`'s exhausted-fuel branch; companion inversions for a statement
+body, a switch-arm list, a call argument and an argument list, of which the
+last two sit outside the mutual block because an argument holds an
+expression or a place and never a statement; and four optional-field
+occurrences — `let.init`, `switch.default`, `return.value` and `call.dest` —
+across three `optD` shapes, since `init` and `value` are both `Option Expr`.
+The measure is new as well: `decodeStmt`, `decodeBody` and `decodeArms`
+order their recursion by `(fuel, kind, length)` where the two families
+proved so far used two components, so the induction mirrors that rather than
+the shape it has been mirroring.
+
+The declarations and the program are fewer forms but bring one genuinely new
+obligation — `programJ` sorts the four declaration lists by name, so
+`Program.Canonical` has to require them *strictly* ordered by name the way
+`SortedKeys` orders object members, which rules out duplicate declaration
+names as well as undoing the sort, and it has to carry each declaration's
+own canonicality underneath. That premise then has to be shown true of the
+artifact rather than merely stated of it, and if the kernel cannot reduce
+`decide` over 2.8 MB the check stays a `#guard` — which is the interpreter
+and not the kernel, and has to be written down as such wherever the result
+is quoted. Then `decodeDepth`, the composed theorem, and the artifact check.
+Statements are next. Gate 2 is started and is not closed, and M7 does not
+get its tag until it is.

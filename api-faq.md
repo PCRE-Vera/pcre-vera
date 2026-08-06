@@ -828,3 +828,55 @@ the map's sort computes too.
 `RoundTrip.lean` cannot pass them to `simp`. What works instead is to state
 the whole enclosing call as a `show ... from rfl`: the private helpers are
 still *reducible*, only not nameable, so the computation goes through.
+
+## A recursive `instance` cannot reach itself through `inferInstanceAs`
+
+Writing `instance : (t : Ty) → Decidable t.Canonical` and then, in the
+`.vec` clause, `inferInstanceAs (Decidable e.Canonical)` fails to
+synthesize: the instance is not registered while it is still being
+elaborated. Naming it — `instance decTyCanonical : ...` — and calling
+`decTyCanonical e` directly works, and the same trick is what lets a
+`mutual` block of instances refer to each other.
+
+## `rw` does not see through a `def` that wraps the predicate
+
+`SortedKeys l` is by definition `l.Pairwise keyLt`, but `rw
+[List.pairwise_map]` on a goal that reads `SortedKeys (List.map f l)` fails
+with "did not find an occurrence" — rewriting matches syntax, and the head
+symbol is `SortedKeys`. A `show List.Pairwise _ (List.map _ l)` first, which
+is a definitional cast, puts the pattern back on the surface.
+
+## A well-founded definition does not unfold under `rfl`, but everything after it does
+
+`decodeConst` carries a `termination_by`, so it is compiled through
+`WellFounded.fix` and no amount of `rfl` will step it. `rw [decodeConst]`
+uses the equation lemma and does. What is worth knowing is that this is the
+*only* barrier: once that one step is taken, the body — `getBool?`,
+`getInt?`, `tagged`, the match on a string literal tag — is ordinary
+structural code, so a `show` that spells the reduced form is accepted and
+the rest of the clause is plain rewriting.
+
+## `List.mergeSort` does not reduce under `rfl`, but `simp` runs it
+
+`jobj` sorts an object's members with `List.mergeSort`, which is
+well-founded, so `jobj [("base", v₁), ("name", v₂)] = .obj [("base", v₁),
+("name", v₂)]` is not `rfl` even though both sides are visibly the same
+list. `simp [jobj, List.mergeSort]` proves it, and it also proves the
+interesting direction, where the printer wrote the keys out of order and the
+sort has to move them. It works with variables in the value positions,
+since only the keys are compared. For the already-sorted case there is also
+`List.mergeSort_of_pairwise`, which wants no transitivity hypothesis — but
+its `Pairwise` premise is not something `decide` can settle when the values
+are free variables, so `simp` is the shorter road either way.
+
+## `rw` cannot reach inside a `match` branch that binds a variable
+
+Half the expression clauses reduce to `match binOp o with | none => … | some
+o' => do let v ← decodeExpr n j; …`, and there `rw [ok_bind]` fails with
+"did not find an occurrence" while `rw [decodeExpr_exprJ …]` on the very
+next line succeeds. The difference is the motive: `decodeExpr n j` is a
+closed subterm that `rw` can abstract, whereas `ok_bind`'s `f` would have to
+mention `o'`, which the branch binds. `simp only` rewrites under binders and
+does not care. The cheaper fix is usually to not need it — rewrite the two
+`decodeExpr` calls directly and let the trailing `cases op <;> rfl` do the
+bind reduction along with the match.

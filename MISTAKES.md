@@ -2115,3 +2115,25 @@ whose numerator and denominator come from two different counting
 conventions is not a measurement. When a document quotes a number that a generated artifact also
 holds, it should read it from the artifact rather than count it again by
 hand.
+
+## Pricing a proof family by its clause count when the cost is per member
+
+What I got wrong: PLAN-M7.md section 11 priced the three remaining gate 2
+families off the constants measurement — about seven lines to a clause on
+sixty lines of scaffolding — and called expressions and places "roughly
+twenty-one clauses". They came to twenty-two clauses and 420 lines, twice
+what that model predicts.
+
+The unit was wrong, not the arithmetic. A clause costs roughly what its
+printed object has members: each member is a line of the `show` that spells
+out what the decoder's step left and a rewrite that discharges it. Constants
+are mostly a leaf or a single payload, so seven lines a clause was really
+"seven lines for a one-member form". Expressions are mostly two- and
+three-member objects, and they came in at twelve.
+
+The measurement was available before the estimate: `Print.lean` says how
+many members every form has, and counting them takes a minute. Doing that
+would also have flipped the ordering the section states — it calls
+statements narrower than expressions on a form count of eighteen against
+twenty-one, where by members they are the wider of the two. The section now
+prices the rest per member and says so.
