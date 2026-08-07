@@ -2137,3 +2137,28 @@ would also have flipped the ordering the section states — it calls
 statements narrower than expressions on a form count of eighteen against
 twenty-one, where by members they are the wider of the two. The section now
 prices the rest per member and says so.
+
+## Treating an admitted subset as a complete compatibility partition (the M8 plan)
+
+What I got wrong: PLAN-M8.md enumerated the alpha-assertion spellings it meant
+to admit and repeated wave 1's five newline conventions, but it never derived
+the surrounding universes. That left the four script-run aliases unnamed and
+left PCRE2's sixth `NEWLINE_NUL` convention looking indistinguishable from an
+option nobody had considered. The engine was not unsound: both the API value
+and `(*NUL)` were already refused, and the five-convention theorem domain was
+exact. The defect was compatibility accounting, not shipped behavior.
+
+The first attempted generalization reached for `shim.c`'s option tables as the
+universe. Those tables are project-maintained projections too, so the shim and
+engine could omit the same new PCRE2 entry and agree. The replacement derives
+the three `(*...)` tables and the public compile, compile-extra and match masks
+from the pinned source, then checks the shim, parser, engine dictionaries and
+explicit unsupported policy as separate projections. Irregular source rows,
+exact cardinalities, alternate syntax/API routes to one option identity and
+the non-table `(*)` route are guarded rather than normalized away.
+
+The lesson is that an inclusion list proves only what is in it. Whenever the
+project imports a closed external table to define syntax, options, aliases or
+a semantic decision, the external source supplies the universe and the project
+supplies an exact policy partition. A corpus or two agreeing project tables
+cannot establish that the complement is complete.
