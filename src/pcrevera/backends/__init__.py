@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .. import leanexport
+from ..capsule import inventory
 from ..leanexport import bridge
 from ..engine import certificate_corpus, migration
 from ..engine.program import program
@@ -88,6 +89,9 @@ def generate() -> tuple[str, list[Output]]:
         # What M7's gate 5 still owes, computed from the artifact's own call
         # graph rather than counted by hand.
         Output(coverage.PATH, coverage.render(coverage.ledger(built, sha256))),
+        # And what is proved, resolved against the Lean sources so that a
+        # renamed theorem fails the build instead of aging in a table.
+        Output(inventory.PATH, inventory.render(inventory.build(built, sha256))),
         # The AST bridge is a function of the two corpora it feeds the Lean
         # replay of, computed from the same fresh texts so that verifying it
         # never depends on what happens to be on disk.

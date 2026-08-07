@@ -910,3 +910,19 @@ nothing to go on. Writing `fun (f : Field) =>` costs one annotation and
 removes the ordering question. The three list companions of the declaration
 family all want it; nothing earlier in the file did, because no earlier
 printer clause maps a lambda over a list.
+
+## `isinstance(x, int)` accepts `True`, so a Boolean passes for a number
+
+Python's `bool` is a subclass of `int`, and `True == 1`. The feature ledger's
+schema checker declared `"wave": (int, type(None))` and then read the row's
+wave to decide whether it may carry wave 1's `m7-foundation-fallback`
+admission basis. A row written `"wave": true` satisfies the type check and
+compares equal to `1`, so a wave 2 feature could have taken the fallback and
+entered the default surface with an incomplete I chain.
+
+The fix is one line per numeric field — `isinstance(value, bool)` is a
+rejection before the type check, not after it — but the general shape is worth
+remembering: wherever a schema distinguishes a number from a flag, the type
+system will not, and the check has to say so. The same trap is waiting in
+`sum()`, `max()` and any `dict` keyed by a small integer, where `True` and `1`
+are the same key.

@@ -60,10 +60,16 @@ sweep: setup
 # through the Lean reference engine (DESIGN.md section 9, M6's R-10): the
 # committed AST bridge feeds it the parsed trees, and any disagreement in
 # outcome, ovector or usage fails the build.
+#
+# The inventory check runs last and is the one that asks Lean rather than a
+# regex: conformance/theorem-inventory.json resolves every claim to a fully
+# qualified name by reading the sources, and this elaborates each one and
+# reports its axioms. A renamed theorem fails here instead of ageing in a table.
 lean:
 	cd lean && lake build && lake exe corpuscheck \
 	    ../conformance/corpus.json ../conformance/sweep.json \
 	    ../gen/lean/bridge.json
+	$(UV) run python -m pcrevera.capsule inventory-check
 
 go:
 	cd gen/go && go vet ./... && go test ./...

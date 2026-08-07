@@ -1,0 +1,1409 @@
+{
+  "features": [
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpAccept"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "core.pattern",
+      "note": "not a spelling: every program ends in the accept the matchers stop on, and no syntax family owns it",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [],
+      "title": "the compiled program envelope",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpChar",
+          "OpCharCI"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.literal",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "a",
+        "\\-"
+      ],
+      "title": "literal bytes",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpChar",
+          "OpCharCI"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.escape.literal",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "\\n",
+        "\\r",
+        "\\t",
+        "\\f",
+        "\\a",
+        "\\e",
+        "\\xHH",
+        "\\x{HH}",
+        "\\0dd",
+        "\\cX"
+      ],
+      "title": "the escapes that denote one byte",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpChar",
+          "OpCharCI"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.quoting",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "\\Q...\\E"
+      ],
+      "title": "quoted literal runs",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpAny",
+          "OpAnyNoNL"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.dot",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "."
+      ],
+      "title": "the dot",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpClass"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.class",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "[abc]",
+        "[a-z]",
+        "[^a-z]",
+        "[[:alpha:]]"
+      ],
+      "title": "bracketed character classes",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpClass"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.escape.class",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "\\d",
+        "\\D",
+        "\\w",
+        "\\W",
+        "\\s",
+        "\\S",
+        "\\h",
+        "\\H",
+        "\\v",
+        "\\V"
+      ],
+      "title": "the class escapes",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpBsr"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.escape.newline",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "\\R"
+      ],
+      "title": "the newline escape",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpCirc",
+          "OpCircM",
+          "OpDoll",
+          "OpDollE",
+          "OpDollM",
+          "OpEod",
+          "OpEodn",
+          "OpNotWordB",
+          "OpSod",
+          "OpWordB"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.anchor",
+      "note": "OpEod is also what the ENDANCHORED option emits with no anchor written at all; the option universes are gate 1's, and that route gets its own row there rather than a second claim on this one",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "^",
+        "$",
+        "\\A",
+        "\\z",
+        "\\Z",
+        "\\b",
+        "\\B"
+      ],
+      "title": "the anchors and word boundaries",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpJump",
+          "OpSplit"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.alternation",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "a|b"
+      ],
+      "title": "alternation",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpRepEnter",
+          "OpRepLoop",
+          "OpRepNext",
+          "OpRepZero",
+          "OpSplit"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.quantifier.greedy",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "?",
+        "*",
+        "+",
+        "{n}",
+        "{n,m}",
+        "{n,}",
+        "{,m}"
+      ],
+      "title": "greedy repetition",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpRepEnter",
+          "OpRepLoop",
+          "OpRepNext",
+          "OpRepZero",
+          "OpSplit"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.quantifier.lazy",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "??",
+        "*?",
+        "+?",
+        "{n,m}?",
+        "{n,}?"
+      ],
+      "title": "lazy repetition",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpSave"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.group.capturing",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "(...)"
+      ],
+      "title": "capturing groups",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [
+          "OpSave"
+        ],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.group.named",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "(?<name>...)",
+        "(?'name'...)",
+        "(?P<name>...)"
+      ],
+      "title": "named capturing groups",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.group.noncapturing",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "(?:...)"
+      ],
+      "title": "non-capturing groups",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.group.options",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "(?i)",
+        "(?i:...)"
+      ],
+      "title": "inline option groups",
+      "wave": 1
+    },
+    {
+      "admissionBasis": "m7-foundation-fallback",
+      "artifactVersion": 1,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [
+        "S-1",
+        "S-2",
+        "S-3",
+        "S-4",
+        "S-5",
+        "S-6",
+        "S-7",
+        "S-8",
+        "S-9",
+        "S-10",
+        "S-11",
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-4",
+        "R-5",
+        "R-6",
+        "R-7",
+        "R-8",
+        "R-9"
+      ],
+      "default": true,
+      "dependsOn": [],
+      "gated": true,
+      "i": "incomplete",
+      "implementation": "complete",
+      "key": "syntax.group.comment",
+      "r": "complete",
+      "s": "complete",
+      "spellings": [
+        "(?#...)"
+      ],
+      "title": "comment groups",
+      "wave": 1
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.atomic",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?>...)",
+        "(*atomic:...)"
+      ],
+      "title": "atomic groups",
+      "wave": 2
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [
+        "syntax.atomic"
+      ],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.quantifier.possessive",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "?+",
+        "*+",
+        "++",
+        "{n}+",
+        "{n,m}+",
+        "{n,}+",
+        "{,m}+"
+      ],
+      "title": "possessive repetition",
+      "wave": 2
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.lookahead.positive",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?=...)",
+        "(*pla:...)",
+        "(*positive_lookahead:...)"
+      ],
+      "title": "positive lookahead",
+      "wave": 2
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.lookahead.negative",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?!...)",
+        "(*nla:...)",
+        "(*negative_lookahead:...)"
+      ],
+      "title": "negative lookahead",
+      "wave": 2
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.lookbehind.positive",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?<=...)",
+        "(*plb:...)",
+        "(*positive_lookbehind:...)"
+      ],
+      "title": "bounded positive lookbehind",
+      "wave": 2
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.lookbehind.negative",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?<!...)",
+        "(*nlb:...)",
+        "(*negative_lookbehind:...)"
+      ],
+      "title": "bounded negative lookbehind",
+      "wave": 2
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.assert.start",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "\\G"
+      ],
+      "title": "the start-of-match assertion",
+      "wave": 2
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.backref.numeric",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "\\n",
+        "\\gn",
+        "\\g{n}",
+        "\\g+n",
+        "\\g-n",
+        "\\g{+n}",
+        "\\g{-n}"
+      ],
+      "title": "numeric backreferences",
+      "wave": 2
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.backref.named",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "\\k<name>",
+        "\\k'name'",
+        "\\k{name}",
+        "\\g{name}",
+        "(?P=name)"
+      ],
+      "title": "named backreferences",
+      "wave": 2
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.lookaround.nonatomic",
+      "note": "a different backtracking contract from the atomic family; outside M8 and not smuggled in as an alias for it",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?*...)",
+        "(?<*...)",
+        "(*napla:...)",
+        "(*naplb:...)"
+      ],
+      "title": "non-atomic lookaround",
+      "wave": null
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.script_run",
+      "note": "the restriction is not observable on the admitted 8-bit non-UTF alphabet, so a match differential could not stand in for admission fixtures",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(*script_run:...)",
+        "(*sr:...)",
+        "(*atomic_script_run:...)",
+        "(*asr:...)"
+      ],
+      "title": "script runs",
+      "wave": null
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.scan_substring",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(*scan_substring:...)",
+        "(*scs:...)"
+      ],
+      "title": "scan-substring assertions",
+      "wave": null
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.conditional",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?(1)...)",
+        "(?(<name>)...)"
+      ],
+      "title": "conditional groups",
+      "wave": 3
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.subroutine",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?1)",
+        "(?&name)",
+        "(?P>name)"
+      ],
+      "title": "subroutine calls",
+      "wave": 3
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.recursion",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?R)",
+        "(?0)"
+      ],
+      "title": "pattern recursion",
+      "wave": 3
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.branch_reset",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?|...)"
+      ],
+      "title": "branch-reset groups",
+      "wave": null
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.keep",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "\\K"
+      ],
+      "title": "the match-start reset",
+      "wave": 3
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.unicode_property",
+      "note": "a well-shaped name is not checked against the property tables until wave 3, which is one of the two edges README names",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "\\p{...}",
+        "\\P{...}"
+      ],
+      "title": "Unicode properties",
+      "wave": 3
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.grapheme",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "\\X"
+      ],
+      "title": "grapheme clusters",
+      "wave": null
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.any_byte",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "\\C"
+      ],
+      "title": "the single-byte escape",
+      "wave": null
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.named_char",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "\\N{...}"
+      ],
+      "title": "named characters",
+      "wave": 3
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.verb",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(*MARK:...)",
+        "(*ACCEPT)",
+        "(*FAIL)",
+        "(*COMMIT)",
+        "(*PRUNE)",
+        "(*SKIP)",
+        "(*THEN)"
+      ],
+      "title": "backtracking control verbs",
+      "wave": null
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.callout",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(?C1)",
+        "(?C'text')"
+      ],
+      "title": "callouts",
+      "wave": null
+    },
+    {
+      "admissionBasis": null,
+      "artifactVersion": null,
+      "capabilities": {
+        "default": [],
+        "gated": []
+      },
+      "claims": [],
+      "default": false,
+      "dependsOn": [],
+      "gated": false,
+      "i": "absent",
+      "implementation": "absent",
+      "key": "syntax.start_item",
+      "note": "gate 3 admits (*NO_AUTO_POSSESS) and splits this row; until then the whole start-item route is refused",
+      "r": "absent",
+      "s": "absent",
+      "spellings": [
+        "(*LIMIT_DEPTH=n)",
+        "(*CR)",
+        "(*UTF)",
+        "(*NO_AUTO_POSSESS)"
+      ],
+      "title": "pattern start items",
+      "wave": null
+    }
+  ],
+  "note": "The one editable source of admission state. A row's default flag is not a preference: for a wave 2 row it is the conclusion of the four status columns, and for a wave 1 row it is the M7 foundation fallback DESIGN.md section 10 documents, named here rather than assumed.",
+  "schema": "pcrevera/features@1"
+}

@@ -2162,3 +2162,87 @@ project imports a closed external table to define syntax, options, aliases or
 a semantic decision, the external source supplies the universe and the project
 supplies an exact policy partition. A corpus or two agreeing project tables
 cannot establish that the complement is complete.
+
+## Reading Lean with a regex that had never seen a comment
+
+What I got wrong: the theorem inventory resolves every claim to a fully
+qualified Lean name by reading the sources, and the first reader tracked
+`namespace` and `end` by matching the start of a line. `Basic.lean` opens with
+a doc comment whose second sentence begins a line with the word `namespace`,
+so the reader opened a scope that never closed and put every declaration in
+that file one level too deep. It also could not follow `end A.B` closing two
+frames at once, or `namespace Std.Stream` closed by `end Stream` alone, both of
+which are ordinary Lean.
+
+None of this failed loudly. A name resolved one namespace too deep is still a
+name, and the inventory would have recorded it as the theorem — which is the
+exact failure the inventory exists to prevent, reproduced inside the tool
+meant to prevent it.
+
+The repair has three parts and the third is the one that matters. The reader
+now strips nested block comments and line comments while keeping the line
+numbering, pushes one frame per dotted namespace component, and refuses rather
+than ignores an `end` that closes nothing open. Then the resolved names are
+handed to Lean: `make lean` elaborates a generated module of `#check @name` and
+`#print axioms name` for all seventy-one of them. A reader that reads the file
+can only ever agree with itself; the compiler is the second opinion, and it was
+available the whole time.
+
+## Pinning the wrapper's hash for the theorem underneath it
+
+What I got wrong: the inventory's S-8 row recorded
+`Proofs/ExecPike.lean, pikeRun_refinesMatches`, the five-line `Exec` wrapper,
+and not `Proofs/PikeRefine.lean, pikeRun_refines_matches`, the seven-thousand
+line proof it delegates to — although `THEOREMS.md` names both. Every check
+passed: the wrapper exists, elaborates, and depends on the three axioms. What
+the row pinned was the source hash of a file that does not contain the proof,
+so editing `PikeRefine.lean` would not have moved the inventory at all.
+
+I-3 was the same shape from the other side. It recorded `artifactSha256`,
+which is a string constant nothing reads, when the evidence it stands for is
+the module's `#guard`s — and the plan says explicitly that an artifact `#guard`
+is never recorded as a theorem. The row now names the module and no
+declaration, which is what the schema's module-only form is for.
+
+What catches this class now is a test that reads `THEOREMS.md`'s three-column
+tables and requires every Lean module a row's cell names to be one that row
+records. Prose is not the authority — the wrong theorem name in it is why the
+inventory was written — but a module the prose names and the inventory does not
+is a gap in the inventory.
+
+## An admission rule with a column it never read
+
+What I got wrong: `features.admits` implements PLAN-M8 section 5's rule, and
+the rule ends "and every named proof belongs to the shipped capsule". The first
+version read four status columns and stopped. An implemented row with
+`s = r = i = complete` and an empty `claims` list therefore validated and
+default-admitted with no theorem behind it at all, and the test that was
+supposed to catch that iterated the empty list and passed.
+
+Two smaller versions of the same error sat beside it. A capability list was
+accepted on a row nothing admits, so an unreachable opcode declaration counted
+as ownership when the artifact's opcodes were checked for a claimant. And
+`"wave": true` satisfied `isinstance(wave, int)` and compared equal to 1, which
+would have let a wave 2 row take wave 1's fallback basis; that one is in
+`api-faq.md` as well.
+
+The common thread is that each hole was in the part of the rule that had no
+test aimed at it, and the tests that existed were written from the same reading
+of the rule as the code. What the ledger has now is a mutation per conjunct: an
+implemented row with no claims, a claim the capsule does not carry, a Boolean
+wave, a capability on an unadmitted row, and a wave 2 row wearing the fallback.
+
+## Attributing an opcode to the family that does not emit it
+
+What I got wrong: the feature ledger says which opcodes each syntax family may
+make the compiler emit, and I gave both quantifier rows `OpJump` alongside
+`OpSplit`. The compiler emits `OpJump` in exactly one place — after a
+completed non-final alternation branch. Repetition emits `OpSplit` for the
+optional and unrolled forms and the four `OpRep*` instructions for the counted
+one, and never a jump.
+
+The attribution was written from what the shapes looked like rather than from
+the emission sites, and the check that passed — every capability name is an
+`Op` variant, every `Op` variant is claimed — could not see it, because
+`OpJump` was claimed by alternation too. A capability table is a claim about
+the compiler, and the compiler is thirty lines of `grep` away.

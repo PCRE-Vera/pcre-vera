@@ -1,0 +1,1655 @@
+{
+  "artifact": "d60df8a5600a4a0d4d1d1ea21e90883eab44d35a8f71e1d5450daf0a61b5dd1f",
+  "axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "claims": [
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ast",
+          "module": "lean/Pcrevera/Spec/Ast.lean",
+          "sha256": "bdb0501b04b6eabefa1be4abceed4e81685d9f9bf86816ee933a7cb9ae291992"
+        }
+      ],
+      "domain": "the wave 1 constructors of DESIGN.md section 2.1",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-1",
+      "kind": "definition",
+      "layer": "S",
+      "statement": "the wave 1 AST as an inductive type, options as parameters",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Spec.matchesF",
+          "module": "lean/Pcrevera/Spec/Match.lean",
+          "sha256": "515a69a8df02ddd68cb82e602055bea1ebf7392d8dcd5a9b84a304d29e71daba"
+        }
+      ],
+      "domain": "every spec AST at every fuel",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-2",
+      "kind": "definition",
+      "layer": "S",
+      "statement": "priority-ordered big-step search: Found with captures, NotFound, or BadInput, and nothing else",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Spec.matches_stable",
+          "module": "lean/Pcrevera/Spec/Total.lean",
+          "sha256": "97993037697c09d073ec87cd9b0f04cf29c9c5206bf2265761411dca91bf6054"
+        }
+      ],
+      "domain": "every spec AST",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-3",
+      "kind": "proof",
+      "layer": "S",
+      "statement": "beyond a computable sufficient fuel the answer no longer changes",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Spec.Matches",
+          "module": "lean/Pcrevera/Spec/Total.lean",
+          "sha256": "97993037697c09d073ec87cd9b0f04cf29c9c5206bf2265761411dca91bf6054"
+        }
+      ],
+      "domain": "every spec AST",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-4",
+      "kind": "definition",
+      "layer": "S",
+      "statement": "S-2 read at the stable fuel of S-3, so totality is earned",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.Config",
+          "module": "lean/Pcrevera/Ref/Exec.lean",
+          "sha256": "f8e8b50b799e18367a294c1449f49a03ef41df3dd75d61c9124658375b6f3b12"
+        },
+        {
+          "lean": "Pcrevera.Ref.Limits",
+          "module": "lean/Pcrevera/Ref/Bytecode.lean",
+          "sha256": "4e6437a9a957664c3a0ba7d1df934a52215e190a8e3486079f34d03d8132e26b"
+        },
+        {
+          "lean": "Pcrevera.Ref.Exec",
+          "module": "lean/Pcrevera/Ref/Exec.lean",
+          "sha256": "f8e8b50b799e18367a294c1449f49a03ef41df3dd75d61c9124658375b6f3b12"
+        }
+      ],
+      "domain": "Pike, backtracking and memoized, each with or without a context",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-5",
+      "kind": "definition",
+      "layer": "S",
+      "statement": "the internal configuration domain, wider than the public API",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.createCtx",
+          "module": "lean/Pcrevera/Ref/Exec.lean",
+          "sha256": "f8e8b50b799e18367a294c1449f49a03ef41df3dd75d61c9124658375b6f3b12"
+        }
+      ],
+      "domain": "every compiled pattern and creation limit vector",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-6",
+      "kind": "definition",
+      "layer": "S",
+      "statement": "the creation step, its one-time reservation and zeroing charged against the creation limits",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.exec_badinput_iff",
+          "module": "lean/Pcrevera/Proofs/BadInput.lean",
+          "sha256": "1105a442f4f28df8a6d9e06881ba0bf82270b67744919d772f7b53bb6ef86702"
+        }
+      ],
+      "domain": "every configuration Exec admits",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-7",
+      "kind": "proof",
+      "layer": "S",
+      "statement": "Exec answers BadInput exactly where Matches does, plus the execution-only cases",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Refine.btRun_refines_matches",
+          "module": "lean/Pcrevera/Proofs/Refine.lean",
+          "sha256": "2cde0f49846fbfe49655bb522b1c38546ea4a7bf9c8c53e2b60b53a022d6aad7"
+        },
+        {
+          "lean": "Pcrevera.Refine.pikeRun_refines_matches",
+          "module": "lean/Pcrevera/Proofs/PikeRefine.lean",
+          "sha256": "1c54a8d836d97284a291fd4b0166b2633c1c25c0aa6e935dd5eccda66d6150d7"
+        },
+        {
+          "lean": "Pcrevera.Ref.btRun_refinesMatches",
+          "module": "lean/Pcrevera/Proofs/ExecBacktrack.lean",
+          "sha256": "b7f895ff1f1e8cd348931183f4da2d0f7aae989735cc830e93d171a270085616"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeRun_refinesMatches",
+          "module": "lean/Pcrevera/Proofs/ExecPike.lean",
+          "sha256": "0c9b1e4c0dde38a1ba85fb28d8f19301e591f42fd7e413c655e667b75d394cff"
+        },
+        {
+          "lean": "Pcrevera.Ref.exec_refinesAnswers",
+          "module": "lean/Pcrevera/Proofs/ExecContext.lean",
+          "sha256": "fbfa4606d317e3a29a32e871daeb9d6c8877a5a429d21bebd91b17aa7f80eda6"
+        }
+      ],
+      "domain": "both matchers, every start offset and match option, over the whole Config domain",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-8",
+      "kind": "proof",
+      "layer": "S",
+      "note": "the Pike half carries the eligibility hypothesis (compile p).pike = true",
+      "statement": "whenever Exec answers Found or NotFound, that answer is Matches",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.exec_monotone",
+          "module": "lean/Pcrevera/Proofs/Monotone.lean",
+          "sha256": "5fa1cc28b6fed2b1c1d7b0a312285baf2430b2c5c367e0826d8d265f1498f03d"
+        }
+      ],
+      "domain": "both limit vectors admitted by the configuration",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-9",
+      "kind": "proof",
+      "layer": "S",
+      "statement": "raising a limit never changes a Found or NotFound",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.btRun_inBudget_counted",
+          "module": "lean/Pcrevera/Proofs/RepRun.lean",
+          "sha256": "0f7c79c8d7dd424b023d8b4f2a9bb7931ed48fbe02b500e63c8062122b73416e"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeRun_inBudget",
+          "module": "lean/Pcrevera/Proofs/PikeBounds.lean",
+          "sha256": "b110045f9c1fd529e0a3aa6f4ee8b3c88f7747541e6cd79d2b30378f1bb4d867"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeRun_inBudget_ctx",
+          "module": "lean/Pcrevera/Proofs/PikeBounds.lean",
+          "sha256": "b110045f9c1fd529e0a3aa6f4ee8b3c88f7747541e6cd79d2b30378f1bb4d867"
+        }
+      ],
+      "domain": "both matchers, plain call and context call alike",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-10",
+      "kind": "proof",
+      "layer": "S",
+      "statement": "every limit at or above the analyzer's bound rules ResourceExceeded out",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.ctx_sufficient",
+          "module": "lean/Pcrevera/Proofs/CtxSufficient.lean",
+          "sha256": "c6a62176a5d40527c6070aad4a51cea50b8f0382b515f2a58c4f8ba9d50c382f"
+        },
+        {
+          "lean": "Pcrevera.Ref.ctx_sufficient_pike",
+          "module": "lean/Pcrevera/Proofs/CtxSufficient.lean",
+          "sha256": "c6a62176a5d40527c6070aad4a51cea50b8f0382b515f2a58c4f8ba9d50c382f"
+        },
+        {
+          "lean": "Pcrevera.Ref.ctx_sufficient_bt",
+          "module": "lean/Pcrevera/Proofs/CtxSufficient.lean",
+          "sha256": "c6a62176a5d40527c6070aad4a51cea50b8f0382b515f2a58c4f8ba9d50c382f"
+        }
+      ],
+      "domain": "the calls a created context admits",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-11",
+      "kind": "proof",
+      "layer": "S",
+      "statement": "S-10 for a context, conditional on creation having succeeded",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.matchers_agree_wf",
+          "module": "lean/Pcrevera/Proofs/ExecPike.lean",
+          "sha256": "0c9b1e4c0dde38a1ba85fb28d8f19301e591f42fd7e413c655e667b75d394cff"
+        },
+        {
+          "lean": "Pcrevera.Ref.matchers_agree_sufficient",
+          "module": "lean/Pcrevera/Proofs/AgreeSufficient.lean",
+          "sha256": "b5c0ed5af6bff8434eea21a2784adf922e7027119d0d23b29833a6f6c1522f8b"
+        }
+      ],
+      "domain": "every Pike-eligible wave 1 pattern",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "S-12",
+      "kind": "proof",
+      "layer": "S",
+      "statement": "on a Pike-eligible pattern the two matchers agree under sufficient budgets",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.compile",
+          "module": "lean/Pcrevera/Ref/Compile.lean",
+          "sha256": "66cbff29babfe51b6689c254250ac9aca322d0b06833691c4815b78e3638ffd7"
+        }
+      ],
+      "domain": "every spec AST",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-1",
+      "kind": "definition",
+      "layer": "R",
+      "statement": "spec AST to bytecode, the compiler of the real engine restated",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.btRun",
+          "module": "lean/Pcrevera/Ref/VM.lean",
+          "sha256": "68f08c2c2954b397565b8f242f3d5c46d180be9ccfef46285d8f06f7619df69c"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeRun",
+          "module": "lean/Pcrevera/Ref/Pike.lean",
+          "sha256": "79b0397ca9187f2c2d22906317b38abd76ba6b45bad0dbb9f87753a62e4ed526"
+        },
+        {
+          "lean": "Pcrevera.Ref.run",
+          "module": "lean/Pcrevera/Ref/Exec.lean",
+          "sha256": "f8e8b50b799e18367a294c1449f49a03ef41df3dd75d61c9124658375b6f3b12"
+        }
+      ],
+      "domain": "every program and configuration",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-2",
+      "kind": "definition",
+      "layer": "R",
+      "statement": "the bytecode under a configuration: same VM loops, same cost accounting, same context split",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.Ctx",
+          "module": "lean/Pcrevera/Ref/Context.lean",
+          "sha256": "53cee786a7beb11f760b825dd616577f05ac58f969e35e4ef920bb7a8ee955b4"
+        },
+        {
+          "lean": "Pcrevera.Ref.ctxCreate",
+          "module": "lean/Pcrevera/Ref/Context.lean",
+          "sha256": "53cee786a7beb11f760b825dd616577f05ac58f969e35e4ef920bb7a8ee955b4"
+        },
+        {
+          "lean": "Pcrevera.Ref.ctxMatch",
+          "module": "lean/Pcrevera/Ref/Context.lean",
+          "sha256": "53cee786a7beb11f760b825dd616577f05ac58f969e35e4ef920bb7a8ee955b4"
+        }
+      ],
+      "domain": "every compiled pattern",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-3",
+      "kind": "definition",
+      "layer": "R",
+      "statement": "the creation step of S-6, executable, with the accessors beside it",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.run_compile_eq_exec",
+          "module": "lean/Pcrevera/Ref/Exec.lean",
+          "sha256": "f8e8b50b799e18367a294c1449f49a03ef41df3dd75d61c9124658375b6f3b12"
+        }
+      ],
+      "domain": "every configuration, pattern, subject, start and limit vector",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-4",
+      "kind": "proof",
+      "layer": "R",
+      "statement": "running the compiled pattern equals Exec: soundness and completeness in one equation",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.btRun_halts",
+          "module": "lean/Pcrevera/Proofs/BtTermination.lean",
+          "sha256": "c9988c6816186aee0044f65674071c7605e873359ae4a866812b5bba2fe5be5e"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeAdd_fuel_irrelevant",
+          "module": "lean/Pcrevera/Proofs/PikeTermination.lean",
+          "sha256": "d4995a4ca66330ddd7f3de32002256cb94b0bba50788d1573937032a9acbf08f"
+        },
+        {
+          "lean": "Pcrevera.Ref.scanFirst_fuel_irrelevant",
+          "module": "lean/Pcrevera/Proofs/PikeTermination.lean",
+          "sha256": "d4995a4ca66330ddd7f3de32002256cb94b0bba50788d1573937032a9acbf08f"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeHollow_fuel_irrelevant",
+          "module": "lean/Pcrevera/Proofs/PikeTermination.lean",
+          "sha256": "d4995a4ca66330ddd7f3de32002256cb94b0bba50788d1573937032a9acbf08f"
+        },
+        {
+          "lean": "Pcrevera.Ref.boundPowGo_fuel_irrelevant",
+          "module": "lean/Pcrevera/Proofs/PikeTermination.lean",
+          "sha256": "d4995a4ca66330ddd7f3de32002256cb94b0bba50788d1573937032a9acbf08f"
+        }
+      ],
+      "domain": "both matchers",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-5",
+      "kind": "proof",
+      "layer": "R",
+      "statement": "every run halts: the backtracking loop by the cost charge, the lockstep loops by their declared variants",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.btRun_cost_le_counted",
+          "module": "lean/Pcrevera/Proofs/RepRun.lean",
+          "sha256": "0f7c79c8d7dd424b023d8b4f2a9bb7931ed48fbe02b500e63c8062122b73416e"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeRun_cost_le_check",
+          "module": "lean/Pcrevera/Proofs/PikeBounds.lean",
+          "sha256": "b110045f9c1fd529e0a3aa6f4ee8b3c88f7747541e6cd79d2b30378f1bb4d867"
+        }
+      ],
+      "domain": "both matchers",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-6",
+      "kind": "proof",
+      "layer": "R",
+      "statement": "the cost a run charges is at most the certificate's bound at the subject length",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.btRun_stack_le_counted",
+          "module": "lean/Pcrevera/Proofs/RepRun.lean",
+          "sha256": "0f7c79c8d7dd424b023d8b4f2a9bb7931ed48fbe02b500e63c8062122b73416e"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeRun_stack_le",
+          "module": "lean/Pcrevera/Proofs/PikeBounds.lean",
+          "sha256": "b110045f9c1fd529e0a3aa6f4ee8b3c88f7747541e6cd79d2b30378f1bb4d867"
+        }
+      ],
+      "domain": "both matchers",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-7",
+      "kind": "proof",
+      "layer": "R",
+      "statement": "the same for backtrack entries",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.btRun_mem_le_counted",
+          "module": "lean/Pcrevera/Proofs/RepRun.lean",
+          "sha256": "0f7c79c8d7dd424b023d8b4f2a9bb7931ed48fbe02b500e63c8062122b73416e"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeRun_mem_le_check",
+          "module": "lean/Pcrevera/Proofs/PikeBounds.lean",
+          "sha256": "b110045f9c1fd529e0a3aa6f4ee8b3c88f7747541e6cd79d2b30378f1bb4d867"
+        }
+      ],
+      "domain": "both matchers",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-8",
+      "kind": "proof",
+      "layer": "R",
+      "statement": "the same for scratch bytes, peak capacity with growth overlap included",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Ref.ctx_resident_eq_reservation",
+          "module": "lean/Pcrevera/Proofs/CtxReserve.lean",
+          "sha256": "27931c91edff2efc720c3f7676e592c4a91d9a50a4af9d697914810198c58cd4"
+        },
+        {
+          "lean": "Pcrevera.Ref.ctxMatch_no_growth_pike",
+          "module": "lean/Pcrevera/Proofs/CtxSufficient.lean",
+          "sha256": "c6a62176a5d40527c6070aad4a51cea50b8f0382b515f2a58c4f8ba9d50c382f"
+        },
+        {
+          "lean": "Pcrevera.Ref.ctxMatch_no_growth_bt",
+          "module": "lean/Pcrevera/Proofs/CtxSufficient.lean",
+          "sha256": "c6a62176a5d40527c6070aad4a51cea50b8f0382b515f2a58c4f8ba9d50c382f"
+        },
+        {
+          "lean": "Pcrevera.Ref.btRun_no_growth_ctx_counted",
+          "module": "lean/Pcrevera/Proofs/RepRun.lean",
+          "sha256": "0f7c79c8d7dd424b023d8b4f2a9bb7931ed48fbe02b500e63c8062122b73416e"
+        },
+        {
+          "lean": "Pcrevera.Ref.pikeRun_no_growth",
+          "module": "lean/Pcrevera/Proofs/PikeBounds.lean",
+          "sha256": "b110045f9c1fd529e0a3aa6f4ee8b3c88f7747541e6cd79d2b30378f1bb4d867"
+        }
+      ],
+      "domain": "both matchers, on a context call",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-9",
+      "kind": "proof",
+      "layer": "R",
+      "statement": "a created context's resident bytes are worstCaseMemory at the declared maximum, and no call on it allocates",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "module": "lean/CorpusCheck.lean",
+          "sha256": "fa0588c13c07883d4c5f63feae3c52003f95df1d342b71d29a1de0fb294f2af5"
+        }
+      ],
+      "domain": "conformance/corpus.json and conformance/sweep.json through the committed AST bridge",
+      "features": [
+        "core.pattern",
+        "syntax.alternation",
+        "syntax.anchor",
+        "syntax.class",
+        "syntax.dot",
+        "syntax.escape.class",
+        "syntax.escape.literal",
+        "syntax.escape.newline",
+        "syntax.group.capturing",
+        "syntax.group.comment",
+        "syntax.group.named",
+        "syntax.group.noncapturing",
+        "syntax.group.options",
+        "syntax.literal",
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy",
+        "syntax.quoting"
+      ],
+      "id": "R-10",
+      "kind": "replay",
+      "layer": "R",
+      "statement": "the reference compiler and VM, evaluated on the committed corpora, give the recorded answers",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Spec.lower",
+          "module": "lean/Pcrevera/Spec/Lower.lean",
+          "sha256": "cb76f4ad306c51e89f00531c872e71729e75065974c192ca9ed46694225c61ba"
+        },
+        {
+          "lean": "Pcrevera.Spec.Nullable",
+          "module": "lean/Pcrevera/Spec/Lower.lean",
+          "sha256": "cb76f4ad306c51e89f00531c872e71729e75065974c192ca9ed46694225c61ba"
+        },
+        {
+          "lean": "Pcrevera.Spec.LowerSafe",
+          "module": "lean/Pcrevera/Spec/Lower.lean",
+          "sha256": "cb76f4ad306c51e89f00531c872e71729e75065974c192ca9ed46694225c61ba"
+        }
+      ],
+      "domain": "every spec AST",
+      "features": [
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy"
+      ],
+      "id": "L-1",
+      "kind": "definition",
+      "layer": "L",
+      "statement": "the quantifier lowering as a function on Ast, with the condition under which it preserves the search",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Spec.lower_searchEq",
+          "module": "lean/Pcrevera/Proofs/LowerMatch.lean",
+          "sha256": "3143dfde871eafce4293154dd2b9110b2822e05eadd19c7deabb9ec42647c450"
+        },
+        {
+          "lean": "Pcrevera.Spec.Matches_lower",
+          "module": "lean/Pcrevera/Proofs/LowerPat.lean",
+          "sha256": "d17ff4bca1efb5c8e38deeb99fd19fb9ba047b79a95d331619420ccd9c7c298d"
+        }
+      ],
+      "domain": "every LowerSafe tree",
+      "features": [
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy"
+      ],
+      "id": "L-2",
+      "kind": "proof",
+      "layer": "L",
+      "statement": "a tree and its lowered form return the same ordered thread list from every position, lifted to the public answer",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Spec.evRep_bounded",
+          "module": "lean/Pcrevera/Proofs/LowerSplice.lean",
+          "sha256": "917203c7c65fbe9f28f7f1cebe032d9f4a3ab95d33c98d27bffbc5cc9b6b5bf3"
+        }
+      ],
+      "domain": "every bounded repetition, the empty range included",
+      "features": [
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy"
+      ],
+      "id": "L-2a",
+      "kind": "proof",
+      "layer": "L",
+      "statement": "the bounded splice, a finite induction needing no semantic hypothesis",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Spec.evRep_unbounded",
+          "module": "lean/Pcrevera/Proofs/LowerSplice.lean",
+          "sha256": "917203c7c65fbe9f28f7f1cebe032d9f4a3ab95d33c98d27bffbc5cc9b6b5bf3"
+        },
+        {
+          "lean": "Pcrevera.Spec.searchRep_count_free",
+          "module": "lean/Pcrevera/Proofs/LowerSplice.lean",
+          "sha256": "917203c7c65fbe9f28f7f1cebe032d9f4a3ab95d33c98d27bffbc5cc9b6b5bf3"
+        }
+      ],
+      "domain": "every unbounded repetition whose body must consume",
+      "features": [
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy"
+      ],
+      "id": "L-2b",
+      "kind": "proof",
+      "layer": "L",
+      "statement": "the unbounded splice: past the minimum the count is read in two places and both have stopped caring",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Spec.maxGroup_lower",
+          "module": "lean/Pcrevera/Proofs/LowerShape.lean",
+          "sha256": "ec31eca6754dde528ca38650e97e12c2a535553583c65a87e50cddd52f3c5577"
+        },
+        {
+          "lean": "Pcrevera.Spec.crWalk_lower",
+          "module": "lean/Pcrevera/Proofs/LowerShape.lean",
+          "sha256": "ec31eca6754dde528ca38650e97e12c2a535553583c65a87e50cddd52f3c5577"
+        },
+        {
+          "lean": "Pcrevera.Spec.wfAst_lower",
+          "module": "lean/Pcrevera/Proofs/LowerWf.lean",
+          "sha256": "446b43cf753abc85a2f1ae54cea4aa570fc2695560d359d86c34785b6aa946b7"
+        },
+        {
+          "lean": "Pcrevera.Spec.capsBelow_lower",
+          "module": "lean/Pcrevera/Proofs/LowerWf.lean",
+          "sha256": "446b43cf753abc85a2f1ae54cea4aa570fc2695560d359d86c34785b6aa946b7"
+        },
+        {
+          "lean": "Pcrevera.Spec.wf_lowered",
+          "module": "lean/Pcrevera/Proofs/LowerWf.lean",
+          "sha256": "446b43cf753abc85a2f1ae54cea4aa570fc2695560d359d86c34785b6aa946b7"
+        },
+        {
+          "lean": "Pcrevera.Spec.covered_lower",
+          "module": "lean/Pcrevera/Proofs/LowerWf.lean",
+          "sha256": "446b43cf753abc85a2f1ae54cea4aa570fc2695560d359d86c34785b6aa946b7"
+        }
+      ],
+      "domain": "every well-formed tree",
+      "features": [
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy"
+      ],
+      "id": "L-3",
+      "kind": "proof",
+      "layer": "L",
+      "statement": "the structural preservation lemmas, gathered at the pattern",
+      "status": "complete"
+    },
+    {
+      "declarations": [],
+      "domain": "outstanding in M7R; see PLAN-M7.md section 10",
+      "features": [
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy"
+      ],
+      "id": "L-4",
+      "kind": "proof",
+      "layer": "L",
+      "statement": "the lowering moved inside Ref.compile, so the pipeline spends L-2 rather than the bridge",
+      "status": "absent"
+    },
+    {
+      "declarations": [],
+      "domain": "outstanding in M7R; see PLAN-M7.md section 10",
+      "features": [
+        "syntax.quantifier.greedy",
+        "syntax.quantifier.lazy"
+      ],
+      "id": "L-5",
+      "kind": "proof",
+      "layer": "L",
+      "statement": "the emitted-size counting theorem restated over the lowered sizes",
+      "status": "absent"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Tir.Program",
+          "module": "lean/Pcrevera/Tir/Syntax.lean",
+          "sha256": "4cc3de080052aadaab2360ca59fac725d89bc871d146bcff6cc193844a2e4ecc"
+        },
+        {
+          "lean": "Pcrevera.Tir.Value",
+          "module": "lean/Pcrevera/Tir/Interp.lean",
+          "sha256": "343d639b35845b02093aac3bce23afe34b19a1db4462bf29576ebdc8ed74bc51"
+        },
+        {
+          "lean": "Pcrevera.Tir.Runs",
+          "module": "lean/Pcrevera/Tir/Exec.lean",
+          "sha256": "effb1def23a08169fbafb8aef355032b318f60f890d93fffa5afb7ea46ac69fa"
+        },
+        {
+          "lean": "Pcrevera.Tir.runs_stable",
+          "module": "lean/Pcrevera/Tir/Stable.lean",
+          "sha256": "dfe39ecc1b4c96fda015eae888127f298544b31638121d5473be9ab17132ba25"
+        },
+        {
+          "lean": "Pcrevera.Tir.runs_unique",
+          "module": "lean/Pcrevera/Tir/Stable.lean",
+          "sha256": "dfe39ecc1b4c96fda015eae888127f298544b31638121d5473be9ab17132ba25"
+        }
+      ],
+      "domain": "every TIR program",
+      "features": [],
+      "id": "I-1",
+      "kind": "definition",
+      "layer": "I",
+      "statement": "the TIR syntax, its interpreter and its execution relation, with stability and uniqueness of a run",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Tir.programJ",
+          "module": "lean/Pcrevera/Tir/Print.lean",
+          "sha256": "e49e42e6321895a6df17614795c0b22f23adb0feedaaaf78bec3d061722fd689"
+        },
+        {
+          "lean": "Pcrevera.Tir.decode",
+          "module": "lean/Pcrevera/Tir/Decode.lean",
+          "sha256": "36c7dc3388d71e40adf27cc463a1becabf497c29d982166e06584d6d2a0b19ac"
+        },
+        {
+          "lean": "Pcrevera.Tir.decodeProgram_programJ",
+          "module": "lean/Pcrevera/Tir/RoundTrip.lean",
+          "sha256": "5c03d26d3bbe250cde0335373c0d3f3cce9fc0f1af7f668dc626f2cc9e575055"
+        },
+        {
+          "module": "lean/Pcrevera/Tir/PrintCheck.lean",
+          "sha256": "55f41433d96326efbea8e69c71623e19887ca0d3fdb812178ba953d7246bd79a"
+        },
+        {
+          "module": "lean/Pcrevera/Tir/Artifact.lean",
+          "sha256": "af2bedc82ceb806d1b2b7d614ec4a1741d0a6bff860000d2669e92ba10fd7665"
+        }
+      ],
+      "domain": "every canonical program at sufficient decode depth",
+      "features": [],
+      "id": "I-2",
+      "kind": "proof",
+      "layer": "I",
+      "note": "the step from printed text to a parsed value stays a check: PrintCheck.lean holds the printer to serialize.dumps byte for byte, and Artifact.lean settles the canonicality premise on the artifact by reduction, which is the interpreter and not the kernel",
+      "statement": "the decoder inverts the printer's tree for every canonical program",
+      "status": "partial"
+    },
+    {
+      "declarations": [
+        {
+          "module": "lean/Pcrevera/Tir/Artifact.lean",
+          "sha256": "af2bedc82ceb806d1b2b7d614ec4a1741d0a6bff860000d2669e92ba10fd7665"
+        }
+      ],
+      "domain": "gen/engine.tir.json, by reduction in the elaborator rather than by the kernel",
+      "features": [],
+      "id": "I-3",
+      "kind": "interpreter-check",
+      "layer": "I",
+      "note": "the evidence is the module's #guards, which are not declarations and are deliberately not recorded as theorems; what the row pins is the module they live in",
+      "statement": "the committed artifact decodes and prints back to the same bytes, and is canonical inside its decode fuel",
+      "status": "complete"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Tir.region_kids_simulates",
+          "module": "lean/Pcrevera/Tir/RegionKids.lean",
+          "sha256": "0b8f483e4f15f2913961bbb05487743e73d60aa94b36c0943882eac93e2e5f3b"
+        }
+      ],
+      "domain": "one artifact function",
+      "features": [],
+      "id": "I-4",
+      "kind": "proof",
+      "layer": "I",
+      "statement": "the artifact's region_kids means what Ref.regionKids means",
+      "status": "complete"
+    },
+    {
+      "declarations": [],
+      "domain": "outstanding in M7R; see PLAN-M7.md section 10",
+      "features": [],
+      "id": "I-5",
+      "kind": "proof",
+      "layer": "I",
+      "statement": "the per-function simulation campaign over the compiler",
+      "status": "absent"
+    },
+    {
+      "declarations": [],
+      "domain": "outstanding in M7R; see PLAN-M7.md section 10",
+      "features": [],
+      "id": "I-6",
+      "kind": "proof",
+      "layer": "I",
+      "statement": "the per-function simulation campaign over the matchers",
+      "status": "absent"
+    },
+    {
+      "declarations": [
+        {
+          "lean": "Pcrevera.Tir.pike_take_simulates",
+          "module": "lean/Pcrevera/Tir/PikeTake.lean",
+          "sha256": "6c3e4aa16ea978e807804c62b6dbfdeb0e0c5458eec5493eda7e3c74f3c8d904"
+        }
+      ],
+      "domain": "one artifact function, conditionally",
+      "features": [],
+      "id": "I-7",
+      "kind": "proof",
+      "layer": "I",
+      "note": "the coverage ledger does not count this theorem, because its hypothesis is the obligation the campaign owes",
+      "statement": "the pool allocator simulates Ref.chargeGrow, given a contract for charge_grow that is itself unproved",
+      "status": "partial"
+    },
+    {
+      "declarations": [],
+      "domain": "outstanding in M7R; see PLAN-M7.md section 10",
+      "features": [],
+      "id": "I-8",
+      "kind": "proof",
+      "layer": "I",
+      "statement": "the composed compiler theorem",
+      "status": "absent"
+    },
+    {
+      "declarations": [],
+      "domain": "outstanding in M7R; see PLAN-M7.md section 10",
+      "features": [],
+      "id": "I-9",
+      "kind": "proof",
+      "layer": "I",
+      "statement": "the composed matcher theorem",
+      "status": "absent"
+    },
+    {
+      "declarations": [],
+      "domain": "outstanding in M7R; see PLAN-M7.md section 1 for the statement it would be",
+      "features": [],
+      "id": "I-10",
+      "kind": "proof",
+      "layer": "I",
+      "statement": "the artifact theorem, the composition of I-5 to I-9",
+      "status": "absent"
+    }
+  ],
+  "counts": {
+    "byKind": {
+      "definition": 10,
+      "interpreter-check": 1,
+      "proof": 27,
+      "replay": 1
+    },
+    "byLayer": {
+      "I": 10,
+      "L": 7,
+      "R": 10,
+      "S": 12
+    },
+    "byStatus": {
+      "absent": 7,
+      "complete": 30,
+      "partial": 2
+    },
+    "claims": 39
+  },
+  "layerI": {
+    "counts": {
+      "owed": 80,
+      "proved": 1
+    },
+    "domain": [
+      "at_line_end",
+      "bound_add",
+      "bound_mul",
+      "bound_pow",
+      "bsr_at",
+      "bt_match",
+      "bt_run",
+      "cert_bound",
+      "cert_build",
+      "cert_check",
+      "cert_install",
+      "cert_shape",
+      "charge_call",
+      "charge_grow",
+      "check_fit",
+      "class_has",
+      "close_region",
+      "compile",
+      "count_regs",
+      "ct",
+      "ctx_create",
+      "ctx_match",
+      "drop_empty_region",
+      "emit",
+      "generate",
+      "mark_seen",
+      "match",
+      "new_rep",
+      "newline_at",
+      "newline_before",
+      "open_region",
+      "pike_add",
+      "pike_check",
+      "pike_defer",
+      "pike_drop",
+      "pike_hollow",
+      "pike_match",
+      "pike_ok",
+      "pike_park",
+      "pike_price",
+      "pike_room",
+      "pike_run",
+      "pike_take",
+      "pike_write",
+      "plan_lowering",
+      "poly_add",
+      "poly_eq",
+      "poly_ge",
+      "poly_mul",
+      "poly_norm",
+      "poly_value",
+      "price_alt",
+      "price_call",
+      "price_repeat",
+      "price_span",
+      "push_bt",
+      "push_job",
+      "push_patch",
+      "re_bound",
+      "re_class",
+      "re_cost",
+      "re_mem",
+      "re_pick",
+      "re_stack",
+      "region_kids",
+      "sat_add",
+      "sat_mul",
+      "scan_alt",
+      "scan_first",
+      "scan_repeat",
+      "scan_span",
+      "shape_alt",
+      "shape_repeat",
+      "shape_span",
+      "size_node",
+      "walk_alt",
+      "walk_lowered",
+      "walk_repeat",
+      "word_edge",
+      "write_reg"
+    ],
+    "functions": [
+      {
+        "name": "at_line_end",
+        "theorem": ""
+      },
+      {
+        "name": "bound_add",
+        "theorem": ""
+      },
+      {
+        "name": "bound_mul",
+        "theorem": ""
+      },
+      {
+        "name": "bound_pow",
+        "theorem": ""
+      },
+      {
+        "name": "bsr_at",
+        "theorem": ""
+      },
+      {
+        "name": "bt_match",
+        "theorem": ""
+      },
+      {
+        "name": "bt_run",
+        "theorem": ""
+      },
+      {
+        "name": "cert_bound",
+        "theorem": ""
+      },
+      {
+        "name": "cert_build",
+        "theorem": ""
+      },
+      {
+        "name": "cert_check",
+        "theorem": ""
+      },
+      {
+        "name": "cert_install",
+        "theorem": ""
+      },
+      {
+        "name": "cert_shape",
+        "theorem": ""
+      },
+      {
+        "name": "charge_call",
+        "theorem": ""
+      },
+      {
+        "name": "charge_grow",
+        "theorem": ""
+      },
+      {
+        "name": "check_fit",
+        "theorem": ""
+      },
+      {
+        "name": "class_has",
+        "theorem": ""
+      },
+      {
+        "name": "close_region",
+        "theorem": ""
+      },
+      {
+        "name": "compile",
+        "theorem": ""
+      },
+      {
+        "name": "count_regs",
+        "theorem": ""
+      },
+      {
+        "name": "ct",
+        "theorem": ""
+      },
+      {
+        "name": "ctx_create",
+        "theorem": ""
+      },
+      {
+        "name": "ctx_match",
+        "theorem": ""
+      },
+      {
+        "name": "drop_empty_region",
+        "theorem": ""
+      },
+      {
+        "name": "emit",
+        "theorem": ""
+      },
+      {
+        "name": "generate",
+        "theorem": ""
+      },
+      {
+        "name": "mark_seen",
+        "theorem": ""
+      },
+      {
+        "name": "match",
+        "theorem": ""
+      },
+      {
+        "name": "new_rep",
+        "theorem": ""
+      },
+      {
+        "name": "newline_at",
+        "theorem": ""
+      },
+      {
+        "name": "newline_before",
+        "theorem": ""
+      },
+      {
+        "name": "open_region",
+        "theorem": ""
+      },
+      {
+        "name": "pike_add",
+        "theorem": ""
+      },
+      {
+        "name": "pike_check",
+        "theorem": ""
+      },
+      {
+        "name": "pike_defer",
+        "theorem": ""
+      },
+      {
+        "name": "pike_drop",
+        "theorem": ""
+      },
+      {
+        "name": "pike_hollow",
+        "theorem": ""
+      },
+      {
+        "name": "pike_match",
+        "theorem": ""
+      },
+      {
+        "name": "pike_ok",
+        "theorem": ""
+      },
+      {
+        "name": "pike_park",
+        "theorem": ""
+      },
+      {
+        "name": "pike_price",
+        "theorem": ""
+      },
+      {
+        "name": "pike_room",
+        "theorem": ""
+      },
+      {
+        "name": "pike_run",
+        "theorem": ""
+      },
+      {
+        "name": "pike_take",
+        "theorem": ""
+      },
+      {
+        "name": "pike_write",
+        "theorem": ""
+      },
+      {
+        "name": "plan_lowering",
+        "theorem": ""
+      },
+      {
+        "name": "poly_add",
+        "theorem": ""
+      },
+      {
+        "name": "poly_eq",
+        "theorem": ""
+      },
+      {
+        "name": "poly_ge",
+        "theorem": ""
+      },
+      {
+        "name": "poly_mul",
+        "theorem": ""
+      },
+      {
+        "name": "poly_norm",
+        "theorem": ""
+      },
+      {
+        "name": "poly_value",
+        "theorem": ""
+      },
+      {
+        "name": "price_alt",
+        "theorem": ""
+      },
+      {
+        "name": "price_call",
+        "theorem": ""
+      },
+      {
+        "name": "price_repeat",
+        "theorem": ""
+      },
+      {
+        "name": "price_span",
+        "theorem": ""
+      },
+      {
+        "name": "push_bt",
+        "theorem": ""
+      },
+      {
+        "name": "push_job",
+        "theorem": ""
+      },
+      {
+        "name": "push_patch",
+        "theorem": ""
+      },
+      {
+        "name": "re_bound",
+        "theorem": ""
+      },
+      {
+        "name": "re_class",
+        "theorem": ""
+      },
+      {
+        "name": "re_cost",
+        "theorem": ""
+      },
+      {
+        "name": "re_mem",
+        "theorem": ""
+      },
+      {
+        "name": "re_pick",
+        "theorem": ""
+      },
+      {
+        "name": "re_stack",
+        "theorem": ""
+      },
+      {
+        "name": "region_kids",
+        "theorem": "Pcrevera.Tir.region_kids_simulates"
+      },
+      {
+        "name": "sat_add",
+        "theorem": ""
+      },
+      {
+        "name": "sat_mul",
+        "theorem": ""
+      },
+      {
+        "name": "scan_alt",
+        "theorem": ""
+      },
+      {
+        "name": "scan_first",
+        "theorem": ""
+      },
+      {
+        "name": "scan_repeat",
+        "theorem": ""
+      },
+      {
+        "name": "scan_span",
+        "theorem": ""
+      },
+      {
+        "name": "shape_alt",
+        "theorem": ""
+      },
+      {
+        "name": "shape_repeat",
+        "theorem": ""
+      },
+      {
+        "name": "shape_span",
+        "theorem": ""
+      },
+      {
+        "name": "size_node",
+        "theorem": ""
+      },
+      {
+        "name": "walk_alt",
+        "theorem": ""
+      },
+      {
+        "name": "walk_lowered",
+        "theorem": ""
+      },
+      {
+        "name": "walk_repeat",
+        "theorem": ""
+      },
+      {
+        "name": "word_edge",
+        "theorem": ""
+      },
+      {
+        "name": "write_reg",
+        "theorem": ""
+      }
+    ]
+  },
+  "schema": "pcrevera/theorem-inventory@1"
+}
